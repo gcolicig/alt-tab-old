@@ -16,9 +16,11 @@ AltTab brings Windows-style window switching to macOS. It lists open windows, su
 ./build.sh --run
 ```
 
-That is the normal local-development path. It builds the `Debug` scheme with a local self-signed signing identity.
+That is the normal local-development path. It builds the `Debug` scheme with ad-hoc signing, so no Apple Developer certificate is required.
 
 For details, see [docs/setup.md](docs/setup.md).
+
+Requirements: Xcode 16 or newer, command line tools for `xcodebuild`, and Git. XcodeGen is installed/checked for the future generated-project workflow; the current upstream `.xcodeproj` remains the source of truth until a complete `project.yml` is added.
 
 ## Install Locally
 
@@ -66,7 +68,7 @@ Optional, disabled unless configured:
 - `src/logic`: window discovery, preferences, event handling, and app behavior.
 - `src/ui`: settings, menu bar, switcher UI, dialogs, and panels.
 - `resources`: icons, fonts, localization, and illustrations.
-- `config`: Xcode build settings.
+- `config`: Xcode build settings using Swift 5.10.
 - `scripts`: upstream build, release, signing, localization, and website helpers.
 - `docs`: setup, privacy, support material, and upstream website docs.
 

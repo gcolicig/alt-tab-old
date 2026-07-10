@@ -14,6 +14,6 @@ Keep the last pre-Pro AltTab codebase buildable as a clear, fork-friendly macOS 
 ## Known Limits
 
 - Release notarization requires an Apple Developer account.
-- The Xcode project is still committed from upstream.
+- The Xcode project is still committed from upstream; migrate to a complete XcodeGen `project.yml` before making generated projects the source of truth.
 - Some dependencies are pinned to upstream forks.
 - macOS permissions are still required for the app to function.

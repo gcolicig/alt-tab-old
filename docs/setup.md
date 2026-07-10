@@ -5,13 +5,21 @@ This fork is meant to be cloneable, buildable, and hackable without access to th
 ## Requirements
 
 - macOS
-- Xcode with command line tools selected
+- Xcode 16 or newer
+- Command line tools available for `xcodebuild`
+- XcodeGen, for the future generated-project workflow
 - Git
 
-If `xcodebuild` reports that only Command Line Tools are active, select Xcode:
+This repository's `build.sh` uses `/Applications/Xcode.app/Contents/Developer` automatically when it exists. You can also select Xcode globally if your user has permission:
 
 ```bash
 sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+```
+
+Or set it only for one command:
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer ./build.sh --run
 ```
 
 ## Build And Run
@@ -20,7 +28,9 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ./build.sh --run
 ```
 
-The script builds the `Debug` scheme with the local self-signed signing identity configured in `config/debug.xcconfig`.
+The script builds the `Debug` scheme with ad-hoc signing, so local builds do not require an Apple Developer certificate.
+
+The project currently keeps the upstream `.xcodeproj` as the source of truth. If a future `project.yml` is added, `build.sh` will run XcodeGen before building.
 
 ## Install Locally
 
