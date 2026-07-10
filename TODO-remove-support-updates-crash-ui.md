@@ -17,13 +17,13 @@ Es ist keine groessere Architekturarbeit noetig. Wichtig ist aber, nicht nur But
 
 ## Gewuenschte Entfernung
 
-- [ ] `Support this project` Button in der Settings-Seitenleiste entfernen.
-- [ ] `Check for updates now...` Button im General-Tab entfernen.
-- [ ] `Updates policy` Auswahl im General-Tab entfernen.
-- [ ] `Crash reports policy` Auswahl im General-Tab entfernen.
-- [ ] Menubar-Icon-Menue: `Check for updates...` entfernen.
-- [ ] Menubar-Icon-Menue: `Send feedback...` entfernen.
-- [ ] Menubar-Icon-Menue: `Support this project` entfernen.
+- [x] `Support this project` Button in der Settings-Seitenleiste entfernen.
+- [x] `Check for updates now...` Button im General-Tab entfernen.
+- [x] `Updates policy` Auswahl im General-Tab entfernen.
+- [x] `Crash reports policy` Auswahl im General-Tab entfernen.
+- [x] Menubar-Icon-Menue: `Check for updates...` entfernen.
+- [x] Menubar-Icon-Menue: `Send feedback...` entfernen.
+- [x] Menubar-Icon-Menue: `Support this project` entfernen.
 
 ## Konkrete Code-Fundstellen
 
@@ -38,11 +38,11 @@ Datei: `src/ui/settings-window/SettingsWindow.swift`
 
 TODO:
 
-- [ ] `supportButton` Property entfernen.
-- [ ] `setupSupportButton(...)` entfernen.
-- [ ] Aufruf in `setupSidebar()` entfernen.
-- [ ] Constraint fuer `sidebarScrollView.bottomAnchor` von `supportButton.topAnchor` auf `resetButton.topAnchor` umhaengen.
-- [ ] Abstand so setzen, dass `Reset settings...` und `Quit AltTab` weiterhin sauber stehen.
+- [x] `supportButton` Property entfernen.
+- [x] `setupSupportButton(...)` entfernen.
+- [x] Aufruf in `setupSidebar()` entfernen.
+- [x] Constraint fuer `sidebarScrollView.bottomAnchor` von `supportButton.topAnchor` auf `resetButton.topAnchor` umhaengen.
+- [x] Abstand so setzen, dass `Reset settings...` und `Quit AltTab` weiterhin sauber stehen.
 
 ### General-Tab
 
@@ -63,15 +63,15 @@ Betroffene Stellen:
 
 TODO:
 
-- [ ] `updatesPolicyDropdown` entfernen, falls keine UI mehr darauf zugreift.
-- [ ] `crashPolicyDropdown` entfernen oder optional behalten, falls `AppCenterCrashes` es noch fuer eine Ask-UI aktualisiert.
-- [ ] `updatesPolicy` Row entfernen.
-- [ ] `crashPolicy` Row entfernen.
-- [ ] `table.addNewTable()` fuer die entfernten Rows pruefen und ggf. entfernen, damit kein leerer Abschnitt bleibt.
-- [ ] `checkForUpdates` Button entfernen.
-- [ ] Tools-Stack auf `[exportButton, importButton]` reduzieren.
-- [ ] `refreshControlsFromPreferences()` um entfernte Dropdowns bereinigen.
-- [ ] `checkForUpdatesNow(_:)` nur entfernen, wenn auch keine andere Stelle sie mehr nutzt.
+- [x] `updatesPolicyDropdown` entfernen, falls keine UI mehr darauf zugreift.
+- [x] `crashPolicyDropdown` entfernen oder optional behalten, falls `AppCenterCrashes` es noch fuer eine Ask-UI aktualisiert.
+- [x] `updatesPolicy` Row entfernen.
+- [x] `crashPolicy` Row entfernen.
+- [x] `table.addNewTable()` fuer die entfernten Rows pruefen und ggf. entfernen, damit kein leerer Abschnitt bleibt.
+- [x] `checkForUpdates` Button entfernen.
+- [x] Tools-Stack auf `[exportButton, importButton]` reduzieren.
+- [x] `refreshControlsFromPreferences()` um entfernte Dropdowns bereinigen.
+- [x] `checkForUpdatesNow(_:)` nur entfernen, wenn auch keine andere Stelle sie mehr nutzt.
 
 Hinweis: Wenn der Menubar-Menuepunkt ebenfalls entfernt ist, kann `GeneralTab.checkForUpdatesNow(_:)` wahrscheinlich entfallen. Danach pruefen, ob `import Sparkle` in `GeneralTab.swift` noch gebraucht wird.
 
@@ -87,9 +87,9 @@ Zu entfernen:
 
 TODO:
 
-- [ ] Die drei Menuepunkte entfernen.
-- [ ] Separatoren danach pruefen, damit keine doppelten oder leeren Gruppen entstehen.
-- [ ] Erwartetes Menue danach: Show, Settings, Check permissions, About, Debug tools, Quit.
+- [x] Die drei Menuepunkte entfernen.
+- [x] Separatoren danach pruefen, damit keine doppelten oder leeren Gruppen entstehen.
+- [x] Erwartetes Menue danach: Show, Settings, Check permissions, About, Debug tools, Quit.
 
 ### Optional: About-Dialog
 
@@ -103,10 +103,10 @@ Der About-Dialog erstellt ebenfalls einen `Support this project` Button:
 
 TODO:
 
-- [ ] Entscheiden, ob der Support-Button auch im About-Dialog entfernt werden soll.
-- [ ] Falls ja: `rows` auf `[[appInfo]]` reduzieren.
-- [ ] `makeSupportProjectButton()` entfernen, falls danach keine andere Stelle sie braucht.
-- [ ] `makeButtonWithIcon(...)` nur behalten, wenn weiterhin benoetigt.
+- [x] Entscheiden, ob der Support-Button auch im About-Dialog entfernt werden soll.
+- [x] Falls ja: `rows` auf `[[appInfo]]` reduzieren.
+- [x] `makeSupportProjectButton()` entfernen, falls danach keine andere Stelle sie braucht.
+- [x] `makeButtonWithIcon(...)` nur behalten, wenn weiterhin benoetigt.
 
 Empfehlung: Entfernen, damit die Fork-App keine Spenden-/Support-Aktion des Upstream-Projekts mehr anbietet.
 
@@ -114,11 +114,11 @@ Empfehlung: Entfernen, damit die Fork-App keine Spenden-/Support-Aktion des Upst
 
 Die UI-Entfernung allein reicht fuer eine saubere Fork-Variante fast aus. Zusaetzlich pruefen:
 
-- [ ] `Preferences.defaults` setzt `updatePolicy` dauerhaft auf `manual`.
-- [ ] `Preferences.defaults` setzt `crashPolicy` fuer den Fork auf `never`, nicht `ask`.
-- [ ] `PreferencesEvents.applyUpdatePolicyPreference()` startet keine periodischen Checks.
-- [ ] `AppCenterCrashes` sendet ohne eigenen AppCenter-Secret nichts.
-- [ ] Importierte Settings koennen keine ungewollten Update- oder Crash-Policies reaktivieren, oder sie werden beim Start normalisiert.
+- [x] `Preferences.defaults` setzt `updatePolicy` dauerhaft auf `manual`.
+- [x] `Preferences.defaults` setzt `crashPolicy` fuer den Fork auf `never`, nicht `ask`.
+- [x] `PreferencesEvents.applyUpdatePolicyPreference()` startet keine periodischen Checks.
+- [x] `AppCenterCrashes` sendet ohne eigenen AppCenter-Secret nichts.
+- [x] Importierte Settings koennen keine ungewollten Update- oder Crash-Policies reaktivieren, oder sie werden beim Start normalisiert.
 
 ## Such- und Lokalisierungsreste
 
@@ -130,8 +130,8 @@ Nach der Entfernung aus UI-Code:
 
 ## Verifikation
 
-- [ ] `git diff --check`
-- [ ] `./build.sh`
+- [x] `git diff --check`
+- [x] `./build.sh`
 - [ ] `./build.sh --run`
 - [ ] Settings-Fenster visuell pruefen:
   - Seitenleiste ohne `Support this project`

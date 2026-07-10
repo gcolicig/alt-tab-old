@@ -24,7 +24,6 @@ class UserDefaultsEvents: NSObject {
             // Sparkle UI "Automatically download and install updates in the future" doesn't activate periodical checks; we do it manually
             SUUpdater.shared().automaticallyChecksForUpdates = true
         }
-        GeneralTab.updatesPolicyDropdown?.selectItem(at: id)
         Preferences.set("updatePolicy", String(id))
     }
 

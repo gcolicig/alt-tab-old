@@ -22,7 +22,7 @@ class AppCenterCrash: NSObject {
     // at launch, the crash report handler can be called before some things are not yet ready; we ensure they are
     func initNecessaryFacilities() {
         if UserDefaults.standard.string(forKey: "crashPolicy") == nil {
-            UserDefaults.standard.register(defaults: ["crashPolicy": "1"])
+            UserDefaults.standard.register(defaults: ["crashPolicy": CrashPolicyPreference.never.indexAsString])
         }
     }
 
@@ -53,9 +53,6 @@ class AppCenterCrash: NSObject {
             alert.accessoryView = checkbox
             let userChoice = alert.runModal()
             let id = crashButtonIdToUpdate(userChoice, checkbox)
-            if let buttons = GeneralTab.crashPolicyDropdown, buttons.numberOfItems > id {
-                buttons.selectItem(at: id)
-            }
             Preferences.set("crashPolicy", String(id))
             return userChoice == .alertFirstButtonReturn
         }

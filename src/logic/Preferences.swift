@@ -41,7 +41,7 @@ class Preferences {
             "language": LanguagePreference.systemDefault.indexAsString,
             "exceptions": defaultExceptions(),
             "updatePolicy": UpdatePolicyPreference.manual.indexAsString,
-            "crashPolicy": CrashPolicyPreference.ask.indexAsString,
+            "crashPolicy": CrashPolicyPreference.never.indexAsString,
             "hideAppBadges": "false",
             "hideThumbnails": "false",
             "hideSpaceNumberLabels": "false",
@@ -158,6 +158,7 @@ class Preferences {
         PreferencesMigrations.removeCorruptedPreferences()
         PreferencesMigrations.migratePreferences()
         registerDefaults()
+        enforceForkPolicies()
     }
 
     static func resetAll() {
@@ -166,6 +167,11 @@ class Preferences {
 
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: defaultValues)
+    }
+
+    private static func enforceForkPolicies() {
+        set("updatePolicy", UpdatePolicyPreference.manual.indexAsString, false)
+        set("crashPolicy", CrashPolicyPreference.never.indexAsString, false)
     }
 
     static func markSettingsWindowShownOnFirstLaunch() {

@@ -17,7 +17,6 @@ class App: AppCenterApplication {
     static let website = repository
     static let appIcon = CGImage.named("app.icns")
     override class var shared: App { super.shared as! App }
-    static var supportProjectAction: Selector { #selector(App.supportProject) }
     static var isTerminating = false
     static var appIsBeingUsed = false
     static var shortcutIndex = 0
@@ -141,25 +140,8 @@ class App: AppCenterApplication {
         focusSelectedWindow(selectedWindow)
     }
 
-    @objc static func checkForUpdatesNow(_ sender: NSMenuItem) {
-        GeneralTab.checkForUpdatesNow(sender)
-    }
-
     @objc static func checkPermissions(_ sender: NSMenuItem) {
         showPermissionsWindow()
-    }
-
-    @objc static func supportProject() {
-        NSWorkspace.shared.open(URL(string: App.repository)!)
-    }
-
-    @objc static func showFeedbackPanel() {
-        guard FeedbackWindow.isConfigured else {
-            NSWorkspace.shared.open(URL(string: App.repository + "/issues")!)
-            return
-        }
-        initializeFeedbackWindowIfNeeded()
-        showSecondaryWindow(FeedbackWindow.shared!)
     }
 
     @objc static func showDebugWindow() {
