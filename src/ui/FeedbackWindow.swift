@@ -4,9 +4,16 @@ import Foundation
 class FeedbackWindow: NSWindow {
     static let token: String = {
         // token is encoded to/from base64 to avoid github noticing it and revoking it
-        let base64Token = Bundle.main.object(forInfoDictionaryKey: "FeedbackToken") as! String
-        return String(data: Data(base64Encoded: base64Token)!, encoding: .utf8)!
+        guard let base64Token = Bundle.main.object(forInfoDictionaryKey: "FeedbackToken") as? String,
+              !base64Token.isEmpty,
+              !base64Token.hasPrefix("#"),
+              let data = Data(base64Encoded: base64Token),
+              let token = String(data: data, encoding: .utf8) else {
+            return ""
+        }
+        return token
     }()
+    static let isConfigured = !token.isEmpty
     static var shared: FeedbackWindow?
     var issueTitle: TextArea!
     var body: TextArea!
@@ -80,6 +87,11 @@ class FeedbackWindow: NSWindow {
     }
 
     @objc private func sendCallback() {
+        guard Self.isConfigured else {
+            Logger.error { "Feedback token is not configured" }
+            close()
+            return
+        }
         URLSession.shared.dataTask(with: prepareRequest(), completionHandler: { data, response, error in
             if error != nil || response == nil || (response as! HTTPURLResponse).statusCode != 201 {
                 Logger.error { "HTTP call failed. response:\(response) error:\(error) data:\(data.flatMap { String(data: $0, encoding: .utf8) })" }
@@ -91,7 +103,7 @@ class FeedbackWindow: NSWindow {
     }
 
     private func prepareRequest() -> URLRequest {
-        var request = URLRequest(url: URL(string: "https://api.github.com/repos/lwouis/alt-tab-macos/issues")!)
+        var request = URLRequest(url: URL(string: App.repository + "/issues")!)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue("application/json", forHTTPHeaderField: "Accept")

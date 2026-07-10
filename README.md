@@ -1,19 +1,90 @@
-<div align = center>
+# AltTab Old
 
-# AltTab
+AltTab Old is a fork-friendly snapshot of AltTab `v10.12.0`, the last known release before AltTab Pro was introduced upstream.
 
-[![Screenshot](docs/public/demo/frontpage.jpg)](docs/public/demo/frontpage.jpg)
+The goal of this repository is simple: clone it, build it, run it, read it, change it, and keep it understandable. This fork intentionally avoids requiring access to the original project's Apple certificates, AppCenter project, GitHub bot token, Sparkle private key, or release infrastructure.
 
-**AltTab** brings the power of Windows alt-tab to macOS
+Upstream project: https://github.com/lwouis/alt-tab-macos
 
-[Official website](https://alt-tab.app/)<br/><sub>15K stars</sub> | [Download](https://github.com/lwouis/alt-tab-macos/releases/download/v10.12.0/AltTab-10.12.0.zip)<br/><sub>7.4M downloads</sub>
--|-
+## What It Does
 
-<div align="right">
-  <p>Project supported by</p>
-  <a href="https://jb.gg/OpenSource">
-    <img src="docs/public/demo/jetbrains.svg" alt="Jetbrains" width="149" height="32">
-  </a>
-</div>
+AltTab brings Windows-style window switching to macOS. It lists open windows, supports keyboard shortcuts, shows previews when permitted by macOS, and lets you focus windows quickly.
 
-</div>
+## Build And Run
+
+```bash
+./build.sh --run
+```
+
+That is the normal local-development path. It builds the `Debug` scheme with a local self-signed signing identity.
+
+For details, see [docs/setup.md](docs/setup.md).
+
+## Install Locally
+
+```bash
+./build.sh --install
+```
+
+This copies the app to `/Applications/AltTab Old.app`.
+
+## Required macOS Permissions
+
+- Accessibility: needed to observe, list, and focus windows.
+- Screen Recording: needed for live window thumbnails.
+
+These permissions are granted locally in System Settings. The app does not upload window titles, screenshots, or usage statistics.
+
+## Data Flow
+
+```text
+Keyboard / mouse input
+        |
+        v
+AltTab Old running locally
+        |
+        +--> macOS Accessibility APIs
+        +--> macOS Screen Recording APIs
+        +--> local UserDefaults preferences
+
+Optional, disabled unless configured:
+        +--> Sparkle update feed
+        +--> AppCenter crash reports
+        +--> GitHub Issues feedback
+```
+
+## Fork-Friendly Defaults
+
+- Bundle identifier is fork-specific: `com.gcolicig.alt-tab-old`.
+- Sparkle automatic update checks are disabled by default.
+- Crash reporting starts only when an AppCenter secret is configured.
+- The in-app feedback form falls back to opening this repository's Issues page unless a token is configured.
+- The original upstream remote is kept as `upstream`; pushes should go to this fork's `origin`.
+
+## Project Structure
+
+- `src/logic`: window discovery, preferences, event handling, and app behavior.
+- `src/ui`: settings, menu bar, switcher UI, dialogs, and panels.
+- `resources`: icons, fonts, localization, and illustrations.
+- `config`: Xcode build settings.
+- `scripts`: upstream build, release, signing, localization, and website helpers.
+- `docs`: setup, privacy, support material, and upstream website docs.
+
+## Release Notes
+
+Local builds do not need notarization. Public distribution may require:
+
+- your own Apple Developer ID certificate
+- your own bundle identifier
+- your own Sparkle feed and signing key, or updates disabled
+- updated branding if distributing outside personal use
+
+Before publishing a release, run through [docs/open-source-preflight.md](docs/open-source-preflight.md).
+
+## Contributing
+
+Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md), [SUPPORT.md](SUPPORT.md), and [ROADMAP.md](ROADMAP.md).
+
+## License
+
+This fork keeps the upstream GPL-3.0 license. See [LICENSE](LICENSE).

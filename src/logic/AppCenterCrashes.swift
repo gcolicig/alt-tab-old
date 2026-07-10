@@ -3,10 +3,12 @@ import AppCenter
 import AppCenterCrashes
 
 class AppCenterCrash: NSObject {
-    static let secret = Bundle.main.object(forInfoDictionaryKey: "AppCenterSecret") as! String
+    static let secret = Bundle.main.object(forInfoDictionaryKey: "AppCenterSecret") as? String ?? ""
+    static let isConfigured = !secret.isEmpty && !secret.hasPrefix("#")
 
     override init() {
         super.init()
+        guard Self.isConfigured else { return }
         // Enable catching uncaught exceptions thrown on the main thread
         UserDefaults.standard.register(defaults: ["NSApplicationCrashOnExceptions": true])
 //        AppCenter.logLevel = .verbose

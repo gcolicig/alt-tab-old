@@ -5,57 +5,52 @@ sitemap: true
 
 # Privacy Policy
 
-*Last updated: April 2026*
+*Last updated: July 2026*
 
-AltTab (SIRET: 10356400100016) is committed to protecting your privacy. This policy explains what data AltTab collects and how it is used.
+AltTab Old is designed to work locally on your Mac. This document describes the default behavior of this fork.
 
-## What we collect
+## What We Collect
 
-**Almost nothing.** AltTab is designed to work entirely on your device.
+By default, this fork does not collect personal data.
 
-## Usage statistics
+## Usage Statistics
 
-AltTab tracks usage data such as how many times you switch windows. This data is calculated and stored **locally on your device only**. It is never transmitted to us or any third party.
+AltTab Old tracks usage data such as how many times you switch windows. This data is calculated and stored locally on your device only. It is not transmitted.
 
-## Crash reports
+## Crash Reports
 
-If the application crashes, you may be prompted to send a crash report. This is **optional and requires your explicit consent** each time. Crash reports are sent to Microsoft AppCenter and contain technical diagnostic information (crash logs, device model, macOS version, app version). They do not contain personal data such as your name, email, or window contents.
+Crash reporting is disabled unless a fork maintainer configures an AppCenter secret. If enabled, crash reports should remain optional and require explicit consent.
 
-## Update checks
+## Update Checks
 
-AltTab periodically checks for updates using the Sparkle framework. This connects to our server to compare your installed version with the latest release. No personal data is transmitted during this check. Your IP address is visible to the server as part of the network connection.
+Automatic update checks are disabled by default. If a maintainer configures a Sparkle feed later, update checks may contact that feed to compare versions.
 
 ## Feedback
 
-AltTab includes an optional feedback form. If you submit feedback, it is posted as a public issue on AltTab's GitHub repository. Do not include personal information in your feedback unless you are comfortable with it being publicly visible. No account or email is required to submit feedback.
+The in-app feedback form is disabled unless a fork-owned GitHub token is configured. By default, feedback opens this repository's GitHub Issues page in your browser.
 
-## License validation
+## Third-Party Services
 
-If you purchase AltTab Pro, the app contacts Lemon Squeezy's API to validate your license. This transmits your license key and a device identifier. No other personal data is sent.
+- Microsoft AppCenter: disabled unless configured for optional crash reports.
+- Sparkle: automatic update checks disabled by default.
+- GitHub: used when you manually open or submit issues.
 
-## Third-party services
+## Data Storage And Retention
 
-- **Lemon Squeezy** (payment processing and license validation): subject to [Lemon Squeezy's privacy policy](https://www.lemonsqueezy.com/privacy).
-- **Microsoft AppCenter** (optional crash reports): subject to [Microsoft's privacy statement](https://privacy.microsoft.com/privacystatement).
-- **Sparkle** (update checks): connects to GitHub/our server. No personal data transmitted.
-- **GitHub** (feedback form): submitted feedback is posted as a public issue. Subject to [GitHub's privacy statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement).
+No personal data is stored by this fork by default.
 
-## Data storage and retention
+## Your Rights
 
-No personal data is stored on our servers. Crash reports sent to AppCenter are retained according to Microsoft's data retention policies.
+Since this fork does not collect personal data by default, there is typically nothing to request from the fork maintainer.
 
-## Your rights
+## Children's Privacy
 
-Under the EU General Data Protection Regulation (GDPR), you have the right to access, correct, or delete any personal data. Since AltTab does not collect personal data, there is typically nothing to request. If you have sent crash reports and wish to inquire about their deletion, contact us.
+AltTab Old does not knowingly collect any data from children under 16.
 
-## Children's privacy
+## Changes To This Policy
 
-AltTab does not knowingly collect any data from children under 16.
-
-## Changes to this policy
-
-This policy may be updated from time to time. Changes will be posted on the AltTab website.
+Changes will be posted in this repository.
 
 ## Contact
 
-For any privacy-related questions: support@alt-tab-macos.app
+For privacy-related questions, open an issue in this repository.
