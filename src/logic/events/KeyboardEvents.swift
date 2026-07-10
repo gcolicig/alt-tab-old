@@ -21,6 +21,12 @@ class KeyboardEvents {
                 }
                 return nil
             }
+            if shouldEnableSearchForActiveFocusOnReleaseShortcut(keyCode, modifiers) {
+                DispatchQueue.main.async {
+                    _ = enableSearchForActiveFocusOnReleaseShortcutIfNeeded(keyCode, modifiers)
+                }
+                return nil
+            }
         } else if type == .flagsChanged {
             // TODO: it would be great to shortcut matching and trigger on the background thread
             // it would enable us to set App.shared.isBeingUsed here, and could stop tasks on main when they check the flag

@@ -60,6 +60,11 @@ class TilesView {
     static func handleSearchEditingKeyDown(_ event: NSEvent) -> SearchKeyResult {
         return App.app.tilesPanel.tilesView.handleSearchEditingKeyDown(event)
     }
+
+    static func enableSearchEditing() {
+        isSearchEditing = true
+        App.forceDoNothingOnRelease = true
+    }
 }
 
 class ControlsTab {

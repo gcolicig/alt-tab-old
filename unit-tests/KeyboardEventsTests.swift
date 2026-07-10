@@ -186,6 +186,50 @@ final class KeyboardEventsUtilsTests: XCTestCase {
         XCTAssertEqual(ControlsTab.shortcutsActionsTriggered, ["nextWindowShortcut", "holdShortcut"])
     }
 
+    func testIsoSectionEnablesSearchForFirstFocusOnReleaseShortcut() throws {
+        resetState()
+        ModifierFlags.current = [.option]
+        handleKeyboardEvent(nil, nil, nil, [.option], false)
+        handleKeyboardEvent(KeyboardEventsTestable.globalShortcutsIds["nextWindowShortcut"], .down, nil, nil, false)
+        handleKeyboardEvent(KeyboardEventsTestable.globalShortcutsIds["nextWindowShortcut"], .up, nil, nil, false)
+
+        XCTAssertTrue(handleKeyboardEvent(nil, nil, UInt32(kVK_ISO_Section), [.option], false))
+        XCTAssertTrue(TilesView.isSearchEditing)
+        XCTAssertTrue(App.forceDoNothingOnRelease)
+        ModifierFlags.current = []
+        handleKeyboardEvent(nil, nil, nil, [], false)
+        XCTAssertEqual(ControlsTab.shortcutsActionsTriggered, ["nextWindowShortcut"])
+    }
+
+    func testIsoSectionEnablesSearchForSecondFocusOnReleaseShortcut() throws {
+        resetState()
+        ModifierFlags.current = [.option]
+        handleKeyboardEvent(nil, nil, nil, [.option], false)
+        handleKeyboardEvent(KeyboardEventsTestable.globalShortcutsIds["nextWindowShortcut2"], .down, nil, nil, false)
+        handleKeyboardEvent(KeyboardEventsTestable.globalShortcutsIds["nextWindowShortcut2"], .up, nil, nil, false)
+
+        XCTAssertTrue(handleKeyboardEvent(nil, nil, UInt32(kVK_ISO_Section), [.option], false))
+        XCTAssertTrue(TilesView.isSearchEditing)
+        XCTAssertTrue(App.forceDoNothingOnRelease)
+        ModifierFlags.current = []
+        handleKeyboardEvent(nil, nil, nil, [], false)
+        XCTAssertEqual(ControlsTab.shortcutsActionsTriggered, ["nextWindowShortcut2"])
+    }
+
+    func testIsoSectionDoesNotEnableSearchIfConfiguredHoldShortcutIsNotPressed() throws {
+        resetState()
+        ModifierFlags.current = [.option]
+        handleKeyboardEvent(nil, nil, nil, [.option], false)
+        handleKeyboardEvent(KeyboardEventsTestable.globalShortcutsIds["nextWindowShortcut"], .down, nil, nil, false)
+        handleKeyboardEvent(KeyboardEventsTestable.globalShortcutsIds["nextWindowShortcut"], .up, nil, nil, false)
+
+        XCTAssertFalse(shouldEnableSearchForActiveFocusOnReleaseShortcut(UInt32(kVK_ISO_Section), []))
+        XCTAssertFalse(TilesView.isSearchEditing)
+        ModifierFlags.current = []
+        handleKeyboardEvent(nil, nil, nil, [], false)
+        XCTAssertEqual(ControlsTab.shortcutsActionsTriggered, ["nextWindowShortcut", "holdShortcut"])
+    }
+
     // alt-down > tab-down > tab-up > `-down > `-up
     func testTransitionFromOneShortcutToAnother() throws {
         resetState()
@@ -208,6 +252,8 @@ final class KeyboardEventsUtilsTests: XCTestCase {
     private func resetState() {
         App.app.appIsBeingUsed = false
         App.app.shortcutIndex = 0
+        App.app.forceDoNothingOnRelease = false
+        TilesView.isSearchEditing = false
         Preferences.shortcutStyle = .focusOnRelease
         ControlsTab.shortcuts.values.forEach { $0.state = .up }
         ControlsTab.shortcutsActionsTriggered = []

@@ -18,13 +18,30 @@ func cancelActiveFocusOnReleaseShortcutIfNeeded(_ keyCode: UInt32?, _ modifiers:
 }
 
 func shouldCancelActiveFocusOnReleaseShortcut(_ keyCode: UInt32?, _ modifiers: NSEvent.ModifierFlags?) -> Bool {
-    guard keyCode == UInt32(kVK_Escape),
-          App.appIsBeingUsed,
+    keyCode == UInt32(kVK_Escape) && activeFocusOnReleaseShortcutHoldIsPressed(modifiers)
+}
+
+func enableSearchForActiveFocusOnReleaseShortcutIfNeeded(_ keyCode: UInt32?, _ modifiers: NSEvent.ModifierFlags?) -> Bool {
+    guard shouldEnableSearchForActiveFocusOnReleaseShortcut(keyCode, modifiers) else { return false }
+    TilesView.enableSearchEditing()
+    return true
+}
+
+func shouldEnableSearchForActiveFocusOnReleaseShortcut(_ keyCode: UInt32?, _ modifiers: NSEvent.ModifierFlags?) -> Bool {
+    keyCode == UInt32(kVK_ISO_Section) && activeFocusOnReleaseShortcutHoldIsPressed(modifiers)
+}
+
+private func activeFocusOnReleaseShortcutHoldIsPressed(_ modifiers: NSEvent.ModifierFlags?) -> Bool {
+    guard App.appIsBeingUsed,
           Preferences.shortcutStyle == .focusOnRelease,
           App.shortcutIndex == 0 || App.shortcutIndex == 1,
           let holdShortcut = ControlsTab.shortcuts[Preferences.indexToName("holdShortcut", App.shortcutIndex)] else {
         return false
     }
+    return modifiersContainHoldShortcut(modifiers, holdShortcut)
+}
+
+private func modifiersContainHoldShortcut(_ modifiers: NSEvent.ModifierFlags?, _ holdShortcut: ATShortcut) -> Bool {
     let currentModifiers = cocoaToCarbonFlags(modifiers ?? ModifierFlags.current).cleaned()
     let holdModifiers = holdShortcut.shortcut.carbonModifierFlags.cleaned()
     return currentModifiers == (currentModifiers | holdModifiers)
@@ -33,6 +50,9 @@ func shouldCancelActiveFocusOnReleaseShortcut(_ keyCode: UInt32?, _ modifiers: N
 @discardableResult
 func handleKeyboardEvent(_ globalId: Int?, _ shortcutState: ShortcutState?, _ keyCode: UInt32?, _ modifiers: NSEvent.ModifierFlags?, _ isARepeat: Bool, _ event: NSEvent? = nil) -> Bool {
     if cancelActiveFocusOnReleaseShortcutIfNeeded(keyCode, modifiers) {
+        return true
+    }
+    if enableSearchForActiveFocusOnReleaseShortcutIfNeeded(keyCode, modifiers) {
         return true
     }
     if let event, shouldAbsorbSearchEditingKeyDown(event) {
