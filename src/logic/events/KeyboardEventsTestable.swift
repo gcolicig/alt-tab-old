@@ -1,3 +1,4 @@
+import Carbon.HIToolbox.Events
 import ShortcutRecorder
 
 class KeyboardEventsTestable {
@@ -9,8 +10,31 @@ class KeyboardEventsTestable {
     }
 }
 
+func cancelActiveFocusOnReleaseShortcutIfNeeded(_ keyCode: UInt32?, _ modifiers: NSEvent.ModifierFlags?) -> Bool {
+    guard shouldCancelActiveFocusOnReleaseShortcut(keyCode, modifiers) else { return false }
+    App.forceDoNothingOnRelease = true
+    App.hideUi()
+    return true
+}
+
+func shouldCancelActiveFocusOnReleaseShortcut(_ keyCode: UInt32?, _ modifiers: NSEvent.ModifierFlags?) -> Bool {
+    guard keyCode == UInt32(kVK_Escape),
+          App.appIsBeingUsed,
+          Preferences.shortcutStyle == .focusOnRelease,
+          App.shortcutIndex == 0 || App.shortcutIndex == 1,
+          let holdShortcut = ControlsTab.shortcuts[Preferences.indexToName("holdShortcut", App.shortcutIndex)] else {
+        return false
+    }
+    let currentModifiers = cocoaToCarbonFlags(modifiers ?? ModifierFlags.current).cleaned()
+    let holdModifiers = holdShortcut.shortcut.carbonModifierFlags.cleaned()
+    return currentModifiers == (currentModifiers | holdModifiers)
+}
+
 @discardableResult
 func handleKeyboardEvent(_ globalId: Int?, _ shortcutState: ShortcutState?, _ keyCode: UInt32?, _ modifiers: NSEvent.ModifierFlags?, _ isARepeat: Bool, _ event: NSEvent? = nil) -> Bool {
+    if cancelActiveFocusOnReleaseShortcutIfNeeded(keyCode, modifiers) {
+        return true
+    }
     if let event, shouldAbsorbSearchEditingKeyDown(event) {
         switch TilesView.handleSearchEditingKeyDown(event) {
         case .handled: return true

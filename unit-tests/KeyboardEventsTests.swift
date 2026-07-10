@@ -1,3 +1,4 @@
+import Carbon.HIToolbox.Events
 import XCTest
 
 final class KeyboardEventsUtilsTests: XCTestCase {
@@ -139,6 +140,50 @@ final class KeyboardEventsUtilsTests: XCTestCase {
         ModifierFlags.current = []
         handleKeyboardEvent(nil, nil, nil, [], false)
         XCTAssertEqual(ControlsTab.shortcutsActionsTriggered, ["nextWindowShortcut"])
+    }
+
+    func testEscapeCancelsFocusOnReleaseForFirstShortcut() throws {
+        resetState()
+        ModifierFlags.current = [.option]
+        handleKeyboardEvent(nil, nil, nil, [.option], false)
+        handleKeyboardEvent(KeyboardEventsTestable.globalShortcutsIds["nextWindowShortcut"], .down, nil, nil, false)
+        handleKeyboardEvent(KeyboardEventsTestable.globalShortcutsIds["nextWindowShortcut"], .up, nil, nil, false)
+        XCTAssertEqual(ControlsTab.shortcutsActionsTriggered, ["nextWindowShortcut"])
+
+        XCTAssertTrue(handleKeyboardEvent(nil, nil, UInt32(kVK_Escape), [.option], false))
+        XCTAssertFalse(App.appIsBeingUsed)
+        ModifierFlags.current = []
+        handleKeyboardEvent(nil, nil, nil, [], false)
+        XCTAssertEqual(ControlsTab.shortcutsActionsTriggered, ["nextWindowShortcut"])
+    }
+
+    func testEscapeCancelsFocusOnReleaseForSecondShortcut() throws {
+        resetState()
+        ModifierFlags.current = [.option]
+        handleKeyboardEvent(nil, nil, nil, [.option], false)
+        handleKeyboardEvent(KeyboardEventsTestable.globalShortcutsIds["nextWindowShortcut2"], .down, nil, nil, false)
+        handleKeyboardEvent(KeyboardEventsTestable.globalShortcutsIds["nextWindowShortcut2"], .up, nil, nil, false)
+        XCTAssertEqual(ControlsTab.shortcutsActionsTriggered, ["nextWindowShortcut2"])
+
+        XCTAssertTrue(handleKeyboardEvent(nil, nil, UInt32(kVK_Escape), [.option], false))
+        XCTAssertFalse(App.appIsBeingUsed)
+        ModifierFlags.current = []
+        handleKeyboardEvent(nil, nil, nil, [], false)
+        XCTAssertEqual(ControlsTab.shortcutsActionsTriggered, ["nextWindowShortcut2"])
+    }
+
+    func testEscapeDoesNotCancelIfConfiguredHoldShortcutIsNotPressed() throws {
+        resetState()
+        ModifierFlags.current = [.option]
+        handleKeyboardEvent(nil, nil, nil, [.option], false)
+        handleKeyboardEvent(KeyboardEventsTestable.globalShortcutsIds["nextWindowShortcut"], .down, nil, nil, false)
+        handleKeyboardEvent(KeyboardEventsTestable.globalShortcutsIds["nextWindowShortcut"], .up, nil, nil, false)
+
+        XCTAssertFalse(shouldCancelActiveFocusOnReleaseShortcut(UInt32(kVK_Escape), []))
+        XCTAssertTrue(App.appIsBeingUsed)
+        ModifierFlags.current = []
+        handleKeyboardEvent(nil, nil, nil, [], false)
+        XCTAssertEqual(ControlsTab.shortcutsActionsTriggered, ["nextWindowShortcut", "holdShortcut"])
     }
 
     // alt-down > tab-down > tab-up > `-down > `-up

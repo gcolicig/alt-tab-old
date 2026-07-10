@@ -12,7 +12,16 @@ class KeyboardEvents {
     private static var eventTap: CFMachPort?
 
     private static let cgEventFlagsChangedHandler: CGEventTapCallBack = { _, type, cgEvent, _ in
-        if type == .flagsChanged {
+        if type == .keyDown {
+            let keyCode = UInt32(cgEvent.getIntegerValueField(.keyboardEventKeycode))
+            let modifiers = NSEvent.ModifierFlags(rawValue: UInt(cgEvent.flags.rawValue))
+            if shouldCancelActiveFocusOnReleaseShortcut(keyCode, modifiers) {
+                DispatchQueue.main.async {
+                    _ = cancelActiveFocusOnReleaseShortcutIfNeeded(keyCode, modifiers)
+                }
+                return nil
+            }
+        } else if type == .flagsChanged {
             // TODO: it would be great to shortcut matching and trigger on the background thread
             // it would enable us to set App.shared.isBeingUsed here, and could stop tasks on main when they check the flag
             DispatchQueue.main.async {
@@ -95,13 +104,13 @@ class KeyboardEvents {
     }
 
     private static func addCgEventTapForModifierFlags() {
-        let eventMask = [CGEventType.flagsChanged].reduce(CGEventMask(0), { $0 | (1 << $1.rawValue) })
+        let eventMask = [CGEventType.flagsChanged, .keyDown].reduce(CGEventMask(0), { $0 | (1 << $1.rawValue) })
         // CGEvent.tapCreate returns null if ensureAccessibilityCheckboxIsChecked() didn't pass
         // CGEvent.tapCreate is unaffected by SecureInput for .flagsChanged
         eventTap = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
             place: .headInsertEventTap,
-            options: .listenOnly,
+            options: .defaultTap,
             eventsOfInterest: eventMask,
             callback: cgEventFlagsChangedHandler,
             userInfo: nil)

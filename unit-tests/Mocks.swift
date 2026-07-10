@@ -36,6 +36,11 @@ class App {
         get { app.forceDoNothingOnRelease }
         set { app.forceDoNothingOnRelease = newValue }
     }
+
+    static func hideUi() {
+        app.appIsBeingUsed = false
+        app.forceDoNothingOnRelease = false
+    }
 }
 
 class TilesPanel {
