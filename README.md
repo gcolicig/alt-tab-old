@@ -10,25 +10,49 @@ Upstream project: https://github.com/lwouis/alt-tab-macos
 
 AltTab brings Windows-style window switching to macOS. It lists open windows, supports keyboard shortcuts, shows previews when permitted by macOS, and lets you focus windows quickly.
 
-## Build And Run
+## Build
 
 ```bash
-./build.sh --run
+./build.sh
 ```
 
-That is the normal local-development path. It builds the `Debug` scheme with ad-hoc signing, so no Apple Developer certificate is required.
+This builds the `Debug` scheme with ad-hoc signing, so no Apple Developer certificate is required.
 
 For details, see [docs/setup.md](docs/setup.md).
 
 Requirements: Xcode 16 or newer, command line tools for `xcodebuild`, and Git. XcodeGen is installed/checked for the future generated-project workflow; the current upstream `.xcodeproj` remains the source of truth until a complete `project.yml` is added.
 
-## Install Locally
+## Test Without Installing
+
+```bash
+./build.sh --run
+```
+
+This builds the app and launches it from:
+
+```text
+DerivedData/Build/Products/Debug/AltTab.app
+```
+
+If the app is already built, you can launch it directly:
+
+```bash
+open -n DerivedData/Build/Products/Debug/AltTab.app
+```
+
+## Install To Applications
 
 ```bash
 ./build.sh --install
 ```
 
-This copies the app to `/Applications/AltTab Old.app`.
+This copies the app to:
+
+```text
+/Applications/AltTab Old.app
+```
+
+You can then launch it like any other macOS app. If you previously ran the app from `DerivedData`, quit that copy first so you are testing the installed app.
 
 ## Required macOS Permissions
 
@@ -36,6 +60,8 @@ This copies the app to `/Applications/AltTab Old.app`.
 - Screen Recording: needed for live window thumbnails.
 
 These permissions are granted locally in System Settings. The app does not upload window titles, screenshots, or usage statistics.
+
+Because this fork uses the bundle identifier `com.gcolicig.alt-tab-old`, macOS treats it as separate from the original AltTab app. You can install both at the same time, but running both simultaneously may cause global shortcut conflicts.
 
 ## Data Flow
 
