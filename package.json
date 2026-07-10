@@ -27,7 +27,7 @@
     "fontkit": "^1.8.0",
     "glob": "^10.0.0",
     "husky": "^3.0.4",
-    "lint-staged": "^13.0.0",
+    "lint-staged": "^17.0.8",
     "marked": "^0.8.0",
     "semantic-release": "^15.13.24"
   },
