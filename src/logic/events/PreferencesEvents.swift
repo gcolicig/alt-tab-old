@@ -54,6 +54,8 @@ class PreferencesEvents {
         switch key {
         case "menubarIcon", "menubarIconShown": applyMenubarPreferencesIfReady()
         case "nextWindowGesture": TrackpadEvents.toggle(Preferences.nextWindowGesture != .disabled)
+        case "hyperKeyEnabled": KeyboardEvents.hyperKeyEnabledChanged()
+        case "hyperKeyHoldDuration": KeyboardEvents.resetHyperKeyState()
         case "startAtLogin": applyStartAtLoginPreference()
         case "updatePolicy": applyUpdatePolicyPreference()
         case let k where preferencesRequiringUiReset.contains(k) && TilesPanel.shared != nil: App.resetPreferencesDependentComponents()

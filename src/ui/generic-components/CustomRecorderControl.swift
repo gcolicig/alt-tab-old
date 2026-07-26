@@ -44,12 +44,13 @@ class CustomRecorderControl: RecorderControl {
     func alertIfSameShortcutAlreadyAssigned(_ candidateShortcut: Shortcut, _ shortcutAlreadyAssigned: String) {
         let isArrowKeys = ["←", "→", "↑", "↓"].contains(shortcutAlreadyAssigned)
         let isVimKeys = shortcutAlreadyAssigned.starts(with: "vimCycle")
-        let existingShortcut = ControlsTab.shortcutControls[shortcutAlreadyAssigned]!
+        let existingShortcut = ControlsTab.shortcutControls[shortcutAlreadyAssigned]
+        let existingShortcutLabel = isArrowKeys ? "Arrow keys" : (isVimKeys ? "Vim keys" : existingShortcut?.1 ?? shortcutAlreadyAssigned)
         let alert = NSAlert()
         alert.alertStyle = .warning
         alert.messageText = NSLocalizedString("Conflicting shortcut", comment: "")
         alert.informativeText = String(format: NSLocalizedString("Shortcut already assigned to another action: %@", comment: ""),
-                                       (isArrowKeys ? "Arrow keys" : (isVimKeys ? "Vim keys" : existingShortcut.1)).replacingOccurrences(of: " ", with: "\u{00A0}"))
+                                       existingShortcutLabel.replacingOccurrences(of: " ", with: "\u{00A0}"))
         if !id.starts(with: "holdShortcut") {
             alert.addButton(withTitle: NSLocalizedString("Unassign existing shortcut and continue", comment: "")).setAccessibilityFocused(true)
         }
@@ -68,8 +69,10 @@ class CustomRecorderControl: RecorderControl {
                 ControlsTab.vimKeysCheckbox.state = .off
                 ControlsTab.vimKeysEnabledCallback(ControlsTab.vimKeysCheckbox)
                 LabelAndControl.controlWasChanged(ControlsTab.vimKeysCheckbox, nil)
-            } else {
+            } else if let existingShortcut {
                 updateShortcut(existingShortcut.0, nil, existingShortcut.0, shortcutAlreadyAssigned)
+            } else {
+                return
             }
             updateShortcut(ControlsTab.shortcutControls[id]!.0, candidateShortcut, self, id)
         }
@@ -137,4 +140,3 @@ extension CustomRecorderControl: RecorderControlDelegate {
         return true
     }
 }
-

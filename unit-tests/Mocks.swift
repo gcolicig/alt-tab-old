@@ -68,31 +68,45 @@ class TilesView {
 }
 
 class ControlsTab {
-    static let defaultShortcuts = [
-        "holdShortcut": ATShortcut(Shortcut(keyEquivalent: "⌥")!, "holdShortcut", .global, .up, 0),
-        "holdShortcut2": ATShortcut(Shortcut(keyEquivalent: "⌥")!, "holdShortcut2", .global, .up, 1),
-        "holdShortcut3": ATShortcut(Shortcut(keyEquivalent: "⌥")!, "holdShortcut3", .global, .up, 2),
-        "nextWindowShortcut": ATShortcut(Shortcut(keyEquivalent: "⇥")!, "nextWindowShortcut", .global, .down),
-        "nextWindowShortcut2": ATShortcut(Shortcut(keyEquivalent: "`")!, "nextWindowShortcut2", .global, .down),
-        "→": ATShortcut(Shortcut(keyEquivalent: "→")!, "→", .local, .down),
-        "←": ATShortcut(Shortcut(keyEquivalent: "←")!, "←", .local, .down),
-        "↑": ATShortcut(Shortcut(keyEquivalent: "↑")!, "↑", .local, .down),
-        "↓": ATShortcut(Shortcut(keyEquivalent: "↓")!, "↓", .local, .down),
+    private static let globalActionShortcutPreferences = Set(WindowLayoutAction.allCases.map(\.shortcutPreferenceKey))
+    static let defaultShortcuts: [String: ATShortcut] = {
+        func shortcut(_ keyEquivalent: String) -> Shortcut {
+            guard let shortcut = Shortcut(keyEquivalent: keyEquivalent) else { fatalError("Invalid test shortcut: \(keyEquivalent)") }
+            return shortcut
+        }
+        func keyShortcut(_ keyCode: KeyCode) -> Shortcut {
+            return Shortcut(code: keyCode, modifierFlags: [], characters: nil, charactersIgnoringModifiers: nil)
+        }
+        return [
+            "holdShortcut": ATShortcut(shortcut("⌥"), "holdShortcut", .global, .up, 0),
+            "holdShortcut2": ATShortcut(shortcut("⌥"), "holdShortcut2", .global, .up, 1),
+            "holdShortcut3": ATShortcut(shortcut("⌥"), "holdShortcut3", .global, .up, 2),
+            "nextWindowShortcut": ATShortcut(shortcut("⇥"), "nextWindowShortcut", .global, .down),
+            "nextWindowShortcut2": ATShortcut(keyShortcut(.ansiGrave), "nextWindowShortcut2", .global, .down),
+            "→": ATShortcut(shortcut("→"), "→", .local, .down),
+            "←": ATShortcut(shortcut("←"), "←", .local, .down),
+            "↑": ATShortcut(shortcut("↑"), "↑", .local, .down),
+            "↓": ATShortcut(shortcut("↓"), "↓", .local, .down),
 //        "vimCycleRight": ATShortcut(Shortcut(keyEquivalent: "l")!, "vimCycleRight", .local, .down),
 //        "vimCycleLeft": ATShortcut(Shortcut(keyEquivalent: "h")!, "vimCycleLeft", .local, .down),
 //        "vimCycleUp": ATShortcut(Shortcut(keyEquivalent: "k")!, "vimCycleUp", .local, .down),
 //        "vimCycleDown": ATShortcut(Shortcut(keyEquivalent: "j")!, "vimCycleDown", .local, .down),
-        "focusWindowShortcut": ATShortcut(Shortcut(keyEquivalent: " ")!, "focusWindowShortcut", .local, .down),
-        "previousWindowShortcut": ATShortcut(Shortcut(keyEquivalent: "⇧")!, "previousWindowShortcut", .local, .down),
-        "cancelShortcut": ATShortcut(Shortcut(keyEquivalent: "⎋")!, "cancelShortcut", .local, .down),
-        "searchShortcut": ATShortcut(Shortcut(keyEquivalent: "s")!, "searchShortcut", .local, .down),
-        "closeWindowShortcut": ATShortcut(Shortcut(keyEquivalent: "w")!, "closeWindowShortcut", .local, .down),
-        "minDeminWindowShortcut": ATShortcut(Shortcut(keyEquivalent: "m")!, "minDeminWindowShortcut", .local, .down),
-        "toggleFullscreenWindowShortcut": ATShortcut(Shortcut(keyEquivalent: "f")!, "toggleFullscreenWindowShortcut", .local, .down),
-        "quitAppShortcut": ATShortcut(Shortcut(keyEquivalent: "q")!, "quitAppShortcut", .local, .down),
-        "hideShowAppShortcut": ATShortcut(Shortcut(keyEquivalent: "h")!, "hideShowAppShortcut", .local, .down),
-    ]
+            "focusWindowShortcut": ATShortcut(keyShortcut(.space), "focusWindowShortcut", .local, .down),
+            "previousWindowShortcut": ATShortcut(shortcut("⇧"), "previousWindowShortcut", .local, .down),
+            "cancelShortcut": ATShortcut(shortcut("⎋"), "cancelShortcut", .local, .down),
+            "searchShortcut": ATShortcut(shortcut("s"), "searchShortcut", .local, .down),
+            "closeWindowShortcut": ATShortcut(shortcut("w"), "closeWindowShortcut", .local, .down),
+            "minDeminWindowShortcut": ATShortcut(shortcut("m"), "minDeminWindowShortcut", .local, .down),
+            "toggleFullscreenWindowShortcut": ATShortcut(shortcut("f"), "toggleFullscreenWindowShortcut", .local, .down),
+            "quitAppShortcut": ATShortcut(shortcut("q"), "quitAppShortcut", .local, .down),
+            "hideShowAppShortcut": ATShortcut(shortcut("h"), "hideShowAppShortcut", .local, .down),
+        ]
+    }()
     static var shortcuts = defaultShortcuts
+
+    static func isGlobalActionShortcut(_ controlId: String) -> Bool {
+        globalActionShortcutPreferences.contains(controlId)
+    }
 
     static func executeAction(_ action: String) {
         shortcutsActionsTriggered.append(action)

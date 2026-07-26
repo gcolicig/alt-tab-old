@@ -18,7 +18,7 @@ LOCAL_CODE_SIGN_IDENTITY="${LOCAL_CODE_SIGN_IDENTITY:-AltTab+ Local Codesign}"
 
 usage() {
   cat <<'EOF'
-Usage: ./build.sh [--run] [--install] [--clean]
+Usage: ./build.sh [--run] [--install] [--clean] [--test]
 
 Builds AltTab+ locally without Apple Developer secrets.
 
@@ -26,6 +26,7 @@ Options:
   --run      Launch the built app after a successful build.
   --install  Copy the built app to /Applications after building.
   --clean    Remove local build output before building.
+  --test     Build and run the unit-test suite after building the app.
 EOF
 }
 
@@ -38,12 +39,14 @@ fi
 RUN_APP=false
 INSTALL_APP=false
 CLEAN=false
+RUN_TESTS=false
 
 for arg in "$@"; do
   case "$arg" in
     --run) RUN_APP=true ;;
     --install) INSTALL_APP=true ;;
     --clean) CLEAN=true ;;
+    --test) RUN_TESTS=true ;;
     -h|--help) usage; exit 0 ;;
     *)
       echo "Unknown option: $arg" >&2
@@ -110,7 +113,12 @@ else
   echo "Run scripts/codesign/setup_local.sh once to keep macOS permissions stable across local builds." >&2
 fi
 
-for pod_scheme in AppCenter LetsMove ShortcutRecorder Sparkle SwiftyBeaver Pods-alt-tab-macos; do
+POD_SCHEMES=(AppCenter LetsMove ShortcutRecorder Sparkle SwiftyBeaver Pods-alt-tab-macos)
+if [[ "$RUN_TESTS" == true ]]; then
+  POD_SCHEMES+=(Pods-unit-tests)
+fi
+
+for pod_scheme in "${POD_SCHEMES[@]}"; do
   xcodebuild \
     -project Pods/Pods.xcodeproj \
     -scheme "$pod_scheme" \
@@ -145,6 +153,19 @@ fi
 if [[ ! -d "$APP_PATH" ]]; then
   echo "Build finished, but $APP_PATH was not produced." >&2
   exit 13
+fi
+
+if [[ "$RUN_TESTS" == true ]]; then
+  xcodebuild \
+    -project alt-tab-macos.xcodeproj \
+    -scheme Test \
+    -configuration "$SCHEME" \
+    -derivedDataPath "$DERIVED_DATA_PATH" \
+    SYMROOT="$BUILD_PRODUCTS_PATH" \
+    BUILD_DIR="$BUILD_PRODUCTS_PATH" \
+    CODE_SIGNING_ALLOWED=NO \
+    CODE_SIGNING_REQUIRED=NO \
+    test
 fi
 
 if [[ "$INSTALL_APP" == true ]]; then

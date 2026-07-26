@@ -134,6 +134,11 @@ class ControlsTab {
         "hideShowAppShortcut": { App.hideShowSelectedApp() },
         "searchShortcut": { App.toggleSearchMode() },
         "lockSearchShortcut": { App.lockSearchMode() },
+        "windowLayoutLeftThirdShortcut": { WindowLayouts.perform(.leftThird) },
+        "windowLayoutRightThirdShortcut": { WindowLayouts.perform(.rightThird) },
+        "windowLayoutLeftTwoThirdsShortcut": { WindowLayouts.perform(.leftTwoThirds) },
+        "windowLayoutRightTwoThirdsShortcut": { WindowLayouts.perform(.rightTwoThirds) },
+        "windowLayoutRestoreShortcut": { WindowLayouts.perform(.restore) },
     ]
     static var arrowKeysCheckbox: Switch!
     static var vimKeysCheckbox: Switch!
@@ -152,7 +157,10 @@ class ControlsTab {
     private static let staticManagedShortcutPreferences = [
         "focusWindowShortcut", "previousWindowShortcut", "cancelShortcut", "searchShortcut", "lockSearchShortcut",
         "closeWindowShortcut", "minDeminWindowShortcut", "toggleFullscreenWindowShortcut", "quitAppShortcut", "hideShowAppShortcut",
+        "windowLayoutLeftThirdShortcut", "windowLayoutRightThirdShortcut", "windowLayoutLeftTwoThirdsShortcut",
+        "windowLayoutRightTwoThirdsShortcut", "windowLayoutRestoreShortcut",
     ]
+    private static let globalActionShortcutPreferences = Set(WindowLayoutAction.allCases.map(\.shortcutPreferenceKey))
     private static let removableShortcutPreferences = [
         "holdShortcut", "nextWindowShortcut",
         "appsToShow", "spacesToShow", "screensToShow",
@@ -738,7 +746,7 @@ class ControlsTab {
                 restrictModifiersOfHoldShortcut(controlId, [])
                 (sender as! CustomRecorderControl).objectValue = nil
             } else {
-                addShortcut(.down, controlId.hasPrefix("nextWindowShortcut") ? .global : .local, newShortcut!, controlId, nil)
+                addShortcut(.down, shortcutScope(controlId), newShortcut!, controlId, nil)
                 restrictModifiersOfHoldShortcut(controlId, [(sender as! CustomRecorderControl).objectValue!.modifierFlags])
             }
         }
@@ -861,8 +869,16 @@ class ControlsTab {
             restrictModifiersOfHoldShortcut(controlId, [])
             return
         }
-        addShortcut(.down, controlId.hasPrefix("nextWindowShortcut") ? .global : .local, shortcut, controlId, nil)
+        addShortcut(.down, shortcutScope(controlId), shortcut, controlId, nil)
         restrictModifiersOfHoldShortcut(controlId, [shortcut.modifierFlags])
+    }
+
+    private static func shortcutScope(_ controlId: String) -> ShortcutScope {
+        controlId.hasPrefix("nextWindowShortcut") || isGlobalActionShortcut(controlId) ? .global : .local
+    }
+
+    static func isGlobalActionShortcut(_ controlId: String) -> Bool {
+        globalActionShortcutPreferences.contains(controlId)
     }
 
     private static func applyHoldShortcutPreference(_ controlId: String) {

@@ -7,11 +7,24 @@
 * open fuzzy search during `Focus selected window` switching with the physical ISO Section key above Tab while the configured Shortcut 1 or Shortcut 2 hold key is still pressed
 * show the search field by default without focusing it, preserving normal Tab cycling until search is activated
 * enable mouse hover window selection by default
+* add configurable global shortcuts for focused-window left/right thirds, left/right two-thirds, and restore
+* add an optional dual-role Caps Lock key: short taps toggle Caps Lock, while held combinations work as system-wide Command-Control-Option-Shift shortcuts
+* allow the four Caps Lock plus arrow combinations to invoke configurable AltTab+ window-layout actions directly
 
 ### Defaults
 
 * force update checks and crash reporting to disabled fork defaults at launch
 * hide apps with no open window by default for Shortcut 1, Shortcut 2, and gestures
+* leave all window-layout shortcuts unassigned to avoid collisions with macOS and existing shortcuts
+
+### Bug Fixes
+
+* keep keyboard navigation in the settings sidebar from jumping back during programmatic scrolling
+* register standalone window-layout shortcuts idempotently and validate Hyperkey-style arrow shortcuts independently from switcher controls
+* avoid a crash when recording a layout shortcut that temporarily conflicts with arrow-key navigation
+* absorb both halves of handled Hyper key presses and reset internal key state across preference, event-tap, sleep/wake, and termination boundaries
+* detect physical Caps Lock press/release through raw HID events and guard synthetic Caps Lock taps against recursion
+* keep physical hold state separate from the persistent Caps Lock toggle state so enabled Caps Lock no longer turns ordinary typing into Hyper shortcuts
 
 # [10.12.0](https://github.com/lwouis/alt-tab-macos/compare/v10.11.0...v10.12.0) (2026-04-13)
 

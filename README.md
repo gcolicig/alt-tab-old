@@ -19,6 +19,24 @@ AltTab brings Windows-style window switching to macOS. It lists open windows, su
 - The switcher shows the search field by default without focusing it. Normal Tab cycling continues until search is activated with the mouse, `S`, or the physical ISO Section key above Tab.
 - Mouse hover selection is enabled by default.
 - Apps with no open window are hidden by default for Shortcut 1, Shortcut 2, and gestures.
+- The new `Window Layouts` settings section provides unassigned global shortcuts for placing the focused window in the left or right third, the left or right two-thirds, and restoring its previous frame.
+- An optional dual-role Caps Lock key provides system-wide Hyper shortcuts while preserving normal Caps Lock toggling on a short tap.
+
+## Window Layouts
+
+Open `Settings > Window Layouts` and record the global shortcuts you want to use. No shortcuts are assigned by default, so the feature does not take over existing macOS or AltTab+ key combinations.
+
+`Restore` returns a window to the frame it had before its first AltTab+ layout action in the current app session. Fullscreen, minimized, non-standard, and non-resizable windows are left unchanged.
+
+### Dual-Role Hyper Key
+
+Keep Caps Lock mapped to `Caps Lock` in `System Settings > Keyboard > Keyboard Shortcuts > Modifier Keys`, then enable `Use Caps Lock as system-wide Hyper key` in `Settings > Window Layouts`. AltTab+ suppresses the native event while the module is enabled and emits a single Caps Lock tap only for a short physical press.
+
+A short Caps Lock tap still toggles Caps Lock on or off. Holding Caps Lock while pressing another key sends that key with Command, Control, Option, and Shift, so the combination can be used by macOS and other apps. The tap/hold threshold is configurable and defaults to 200 ms.
+
+The four arrow keys can optionally be handled directly by AltTab+ window layouts instead. Their defaults are left two-thirds for Left Arrow, right two-thirds for Right Arrow, Restore for Up Arrow, and no internal action for Down Arrow. An arrow set to `Do nothing` remains available as a system-wide Hyper shortcut. The module is disabled by default.
+
+The implementation adds Hyper modifiers to complete key-down/key-up pairs instead of posting standalone modifier-down events. Its own synthetic Caps Lock tap is tagged so AltTab+ does not process it recursively. Leader sequences, FlickRing, and mouse-driven move/resize remain planned work in [ROADMAP.md](ROADMAP.md).
 
 ## Build
 
@@ -37,6 +55,12 @@ The setup imports a private key into the login keychain and trusts its self-sign
 For details, see [docs/setup.md](docs/setup.md).
 
 Requirements: Xcode 16 or newer, command line tools for `xcodebuild`, and Git. XcodeGen is installed/checked for the future generated-project workflow; the current upstream `.xcodeproj` remains the source of truth until a complete `project.yml` is added.
+
+Run the complete local build and unit-test workflow with:
+
+```bash
+./build.sh --test
+```
 
 ## Test Without Installing
 

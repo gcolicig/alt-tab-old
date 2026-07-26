@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
-set -ex
+set -euo pipefail
 
-xcodebuild -version
-xcodebuild -project alt-tab-macos.xcodeproj -scheme Release -showBuildSettings | grep SWIFT_VERSION
-
-set -o pipefail && xcodebuild test -project alt-tab-macos.xcodeproj -scheme Test -configuration Release -derivedDataPath DerivedData | scripts/xcbeautify
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT_DIR"
+exec ./build.sh --test

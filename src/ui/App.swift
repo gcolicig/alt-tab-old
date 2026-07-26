@@ -412,6 +412,7 @@ extension App: NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        KeyboardEvents.stopHyperKeyMonitoring()
         // symbolic hotkeys state persist after the app is quit; we restore this shortcut before quitting
         setNativeCommandTabEnabled(true)
     }

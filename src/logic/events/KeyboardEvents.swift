@@ -1,4 +1,5 @@
 import Cocoa
+import IOKit.hid
 import ShortcutRecorder
 
 class KeyboardEvents {
@@ -10,11 +11,28 @@ class KeyboardEvents {
     private static var hotKeyReleasedEventHandler: EventHandlerRef?
     private static var globalShortcutsAreDisabled = false
     private static var eventTap: CFMachPort?
+    private static var hyperKeyHidManager: IOHIDManager?
+    private static var hyperKeyState = HyperKeyStateMachine()
+    private static let hyperKeyStateLock = NSLock()
+    private static let hyperKeyModifiers: CGEventFlags = [.maskCommand, .maskControl, .maskAlternate, .maskShift]
+    private static let syntheticCapsLockMarker: Int64 = 0x414C545448595052
+    private static let hyperKeyHidCallback: IOHIDValueCallback = { _, _, _, value in
+        let element = IOHIDValueGetElement(value)
+        guard IOHIDElementGetUsagePage(element) == kHIDPage_KeyboardOrKeypad,
+              IOHIDElementGetUsage(element) == 0x39 else { return }
+        KeyboardEvents.handlePhysicalCapsLockChange(IOHIDValueGetIntegerValue(value) != 0)
+    }
 
     private static let cgEventFlagsChangedHandler: CGEventTapCallBack = { _, type, cgEvent, _ in
+        if cgEvent.getIntegerValueField(.eventSourceUserData) == syntheticCapsLockMarker {
+            return Unmanaged.passUnretained(cgEvent)
+        }
         if type == .keyDown {
             let keyCode = UInt32(cgEvent.getIntegerValueField(.keyboardEventKeycode))
             let modifiers = NSEvent.ModifierFlags(rawValue: UInt(cgEvent.flags.rawValue))
+            if handleHyperKeyDown(keyCode, cgEvent) {
+                return nil
+            }
             if handleActiveArrowKeyIfNeeded(keyCode) {
                 return nil
             }
@@ -30,7 +48,17 @@ class KeyboardEvents {
                 }
                 return nil
             }
+        } else if type == .keyUp {
+            let keyCode = UInt32(cgEvent.getIntegerValueField(.keyboardEventKeycode))
+            if handleHyperKeyUp(keyCode, cgEvent) {
+                return nil
+            }
         } else if type == .flagsChanged {
+            let keyCode = CGKeyCode(cgEvent.getIntegerValueField(.keyboardEventKeycode))
+            if keyCode == CGKeyCode(kVK_CapsLock), Preferences.hyperKeyEnabled {
+                return nil
+            }
+            withHyperKeyState { $0.markCapsLockUsed() }
             // TODO: it would be great to shortcut matching and trigger on the background thread
             // it would enable us to set App.shared.isBeingUsed here, and could stop tasks on main when they check the flag
             DispatchQueue.main.async {
@@ -40,10 +68,90 @@ class KeyboardEvents {
                 handleKeyboardEvent(nil, nil, nil, modifiers, false)
             }
         } else if (type == .tapDisabledByUserInput || type == .tapDisabledByTimeout) {
+            resetHyperKeyState()
             CGEvent.tapEnable(tap: eventTap!, enable: true)
         }
         // we always return this because we want to let these event pass through to the currently focused app
         return Unmanaged.passUnretained(cgEvent)
+    }
+
+    private static func handleHyperKeyDown(_ keyCode: UInt32, _ event: CGEvent) -> Bool {
+        let action = hyperKeyAction(keyCode)
+        let internalActionIsConfigured = action != .none && !App.appIsBeingUsed
+        let decision = withHyperKeyState {
+            $0.keyDown(keyCode, internalActionIsConfigured: internalActionIsConfigured, enabled: Preferences.hyperKeyEnabled)
+        }
+        if decision == .systemWide {
+            event.flags.formUnion(hyperKeyModifiers)
+            return false
+        }
+        if decision == .triggerInternal, let windowLayoutAction = action.windowLayoutAction {
+            DispatchQueue.main.async {
+                WindowLayouts.perform(windowLayoutAction)
+            }
+        }
+        return decision == .absorb || decision == .triggerInternal
+    }
+
+    private static func handleHyperKeyUp(_ keyCode: UInt32, _ event: CGEvent) -> Bool {
+        let decision = withHyperKeyState { $0.keyUp(keyCode) }
+        if decision == .systemWide {
+            event.flags.formUnion(hyperKeyModifiers)
+        }
+        return decision == .absorb
+    }
+
+    private static func handlePhysicalCapsLockChange(_ isDown: Bool) {
+        let decision = withHyperKeyState {
+            $0.capsLockChanged(
+                isDown,
+                at: ProcessInfo.processInfo.systemUptime,
+                tapThreshold: Preferences.hyperKeyHoldDuration,
+                enabled: Preferences.hyperKeyEnabled)
+        }
+        if decision == .toggle {
+            postCapsLockTap()
+        }
+    }
+
+    private static func postCapsLockTap() {
+        guard let source = CGEventSource(stateID: .hidSystemState) else { return }
+        [true, false].forEach {
+            guard let event = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_CapsLock), keyDown: $0) else { return }
+            event.setIntegerValueField(.eventSourceUserData, value: syntheticCapsLockMarker)
+            event.post(tap: .cgSessionEventTap)
+        }
+    }
+
+    private static func hyperKeyAction(_ keyCode: UInt32) -> HyperKeyActionPreference {
+        switch Int(keyCode) {
+        case kVK_LeftArrow: return Preferences.hyperKeyLeftAction
+        case kVK_RightArrow: return Preferences.hyperKeyRightAction
+        case kVK_UpArrow: return Preferences.hyperKeyUpAction
+        case kVK_DownArrow: return Preferences.hyperKeyDownAction
+        default: return .none
+        }
+    }
+
+    @discardableResult
+    private static func withHyperKeyState<T>(_ body: (inout HyperKeyStateMachine) -> T) -> T {
+        hyperKeyStateLock.lock()
+        defer { hyperKeyStateLock.unlock() }
+        return body(&hyperKeyState)
+    }
+
+    static func resetHyperKeyState() {
+        withHyperKeyState { $0.reset() }
+    }
+
+    static func hyperKeyEnabledChanged() {
+        resetHyperKeyState()
+        Preferences.hyperKeyEnabled ? addHyperKeyHidMonitor() : removeHyperKeyHidMonitor()
+    }
+
+    static func stopHyperKeyMonitoring() {
+        resetHyperKeyState()
+        removeHyperKeyHidMonitor()
     }
 
     private static func handleActiveArrowKeyIfNeeded(_ keyCode: UInt32) -> Bool {
@@ -85,6 +193,7 @@ class KeyboardEvents {
     }
 
     static func reEnableTapIfNeeded() {
+        resetHyperKeyState()
         guard let eventTap, !CGEvent.tapIsEnabled(tap: eventTap) else { return }
         CGEvent.tapEnable(tap: eventTap, enable: true)
         Logger.warning { "" }
@@ -93,6 +202,7 @@ class KeyboardEvents {
     static func addEventHandlers() {
         addLocalMonitorForKeyDownAndKeyUp()
         addCgEventTapForModifierFlags()
+        hyperKeyEnabledChanged()
     }
 
     private static func unregisterHotKeyIfNeeded(_ controlId: String, _ shortcut: Shortcut) {
@@ -107,12 +217,20 @@ class KeyboardEvents {
     private static func registerHotKeyIfNeeded(_ controlId: String, _ shortcut: Shortcut) {
         if shortcut.keyCode != .none {
             guard let id = KeyboardEventsTestable.globalShortcutsIds[controlId] else { return }
+            if let existingReference = eventHotKeyRefs[controlId] {
+                UnregisterEventHotKey(existingReference)
+                eventHotKeyRefs[controlId] = nil
+            }
             let hotkeyId = EventHotKeyID(signature: signature, id: UInt32(id))
             let key = shortcut.carbonKeyCode
             let mods = shortcut.carbonModifierFlags
             let options = UInt32(kEventHotKeyNoOptions)
             var shortcutsReference: EventHotKeyRef?
-            RegisterEventHotKey(key, mods, hotkeyId, shortcutEventTarget, options, &shortcutsReference)
+            let result = RegisterEventHotKey(key, mods, hotkeyId, shortcutEventTarget, options, &shortcutsReference)
+            guard result == noErr, let shortcutsReference else {
+                Logger.error { "Unable to register global shortcut \(controlId), status:\(result), key:\(key), modifiers:\(mods)" }
+                return
+            }
             eventHotKeyRefs[controlId] = shortcutsReference
         }
     }
@@ -128,7 +246,7 @@ class KeyboardEvents {
     }
 
     private static func addCgEventTapForModifierFlags() {
-        let eventMask = [CGEventType.flagsChanged, .keyDown].reduce(CGEventMask(0), { $0 | (1 << $1.rawValue) })
+        let eventMask = [CGEventType.flagsChanged, .keyDown, .keyUp].reduce(CGEventMask(0), { $0 | (1 << $1.rawValue) })
         // CGEvent.tapCreate returns null if ensureAccessibilityCheckboxIsChecked() didn't pass
         // CGEvent.tapCreate is unaffected by SecureInput for .flagsChanged
         eventTap = CGEvent.tapCreate(
@@ -144,6 +262,43 @@ class KeyboardEvents {
         } else {
             App.restart()
         }
+    }
+
+    private static func addHyperKeyHidMonitor() {
+        guard hyperKeyHidManager == nil,
+              let runLoop = BackgroundWork.keyboardAndMouseAndTrackpadEventsThread.runLoop else { return }
+        let manager = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(kIOHIDOptionsTypeNone))
+        IOHIDManagerSetDeviceMatching(manager, [
+            kIOHIDDeviceUsagePageKey: kHIDPage_GenericDesktop,
+            kIOHIDDeviceUsageKey: kHIDUsage_GD_Keyboard,
+        ] as CFDictionary)
+        IOHIDManagerRegisterInputValueCallback(manager, hyperKeyHidCallback, nil)
+        IOHIDManagerScheduleWithRunLoop(
+            manager,
+            runLoop,
+            CFRunLoopMode.commonModes.rawValue)
+        let result = IOHIDManagerOpen(manager, IOOptionBits(kIOHIDOptionsTypeNone))
+        guard result == kIOReturnSuccess else {
+            Logger.error { "Unable to monitor the physical Caps Lock key, status:\(result)" }
+            IOHIDManagerUnscheduleFromRunLoop(
+                manager,
+                runLoop,
+                CFRunLoopMode.commonModes.rawValue)
+            return
+        }
+        hyperKeyHidManager = manager
+    }
+
+    private static func removeHyperKeyHidMonitor() {
+        guard let manager = hyperKeyHidManager else { return }
+        if let runLoop = BackgroundWork.keyboardAndMouseAndTrackpadEventsThread.runLoop {
+            IOHIDManagerUnscheduleFromRunLoop(
+                manager,
+                runLoop,
+                CFRunLoopMode.commonModes.rawValue)
+        }
+        IOHIDManagerClose(manager, IOOptionBits(kIOHIDOptionsTypeNone))
+        hyperKeyHidManager = nil
     }
 
     private static func addGlobalHandlerIfNeeded(_ shortcut: Shortcut) {

@@ -28,10 +28,14 @@ class CustomRecorderControlTestable {
     }
 
     static func newCombinationsFromCandidate(_ candidateId: String, _ candidateShortcut: Shortcut) -> [(String, Shortcut)] {
+        if ControlsTab.isGlobalActionShortcut(candidateId) {
+            return [(candidateId, candidateShortcut)]
+        }
         var combos = [(String, Shortcut)]()
         for atShortcut in ControlsTab.shortcuts.values {
             guard atShortcut.id != candidateId
                       && !((candidateId.starts(with: "holdShortcut") || candidateId.starts(with: "nextWindowShortcut")) && (atShortcut.id.starts(with: "holdShortcut") || atShortcut.id.starts(with: "nextWindowShortcut")) && Preferences.nameToIndex(candidateId) != Preferences.nameToIndex(atShortcut.id))
+                      && !ControlsTab.isGlobalActionShortcut(atShortcut.id)
                       && !(atShortcut.shortcut.keyCode == .none && atShortcut.shortcut.modifierFlags == []) else { continue }
             // candidate is holdShortcut
             if candidateId.starts(with: "holdShortcut") {
@@ -61,10 +65,13 @@ class CustomRecorderControlTestable {
     static func oldCombinationsExcludingTargetOfCandidate(_ candidateId: String) -> [(String, Shortcut)] {
         var holds = [ATShortcut]()
         var nonHolds = [ATShortcut]()
+        var globalActions = [ATShortcut]()
         for atShortcut in ControlsTab.shortcuts.values {
             guard !((candidateId.starts(with: "holdShortcut") || candidateId.starts(with: "nextWindowShortcut")) && (atShortcut.id.starts(with: "holdShortcut") || atShortcut.id.starts(with: "nextWindowShortcut")) && Preferences.nameToIndex(candidateId) == Preferences.nameToIndex(atShortcut.id) )
                       && !(atShortcut.shortcut.keyCode == .none && atShortcut.shortcut.modifierFlags == []) else { continue }
-            if atShortcut.id.starts(with: "holdShortcut") {
+            if ControlsTab.isGlobalActionShortcut(atShortcut.id) {
+                globalActions.append(atShortcut)
+            } else if atShortcut.id.starts(with: "holdShortcut") {
                 holds.append(atShortcut)
             } else {
                 nonHolds.append(atShortcut)
@@ -77,6 +84,7 @@ class CustomRecorderControlTestable {
                 combos.append((nonHold.id, Shortcut(code: nonHold.shortcut.keyCode, modifierFlags: [hold.shortcut.modifierFlags, nonHold.shortcut.modifierFlags], characters: nil, charactersIgnoringModifiers: nil)))
             }
         }
+        combos.append(contentsOf: globalActions.map { ($0.id, $0.shortcut) })
         return combos
     }
 

@@ -6,7 +6,88 @@ class KeyboardEventsTestable {
         var ids = [String: Int]()
         (0..<Preferences.maxShortcutCount).forEach { ids[Preferences.indexToName("nextWindowShortcut", $0)] = $0 }
         (0..<Preferences.maxShortcutCount).forEach { ids[Preferences.indexToName("holdShortcut", $0)] = Preferences.maxShortcutCount + $0 }
+        WindowLayoutAction.allCases.enumerated().forEach {
+            ids[$0.element.shortcutPreferenceKey] = Preferences.maxShortcutCount * 2 + $0.offset
+        }
         return ids
+    }
+}
+
+enum HyperKeyDecision: Equatable {
+    case pass
+    case absorb
+    case systemWide
+    case triggerInternal
+}
+
+enum HyperKeyCapsDecision: Equatable {
+    case pass
+    case absorb
+    case toggle
+}
+
+private enum HyperKeyRoute {
+    case systemWide
+    case internalAction
+}
+
+struct HyperKeyStateMachine {
+    private(set) var capsLockIsDown = false
+    private(set) var capsLockWasUsed = false
+    private var routedKeyCodes = [UInt32: HyperKeyRoute]()
+    private var capsLockPressedAt: TimeInterval?
+
+    mutating func capsLockChanged(_ isDown: Bool, at timestamp: TimeInterval, tapThreshold: TimeInterval, enabled: Bool) -> HyperKeyCapsDecision {
+        guard enabled else {
+            reset()
+            return .pass
+        }
+        if isDown {
+            guard !capsLockIsDown else { return .absorb }
+            capsLockIsDown = true
+            capsLockWasUsed = false
+            capsLockPressedAt = timestamp
+            return .absorb
+        }
+        guard capsLockIsDown else { return .absorb }
+        let shouldToggle = !capsLockWasUsed && timestamp - (capsLockPressedAt ?? timestamp) < tapThreshold
+        capsLockIsDown = false
+        capsLockWasUsed = false
+        capsLockPressedAt = nil
+        return shouldToggle ? .toggle : .absorb
+    }
+
+    mutating func keyDown(_ keyCode: UInt32, internalActionIsConfigured: Bool, enabled: Bool) -> HyperKeyDecision {
+        guard enabled else {
+            reset()
+            return .pass
+        }
+        if let route = routedKeyCodes[keyCode] {
+            return route == .systemWide ? .systemWide : .absorb
+        }
+        guard capsLockIsDown else { return .pass }
+        capsLockWasUsed = true
+        let route: HyperKeyRoute = internalActionIsConfigured ? .internalAction : .systemWide
+        routedKeyCodes[keyCode] = route
+        return route == .systemWide ? .systemWide : .triggerInternal
+    }
+
+    mutating func keyUp(_ keyCode: UInt32) -> HyperKeyDecision {
+        guard let route = routedKeyCodes.removeValue(forKey: keyCode) else { return .pass }
+        return route == .systemWide ? .systemWide : .absorb
+    }
+
+    mutating func markCapsLockUsed() {
+        if capsLockIsDown {
+            capsLockWasUsed = true
+        }
+    }
+
+    mutating func reset() {
+        capsLockIsDown = false
+        capsLockWasUsed = false
+        capsLockPressedAt = nil
+        routedKeyCodes.removeAll()
     }
 }
 

@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-xcodebuild \
-  -workspace alt-tab-macos.xcworkspace \
-  -scheme Debug \
-  -configuration Debug \
-  -derivedDataPath ~/git/alt-tab-macos/DerivedData
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT_DIR"
+exec ./build.sh --test

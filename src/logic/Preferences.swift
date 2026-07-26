@@ -17,6 +17,17 @@ class Preferences {
             "quitAppShortcut": defaultShortcut("Q"),
             "hideShowAppShortcut": defaultShortcut("H"),
             "searchShortcut": defaultShortcut("S"),
+            "windowLayoutLeftThirdShortcut": defaultShortcut(""),
+            "windowLayoutRightThirdShortcut": defaultShortcut(""),
+            "windowLayoutLeftTwoThirdsShortcut": defaultShortcut(""),
+            "windowLayoutRightTwoThirdsShortcut": defaultShortcut(""),
+            "windowLayoutRestoreShortcut": defaultShortcut(""),
+            "hyperKeyEnabled": "false",
+            "hyperKeyHoldDuration": HyperKeyHoldDurationPreference.milliseconds200.indexAsString,
+            "hyperKeyLeftAction": HyperKeyActionPreference.leftTwoThirds.indexAsString,
+            "hyperKeyRightAction": HyperKeyActionPreference.rightTwoThirds.indexAsString,
+            "hyperKeyUpAction": HyperKeyActionPreference.restore.indexAsString,
+            "hyperKeyDownAction": HyperKeyActionPreference.none.indexAsString,
             "arrowKeysEnabled": "true",
             "vimKeysEnabled": "false",
             "mouseHoverEnabled": "true",
@@ -75,6 +86,8 @@ class Preferences {
     static let staticShortcutKeys = [
         "focusWindowShortcut", "previousWindowShortcut", "cancelShortcut", "lockSearchShortcut", "closeWindowShortcut",
         "minDeminWindowShortcut", "toggleFullscreenWindowShortcut", "quitAppShortcut", "hideShowAppShortcut", "searchShortcut",
+        "windowLayoutLeftThirdShortcut", "windowLayoutRightThirdShortcut", "windowLayoutLeftTwoThirdsShortcut",
+        "windowLayoutRightTwoThirdsShortcut", "windowLayoutRestoreShortcut",
     ]
     static var allShortcutPreferenceKeys: [String] {
         staticShortcutKeys + (0..<maxShortcutCount).flatMap { [indexToName("holdShortcut", $0), indexToName("nextWindowShortcut", $0)] }
@@ -97,6 +110,12 @@ class Preferences {
     static var quitAppShortcut: Shortcut? { CachedUserDefaults.shortcut("quitAppShortcut") }
     static var hideShowAppShortcut: Shortcut? { CachedUserDefaults.shortcut("hideShowAppShortcut") }
     static var searchShortcut: Shortcut? { CachedUserDefaults.shortcut("searchShortcut") }
+    static var hyperKeyEnabled: Bool { CachedUserDefaults.bool("hyperKeyEnabled") }
+    static var hyperKeyHoldDuration: TimeInterval { CachedUserDefaults.macroPref("hyperKeyHoldDuration", HyperKeyHoldDurationPreference.allCases).seconds }
+    static var hyperKeyLeftAction: HyperKeyActionPreference { CachedUserDefaults.macroPref("hyperKeyLeftAction", HyperKeyActionPreference.allCases) }
+    static var hyperKeyRightAction: HyperKeyActionPreference { CachedUserDefaults.macroPref("hyperKeyRightAction", HyperKeyActionPreference.allCases) }
+    static var hyperKeyUpAction: HyperKeyActionPreference { CachedUserDefaults.macroPref("hyperKeyUpAction", HyperKeyActionPreference.allCases) }
+    static var hyperKeyDownAction: HyperKeyActionPreference { CachedUserDefaults.macroPref("hyperKeyDownAction", HyperKeyActionPreference.allCases) }
     // periphery:ignore
     static var arrowKeysEnabled: Bool { CachedUserDefaults.bool("arrowKeysEnabled") }
     // periphery:ignore

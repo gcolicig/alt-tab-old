@@ -516,6 +516,7 @@ class SettingsWindow: NSWindow {
     private var liveResizeOriginX: CGFloat?
     private var sectionSelectionTriggerRatio = SettingsWindow.sectionSelectionTriggerRatioWhenScrollingDown
     private var lastContentScrollY: CGFloat?
+    private var ignoresContentScrollSelection = false
 
     convenience init() {
         let windowWidth = Self.sidebarWidth + Self.contentWidth + 3 * Self.contentHorizontalPadding
@@ -702,6 +703,7 @@ class SettingsWindow: NSWindow {
         [
             SettingsSectionDefinition(id: "appearance", title: NSLocalizedString("Appearance", comment: ""), imageName: "appearance", systemSymbolName: "paintpalette", view: AppearanceTab.initTab()),
             SettingsSectionDefinition(id: "controls", title: NSLocalizedString("Controls", comment: ""), imageName: "controls", systemSymbolName: "command", view: ControlsTab.initTab()),
+            SettingsSectionDefinition(id: "window-layouts", title: NSLocalizedString("Window Layouts", comment: ""), imageName: "controls", systemSymbolName: "rectangle.split.3x1", view: WindowLayoutsTab.initTab()),
             SettingsSectionDefinition(id: "general", title: NSLocalizedString("General", comment: ""), imageName: "general", systemSymbolName: "gearshape", view: GeneralTab.initTab()),
             SettingsSectionDefinition(id: "exceptions", title: NSLocalizedString("Exceptions", comment: ""), imageName: "exceptions", systemSymbolName: "hand.raised", view: ExceptionsTab.initTab()),
         ]
@@ -1237,6 +1239,10 @@ class SettingsWindow: NSWindow {
 
     @objc private func contentViewBoundsDidChange(_ notification: Notification) {
         let currentY = rightScrollView.contentView.bounds.minY
+        guard !ignoresContentScrollSelection else {
+            lastContentScrollY = currentY
+            return
+        }
         updateSectionSelectionTriggerRatio(currentY)
         guard let section = sectionAtCurrentScrollPosition(sectionSelectionTriggerRatio) else { return }
         guard selectedSectionId != section.id else { return }
@@ -1280,8 +1286,14 @@ class SettingsWindow: NSWindow {
         sectionsDocumentView.layoutSubtreeIfNeeded()
         let anchorFrame = section.anchor.convert(section.anchor.bounds, to: sectionsDocumentView)
         let targetY = max(anchorFrame.minY - Self.sectionScrollTopPadding, 0)
+        ignoresContentScrollSelection = true
         rightScrollView.contentView.scroll(to: NSPoint(x: 0, y: targetY))
         rightScrollView.reflectScrolledClipView(rightScrollView.contentView)
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.lastContentScrollY = self.rightScrollView.contentView.bounds.minY
+            self.ignoresContentScrollSelection = false
+        }
     }
 
     private func applySearch(_ query: String) {

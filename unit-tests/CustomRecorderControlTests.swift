@@ -27,6 +27,16 @@ final class CustomRecorderControlTests: XCTestCase {
         XCTAssertEqual(CustomRecorderControlTestable.isShortcutAcceptable("nextWindowShortcut", Shortcut(keyEquivalent: "⇧")!), .conflictWithExistingShortcut(shortcutAlreadyAssigned: "previousWindowShortcut"))
     }
 
+    func testGlobalLayoutShortcutsAreSelfContained() {
+        let left = Shortcut(code: .leftArrow, modifierFlags: [.control, .option, .command], characters: nil, charactersIgnoringModifiers: nil)
+        let right = Shortcut(code: .rightArrow, modifierFlags: [.control, .option, .command], characters: nil, charactersIgnoringModifiers: nil)
+        XCTAssertEqual(CustomRecorderControlTestable.isShortcutAcceptable("windowLayoutLeftTwoThirdsShortcut", left), .accepted)
+        ControlsTab.shortcuts["windowLayoutLeftTwoThirdsShortcut"] = ATShortcut(left, "windowLayoutLeftTwoThirdsShortcut", .global, .down)
+        XCTAssertEqual(CustomRecorderControlTestable.isShortcutAcceptable("windowLayoutRightTwoThirdsShortcut", right), .accepted)
+        XCTAssertEqual(CustomRecorderControlTestable.isShortcutAcceptable("windowLayoutRightTwoThirdsShortcut", left), .conflictWithExistingShortcut(shortcutAlreadyAssigned: "windowLayoutLeftTwoThirdsShortcut"))
+        ControlsTab.shortcuts = ControlsTab.defaultShortcuts
+    }
+
     func testIsShortcutAcceptable_reservedByMacos() {
         XCTAssertEqual(CustomRecorderControlTestable.isShortcutAcceptable("previousWindowShortcut", Shortcut(keyEquivalent: "⌘⇧")!), .accepted) // ⌘⎋
         XCTAssertEqual(CustomRecorderControlTestable.isShortcutAcceptable("previousWindowShortcut", Shortcut(keyEquivalent: "⌘⌃⇧")!), .accepted) // ⌘⎋

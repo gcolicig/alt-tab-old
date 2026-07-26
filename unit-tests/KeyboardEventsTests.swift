@@ -2,6 +2,67 @@ import Carbon.HIToolbox.Events
 import XCTest
 
 final class KeyboardEventsUtilsTests: XCTestCase {
+    func testShortCapsLockTapTogglesCapsLock() {
+        var state = HyperKeyStateMachine()
+        XCTAssertEqual(state.capsLockChanged(true, at: 1, tapThreshold: 0.2, enabled: true), .absorb)
+        XCTAssertEqual(state.capsLockChanged(false, at: 1.1, tapThreshold: 0.2, enabled: true), .toggle)
+    }
+
+    func testLongCapsLockHoldDoesNotToggleCapsLock() {
+        var state = HyperKeyStateMachine()
+        XCTAssertEqual(state.capsLockChanged(true, at: 1, tapThreshold: 0.2, enabled: true), .absorb)
+        XCTAssertEqual(state.capsLockChanged(false, at: 1.21, tapThreshold: 0.2, enabled: true), .absorb)
+    }
+
+    func testCapsLockTapDoesNotToggleAfterAnotherModifierWasPressed() {
+        var state = HyperKeyStateMachine()
+        XCTAssertEqual(state.capsLockChanged(true, at: 1, tapThreshold: 0.2, enabled: true), .absorb)
+        state.markCapsLockUsed()
+        XCTAssertEqual(state.capsLockChanged(false, at: 1.1, tapThreshold: 0.2, enabled: true), .absorb)
+    }
+
+    func testDuplicateCapsLockEventsDoNotToggleTwice() {
+        var state = HyperKeyStateMachine()
+        XCTAssertEqual(state.capsLockChanged(true, at: 1, tapThreshold: 0.2, enabled: true), .absorb)
+        XCTAssertEqual(state.capsLockChanged(true, at: 1.01, tapThreshold: 0.2, enabled: true), .absorb)
+        XCTAssertEqual(state.capsLockChanged(false, at: 1.1, tapThreshold: 0.2, enabled: true), .toggle)
+        XCTAssertEqual(state.capsLockChanged(false, at: 1.11, tapThreshold: 0.2, enabled: true), .absorb)
+    }
+
+    func testHyperKeyRoutesUnconfiguredKeysSystemWide() {
+        var state = HyperKeyStateMachine()
+        XCTAssertEqual(state.capsLockChanged(true, at: 1, tapThreshold: 0.2, enabled: true), .absorb)
+        XCTAssertEqual(state.keyDown(UInt32(kVK_ANSI_T), internalActionIsConfigured: false, enabled: true), .systemWide)
+        XCTAssertEqual(state.keyDown(UInt32(kVK_ANSI_T), internalActionIsConfigured: false, enabled: true), .systemWide)
+        XCTAssertEqual(state.capsLockChanged(false, at: 1.1, tapThreshold: 0.2, enabled: true), .absorb)
+        XCTAssertEqual(state.keyUp(UInt32(kVK_ANSI_T)), .systemWide)
+        XCTAssertEqual(state.keyUp(UInt32(kVK_ANSI_T)), .pass)
+    }
+
+    func testHyperKeyRoutesConfiguredInternalActionAndAbsorbsKeyPair() {
+        var state = HyperKeyStateMachine()
+        XCTAssertEqual(state.capsLockChanged(true, at: 1, tapThreshold: 0.2, enabled: true), .absorb)
+        XCTAssertEqual(state.keyDown(UInt32(kVK_LeftArrow), internalActionIsConfigured: true, enabled: true), .triggerInternal)
+        XCTAssertEqual(state.keyDown(UInt32(kVK_LeftArrow), internalActionIsConfigured: true, enabled: true), .absorb)
+        XCTAssertEqual(state.keyUp(UInt32(kVK_LeftArrow)), .absorb)
+        XCTAssertEqual(state.capsLockChanged(false, at: 1.1, tapThreshold: 0.2, enabled: true), .absorb)
+    }
+
+    func testHyperKeyPassesKeysWhileCapsLockIsUp() {
+        var state = HyperKeyStateMachine()
+        XCTAssertEqual(state.keyDown(UInt32(kVK_LeftArrow), internalActionIsConfigured: true, enabled: true), .pass)
+        XCTAssertEqual(state.keyUp(UInt32(kVK_LeftArrow)), .pass)
+    }
+
+    func testHyperKeyDisableClearsState() {
+        var state = HyperKeyStateMachine()
+        XCTAssertEqual(state.capsLockChanged(true, at: 1, tapThreshold: 0.2, enabled: true), .absorb)
+        XCTAssertEqual(state.keyDown(UInt32(kVK_UpArrow), internalActionIsConfigured: true, enabled: true), .triggerInternal)
+        XCTAssertEqual(state.keyDown(UInt32(kVK_UpArrow), internalActionIsConfigured: true, enabled: false), .pass)
+        XCTAssertFalse(state.capsLockIsDown)
+        XCTAssertEqual(state.keyUp(UInt32(kVK_UpArrow)), .pass)
+    }
+
     // alt-down > tab-down > tab-up > alt-up
     func testMostCommonSequence() throws {
         resetState()

@@ -186,6 +186,33 @@ extension AXUIElement {
         try throwIfNotSuccess(AXUIElementSetAttributeValue(self, key as CFString, value as CFTypeRef))
     }
 
+    func isAttributeSettable(_ key: String) throws -> Bool {
+        var settable = DarwinBoolean(false)
+        let result = AXUIElementIsAttributeSettable(self, key as CFString, &settable)
+        guard result == .success else { throw AxError.runtimeError }
+        return settable.boolValue
+    }
+
+    func setFrame(_ frame: CGRect) throws {
+        try setSize(frame.size)
+        try setPosition(frame.origin)
+        try setSize(frame.size)
+    }
+
+    private func setPosition(_ position: CGPoint) throws {
+        var position = position
+        guard let value = AXValueCreate(.cgPoint, &position) else { throw AxError.runtimeError }
+        let result = AXUIElementSetAttributeValue(self, kAXPositionAttribute as CFString, value)
+        guard result == .success else { throw AxError.runtimeError }
+    }
+
+    private func setSize(_ size: CGSize) throws {
+        var size = size
+        guard let value = AXValueCreate(.cgSize, &size) else { throw AxError.runtimeError }
+        let result = AXUIElementSetAttributeValue(self, kAXSizeAttribute as CFString, value)
+        guard result == .success else { throw AxError.runtimeError }
+    }
+
     func performAction(_ action: String) throws {
         try throwIfNotSuccess(AXUIElementPerformAction(self, action as CFString))
     }

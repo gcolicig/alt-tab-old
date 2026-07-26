@@ -12,6 +12,7 @@ class SleepWakeEvents {
     }
 
     private static func reEnableAllTaps() {
+        KeyboardEvents.resetHyperKeyState()
         TrackpadEvents.reEnableTapIfNeeded()
         ScrollwheelEvents.reEnableTapIfNeeded()
         KeyboardEvents.reEnableTapIfNeeded()
