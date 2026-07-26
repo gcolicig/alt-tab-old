@@ -3,7 +3,7 @@
 # set to empty for debug builds
 OTHER_CODE_SIGN_FLAGS="${OTHER_CODE_SIGN_FLAGS:-}"
 
-set -exu
+set -eu
 
 # codesign --deep is only 1 level deep. It misses Sparkle embedded app AutoUpdate
 # this build phase script works around the issue

@@ -7,7 +7,7 @@ sitemap: true
 
 *Last updated: July 2026*
 
-AltTab Old is designed to work locally on your Mac. This document describes the default behavior of this fork.
+AltTab+ is designed to work locally on your Mac. This document describes the default behavior of this fork.
 
 ## What We Collect
 
@@ -15,7 +15,7 @@ By default, this fork does not collect personal data.
 
 ## Usage Statistics
 
-AltTab Old tracks usage data such as how many times you switch windows. This data is calculated and stored locally on your device only. It is not transmitted.
+AltTab+ tracks usage data such as how many times you switch windows. This data is calculated and stored locally on your device only. It is not transmitted.
 
 ## Crash Reports
 
@@ -45,7 +45,7 @@ Since this fork does not collect personal data by default, there is typically no
 
 ## Children's Privacy
 
-AltTab Old does not knowingly collect any data from children under 16.
+AltTab+ does not knowingly collect any data from children under 16.
 
 ## Changes To This Policy
 

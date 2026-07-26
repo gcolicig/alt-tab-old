@@ -16,7 +16,7 @@ This document gives a technical overview of the project, for newcomers who want 
 
 This project has minimal dependency on Xcode-only features (e.g. InterfaceBuilder, Playgrounds). You can build it by doing:
 
-* `scripts/codesign/setup_local.sh` to generate a local self-signed certificate, to avoid having to re-check the `System Preferences > Security & Privacy` permissions on every build
+* `scripts/codesign/setup_local.sh` to generate the `AltTab+ Local Codesign` self-signed certificate, so macOS keeps Accessibility and Screen Recording permissions attached to local rebuilds
 * Either open `alt-tab-macos.xcworkspace` with XCode, or use the cli: `xcodebuild -workspace alt-tab-macos.xcworkspace -scheme Debug` to build the .app with the `Debug` build configuration
 
 ## Mac development

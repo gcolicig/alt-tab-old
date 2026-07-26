@@ -4,6 +4,7 @@ import ShortcutRecorder
 
 enum SearchMode {
     case off
+    case visible
     case editing
     case locked
 }
@@ -14,10 +15,17 @@ enum SearchKeyResult {
     case passToShortcuts
 }
 
+class SearchField: NSSearchField {
+    override func mouseDown(with event: NSEvent) {
+        TilesView.enableSearchEditing()
+        super.mouseDown(with: event)
+    }
+}
+
 class TilesView {
     static var scrollView: ScrollView!
     static var contentView: EffectView!
-    static var searchField = NSSearchField(frame: .zero)
+    static var searchField = SearchField(frame: .zero)
     static var noWindowLabel = NSTextField(labelWithString: NSLocalizedString("No Window", comment: ""))
     private(set) static var searchMode: SearchMode = .off
     static var rows = [[TileView]]()
@@ -41,14 +49,16 @@ class TilesView {
         initialized = true
     }
 
-    static var isSearchModeOn: Bool { searchMode != .off }
+    static var isSearchVisible: Bool { searchMode != .off }
+    static var isSearchModeOn: Bool { isSearchVisible }
+    static var isSearchActive: Bool { searchMode == .editing || searchMode == .locked }
     static var isSearchEditing: Bool { searchMode == .editing }
     static var isSearchLocked: Bool { searchMode == .locked }
 
     static func startSearchSession(_ startInSearchMode: Bool) {
         searchField.stringValue = ""
         Windows.updateSearchQuery("")
-        searchMode = startInSearchMode ? .editing : .off
+        searchMode = startInSearchMode ? .editing : .visible
         updateSearchFieldEditability()
     }
 
@@ -61,7 +71,7 @@ class TilesView {
     }
 
     static func toggleSearchModeFromShortcut() {
-        if searchMode == .off {
+        if searchMode == .off || searchMode == .visible {
             enableSearchEditing()
         } else if searchMode == .editing {
             disableSearchMode()
@@ -71,9 +81,9 @@ class TilesView {
     }
 
     static func disableSearchMode() {
-        guard searchMode != .off else { return }
+        guard isSearchActive else { return }
         TilesPanel.shared.resetFrozenPosition()
-        searchMode = .off
+        searchMode = App.appIsBeingUsed ? .visible : .off
         updateSearchFieldEditability()
         searchField.stringValue = ""
         clearHover()
@@ -228,7 +238,7 @@ class TilesView {
     static func updateBackgroundView() {
         contentView = makeAppropriateEffectView()
         scrollView = ScrollView()
-        searchField.isHidden = searchMode == .off
+        searchField.isHidden = !isSearchVisible
         contentView.addSubview(searchField)
         contentView.addSubview(scrollView)
         contentView.addSubview(noWindowLabel)
@@ -365,7 +375,7 @@ class TilesView {
     }
 
     private static func resolveAutoSize(_ widthMax: CGFloat) {
-        let searchReservedHeight: CGFloat = searchMode == .off ? 0 : searchBarHeight() + 10
+        let searchReservedHeight: CGFloat = isSearchVisible ? searchBarHeight() + 10 : 0
         let heightMax = max(0, TilesPanel.maxThumbnailsHeight() - searchReservedHeight)
         for size in [AppearanceSizePreference.large, .medium, .small] {
             Appearance.applySize(size)
@@ -487,11 +497,11 @@ class TilesView {
     private static func layoutParentViews(_ maxX: CGFloat, _ widthMax: CGFloat, _ maxY: CGFloat, _ labelHeight: CGFloat) {
         let searchBarHeight = searchBarHeight()
         let searchBottomPadding = CGFloat(10)
-        let searchReservedHeight = searchMode == .off ? 0 : searchBarHeight + searchBottomPadding
+        let searchReservedHeight = isSearchVisible ? searchBarHeight + searchBottomPadding : 0
         let heightMax = max(0, TilesPanel.maxThumbnailsHeight() - searchReservedHeight)
         let minSearchWidth = min(widthMax, 320)
         let minWidth = min(widthMax, 320)
-        TilesView.thumbnailsWidth = max(min(maxX, widthMax), searchMode == .off ? (maxX == 0 ? minWidth : 0) : minWidth)
+        TilesView.thumbnailsWidth = max(min(maxX, widthMax), isSearchVisible ? minWidth : (maxX == 0 ? minWidth : 0))
         TilesView.thumbnailsHeight = min(maxY, heightMax)
         let appIconsBottomViewportPadding = appIconsBottomViewportPadding(maxY, heightMax, labelHeight)
         let frameWidth = TilesView.thumbnailsWidth + Appearance.windowPadding * 2
@@ -508,8 +518,8 @@ class TilesView {
         scrollView.frame.size = NSSize(width: TilesView.thumbnailsWidth, height: scrollHeight)
         scrollView.frame.origin = CGPoint(x: originX, y: originY + appIconsBottomViewportPadding * 2)
         scrollView.contentView.frame.size = scrollView.frame.size
-        searchField.isHidden = searchMode == .off
-        if searchMode != .off {
+        searchField.isHidden = !isSearchVisible
+        if isSearchVisible {
             let searchWidth = minSearchWidth
             searchField.frame.size = NSSize(width: searchWidth, height: searchBarHeight)
             let searchX = originX + (TilesView.thumbnailsWidth - searchWidth) * 0.5

@@ -68,7 +68,7 @@ AltTab has been designed to take as few resources as possible on the user comput
 
 ## CLI usage
 
-You can run CLI commands directly on the executable inside the .app bundle (e.g. `/Applications/AltTab.app/Contents/MacOS/AltTab`)
+You can run CLI commands directly on the executable inside the .app bundle (e.g. `/Applications/AltTab+.app/Contents/MacOS/AltTab+`)
 
 * `AltTab --list` will return the list of windows (ID and title) in JSON
 * `AltTab --detailed-list` will return the list of windows (lots of info) in JSON
@@ -76,7 +76,7 @@ You can run CLI commands directly on the executable inside the .app bundle (e.g.
 * `AltTab --focus=window_id` will focus the window with the specified ID (get it from --list)
 * `AltTab --focusUsingLastFocusOrder=focus_order` will focus the window with the specified focus-order (get it from --detailed-list)
 
-For this to work, you need AltTab.app to be running, to keep track of the state of windows, and execute the commands
+For this to work, you need AltTab+.app to be running, to keep track of the state of windows, and execute the commands
 
 ## Alternatives
 

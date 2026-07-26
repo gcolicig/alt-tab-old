@@ -31,7 +31,12 @@ Fork-freundlich ist ein Projekt erst dann, wenn der Fork nicht nur technisch kom
 
 - [ ] Ein einzelner Build-Befehl funktioniert, z. B. `./build.sh`.
 - [ ] Der Build benoetigt keine privaten Zertifikate.
-- [ ] Lokale Builds verwenden ad-hoc signing, wenn echte Developer-Zertifikate nicht noetig sind.
+- [ ] Lokale Builds koennen ohne Apple Developer Account signiert werden.
+- [ ] Fuer macOS-Apps mit TCC-Berechtigungen gibt es eine stabile lokale Signatur, damit Accessibility, Screen Recording und aehnliche Rechte ueber Rebuilds hinweg erhalten bleiben.
+- [ ] Ad-hoc signing bleibt nur Fallback fuer lokale Builds, wenn keine lokale Signier-Identitaet vorhanden ist.
+- [ ] Der lokale Ad-hoc-Fallback warnt klar, dass TCC-Berechtigungen wie Accessibility und Screen Recording nach einem Rebuild erneut erforderlich sein koennen.
+- [ ] Lokale Builds laufen im normalen User-Kontext; `sudo` wird hoechstens fuer den finalen Kopiervorgang nach `/Applications` verwendet.
+- [ ] Release- und Distributionsbuilds brechen ohne die vorgesehene Signatur ab, statt unbemerkt ad-hoc zu signieren.
 - [ ] Das Build-Script prueft Xcode, Command Line Tools und Mindestversion.
 - [ ] Fehlende Werkzeuge erzeugen klare Fehlermeldungen.
 - [ ] Der Build schreibt lokale Artefakte in ignorierte Ordner wie `DerivedData/` oder `build/`.
@@ -68,6 +73,11 @@ Fork-freundlich ist ein Projekt erst dann, wenn der Fork nicht nur technisch kom
 - [ ] Keine privaten Zertifikate, Provisioning Profiles oder Notarisierungs-Credentials liegen im Repository.
 - [ ] CI- und Release-Scripte erwarten Secrets nur optional und dokumentiert.
 - [ ] Lokale Builds funktionieren ohne Apple Developer Account.
+- [ ] Lokale selbstsignierte Zertifikate werden nicht committed, sondern bei Bedarf reproduzierbar erzeugt.
+- [ ] Der Name der lokalen Signier-Identitaet ist dokumentiert und wird vom Build-Script automatisch verwendet.
+- [ ] Signing-Scripte verwenden kein Shell-Tracing wie `set -x`, wenn Passwoerter, Zertifikate oder Schluessel verarbeitet werden.
+- [ ] Zufaellige Exportpasswoerter und temporaere private Schluessel werden auch bei einem Scriptfehler sicher aufgeraeumt.
+- [ ] TCC-relevante macOS-Berechtigungen werden gegen stabile App-Identitaet getestet, nicht nur gegen App-Name und Bundle-ID.
 - [ ] Release-Builds dokumentieren klar, welche Signatur- und Notarisierungsdaten benoetigt werden.
 - [ ] Keine API-Keys, Tokens, AppCenter-Secrets oder private Appcast-Signing-Keys sind committed.
 
@@ -109,13 +119,20 @@ Fork-freundlich ist ein Projekt erst dann, wenn der Fork nicht nur technisch kom
 Diese Punkte waren in der konkreten AltTab-Fork-Arbeit besonders wichtig:
 
 - Eine letzte freie Version sollte als stabiler Ausgangspunkt getaggt werden, hier `v10.12.0`.
-- Der Fork braucht einen eigenen Bundle Identifier, hier `com.gcolicig.alt-tab-old`.
+- Der Fork braucht einen eigenen Bundle Identifier, hier `com.gcolicig.alttab-plus`.
 - Auto-Update darf nicht unbemerkt wieder auf Upstream oder eine neuere kostenpflichtige Version zeigen.
 - Sparkle-Feeds muessen geleert, deaktiviert oder auf eigene Infrastruktur umgestellt werden.
 - AppCenter und Feedback-Code sollten optional sein, damit fehlende Maintainer-Accounts den Fork nicht brechen.
 - Lokale Builds muessen ohne Apple Developer Certificate funktionieren.
-- `/Applications/AltTab Old.app` ist ein sinnvoller Installationsname, weil er vom Original unterscheidbar ist.
+- Lokale AltTab+-Entwicklungsbuilds sollten mit `AltTab+ Local Codesign` signiert werden, sobald dieses Zertifikat im Login-Schluesselbund existiert.
+- Reines ad-hoc signing kann macOS-TCC verwirren: System Settings zeigt dann Berechtigungen als aktiv, waehrend die neu gebaute App intern als andere Binary gilt und `Not allowed` meldet.
+- Der Ad-hoc-Fallback ist trotzdem sinnvoll, damit ein frischer Checkout ohne Apple Developer Account und ohne vorheriges Schluesselbund-Setup gebaut werden kann; er ist kein geeigneter Release-Fallback.
+- Der Build selbst sollte nicht mit `sudo` laufen, weil die private Signier-Identitaet an den Login-Schluesselbund des normalen Users gekoppelt ist. Erhoehte Rechte gehoeren nur an den Installationsschritt.
+- Das lokale Codesign-Zertifikat darf nicht im Repo liegen; `scripts/codesign/setup_local.sh` erzeugt es reproduzierbar und raeumt temporaere Dateien wieder auf.
+- Codesign-Scripte duerfen nicht mit `set -x` laufen: Sonst koennen zufaellige PKCS#12-Passwoerter im Terminal- oder CI-Protokoll landen.
+- `/Applications/AltTab+.app` ist ein sinnvoller Installationsname, weil er vom Original unterscheidbar ist.
 - Ein laufender Build aus `DerivedData` sollte beendet werden, bevor man die installierte App testet.
+- Wenn `DerivedData`-Frameworks beim Bauen gesperrt sind, laeuft wahrscheinlich noch eine alte App-Instanz; fuer Verifikation hilft ein frischer `DERIVED_DATA_PATH`.
 - XcodeGen ist nur dann Standardvorgehen, wenn das Projekt wirklich aus `project.yml` generiert wird.
 - Wenn kein `project.yml` existiert, bleibt die vorhandene `.xcodeproj` vorerst Source of Truth.
 - `origin` sollte auf den eigenen Fork zeigen, `upstream` auf das Original.
@@ -131,6 +148,10 @@ Diese Punkte waren in der konkreten AltTab-Fork-Arbeit besonders wichtig:
 - [ ] Lizenz klar
 - [ ] Lokal buildbar
 - [ ] Ohne private Zertifikate buildbar
+- [ ] Stabile lokale Signatur fuer macOS-Berechtigungen
+- [ ] Dokumentierter Ad-hoc-Fallback fuer lokale Builds
+- [ ] Kein stiller Ad-hoc-Fallback fuer Release-Builds
+- [ ] Kein kompletter Build unter `sudo`
 - [ ] Ohne interne Dienste startbar
 - [ ] Eigene Bundle-ID / Paket-ID
 - [ ] Eigene Repository-Links
@@ -154,7 +175,7 @@ Diese Punkte waren in der konkreten AltTab-Fork-Arbeit besonders wichtig:
 
 ### Ergebnis
 
-Pflicht: __ / 10
+Pflicht: __ / 14
 Empfohlen: __ / 10
 
 Einschaetzung:
@@ -169,6 +190,10 @@ Einschaetzung:
 - README beschreibt Features, aber keinen Build.
 - Build funktioniert nur in Xcode, aber nicht reproduzierbar per Script.
 - Release-Scripte erwarten private Zertifikate ohne Fallback.
+- Release-Builds fallen bei fehlender Signier-Identitaet unbemerkt auf ad-hoc signing zurueck.
+- Lokale Builds muessen komplett mit `sudo` laufen, obwohl die Signier-Identitaet im User-Schluesselbund liegt.
+- Lokale macOS-Apps werden nur ad-hoc signiert, obwohl sie Accessibility, Screen Recording oder Input Monitoring brauchen.
+- System Settings zeigt Berechtigungen als aktiv, aber die App meldet sie als fehlend; haeufiges Zeichen fuer instabile Signatur oder wechselnden Build-Pfad.
 - Auto-Update zeigt weiter auf Upstream.
 - Crash-Reporting startet mit fremden oder fehlenden Secrets.
 - Bundle-ID bleibt identisch mit dem Original.

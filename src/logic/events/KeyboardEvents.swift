@@ -15,6 +15,9 @@ class KeyboardEvents {
         if type == .keyDown {
             let keyCode = UInt32(cgEvent.getIntegerValueField(.keyboardEventKeycode))
             let modifiers = NSEvent.ModifierFlags(rawValue: UInt(cgEvent.flags.rawValue))
+            if handleActiveArrowKeyIfNeeded(keyCode) {
+                return nil
+            }
             if shouldCancelActiveFocusOnReleaseShortcut(keyCode, modifiers) {
                 DispatchQueue.main.async {
                     _ = cancelActiveFocusOnReleaseShortcutIfNeeded(keyCode, modifiers)
@@ -41,6 +44,21 @@ class KeyboardEvents {
         }
         // we always return this because we want to let these event pass through to the currently focused app
         return Unmanaged.passUnretained(cgEvent)
+    }
+
+    private static func handleActiveArrowKeyIfNeeded(_ keyCode: UInt32) -> Bool {
+        guard App.appIsBeingUsed, Preferences.arrowKeysEnabled, !TilesView.isSearchEditing else { return false }
+        guard let direction = directionForArrowKey(keyCode) else { return false }
+        DispatchQueue.main.async { App.cycleSelection(direction) }
+        return true
+    }
+
+    private static func directionForArrowKey(_ keyCode: UInt32) -> Direction? {
+        if keyCode == UInt32(kVK_LeftArrow) { return .left }
+        if keyCode == UInt32(kVK_RightArrow) { return .right }
+        if keyCode == UInt32(kVK_UpArrow) { return .up }
+        if keyCode == UInt32(kVK_DownArrow) { return .down }
+        return nil
     }
 
     static func addGlobalShortcut(_ controlId: String, _ shortcut: Shortcut) {

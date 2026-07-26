@@ -20,6 +20,7 @@ class PermissionsWindow: NSWindow {
         accessibilityView.updatePermissionStatus(AccessibilityPermission.status)
         if #available(macOS 10.15, *) {
             screenRecordingView.updatePermissionStatus(ScreenRecordingPermission.status)
+            screenRecordingView.setButtonEnabled(AccessibilityPermission.status == .granted && !ScreenRecordingPermission.isRequestingAccess)
         }
     }
 
@@ -68,8 +69,10 @@ class PermissionsWindow: NSWindow {
                 NSLocalizedString("This permission is needed to show thumbnails and preview of open windows", comment: ""),
                 NSLocalizedString("Open Screen Recording Settings…", comment: ""),
                 "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture",
-                StackView(LabelAndControl.makeLabelWithCheckbox(NSLocalizedString("Use the app without this permission. Thumbnails won’t show.", comment: ""), "screenRecordingPermissionSkipped", labelPosition: .right))
+                StackView(LabelAndControl.makeLabelWithCheckbox(NSLocalizedString("Use the app without this permission. Thumbnails won’t show.", comment: ""), "screenRecordingPermissionSkipped", labelPosition: .right)),
+                { _ in ScreenRecordingPermission.requestAccessAndOpenSettings() }
             )
+            Self.screenRecordingView.setButtonEnabled(false)
             rows.append([Self.screenRecordingView])
         }
         let widestRowWidth = rows.reduce(0) { max($0, $1[0]!.fittingSize.width) }

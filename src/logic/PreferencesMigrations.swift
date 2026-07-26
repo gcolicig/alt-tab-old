@@ -9,6 +9,7 @@ class PreferencesMigrations {
     }
 
     static func migratePreferences() {
+        migrateAltTabPlusForkDefaults()
         let preferencesKey = "preferencesVersion"
         if let versionInPlist = UserDefaults.standard.string(forKey: preferencesKey) {
             if versionInPlist != "#VERSION#" && versionInPlist.compare(App.version, options: .numeric) != .orderedDescending {
@@ -16,6 +17,14 @@ class PreferencesMigrations {
             }
         }
         UserDefaults.standard.set(App.version, forKey: preferencesKey)
+    }
+
+    private static func migrateAltTabPlusForkDefaults() {
+        let key = "altTabPlusForkDefaults20260723"
+        guard UserDefaults.standard.string(forKey: key) == nil else { return }
+        UserDefaults.standard.set("true", forKey: "previewFocusedWindow")
+        UserDefaults.standard.set("true", forKey: "mouseHoverEnabled")
+        UserDefaults.standard.set("true", forKey: key)
     }
 
     private static func updateToNewPreferences(_ versionInPlist: String) {

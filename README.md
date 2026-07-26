@@ -1,6 +1,6 @@
-# AltTab Old
+# AltTab+
 
-AltTab Old is a fork-friendly snapshot of AltTab `v10.12.0`, the last known release before AltTab Pro was introduced upstream.
+AltTab+ is a fork-friendly snapshot of AltTab `v10.12.0`, the last known release before AltTab Pro was introduced upstream.
 
 The goal of this repository is simple: clone it, build it, run it, read it, change it, and keep it understandable. This fork intentionally avoids requiring access to the original project's Apple certificates, AppCenter project, GitHub bot token, Sparkle private key, or release infrastructure.
 
@@ -10,13 +10,29 @@ Upstream project: https://github.com/lwouis/alt-tab-macos
 
 AltTab brings Windows-style window switching to macOS. It lists open windows, supports keyboard shortcuts, shows previews when permitted by macOS, and lets you focus windows quickly.
 
+## Fork Changes
+
+- Support, feedback, manual update checks, update policy, and crash-report policy UI have been removed from the app.
+- Auto-update and crash-report preferences are forced to disabled fork defaults at launch.
+- When `After keys are released` is set to `Focus selected window`, pressing Escape while the configured hold shortcut is still down cancels the switch without focusing the selected window. This works for Shortcut 1 and Shortcut 2.
+- While using `Focus selected window`, pressing the physical ISO Section key above Tab while the configured hold shortcut is still down opens fuzzy search without focusing it first. This works across keyboard layouts that expose that physical ISO key, independent of the printed character.
+- The switcher shows the search field by default without focusing it. Normal Tab cycling continues until search is activated with the mouse, `S`, or the physical ISO Section key above Tab.
+- Mouse hover selection is enabled by default.
+- Apps with no open window are hidden by default for Shortcut 1, Shortcut 2, and gestures.
+
 ## Build
 
 ```bash
 ./build.sh
 ```
 
-This builds the `Debug` scheme with ad-hoc signing, so no Apple Developer certificate is required.
+This builds the `Debug` scheme without requiring an Apple Developer certificate. For day-to-day testing, set up the local self-signed signing identity once:
+
+```bash
+scripts/codesign/setup_local.sh
+```
+
+The setup imports a private key into the login keychain and trusts its self-signed certificate for code signing. After that, `build.sh` automatically signs AltTab+ with `AltTab+ Local Codesign`. This keeps macOS Accessibility and Screen Recording permissions stable across rebuilds.
 
 For details, see [docs/setup.md](docs/setup.md).
 
@@ -31,13 +47,13 @@ Requirements: Xcode 16 or newer, command line tools for `xcodebuild`, and Git. X
 This builds the app and launches it from:
 
 ```text
-DerivedData/Build/Products/Debug/AltTab.app
+DerivedData/Build/Products/Debug/AltTab+.app
 ```
 
 If the app is already built, you can launch it directly:
 
 ```bash
-open -n DerivedData/Build/Products/Debug/AltTab.app
+open -n DerivedData/Build/Products/Debug/AltTab+.app
 ```
 
 ## Install To Applications
@@ -49,8 +65,12 @@ open -n DerivedData/Build/Products/Debug/AltTab.app
 This copies the app to:
 
 ```text
-/Applications/AltTab Old.app
+/Applications/AltTab+.app
 ```
+
+Run the command as your normal user, not with `sudo`. If `/Applications` needs elevated permissions, the script asks only for the copy step so the build can still use the signing identity from your login keychain.
+
+If you already ran `sudo ./build.sh --install`, fix the build output once with `sudo chown -R "$USER" DerivedData`, then run `./build.sh --install` again.
 
 You can then launch it like any other macOS app. If you previously ran the app from `DerivedData`, quit that copy first so you are testing the installed app.
 
@@ -61,7 +81,9 @@ You can then launch it like any other macOS app. If you previously ran the app f
 
 These permissions are granted locally in System Settings. The app does not upload window titles, screenshots, or usage statistics.
 
-Because this fork uses the bundle identifier `com.gcolicig.alt-tab-old`, macOS treats it as separate from the original AltTab app. You can install both at the same time, but running both simultaneously may cause global shortcut conflicts.
+Because this fork uses the bundle identifier `com.gcolicig.alttab-plus`, macOS treats it as separate from the original AltTab app and earlier AltTab Old builds. You can install them side by side, but running them simultaneously may cause global shortcut conflicts.
+
+If permissions appear enabled in System Settings but AltTab+ still says `Not allowed`, rebuild with the local signing identity above, then remove and grant the AltTab+ permission entries once. Ad-hoc builds can look like a different app to macOS after every rebuild.
 
 ## Data Flow
 
@@ -69,7 +91,7 @@ Because this fork uses the bundle identifier `com.gcolicig.alt-tab-old`, macOS t
 Keyboard / mouse input
         |
         v
-AltTab Old running locally
+AltTab+ running locally
         |
         +--> macOS Accessibility APIs
         +--> macOS Screen Recording APIs
@@ -83,7 +105,7 @@ Optional, disabled unless configured:
 
 ## Fork-Friendly Defaults
 
-- Bundle identifier is fork-specific: `com.gcolicig.alt-tab-old`.
+- Bundle identifier is fork-specific: `com.gcolicig.alttab-plus`.
 - Sparkle automatic update checks are disabled by default.
 - Crash reporting starts only when an AppCenter secret is configured.
 - The in-app feedback form falls back to opening this repository's Issues page unless a token is configured.

@@ -120,13 +120,13 @@ class App: AppCenterApplication {
     }
 
     static func lockSearchMode() {
-        guard appIsBeingUsed, TilesView.isSearchModeOn else { return }
+        guard appIsBeingUsed, TilesView.isSearchActive else { return }
         TilesView.lockSearchMode()
     }
 
     static func cancelSearchModeOrHideUi() {
         guard appIsBeingUsed else { return }
-        if TilesView.isSearchModeOn {
+        if TilesView.isSearchActive {
             TilesView.disableSearchMode()
         } else {
             hideUi()

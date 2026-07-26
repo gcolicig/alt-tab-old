@@ -25,7 +25,7 @@ class BackgroundWork {
         permissionsCheckOnTimerQueue = LabeledOperationQueue("permissionsCheckOnTimer", .userInteractive, 1)
         // if macOS is overwhelmed, let's reduce the pressure on it by calling permission APIs one at a time
         permissionsSystemCallsQueue = LabeledOperationQueue("permissionsSystemCalls", .userInteractive, 1)
-        // we update cachedSCWindows during the first permission check; so we need this queue early
+        // screenshot capture may start as soon as permissions are granted; so we need this queue early
         screenshotsQueue = LabeledOperationQueue("screenshots", .userInteractive, 8)
     }
 

@@ -1,3 +1,18 @@
+# AltTab+ fork changes
+
+### Features
+
+* remove support, feedback, manual update, update policy, and crash-report policy UI from the app
+* cancel `Focus selected window` switching with Escape while the configured Shortcut 1 or Shortcut 2 hold key is still pressed
+* open fuzzy search during `Focus selected window` switching with the physical ISO Section key above Tab while the configured Shortcut 1 or Shortcut 2 hold key is still pressed
+* show the search field by default without focusing it, preserving normal Tab cycling until search is activated
+* enable mouse hover window selection by default
+
+### Defaults
+
+* force update checks and crash reporting to disabled fork defaults at launch
+* hide apps with no open window by default for Shortcut 1, Shortcut 2, and gestures
+
 # [10.12.0](https://github.com/lwouis/alt-tab-macos/compare/v10.11.0...v10.12.0) (2026-04-13)
 
 

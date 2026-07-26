@@ -1,5 +1,4 @@
 import Cocoa
-import ScreenCaptureKit.SCShareableContent
 
 // macOS has some privacy restrictions. The user needs to grant certain permissions, app by app, in System Preferences > Security & Privacy
 class SystemPermissions {
@@ -17,8 +16,10 @@ class SystemPermissions {
     private static func checkPermissionsOnTimer() {
         AccessibilityPermission.update()
         let isPermissionsWindowVisible = PermissionsWindow.shared?.isVisible ?? false
-        if !preStartupPermissionsPassed || isPermissionsWindowVisible {
+        if AccessibilityPermission.status == .granted && (!preStartupPermissionsPassed || isPermissionsWindowVisible) {
             ScreenRecordingPermission.update()
+        } else if Preferences.screenRecordingPermissionSkipped {
+            ScreenRecordingPermission.status = .skipped
         }
         Logger.debug { "accessibility:\(AccessibilityPermission.status) screenRecording:\(ScreenRecordingPermission.status)" }
         if !preStartupPermissionsPassed {
@@ -93,6 +94,8 @@ class AccessibilityPermission {
 
 class ScreenRecordingPermission {
     static var status = PermissionStatus.notGranted
+    private(set) static var isRequestingAccess = false
+    private static let settingsUrl = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!
 
     @discardableResult
     static func update() -> PermissionStatus {
@@ -102,81 +105,27 @@ class ScreenRecordingPermission {
 
     private static func detect() -> PermissionStatus {
         if #available(macOS 10.15, *) {
-            return isGrantedOnSomeDisplay() ? .granted :
+            return CGPreflightScreenCaptureAccess() ? .granted :
                 (Preferences.screenRecordingPermissionSkipped ? .skipped : .notGranted)
         }
         return .granted
     }
 
-    // workaround: public API CGPreflightScreenCaptureAccess and private API SLSRequestScreenCaptureAccess exist, but
-    // their return value is not updated during the app lifetime
-    // note: shows the system prompt if there's no permission
-    private static func isGrantedOnSomeDisplay() -> Bool {
-        if #available(macOS 12.3, *) {
-            return checkWithSCShareableContent()
-        } else {
-            let mainDisplayID = CGMainDisplayID()
-            if checkWithCGDisplayStream(mainDisplayID) {
-                return true
-            }
-            // maybe the main screen can't produce a CGDisplayStream, but another screen can
-            // a positive on any screen must mean that the permission is granted; we try on the other screens
-            for screen in NSScreen.screens {
-                if let id = screen.number(), id != mainDisplayID {
-                    if checkWithCGDisplayStream(id) {
-                        return true
-                    }
-                }
-            }
-            return false
-        }
-    }
-
-    @available(macOS 12.3, *)
-    private static func checkWithSCShareableContent() -> Bool {
-        return runWithTimeout { completion in
-            SCShareableContent.getExcludingDesktopWindows(true, onScreenWindowsOnly: false) { shareableContent, error in
-                // this callback runs on a GCD queue, not on the thread that called getWithCompletionHandler
-                if #available(macOS 14.0, *), let shareableContent, error == nil {
-                    BackgroundWork.screenshotsQueue.addOperation {
-                        WindowCaptureScreenshots.cachedSCWindows = shareableContent.windows
-                    }
-                }
-                completion(error != nil ? false : (shareableContent != nil))
-            }
-        }
-    }
-
-    private static func checkWithCGDisplayStream(_ id: CGDirectDisplayID) -> Bool {
-        return runWithTimeout { completion in
-            // this initializer can actually block for a while
-            // it's undocumented but has been proven by spindumps shared by AltTab users
-            let displayStream = CGDisplayStream(
-                dispatchQueueDisplay: id,
-                outputWidth: 1,
-                outputHeight: 1,
-                pixelFormat: Int32(kCVPixelFormatType_32BGRA),
-                properties: nil,
-                queue: .global()
-            ) { _, _, _, _ in }
-            completion(displayStream != nil)
-        }
-    }
-
-    private static func runWithTimeout(_ block: @escaping (@escaping (Bool) -> Void) -> Void) -> Bool {
-        let semaphore = DispatchSemaphore(value: 0)
-        var result = false
+    static func requestAccessAndOpenSettings() {
+        guard #available(macOS 10.15, *), !isRequestingAccess else { return }
+        isRequestingAccess = true
+        PermissionsWindow.updatePermissionViews()
         BackgroundWork.permissionsSystemCallsQueue.addOperation {
-            block { r in
-                result = r
-                semaphore.signal()
+            let granted = CGRequestScreenCaptureAccess()
+            DispatchQueue.main.async {
+                isRequestingAccess = false
+                if granted {
+                    status = .granted
+                } else {
+                    NSWorkspace.shared.open(settingsUrl)
+                }
+                PermissionsWindow.updatePermissionViews()
             }
         }
-        let timeoutResult = semaphore.wait(timeout: .now() + 6)
-        if timeoutResult == .timedOut {
-            Logger.error { "Screen-recording permission call timed out after 6s" }
-            return false
-        }
-        return result
     }
 }

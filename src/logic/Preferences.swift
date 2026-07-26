@@ -19,7 +19,7 @@ class Preferences {
             "searchShortcut": defaultShortcut("S"),
             "arrowKeysEnabled": "true",
             "vimKeysEnabled": "false",
-            "mouseHoverEnabled": "false",
+            "mouseHoverEnabled": "true",
             "cursorFollowFocus": CursorFollowFocus.never.indexAsString,
             "showTabsAsWindows": "false",
             "hideColoredCircles": "false",
@@ -46,7 +46,7 @@ class Preferences {
             "hideThumbnails": "false",
             "hideSpaceNumberLabels": "false",
             "hideStatusIcons": "false",
-            "previewFocusedWindow": "false",
+            "previewFocusedWindow": "true",
             "captureWindowsInBackground": "true",
             "screenRecordingPermissionSkipped": "false",
             "trackpadHapticFeedbackEnabled": "true",
@@ -63,7 +63,7 @@ class Preferences {
             values[indexToName("showMinimizedWindows", index)] = ShowHowPreference.show.indexAsString
             values[indexToName("showHiddenWindows", index)] = ShowHowPreference.show.indexAsString
             values[indexToName("showFullscreenWindows", index)] = ShowHowPreference.show.indexAsString
-            values[indexToName("showWindowlessApps", index)] = ShowHowPreference.showAtTheEnd.indexAsString
+            values[indexToName("showWindowlessApps", index)] = defaultShowWindowlessApps(index)
             values[indexToName("windowOrder", index)] = WindowOrderPreference.recentlyFocused.indexAsString
             values[indexToName("shortcutStyle", index)] = ShortcutStylePreference.focusOnRelease.indexAsString
         }
@@ -251,6 +251,11 @@ class Preferences {
         ].map {
             ExceptionEntry(bundleIdentifier: $0, hide: .none, ignore: .whenFullscreen)
         })
+    }
+
+    private static func defaultShowWindowlessApps(_ index: Int) -> String {
+        guard index == 0 || index == 1 || index == gestureIndex else { return ShowHowPreference.showAtTheEnd.indexAsString }
+        return ShowHowPreference.hide.indexAsString
     }
 
     static func jsonEncode<T>(_ value: T) -> String where T: Encodable {
