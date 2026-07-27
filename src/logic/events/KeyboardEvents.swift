@@ -26,10 +26,6 @@ class KeyboardEvents {
     private static var hyperKeyHoldGeneration = UInt64(0)
     private static var capsLockWasForcedOffForCurrentHold = false
     private static var capsLockStateBeforeCurrentHold: Bool?
-    private static var lastPhysicalCapsLockReportAt = TimeInterval(0)
-    /// Long enough that the HID callback and the event tap for the same key press cannot race into a
-    /// false alarm, short enough that recovery happens on the very next Caps Lock press.
-    private static let physicalCapsLockReportGracePeriod = TimeInterval(0.2)
     private static let hyperKeyHidCallback: IOHIDValueCallback = { _, _, _, value in
         let element = IOHIDValueGetElement(value)
         guard IOHIDElementGetUsagePage(element) == kHIDPage_KeyboardOrKeypad,
@@ -70,9 +66,6 @@ class KeyboardEvents {
         } else if type == .flagsChanged {
             let keyCode = CGKeyCode(cgEvent.getIntegerValueField(.keyboardEventKeycode))
             if keyCode == CGKeyCode(kVK_CapsLock), hyperKeyIsActive() {
-                // this absorbs Caps Lock in favour of the HID monitor, so a monitor that stopped
-                // reporting would leave both Caps Lock and Hyper dead until Hyper is toggled by hand
-                checkPhysicalCapsLockMonitor()
                 return nil
             }
             withHyperKeyState { $0.markCapsLockUsed() }
@@ -124,7 +117,6 @@ class KeyboardEvents {
     private static func handlePhysicalCapsLockChange(_ isDown: Bool) {
         let stateBeforeHold = isDown ? currentCapsLockState() : nil
         let result = withHyperKeyState { state -> (UInt64, HyperKeyCapsDecision, Bool?) in
-            lastPhysicalCapsLockReportAt = ProcessInfo.processInfo.systemUptime
             hyperKeyHoldGeneration &+= 1
             if isDown {
                 capsLockWasForcedOffForCurrentHold = false
@@ -481,25 +473,6 @@ class KeyboardEvents {
 
     private static func hyperKeyIsActive() -> Bool {
         withHyperKeyState { _ in hyperKeyRuntimeEnabled }
-    }
-
-    /// The event tap saw a physical Caps Lock event. If the HID monitor did not report the same press,
-    /// it stopped delivering, which used to require toggling Hyper in Settings. Re-arm it instead.
-    private static func checkPhysicalCapsLockMonitor() {
-        let observedAt = ProcessInfo.processInfo.systemUptime
-        DispatchQueue.main.asyncAfter(deadline: .now() + physicalCapsLockReportGracePeriod) {
-            guard Preferences.hyperKeyEnabled, hyperKeyIsActive() else { return }
-            let monitorIsSilent = withHyperKeyState { _ in lastPhysicalCapsLockReportAt < observedAt }
-            guard monitorIsSilent else { return }
-            Logger.warning { "physical Caps Lock monitor stopped reporting; re-arming it" }
-            resetHyperKeyState()
-            removeHyperKeyHidMonitor()
-            if !addHyperKeyHidMonitor() {
-                Logger.error { "could not re-arm the physical Caps Lock monitor; disabling Hyper" }
-                setHyperKeyRuntimeEnabled(false)
-                disableInputModulesForSafety(NSLocalizedString("Hyper was disabled because the Caps Lock monitor could not be restored.", comment: ""))
-            }
-        }
     }
 
     private static func setHyperKeyRuntimeEnabled(_ enabled: Bool) {
