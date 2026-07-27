@@ -20,6 +20,7 @@
 		C0DE10000000000000000009 /* InstantSpacesTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000007 /* InstantSpacesTestable.swift */; };
 		C0DE1000000000000000000A /* InstantSpaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000008 /* InstantSpaces.swift */; };
 		C0DE1000000000000000000B /* InstantSpacesPrivateApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000009 /* InstantSpacesPrivateApi.swift */; };
+		C0DE10000000000000000010 /* SpacesTrace.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000000D /* SpacesTrace.swift */; };
 		C0DE1000000000000000000C /* InstantSpacesTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000007 /* InstantSpacesTestable.swift */; };
 		C0DE1000000000000000000D /* InstantSpacesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000000A /* InstantSpacesTests.swift */; };
 		1C96101BC5817A7F85FA1F8D /* titles_show_running_applications_light@2x.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 1C961F57248D4E2377A9038E /* titles_show_running_applications_light@2x.jpg */; };
@@ -344,6 +345,7 @@
 		C0DE20000000000000000007 /* InstantSpacesTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpacesTestable.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000008 /* InstantSpaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpaces.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000009 /* InstantSpacesPrivateApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpacesPrivateApi.swift; sourceTree = "<group>"; };
+		C0DE2000000000000000000D /* SpacesTrace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacesTrace.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000000A /* InstantSpacesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpacesTests.swift; sourceTree = "<group>"; };
 		1C961003A0D16B9AE3932B3F /* thumbnails_show_colored_circles_light@2x.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "thumbnails_show_colored_circles_light@2x.jpg"; sourceTree = "<group>"; };
 		1C9610071E9F3434C893DC95 /* thumbnails_align_thumbnails_center_light@2x.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "thumbnails_align_thumbnails_center_light@2x.jpg"; sourceTree = "<group>"; };
@@ -1686,6 +1688,7 @@
 			children = (
 				C0DE20000000000000000007 /* InstantSpacesTestable.swift */,
 				C0DE20000000000000000008 /* InstantSpaces.swift */,
+				C0DE2000000000000000000D /* SpacesTrace.swift */,
 			);
 			path = spaces;
 			sourceTree = "<group>";
@@ -2638,6 +2641,7 @@
 				C0DE10000000000000000009 /* InstantSpacesTestable.swift in Sources */,
 				C0DE1000000000000000000A /* InstantSpaces.swift in Sources */,
 				C0DE1000000000000000000B /* InstantSpacesPrivateApi.swift in Sources */,
+				C0DE10000000000000000010 /* SpacesTrace.swift in Sources */,
 				C0DE10000000000000000001 /* WindowLayoutGeometry.swift in Sources */,
 				C0DE10000000000000000002 /* WindowLayouts.swift in Sources */,
 				C0DE10000000000000000003 /* WindowLayoutsTab.swift in Sources */,

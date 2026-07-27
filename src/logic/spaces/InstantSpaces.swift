@@ -4,7 +4,9 @@ enum InstantSpaces {
     private struct Snapshot {
         let displayId: String
         let currentIndex: Int
-        let spaceCount: Int
+        let spaceIds: [CGSSpaceID]
+
+        var spaceCount: Int { spaceIds.count }
     }
 
     private static let supportedMajorVersion = 26
@@ -67,6 +69,8 @@ enum InstantSpaces {
             // a new command supersedes whatever is still running for this display: without that, the
             // older sequence kept stepping towards its own target and dragged the Space back
             let generation = beginSequence(on: snapshot.displayId)
+            SpacesTrace.beginSequence("\(action.stableId): observed \(snapshot.currentIndex), base \(predictedIndex(snapshot)), target \(plan.targetIndex), \(plan.steps) step(s)",
+                                      displayId: snapshot.displayId, spaceIds: snapshot.spaceIds, generation: generation)
             if plan.steps > 1 {
                 beginTraversalCover()
             }
@@ -79,21 +83,28 @@ enum InstantSpaces {
     /// swipe cannot desynchronize the following steps. The target index belongs to the display the
     /// sequence started on; moving the cursor to another display stops it rather than switching there.
     private static func step(towards targetIndex: Int, on displayId: String, generation: UInt64, attemptsLeft: Int) {
-        guard isCurrentSequence(generation, on: displayId) else { return }
+        guard isCurrentSequence(generation, on: displayId) else {
+            SpacesTrace.event("step abandoned: generation \(generation) superseded")
+            return
+        }
         guard attemptsLeft > 0, let snapshot = snapshot(), snapshot.displayId == displayId else {
+            SpacesTrace.event("step aborted: attemptsLeft \(attemptsLeft), snapshot unusable or display changed")
             finishSequence(on: displayId, generation: generation, settledIndex: nil)
             return
         }
         let baseIndex = predictedIndex(snapshot)
         guard let direction = SpaceSwitchPlanner.stepDirection(
             currentIndex: baseIndex, targetIndex: targetIndex, spaceCount: snapshot.spaceCount) else {
+            SpacesTrace.event("no step needed: observed \(snapshot.currentIndex), base \(baseIndex), target \(targetIndex)")
             finishSequence(on: displayId, generation: generation, settledIndex: snapshot.currentIndex)
             return
         }
         guard postStep(direction) else {
+            SpacesTrace.event("posting the swipe failed")
             finishSequence(on: displayId, generation: generation, settledIndex: nil)
             return
         }
+        SpacesTrace.event("posted swipe \(direction == .right ? "right" : "left"): observed \(snapshot.currentIndex), base \(baseIndex), target \(targetIndex), attemptsLeft \(attemptsLeft)")
         let stepIndex = direction == .right ? baseIndex + 1 : baseIndex - 1
         setPrediction(SpacePrediction(sourceIndex: snapshot.currentIndex, targetIndex: stepIndex, timestamp: now()), for: displayId)
         if stepIndex == targetIndex {
@@ -115,12 +126,14 @@ enum InstantSpaces {
                 finishSequence(on: displayId, generation: generation, settledIndex: nil)
                 return
             }
+            SpacesTrace.event("arrival check \(settleCheckCount - checksLeft + 1): observed \(snapshot.currentIndex), target \(targetIndex)")
             if snapshot.currentIndex == targetIndex {
                 finishSequence(on: displayId, generation: generation, settledIndex: targetIndex)
             } else if checksLeft > 1 {
                 verifyArrival(of: targetIndex, on: displayId, generation: generation, attemptsLeft: attemptsLeft, checksLeft: checksLeft - 1)
             } else {
                 // the last swipe was dropped: retry through the normal step path
+                SpacesTrace.event("arrival never observed; retrying with attemptsLeft \(attemptsLeft)")
                 step(towards: targetIndex, on: displayId, generation: generation, attemptsLeft: attemptsLeft)
             }
         }
@@ -177,7 +190,7 @@ enum InstantSpaces {
         guard let spaceIds, !spaceIds.isEmpty,
               let currentSpaceId = InstantSpacesPrivateApi.currentSpaceId(displayId),
               let currentIndex = spaceIds.firstIndex(of: currentSpaceId) else { return nil }
-        return Snapshot(displayId: displayId as String, currentIndex: currentIndex, spaceCount: spaceIds.count)
+        return Snapshot(displayId: displayId as String, currentIndex: currentIndex, spaceIds: Array(spaceIds))
     }
 
     private static func predictedIndex(_ snapshot: Snapshot) -> Int {
@@ -207,6 +220,8 @@ enum InstantSpaces {
             histories[displayId, default: SpaceHistory()].record(settledIndex)
         }
         predictionLock.unlock()
+        SpacesTrace.event("sequence finished: settled \(settledIndex.map(String.init) ?? "unknown")")
+        SpacesTrace.stopSampling()
         // the menubar row skips its refresh while a sequence runs, so it needs the settled state here
         DispatchQueue.main.async {
             endTraversalCover()
@@ -222,6 +237,7 @@ enum InstantSpaces {
 
     static func noteSystemSpaceChange() {
         guard let snapshot = snapshot() else { return }
+        SpacesTrace.event("system reported a Space change: observed \(snapshot.currentIndex)")
         predictionLock.lock()
         let isInFlight = displaysWithSequenceInFlight.contains(snapshot.displayId)
         if !isInFlight {
