@@ -21,6 +21,11 @@ class Preferences {
             "windowLayoutRightThirdShortcut": defaultShortcut(""),
             "windowLayoutLeftTwoThirdsShortcut": defaultShortcut(""),
             "windowLayoutRightTwoThirdsShortcut": defaultShortcut(""),
+            "windowLayoutLeftThreeQuartersShortcut": defaultShortcut(""),
+            "windowLayoutRightThreeQuartersShortcut": defaultShortcut(""),
+            "windowLayoutLeftFocusShortcut": defaultShortcut(""),
+            "windowLayoutCenterFocusShortcut": defaultShortcut(""),
+            "windowLayoutRightFocusShortcut": defaultShortcut(""),
             "windowLayoutRestoreShortcut": defaultShortcut(""),
             "hyperKeyEnabled": "false",
             "hyperKeyHoldDuration": HyperKeyHoldDurationPreference.milliseconds200.indexAsString,
@@ -87,7 +92,9 @@ class Preferences {
         "focusWindowShortcut", "previousWindowShortcut", "cancelShortcut", "lockSearchShortcut", "closeWindowShortcut",
         "minDeminWindowShortcut", "toggleFullscreenWindowShortcut", "quitAppShortcut", "hideShowAppShortcut", "searchShortcut",
         "windowLayoutLeftThirdShortcut", "windowLayoutRightThirdShortcut", "windowLayoutLeftTwoThirdsShortcut",
-        "windowLayoutRightTwoThirdsShortcut", "windowLayoutRestoreShortcut",
+        "windowLayoutRightTwoThirdsShortcut", "windowLayoutLeftThreeQuartersShortcut", "windowLayoutRightThreeQuartersShortcut",
+        "windowLayoutLeftFocusShortcut", "windowLayoutCenterFocusShortcut",
+        "windowLayoutRightFocusShortcut", "windowLayoutRestoreShortcut",
     ]
     static var allShortcutPreferenceKeys: [String] {
         staticShortcutKeys + (0..<maxShortcutCount).flatMap { [indexToName("holdShortcut", $0), indexToName("nextWindowShortcut", $0)] }

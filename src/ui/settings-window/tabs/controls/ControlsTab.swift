@@ -138,6 +138,11 @@ class ControlsTab {
         "windowLayoutRightThirdShortcut": { WindowLayouts.perform(.rightThird) },
         "windowLayoutLeftTwoThirdsShortcut": { WindowLayouts.perform(.leftTwoThirds) },
         "windowLayoutRightTwoThirdsShortcut": { WindowLayouts.perform(.rightTwoThirds) },
+        "windowLayoutLeftThreeQuartersShortcut": { WindowLayouts.perform(.leftThreeQuarters) },
+        "windowLayoutRightThreeQuartersShortcut": { WindowLayouts.perform(.rightThreeQuarters) },
+        "windowLayoutLeftFocusShortcut": { WindowLayouts.perform(.leftFocus) },
+        "windowLayoutCenterFocusShortcut": { WindowLayouts.perform(.centerFocus) },
+        "windowLayoutRightFocusShortcut": { WindowLayouts.perform(.rightFocus) },
         "windowLayoutRestoreShortcut": { WindowLayouts.perform(.restore) },
     ]
     static var arrowKeysCheckbox: Switch!
@@ -158,7 +163,9 @@ class ControlsTab {
         "focusWindowShortcut", "previousWindowShortcut", "cancelShortcut", "searchShortcut", "lockSearchShortcut",
         "closeWindowShortcut", "minDeminWindowShortcut", "toggleFullscreenWindowShortcut", "quitAppShortcut", "hideShowAppShortcut",
         "windowLayoutLeftThirdShortcut", "windowLayoutRightThirdShortcut", "windowLayoutLeftTwoThirdsShortcut",
-        "windowLayoutRightTwoThirdsShortcut", "windowLayoutRestoreShortcut",
+        "windowLayoutRightTwoThirdsShortcut", "windowLayoutLeftThreeQuartersShortcut", "windowLayoutRightThreeQuartersShortcut",
+        "windowLayoutLeftFocusShortcut", "windowLayoutCenterFocusShortcut",
+        "windowLayoutRightFocusShortcut", "windowLayoutRestoreShortcut",
     ]
     private static let globalActionShortcutPreferences = Set(WindowLayoutAction.allCases.map(\.shortcutPreferenceKey))
     private static let removableShortcutPreferences = [
