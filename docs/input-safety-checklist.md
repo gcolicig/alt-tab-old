@@ -44,4 +44,11 @@ Current user-facing Hyper and Caps Lock behavior was manually accepted on 2026-0
 
 ## Known observations
 
-- On 2026-07-27, recording a Space shortcut only became possible after toggling Hyperkey off and on in Settings. The cause and exact scope are unverified; no corrective app change was made.
+- On 2026-07-27, recording a Space shortcut only became possible after toggling Hyperkey off and on in Settings. The cause is still unverified.
+- Static analysis found one path that produces exactly this symptom: a routed key code survived a missed key-up, so every later press of that key kept carrying the Hyper modifiers until `resetHyperKeyState` ran, which is what toggling Hyperkey does. The state machine now drops such a stale route on the next fresh press. Whether this was the observed cause is unconfirmed; re-check the recorder on the target machine.
+
+## Stale Hyper routes
+
+- Hold Caps Lock, press and hold a letter, focus a password field, and release the letter there.
+- Return to a normal text field and type the same letter; confirm that it types normally instead of triggering a Hyper shortcut.
+- Repeat with Caps Lock released before the letter and confirm that holding the letter still autorepeats its Hyper combination.

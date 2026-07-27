@@ -358,7 +358,8 @@ Implementierungsstand:
 - Der aktive Space verwendet eine staerkere monochrome Umrandung und eine dezente Flaeche; Tooltip und Accessibility-Label benennen das direkte Ziel.
 - Klicks laufen ueber die registrierte `Space n`-Aktion. Space-, Display- und Wake-Ereignisse aktualisieren die Reihe ohne Polling.
 - Eigene Spaces-Settings bieten konfliktgepruefte globale Shortcuts fuer links, rechts und Space 1 bis 9; alle bleiben per Default unbelegt.
-- Manueller Befund vom 2026-07-27: Zum Aufzeichnen eines Space-Shortcuts musste Hyperkey in den Settings einmal aus- und wieder eingeschaltet werden. Ursache und Umfang sind noch nicht geklaert; der Befund wird beobachtet und loest in diesem Schritt keine App-Aenderung aus.
+- Manueller Befund vom 2026-07-27: Zum Aufzeichnen eines Space-Shortcuts musste Hyperkey in den Settings einmal aus- und wieder eingeschaltet werden. Die Ursache ist weiterhin nicht belegt.
+- Statische Analyse dazu: Ein geroutetes Key-Code-Mapping ueberlebte ein ausgebliebenes Key-Up, wodurch jeder spaetere Druck derselben Taste weiterhin die Hyper-Modifier trug, bis `resetHyperKeyState` lief — genau das loest das Aus-/Einschalten von Hyperkey aus. Der Zustandsautomat verwirft ein solches veraltetes Routing jetzt beim naechsten frischen Tastendruck. Ob das der beobachtete Fall war, ist offen und am Zielgeraet zu pruefen.
 - S-07 ist noch nicht bestanden: Display-Gruppierung, Separate-Spaces-Modi, Ueberlauf, Create/Delete/Reorder, VoiceOver und die reale Klickgeometrie in der System-Menueleiste bleiben manuell zu pruefen.
 - Konkreter S-07-Pruefpunkt: Findet sich fuer das Cursor-Display kein Eintrag in `Spaces.screenSpacesMap`, zeigt die Leiste still das erste bekannte Display, waehrend der Klick weiterhin auf das Cursor-Display zielt. Anzeige und Wirkung koennen dadurch auseinanderlaufen; das Verhalten ist am Zielgeraet zu pruefen, bevor die Display-Gruppierung gebaut wird.
 
