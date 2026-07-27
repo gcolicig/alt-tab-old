@@ -20,6 +20,7 @@ enum InstantSpaces {
     private static var predictions = [String: SpacePrediction]()
     private static var histories = [String: SpaceHistory]()
     private static var displaysWithSequenceInFlight = Set<String>()
+    private static var sequenceGenerations = [String: UInt64]()
     private static let eventTypeField = CGEventField(rawValue: 55)
     private static let gestureHidTypeField = CGEventField(rawValue: 110)
     private static let swipeMotionField = CGEventField(rawValue: 123)
@@ -63,31 +64,34 @@ enum InstantSpaces {
             guard availability(action).isAvailable,
                   let snapshot = snapshot(),
                   let plan = plan(action, snapshot) else { return }
-            markSequenceInFlight(snapshot.displayId, true)
+            // a new command supersedes whatever is still running for this display: without that, the
+            // older sequence kept stepping towards its own target and dragged the Space back
+            let generation = beginSequence(on: snapshot.displayId)
             if plan.steps > 1 {
                 beginTraversalCover()
             }
             // one extra attempt per step absorbs a dropped swipe without letting a blocked switch loop
-            step(towards: plan.targetIndex, on: snapshot.displayId, attemptsLeft: plan.steps * 2)
+            step(towards: plan.targetIndex, on: snapshot.displayId, generation: generation, attemptsLeft: plan.steps * 2)
         }
     }
 
     /// Posts one swipe at a time and re-reads the real Space between steps, so a coalesced or dropped
     /// swipe cannot desynchronize the following steps. The target index belongs to the display the
     /// sequence started on; moving the cursor to another display stops it rather than switching there.
-    private static func step(towards targetIndex: Int, on displayId: String, attemptsLeft: Int) {
+    private static func step(towards targetIndex: Int, on displayId: String, generation: UInt64, attemptsLeft: Int) {
+        guard isCurrentSequence(generation, on: displayId) else { return }
         guard attemptsLeft > 0, let snapshot = snapshot(), snapshot.displayId == displayId else {
-            finishSequence(on: displayId, settledIndex: nil)
+            finishSequence(on: displayId, generation: generation, settledIndex: nil)
             return
         }
         let baseIndex = predictedIndex(snapshot)
         guard let direction = SpaceSwitchPlanner.stepDirection(
             currentIndex: baseIndex, targetIndex: targetIndex, spaceCount: snapshot.spaceCount) else {
-            finishSequence(on: displayId, settledIndex: snapshot.currentIndex)
+            finishSequence(on: displayId, generation: generation, settledIndex: snapshot.currentIndex)
             return
         }
         guard postStep(direction) else {
-            finishSequence(on: displayId, settledIndex: nil)
+            finishSequence(on: displayId, generation: generation, settledIndex: nil)
             return
         }
         let stepIndex = direction == .right ? baseIndex + 1 : baseIndex - 1
@@ -96,27 +100,28 @@ enum InstantSpaces {
             // the sequence stays in flight until arrival is observed: the swipes are asynchronous, and
             // releasing the menubar row on posting let the trailing notifications repaint every
             // intermediate Space. Poll briefly so the highlight still follows arrival closely.
-            verifyArrival(of: targetIndex, on: displayId, attemptsLeft: attemptsLeft - 1, checksLeft: settleCheckCount)
+            verifyArrival(of: targetIndex, on: displayId, generation: generation, attemptsLeft: attemptsLeft - 1, checksLeft: settleCheckCount)
         } else {
             DispatchQueue.main.asyncAfter(deadline: .now() + stepInterval) {
-                step(towards: targetIndex, on: displayId, attemptsLeft: attemptsLeft - 1)
+                step(towards: targetIndex, on: displayId, generation: generation, attemptsLeft: attemptsLeft - 1)
             }
         }
     }
 
-    private static func verifyArrival(of targetIndex: Int, on displayId: String, attemptsLeft: Int, checksLeft: Int) {
+    private static func verifyArrival(of targetIndex: Int, on displayId: String, generation: UInt64, attemptsLeft: Int, checksLeft: Int) {
         DispatchQueue.main.asyncAfter(deadline: .now() + settleCheckInterval) {
+            guard isCurrentSequence(generation, on: displayId) else { return }
             guard let snapshot = snapshot(), snapshot.displayId == displayId else {
-                finishSequence(on: displayId, settledIndex: nil)
+                finishSequence(on: displayId, generation: generation, settledIndex: nil)
                 return
             }
             if snapshot.currentIndex == targetIndex {
-                finishSequence(on: displayId, settledIndex: targetIndex)
+                finishSequence(on: displayId, generation: generation, settledIndex: targetIndex)
             } else if checksLeft > 1 {
-                verifyArrival(of: targetIndex, on: displayId, attemptsLeft: attemptsLeft, checksLeft: checksLeft - 1)
+                verifyArrival(of: targetIndex, on: displayId, generation: generation, attemptsLeft: attemptsLeft, checksLeft: checksLeft - 1)
             } else {
                 // the last swipe was dropped: retry through the normal step path
-                step(towards: targetIndex, on: displayId, attemptsLeft: attemptsLeft)
+                step(towards: targetIndex, on: displayId, generation: generation, attemptsLeft: attemptsLeft)
             }
         }
     }
@@ -150,6 +155,8 @@ enum InstantSpaces {
         predictions.removeAll(keepingCapacity: true)
         histories.removeAll(keepingCapacity: true)
         displaysWithSequenceInFlight.removeAll(keepingCapacity: true)
+        // invalidate running sequences: their target indexes no longer describe the same Spaces
+        sequenceGenerations.keys.forEach { sequenceGenerations[$0] = (sequenceGenerations[$0] ?? 0) &+ 1 }
         predictionLock.unlock()
         DispatchQueue.main.async { endTraversalCover() }
     }
@@ -188,8 +195,12 @@ enum InstantSpaces {
 
     /// Records the Space a display arrived at. Called when one of our sequences settles and, through
     /// `noteSystemSpaceChange`, when the user switches Spaces natively.
-    private static func finishSequence(on displayId: String, settledIndex: Int?) {
+    private static func finishSequence(on displayId: String, generation: UInt64, settledIndex: Int?) {
         predictionLock.lock()
+        guard sequenceGenerations[displayId] == generation else {
+            predictionLock.unlock()
+            return
+        }
         predictions[displayId] = nil
         displaysWithSequenceInFlight.remove(displayId)
         if let settledIndex {
@@ -219,14 +230,20 @@ enum InstantSpaces {
         predictionLock.unlock()
     }
 
-    private static func markSequenceInFlight(_ displayId: String, _ inFlight: Bool) {
+    /// Starts a sequence and invalidates any older one for the same display.
+    private static func beginSequence(on displayId: String) -> UInt64 {
         predictionLock.lock()
-        if inFlight {
-            displaysWithSequenceInFlight.insert(displayId)
-        } else {
-            displaysWithSequenceInFlight.remove(displayId)
-        }
-        predictionLock.unlock()
+        defer { predictionLock.unlock() }
+        let generation = (sequenceGenerations[displayId] ?? 0) &+ 1
+        sequenceGenerations[displayId] = generation
+        displaysWithSequenceInFlight.insert(displayId)
+        return generation
+    }
+
+    private static func isCurrentSequence(_ generation: UInt64, on displayId: String) -> Bool {
+        predictionLock.lock()
+        defer { predictionLock.unlock() }
+        return sequenceGenerations[displayId] == generation
     }
 
     private static func previousIndex(for displayId: String) -> Int? {

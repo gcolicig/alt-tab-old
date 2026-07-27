@@ -45,8 +45,15 @@ Current user-facing Hyper and Caps Lock behavior was manually accepted on 2026-0
 ## Known observations
 
 - On 2026-07-27, recording a Space shortcut only became possible after toggling Hyperkey off and on in Settings. The cause is still unverified.
-- On 2026-07-28 the observation recurred after the stale-route fix, so that fix did not remove the cause (or a second cause exists). Still to record on the next occurrence: whether Hyper itself was dead (Caps Lock + key had no effect anywhere) or only the recorder ignored input, and whether a safe-mode warning had appeared.
+- On 2026-07-28 the observation recurred twice after the stale-route fix, so that fix did not remove the cause. The event tap absorbs every physical Caps Lock event while Hyper is enabled and relies on the HID monitor to report the press, so a monitor that stopped delivering leaves both Caps Lock and Hyper dead until Hyper is toggled by hand, which re-registers it. AltTab+ now detects that silence and re-arms the monitor by itself.
 - Static analysis found one path that produces exactly this symptom: a routed key code survived a missed key-up, so every later press of that key kept carrying the Hyper modifiers until `resetHyperKeyState` ran, which is what toggling Hyperkey does. The state machine now drops such a stale route on the next fresh press. Whether this was the observed cause is unconfirmed; re-check the recorder on the target machine.
+
+## Caps Lock monitor recovery
+
+- Enable Hyper, then press Caps Lock and confirm that Hyper combinations work.
+- Provoke the failure if possible (focus a secure input field, sleep and wake, switch users), then press Caps Lock twice.
+- Confirm that Hyper works again without toggling it in Settings, and that `physical Caps Lock monitor stopped reporting` appears in the log at most once per recovery.
+- Confirm that Caps Lock itself still toggles normally afterwards.
 
 ## Stale Hyper routes
 
