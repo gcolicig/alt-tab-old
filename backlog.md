@@ -1,6 +1,6 @@
 # Backlog: Mac UX Enhancer
 
-Stand: 2026-07-26
+Stand: 2026-07-27
 
 Ziel: Ideen aus dem BetterTouchTool-/OSS-Tooling-Verlauf festhalten, damit sie in spaeteren Versionen des AltTab-Forks wieder aufgegriffen werden koennen. Arbeitshypothese: Der Fork kann langfristig zu einem offenen, Windows-naeheren macOS UX Enhancer wachsen.
 
@@ -32,6 +32,25 @@ Diese Revision korrigiert den Vorgaengerstand nach zwei Befunden:
 2. Input-Module mit Event Taps, Accessibility-Mutation oder privater Multitouch-API brauchen explizite Runtime-Sicherungen.
 
 Wichtig: Die native Feature-Menge wird nur fuer macOS Tahoe auf Apple Silicon bewertet. Widersprueche zur Feature-Menge von macOS 15 sind fuer diesen Fork nicht entscheidend, weil aeltere macOS-Versionen nicht Zielplattform sind.
+
+## Guide: macOS Spaces
+
+AltTab+ dokumentiert zuerst die vorhandene macOS-Bedienung und stellt eigene Funktionen als optionale Abkuerzung dar:
+
+- Neue Spaces werden in Mission Control angelegt: Mission Control mit `Control+Pfeil hoch`, der Mission-Control-Taste (`F3`, je nach Tastatur gegebenenfalls mit `Fn`) oder der in macOS konfigurierten Trackpad-Geste oeffnen und in der Spaces-Leiste auf `+` klicken.
+- Mission Control verwendet standardmaessig einen Drei-Finger-Wisch nach oben; Gesten und Tastaturkuerzel koennen in den Systemeinstellungen geaendert oder deaktiviert sein.
+- Zwischen Spaces wechseln: auf dem Trackpad mit drei oder vier Fingern horizontal wischen, auf der Magic Mouse mit zwei Fingern wischen oder `Control+Pfeil links/rechts` verwenden.
+- Direkte Spruenge per `Control+Zahl` sind keine verlaessliche `1-0`-Grundannahme. Die Aktionen `Zu Schreibtisch n wechseln` muessen unter `Systemeinstellungen > Tastatur > Tastaturkurzbefehle > Mission Control` vorhanden, aktiviert und konfliktfrei sein.
+- Fenster in einen benachbarten Space verschieben: Fenster an den linken oder rechten Bildschirmrand ziehen und kurz halten. Fuer ein beliebiges Ziel Mission Control oeffnen und das Fenster auf den gewuenschten Space ziehen.
+- Apps koennen nativ ueber `Control-Klick auf das Dock-Symbol > Optionen > Zuweisen zu` einem Desktop zugeordnet werden.
+- Bei mehreren Displays bestimmt `Systemeinstellungen > Schreibtisch & Dock > Mission Control > Displays haben separate Spaces` die Semantik. Aktiviert bedeutet eigene Space-Mengen pro Display; deaktiviert bedeutet eine gemeinsame Space-Umschaltung fuer den gesamten Desktopverbund.
+- Der Guide verlinkt die Apple-Dokumentation und veraendert keine macOS-Einstellung automatisch.
+
+Quellen:
+
+- https://support.apple.com/guide/mac-help/work-in-multiple-spaces-mh14112/mac
+- https://support.apple.com/guide/mac-help/view-open-windows-and-spaces-mh35798/mac
+- https://support.apple.com/guide/mac-help/change-desktop-dock-settings-mchlp1119/mac
 
 ## Querschnittsanforderungen
 
@@ -72,6 +91,9 @@ Permission-Modell:
 
 Safe Start und Laufzeitsicherung:
 
+- Umgesetzt fuer Hyper: `inputModulesSafeMode`, ein fuenfsekundiger Arming-Marker, der feste Not-Aus `Command+Control+Option+Shift+Escape` und ein Circuit Breaker beim zweiten Keyboard-Tap-Ausfall innerhalb von zehn Sekunden.
+- Der Not-Aus deaktiviert Hyper und Gesten, schliesst den Switcher und blockiert Window-Layout-Ausfuehrung. Der AltTab-Kern bleibt aktiv.
+- Manuelle Verifikation: `docs/input-safety-checklist.md`.
 - Primaerer Safe Mode ist ein persistierter Override, der extern per `defaults` oder Sentinel-Datei gesetzt und vor `Preferences.initialize()` beziehungsweise jeder Input-Modulinitialisierung gelesen werden kann.
 - Ein beim manuellen Start gedrueckter Modifier bleibt als zusaetzlicher Safe-Mode-Zugang erhalten, ist aber nicht der primaere Mechanismus.
 - Vor dem Scharfschalten eines riskanten Moduls wird ein modulspezifischer Arming-Marker geschrieben. Nach bestandener Start-Stabilitaetsfrist wird er entfernt.
@@ -121,7 +143,7 @@ Dual-Role-Hyper:
 - Es werden keine eigenstaendig gehaltenen Modifier-down-/Modifier-up-Events erzeugt.
 - Das Modul startet deaktiviert.
 - Pfeiltasten koennen vorhandenen Thirds-, Two-Thirds- und Restore-Aktionen zugeordnet werden; konfigurierte interne Paare werden vollstaendig absorbiert.
-- Nicht intern konfigurierte Tasten, einschliesslich Pfeiltasten mit `Do nothing`, bleiben fuer systemweite Hyper-Shortcuts verfuegbar.
+- Hyper-Kombinationen werden einheitlich als systemweite Shortcuts behandelt; Window Layouts nutzen dieselben globalen Shortcut-Felder wie andere Hyper-Ziele.
 
 Leader:
 
@@ -154,6 +176,7 @@ Prioritaet: Sehr hoch
 Beschreibung:
 
 - Gemeinsamer Kern fuer Keyboard Layouts, Modifier Move/Resize und Snapping.
+- Modifier Move und Modifier-Snapping verwenden dieselbe Drag-Sitzung; Fensterauflösung, Ursprungsrahmen, Display-Geometrie, Overlay und Abschluss werden nicht von zwei konkurrierenden Trackern verwaltet.
 - Identifiziert das betroffene Fenster robust.
 - Setzt Fensterposition und Fenstergroesse ueber Accessibility API.
 - Filtert ungeeignete Fenster aus, statt riskant zu mutieren.
@@ -191,8 +214,8 @@ Chrome/Electron/AX:
 
 Private-API-Befund:
 
-- `_AXUIElementGetWindow` ist vorhanden, aber aktuell per `@_silgen_name` gebunden.
-- Restarbeit: optionales/weak Binding oder gleichwertige Degradationsstrategie pruefen, damit ein Symbolwegfall nicht zum Startup-Problem wird.
+- `_AXUIElementGetWindow` ist vorhanden und wird optional zur Laufzeit gebunden.
+- Ein Symbolwegfall degradiert die jeweilige Fenster-ID-Abfrage, statt den App-Start zu gefaehrden.
 
 Kompatibilitaetsmatrix:
 
@@ -206,7 +229,7 @@ Kompatibilitaetsmatrix:
 
 ### 2. Keyboard-basierte Window Layouts
 
-Status: Revidierter MVP-Kandidat
+Status: Erste Ausbaustufe implementiert
 Prioritaet: Hoch
 
 Beschreibung:
@@ -219,19 +242,22 @@ Erste umgesetzte Ausbaustufe:
 
 - Thirds.
 - Two-Thirds.
-- Restore.
+- Three-Quarters.
+- Left-, Center- und Right-Focus-Layouts.
+- Ein-Schritt-Restore auf den Rahmen vor der ersten Layoutaktion der laufenden Sitzung.
 - Keine Shortcuts vorregistrieren.
 - Kollisionspruefung gegen registrierte AltTab-Hotkeys.
 
 Folgeumfang nach Tahoe-Feature-Matrix:
 
-- Center.
+- Klassisches Center ohne Resize, falls die Tahoe-Feature-Matrix einen Bedarf zeigt; `Center focus` ist bereits umgesetzt.
 - Display-Moves.
 - Optionaler Preset-Picker.
 - Halves/Quarters nur, wenn die Tahoe-Feature-Matrix echten Bedarf zeigt.
 
 Nicht im MVP:
 
+- Allgemeiner Undo-Stack oder chronologischer Verlauf ueber mehrere Fenster; Restore bleibt zunaechst eine Ein-Schritt-Aktion pro Fenster.
 - Shortcut-Wiederholung zum Zyklieren.
 - Pro-Display Grid-Definitionen.
 - App-spezifische Layout-Regeln.
@@ -243,6 +269,157 @@ Repo-Learnings:
 - Rectangle-Defaults sind bei Zielnutzern haeufig schon belegt; deshalb keine Default-Shortcuts.
 - `Fn-Control-*` gehoert ab aktuellen macOS-Versionen Apple und ist als Default ausgeschlossen.
 
+### 2B. Instant Spaces
+
+Status: Kern implementiert, manuelle Tahoe-Verifikation S-06 offen
+Prioritaet: Mittel
+
+Beschreibung:
+
+- Native macOS Spaces ohne sichtbare Wechselanimation nach links, rechts oder direkt zu einem Index wechseln.
+- Inspiration: `jurplel/InstantSpaceSwitcher`.
+- Ziel-Display ist standardmaessig das Display unter dem Cursor.
+- Aktionen werden im gemeinsamen Aktionsregister angeboten und koennen von Shortcuts, Hyper, Leader, FlickRing oder der Spaces-Menueleiste ausgeloest werden.
+
+MVP-Scope:
+
+- `Space left`, `Space right` und `Space 1` bis `Space 9`.
+- Kein Wrap am ersten oder letzten Space.
+- Keine Default-Shortcuts; ohne zugewiesenen Shortcut und bei ausgeblendeter Spaces-Menueleiste gibt es keinen aktiven Ausloeser.
+- Keine Aktion, solange Mission Control oder App Expose verlaesslich als aktiv erkannt wird.
+- Feste, auf Tahoe kalibrierte Wechselgeschwindigkeit; kein Speed-Slider im MVP.
+
+Technischer Ansatz:
+
+- Funktionale Swift-Reimplementierung; keine direkte Uebernahme des C-Kerns.
+- Wechsel durch eine kurze synthetische Dock-Swipe-Sequenz mit hoher Geschwindigkeit.
+- Der MVP postet Events nur bei einer Aktion und benoetigt keinen permanenten Event-Tap.
+- Bestehende `Spaces`-/Display-Logik und `CGSCopyManagedDisplaySpaces`-Daten wiederverwenden.
+- Private CGS-Symbole zentral im API-Wrapper-Layer optional binden; private Gesture-Event-Typen und -Feldnummern dort zentralisieren und nach macOS-Version gaten.
+- Nur auf verifizierten Tahoe-Builds aktivieren; bei unbekannter macOS-Major-Version oder fehlenden Symbolen Modul sichtbar deaktivieren.
+- Accessibility muss bereits erteilt sein; andernfalls bleibt die Aktion unverfuegbar und die bestehende Berechtigungsfuehrung des AltTab-Kerns greift.
+- Erwarteten Zielindex pro Display nur kurzfristig vorhersagen. Bei `activeSpaceDidChange`, Display-Reconfiguration, Wake, Fehler oder abweichendem Ist-Zustand verwerfen und aus dem Systemzustand neu synchronisieren.
+- Direkter Mehrfachwechsel darf nicht dauerhaft auf einer Vorhersage weiterlaufen; Abschluss und naechste Aktion werden mit dem tatsaechlichen Space abgeglichen.
+- Erkennung von Mission Control/App Expose ueber Dock-Window-Layer ist empirisch und muss auf Tahoe verifiziert werden; bei unzuverlaessigem Befund keine invasive Unterdrueckung anderer Systemgesten.
+
+Implementierungsstand:
+
+- `Space left`, `Space right` und `Space 1` bis `Space 9` sind mit stabilen IDs im gemeinsamen Aktionsregister vorhanden.
+- Der Swift-Kern sendet die kurze Began-/Changed-/Ended-Sequenz nur bei einer Aktion und verwendet keinen permanenten Event-Tap.
+- CGS-Symbole werden ueber `dlopen`/`dlsym` optional aufgeloest; macOS-Major-Versionen ausserhalb Tahoe und fehlende Symbole bleiben fail-closed.
+- Planung, Randbegrenzung, direkte Ein-basierte Indizes, Dock-Overlay-Erkennung und eindeutige Action-IDs sind automatisiert getestet.
+- S-06 und V-12 bleiben offen, bis die Event-Felder, sichtbare Animationsfreiheit, Multi-Display-Semantik und schnelle Folgewechsel ueber eine Bedienoberflaeche am Tahoe-Zielgeraet geprueft wurden.
+
+Nicht im MVP:
+
+- Echte Trackpad-Swipes abfangen, unterdruecken oder ersetzen.
+- Permanenter Gesture-/Dock-Control-Event-Tap.
+- Konfigurierbare Swipe-Geschwindigkeit.
+- Wrap-around.
+- Beliebige Space-Namen oder dauerhafte Zuordnung zu Space-IDs; dies folgt im Spaces-Menueleisten-Modul erst nach verifizierter stabiler Identitaet.
+- Eigener CLI-Umfang; spaeter optional ueber das bestehende AltTab+-Aktionsmodell.
+
+Folgeumfang:
+
+- Optionaler Swipe-Override erst neben dem Gestenmodul und nur nach Q-01, Q-04, Q-09, Q-11, Q-12 sowie Energie- und Konfliktpruefung.
+- Reale HID-Swipes von synthetischen AltTab+-Events unterscheiden, Began/Changed/Ended vollstaendig behandeln und bei Mission Control, App Expose oder unbekanntem Zustand unveraendert durchreichen.
+
+Repo-Learnings:
+
+- InstantSpaceSwitcher nutzt native Spaces ohne SIP-Deaktivierung, indem es synthetische Dock-Swipe-Events mit empirisch sehr hoher Geschwindigkeit postet.
+- Es ermittelt Space-Anzahl und aktiven Index pro Display, begrenzt Randwechsel und unterstuetzt direkten Indexwechsel.
+- Fuer schnelle Folgeaktionen fuehrt es pro Display einen vorhergesagten Index; AltTab+ uebernimmt dieses Verhalten nur mit expliziter Resynchronisation.
+- Der optionale Swipe-Override verwendet private Event-Typen/-Felder und einen aktiven Event-Tap; deshalb kein MVP-Bestandteil.
+
+### 2C. Spaces in der Menueleiste
+
+Status: Erster einzeiliger MVP-Schnitt implementiert, Mehrdisplay und Ueberlauf offen
+Prioritaet: Mittel bis hoch
+
+Beschreibung:
+
+- Rechts neben dem bestehenden AltTab+-Symbol erscheint optional eine kompakte Reihe der verfuegbaren Spaces.
+- Der aktive Space wird monochrom hervorgehoben: schwarz im Light Mode und weiss im Dark Mode.
+- Ein Klick auf einen Space aktiviert ihn direkt ueber dieselbe typisierte `Space n`-Aktion wie Shortcut, Hyper, Leader oder FlickRing.
+- Konfigurierbare Space-Shortcuts bleiben als vollwertiger Fallback erhalten; die Menueleiste ist kein exklusiver Bedienweg.
+
+Darstellung und Interaktion:
+
+- Ein einzelnes `NSStatusItem` mit variabler Breite und AppKit-Custom-View haelt AltTab+-Symbol und Space-Segmente in stabiler Reihenfolge zusammen. Das Symbol behaelt sein bisheriges Menue- und Klickverhalten; jedes Space-Segment besitzt einen eigenen Hit-Bereich, Tooltip und Accessibility-Namen.
+- MVP-Labels sind `1...n`. Optional benannte Spaces zeigen einen kurzen Alias; bei Platzmangel faellt die Leiste auf Nummern zurueck und bietet die vollstaendige Liste im Menue.
+- Segmentbreiten sind stabil begrenzt. Viele Spaces oder Displays duerfen andere Status-Items nicht unkontrolliert verdraengen; Ueberlauf wird in ein Menue beziehungsweise einen kompakten `...`-Eintrag verschoben.
+- Kein Polling-Timer. Aktualisierung bei `activeSpaceDidChange`, Display-Reconfiguration, Wake, Rueckkehr aus Mission Control, Menueoeffnung und nach einer eigenen Space-Aktion.
+- Ein Klick bleibt deaktiviert, wenn Instant Spaces wegen unbekannter macOS-Version, fehlender Symbole, Mission Control/App Expose oder fehlender Berechtigung nicht sicher arbeiten kann. Der sichtbare aktuelle Zustand darf trotzdem angezeigt werden.
+
+Implementierungsstand:
+
+- Die allgemeine Einstellung `Show Spaces next to the menubar icon` ist vorhanden und per Default aus.
+- Das bestehende `NSStatusItem` zeigt rechts vom AltTab+-Symbol bis zu neun nummerierte Segmente fuer das Display unter dem Cursor.
+- Der aktive Space verwendet eine staerkere monochrome Umrandung und eine dezente Flaeche; Tooltip und Accessibility-Label benennen das direkte Ziel.
+- Klicks laufen ueber die registrierte `Space n`-Aktion. Space-, Display- und Wake-Ereignisse aktualisieren die Reihe ohne Polling.
+- Eigene Spaces-Settings bieten konfliktgepruefte globale Shortcuts fuer links, rechts und Space 1 bis 9; alle bleiben per Default unbelegt.
+- Manueller Befund vom 2026-07-27: Zum Aufzeichnen eines Space-Shortcuts musste Hyperkey in den Settings einmal aus- und wieder eingeschaltet werden. Ursache und Umfang sind noch nicht geklaert; der Befund wird beobachtet und loest in diesem Schritt keine App-Aenderung aus.
+- S-07 ist noch nicht bestanden: Display-Gruppierung, Separate-Spaces-Modi, Ueberlauf, Create/Delete/Reorder, VoiceOver und die reale Klickgeometrie in der System-Menueleiste bleiben manuell zu pruefen.
+
+Mehrere Displays:
+
+- Standard ist `macOS folgen`, kein eigener globaler Umschaltmodus.
+- Bei aktivem `Displays haben separate Spaces` werden Spaces nach Display gruppiert. Ein Klick wechselt nur das Display der angeklickten Gruppe.
+- Bei deaktiviertem `Displays haben separate Spaces` wird eine gemeinsame Reihe gezeigt; ein Wechsel betrifft gemaess macOS-Semantik den gesamten Displayverbund.
+- Da macOS dieselbe Statusleiste auf mehreren Displays spiegeln kann, zeigt der MVP in einem Status-Item kompakte Display-Gruppen statt pro Menueleistenkopie unterschiedlichen Inhalt zu versprechen. Die Darstellung pro physischem Display ist ein separater Machbarkeitscheck.
+
+Optionale Namen:
+
+- Space-Aliase sind AltTab+-Metadaten; macOS selbst erhaelt dadurch keine benannten Spaces.
+- Aliase werden nur persistiert, wenn eine auf Tahoe verifizierte stabile Managed-Space-UUID verfuegbar ist.
+- Reine numerische Indizes oder sitzungsgebundene CGS-Space-IDs duerfen nach Reorder, Neustart, Hinzufuegen oder Loeschen nicht still einem alten Namen zugeordnet werden. Bei unsicherer Identitaet auf Nummern degradieren und die Zuordnung sichtbar als ungeklaert markieren.
+
+Repo-Learnings:
+
+- `xiamaz/YabaiIndicator` zeigt klickbare Space-Segmente, aktiven Zustand, Fullscreen-Spaces, kompakten Modus und mehrere Displays in der Menueleiste.
+- YabaiIndicator nutzt yabai als Zustands- und Switching-Backend, externe yabai-Signale zur Synchronisierung und verlangt laut README fuer korrektes Klicken deaktiviertes SIP. AltTab+ uebernimmt nur das Darstellungs- und Event-Refresh-Muster, nicht die yabai-Abhaengigkeit, Socket-Steuerung oder SIP-Anforderung.
+- Das bereits gelesene InstantSpaceSwitcher-Menue setzt aktive Eintraege, deaktiviert Randaktionen und aktualisiert vor Menueoeffnung. Diese Zustandslogik kann in das gemeinsame Aktionsregister ueberfuehrt werden; die sichtbare Segmentleiste bleibt AltTab+-eigene AppKit-UI.
+
+Nicht im MVP:
+
+- Space-Erstellung, Loeschung oder Reordering aus der Menueleiste.
+- Fensterminiaturen in den Space-Segmenten.
+- Erzwingen eines synchronen Wechsels aller Displays, wenn macOS separate Spaces verwendet.
+- Projektprofile, App-Zuordnungen und Session-Restore; diese bauen spaeter auf Alias- und Space-Identitaet auf.
+
+### 2D. Projektprofile und Workspace-Restore
+
+Status: Spaeterer Folgeumfang
+Prioritaet: Mittel
+
+Produktmodell:
+
+- Ein Space-Alias benennt nur einen macOS-Space. Ein Projektprofil ist ein stabiles AltTab+-Objekt mit Name, Apps, optionalem Layout, optionalem Space-Binding und optionalem Shortcut.
+- Profile wie `Coding`, `Research` oder `Meeting` koennen in der Menueleiste anstelle einer reinen Nummer erscheinen, ersetzen aber nicht den darunterliegenden macOS-Space.
+- Profile bleiben auch dann erhalten, wenn ein Space geloescht oder seine sitzungsinterne ID geaendert wird. Eine verlorene Bindung wird sichtbar und nie automatisch auf einen zufaelligen Space umgebogen.
+
+Erste Ausbaustufe:
+
+- Profile anlegen, benennen und optional mit einem stabil identifizierten Space verknuepfen.
+- Apps ueber Bundle-ID einem Profil zuordnen.
+- Optionales Layout-Preset und eigener konfliktgepruefter Shortcut pro Profil.
+- Profilaktivierung wechselt zuerst den gebundenen Space und bietet danach dessen Apps im AltTab+-Switcher priorisiert beziehungsweise gefiltert an.
+- Apps werden nicht ungefragt beendet, versteckt, gestartet oder in andere Spaces verschoben. Solche Wirkungen brauchen getrennte Opt-in-Aktionen.
+
+Zweite Ausbaustufe:
+
+- Explizite Aktionen `Profil-Apps starten`, `Fenster dem Profil-Space zuordnen`, `Session speichern` und `Session wiederherstellen`.
+- Session-Snapshot umfasst mindestens Bundle-ID, belastbare Fenstermerkmale, Rahmen, Minimized-Zustand, Z-Reihenfolge, Display-UUID, Space-Zuordnung und Display-Topologie.
+- Restore arbeitet best-effort, zeigt nicht zuordenbare Fenster und ueberschreibt keine unsicheren Matches. Geaenderte Display-Topologien verwenden dokumentiertes Clamping beziehungsweise Layout-Fallbacks.
+- Automatisches Speichern beim Profilwechsel und automatisches Wiederherstellen bleiben aus, bis manuelle Capture-/Restore-Pruefungen ueber die App- und Display-Matrizen stabil sind.
+
+HopTab-Learnings:
+
+- `royalbhati/HopTab` modelliert Profile mit Name, gepinnten Apps, Hotkey und Layout-Binding, ordnet Profile einem aktiven CGS-Space zu und reagiert auf `activeSpaceDidChange`.
+- HopTab speichert pro Profil Fensterrahmen, Minimized-Zustand und Z-Reihenfolge und restauriert nach Profilwechsel beziehungsweise App-Start zeitversetzt.
+- Fuer AltTab+ sind Produktmodell und Ablauf gute Vorbilder. Die konkrete Implementierung wird nicht direkt uebernommen: HopTabs Space-ID ist laut Quelltext sitzungslokal, und das Fenster-Matching per Bundle-ID, Titel und Reihenfolge ist fuer ein dauerhaftes Restore zu schwach.
+- Profile sind keine allgemeine Automationsplattform. Kalender-, Zeitplan-, Focus-Mode- oder frei skriptbare Regeln bleiben ausserhalb dieses Umfangs.
+
 ### 3. Modifier-basierter Window Move/Resize
 
 Status: Revidierter MVP-Kandidat
@@ -252,6 +429,7 @@ Beschreibung:
 
 - Fenster unter dem Cursor bewegen oder resizen, ohne den Fensterrahmen exakt treffen zu muessen.
 - Ziel ist ein BTT-aehnliches Move/Resize-Verhalten.
+- Move und Snapping bilden eine gemeinsame Drag-Sitzung: freies Bewegen und Randziel-Erkennung laufen auf demselben festgehaltenen Fenster und enden in genau einer Abschlussaktion.
 - Kein Default-Modifier; Modul startet aus.
 - Keine direkte Uebernahme von `Moves/WindowHandler.swift`; AltTab+ verwendet den eigenen AX-, Queue-, Timeout- und Diagnosepfad.
 
@@ -262,17 +440,28 @@ Drag-Sitzung:
 3. Ursprungsrahmen und Mausposition einmal speichern; Ziel aus kumulativem Delta berechnen.
 4. Event-Callback publiziert nur den neuesten Zielrahmen.
 5. Serielle AX-Queue schreibt mit Coalescing bei 30 bis 60 Hz und laesst hoechstens einen Set-Aufruf gleichzeitig laufen.
-6. Move zuerst ausliefern; Resize und weitere Fenster-Fallbacks erst nach bestandener Move-Matrix.
+6. Waehrend eines Move-Drags Randziele aus derselben Maus- und Display-Geometrie bestimmen und das gemeinsame Snapping-Overlay aktualisieren.
+7. Mouseup ohne aktives Randziel behaelt die frei verschobene Position; Mouseup mit aktivem Randziel setzt genau dessen Zielrahmen.
+8. Move samt Modifier-Drag-Snapping zuerst ausliefern; Resize und weitere Fenster-Fallbacks erst nach bestandener Move-Matrix.
 
 Modifier-Regeln:
 
 | Kombination | Bewertung |
 |---|---|
-| `ctrl` in jeder Kombination | Ausgeschlossen. Control-click ist systemweit Secondary Click |
+| `ctrl` allein und alle Control-Kombinationen ausser dem expliziten `cmd+ctrl`-Pfad | Ausgeschlossen. Control-click ist systemweit Secondary Click |
 | `option` | Belegt. Apple nutzt Option beim Drag fuer schnelleres Tiling; Finder nutzt Option fuer Copy-Drag |
 | `cmd` allein | Belegt. macOS zieht damit bereits Hintergrundfenster ohne Fokuswechsel |
 | `fn` / Globe | Kandidat, aber nicht als Default; Nicht-Apple-Tastaturen melden es teils nicht als `maskSecondaryFn`, und Apple belegt `Fn-Control-*` |
-| `cmd+shift`, `cmd+ctrl` | Kandidaten; `cmd+ctrl` nur mit Pruefung der Secondary-Click-Interpretation |
+| `cmd+shift` | Konfliktarmer Kandidat im Picker |
+| `cmd+ctrl` | Explizit waehlbarer, konfliktbehafteter Kandidat. Nur bei bewusster Auswahl und nie als Default |
+
+`Command+Control` und globale macOS-Einstellung:
+
+- Bei bewusst gewaehltem `Command+Control` konsumiert AltTab+ den primaeren Mousedown und die zugehoerige Drag-/Mouseup-Sequenz. Dieser Pfad wird nicht zugleich als Control-click an die Ziel-App durchgereicht.
+- Vor Aktivierung liest AltTab+ `NSGlobalDomain` / `NSWindowShouldDragOnGesture` und stellt sicher, dass der Wert `false` ist; dies entspricht `defaults write -g NSWindowShouldDragOnGesture -bool false`.
+- Die Umsetzung verwendet die strukturierte Preferences-API und startet keinen Shell-Prozess.
+- Ursprungswert, letzter von AltTab+ geschriebener Wert und Besitzstatus werden persistiert. Beim Deaktivieren oder bei Recovery wird der Ursprungswert nur restauriert, wenn der aktuelle Wert weiterhin dem letzten AltTab+-Wert entspricht; eine zwischenzeitliche externe Aenderung wird nicht ueberschrieben.
+- Kann `false` nicht gesetzt oder verifiziert werden, bleibt `Command+Control` deaktiviert und die App meldet den Konflikt sichtbar.
 
 Repo-Learnings:
 
@@ -285,7 +474,7 @@ Entscheidung:
 
 - Kein Default-Modifier ausliefern.
 - Beim ersten Aktivieren: Modifier-Picker mit Live-Kollisionspruefung.
-- Modifier-Flags erst nach Mousedown auswerten, damit Secondary-Click-Interpretation nicht als Blocker greift.
+- `Command+Control` nur nach bewusster Auswahl und erfolgreicher Verifikation von `NSWindowShouldDragOnGesture == false` scharfschalten.
 - Modul bleibt Opt-in.
 
 Akzeptanzideen:
@@ -351,12 +540,15 @@ Neue Leitlinie:
 - Apple-Verhalten nicht nachbauen.
 - Coexistence sicherstellen.
 - Nur Luecken schliessen, die Apple auf Tahoe nicht liefert.
+- Ausnahme: Waehrend einer AltTab+-eigenen Modifier-Drag-Sitzung stellt AltTab+ `Left half`, `Right half` und `Fill` selbst bereit, weil der AX-basierte Drag nicht Apples Titelbalken-Tiling ausloest.
+- Die Ausnahme gilt ausschliesslich fuer den eigenen Modifier-Drag. Normales Ziehen am Titelbalken und Apples native Snap-Zonen werden weder abgefangen noch veraendert.
 
 Im Scope:
 
 - Coexistence-Pruefung: Sind native Tiling-Schalter aktiv?
 - UX-Hinweis, dass Apples Schalter nur durch Nutzer in Desktop & Dock geaendert werden koennen.
 - Luecken-Kandidaten: Thirds, Two-Thirds, Custom-Zonen, Center, Display-Moves.
+- Modifier-Drag-Ziele `Left half`, `Right half` und `Fill`; `Fill` nutzt das sichtbare Desktop-Rechteck und ist kein macOS-Fullscreen-Space.
 - Fenster-Identifikation ueber den AX-Fensteroperations-Kern.
 - Edge-Modell in Points, nicht Pixeln.
 - Halbtransparenter Zielrahmen als nicht aktivierendes `NSPanel`, ohne Fokuswechsel.
@@ -370,12 +562,12 @@ Im Scope:
 
 Nicht im Scope:
 
-- Left/right half, corner quarters, top-maximize als Drag-Ziele, solange Tahoe sie nativ liefert.
+- Left/right half, corner quarters und top-Fill ausserhalb einer AltTab+-eigenen Modifier-Drag-Sitzung, solange Tahoe sie nativ liefert.
 - Ueberschreiben oder Unterdruecken von Apples Snap-Zonen.
 - Bottom-Edge im MVP.
 - Gespeicherte Layouts.
 - Snap Groups.
-- Animierte oder konfigurierbare Overlays.
+- Animierte oder konfigurierbare Overlays im MVP.
 
 Edge-Modell:
 
@@ -383,8 +575,16 @@ Edge-Modell:
 |---|---|
 | Freier Rand ohne Nachbardisplay | Cursor an Screen-Bounds geclampt, Toleranz 2 bis 4 pt, sofort |
 | Geteilter Rand mit Nachbardisplay | Dwell 150 bis 300 ms oder explizites Modifier-Gate; kein reiner Distanz-Threshold |
-| Oberer Rand | Keine eigene Zone; dort liegen Menubar-Fill und Mission-Control-Trigger |
+| Oberer Rand bei normalem Fensterdrag | Keine eigene Zone; dort liegen Menubar-Fill und Mission-Control-Trigger |
+| Oberer Rand bei AltTab+-Modifier-Drag | Eigenes `Fill`-Ziel innerhalb derselben Drag-Sitzung; Overlay vor Mouseup, kein macOS-Fullscreen-Space |
 | Unterer Rand | Deaktiviert; Kollision mit Dock Auto-Hide und Magnification |
+
+Folgeumfang:
+
+- Konfigurierbares Padding fuer AltTab+-Layout- und Snap-Zielrahmen.
+- Ein-/ausschaltbare beziehungsweise konfigurierbare Bewegungsanimation, ohne die AX-Queue oder Mouseup-Latenz zu verschlechtern.
+- Konfigurierbare Snap-Zonenstaerke und Dwell-Zeit mit sicheren Wertebereichen; das MVP verwendet feste, getestete Werte.
+- Allgemeiner Undo-Stack erst nach dem Ein-Schritt-Restore und nur mit klarer Semantik fuer mehrere Fenster, Displays und externe Fensteraenderungen.
 
 Repo-Learnings:
 
@@ -476,6 +676,13 @@ Status: Minimal halten
 - Neue experimentelle Abschnitte muessen nicht aktiv aus der Suche ausgeschlossen werden. Unuebersetzte Labels sind aber sofort nur englisch suchbar.
 - Sidebar vorerst flach halten.
 
+## Aktionsoberflaechen
+
+- Das gemeinsame typisierte Aktionsregister ist die einzige Quelle fuer Window Layouts, Restore, Display-Wechsel und spaetere Fensteraktionen.
+- Globale Shortcuts, Hyper, Leader, FlickRing und die klickbaren Space-Segmente verwenden dieses Register.
+- Die bestehende Menueleiste wird als weiterer Verbraucher angebunden und bietet die verfuegbaren Fensteraktionen fuer das aktuell fokussierte geeignete Fenster an.
+- Nicht verfuegbare Aktionen werden deaktiviert oder ausgeblendet; die Menueleiste implementiert keine eigene Fensterlogik.
+
 ## Distribution und Migration
 
 - Produktname und Bundle-ID bleiben fork-spezifisch: AltTab+ und `com.gcolicig.alttab-plus`.
@@ -552,21 +759,30 @@ Energiepruefung:
 | S-03 | Pointer Accel/Speed via IOKit | Getrennte Werte fuer Mouse und Trackpad setzbar und restaurierbar, ohne Event-Tap, private API oder zusaetzliche TCC-Berechtigung; Aenderung ausserhalb von AltTab+ persistiert `relinquished`; Crash-/Kill-Recovery restauriert nur unter Gleichheitspruefung |
 | S-04 | Tahoe-Tiling-Feature-Matrix | Auf macOS Tahoe / Apple Silicon dokumentierte Liste nativ vorhandener Drag- und Shortcut-Aktionen |
 | S-05 | Scroll-Tap Kosten | Tap-Recovery nachgewiesen; feste Scrollmessung bleibt innerhalb des unter Energiepruefung dokumentierten Budgets |
+| S-06 | Instant Spaces | Links/rechts und direkter Index wechseln auf verifiziertem Tahoe ohne sichtbare Animation; Display-Ziel, Randblockierung und Ist-Zustand konvergieren bei schnellen Folgen; fehlende Symbole oder unbekannte Version deaktivieren nur das Modul |
+| S-07 | Spaces-Menueleiste | Space-Anzahl und aktiver Zustand konvergieren ereignisbasiert ohne Polling; Klick aktiviert den erwarteten Space; Ueberlauf, Separate-Spaces-Modi und deaktiviertes Instant Spaces degradieren bedienbar |
+| S-08 | Stabile Space-Identitaet | Managed-Space-UUID bleibt auf Tahoe ueber Neustart, Reorder sowie Hinzufuegen/Loeschen eindeutig genug fuer Aliase; andernfalls bleiben persistente Namen und Profile-Bindings deaktiviert |
 
 ## Umsetzungsreihenfolge
 
-1. Fokussierter AX-Fensterpfad fuer einmalige Tastaturaktionen.
-2. Keyboard Layouts mit Thirds, Two-Thirds und Restore, ohne Default-Shortcuts. Dieser Stand ist umgesetzt.
-3. Dual-Role-Hyper fuer systemweite Shortcuts und vorhandene Window Layouts, deaktiviert per Default. Dieser Stand ist umgesetzt.
-4. Gemeinsames Aktionsregister und Input-Laufzeit gemaess Q-01, Q-04, Q-11 bis Q-16 sowie V-08/V-09 vervollstaendigen.
-5. Leader-Modus mit verschachtelten Sequenzen, danach FlickRing mit reservierter Seitentaste.
-6. Cursor-basierter AX-Fensterkern und AX-Latenz-Spike S-01/S-02 fuer kontinuierliche Operationen.
-7. Move zuerst, danach Resize, jeweils ohne Default-Trigger.
-8. Pointer Accel/Speed als settings-basierter Early Win, sofern S-03 haelt.
-9. Snapping nur dort, wo Tahoe nativ nicht ausreicht, setzt S-04 und V-11 voraus.
-10. Reverse Scrolling und Scroll Speed mit Tap, setzt S-05 voraus.
-11. Gesten als Spike; Default-Aktivierung erst mit Helper-Prozess.
-12. Abschliessender Default-Settings-Audit: alle Fork-Defaults gemeinsam pruefen, Reset-Verhalten und Migration abgleichen und noetige manuelle Nachkonfiguration minimieren.
+1. Abgeschlossen: fokussierter AX-Fensterpfad, Window Layouts und Hyper sind umgesetzt; Dokumentation und automatisierte Tests sind aktualisiert, der aktuelle Funktionsstand wurde manuell abgenommen. Formale App-/Display-Matrizen bleiben wiederkehrende Release-Gates.
+2. Plattform-Gates vor privaten oder kontinuierlichen Modulen schliessen: Tahoe-Tiling-Matrix S-04, degradierbare Symbolbindung V-03 und Provenienz-Register V-04.
+3. Minimalen gemeinsamen Aktionskern gemaess Q-01 aufbauen: Die erste Ausbaustufe fuer Window Layouts, Restore und globale Shortcuts ist umgesetzt; Display-, Space-, App-, URL- und Menueleisten-Verbraucher folgen. Keine beliebigen Makros oder Shell-Kommandos.
+4. Instant-Spaces-Kern ist als tap-freie Private-Event-Reimplementierung ueber das Aktionsregister umgesetzt; S-06/V-12 bleiben als manuelle Tahoe-Pruefung offen, Swipe-Override bleibt Folgeumfang.
+5. Teilweise abgeschlossen: Spaces-Menueleiste mit Nummern, monochrom aktivem Zustand, Klick und Shortcut-Fallback ist umgesetzt. S-07 bleibt fuer Mehrdisplay, Ueberlauf, Create/Delete/Reorder, VoiceOver und Degradation offen.
+6. Stabile Space-Identitaet S-08 pruefen; Aliase und persistente Profil-Bindings erst nach bestandenem Spike aktivieren.
+7. Cursor-basierten AX-Fensterkern und AX-Latenz-Spikes S-01/S-02 fuer kontinuierliche Operationen abschliessen.
+8. Move samt gemeinsamer Modifier-Drag-Sitzung und den exklusiven Zielen `Left half`, `Right half` und `Fill` umsetzen; sichere Input-Laufzeit gemaess Q-04 und Q-11 bis Q-16 fuer diesen Pfad erweitern.
+9. Resize auf derselben Cursor-Erkennung, AX-Queue und Input-Sicherung aufbauen; jeweils ohne Default-Trigger.
+10. Leader-Modus mit verschachtelten Sequenzen umsetzen, danach FlickRing mit reservierter Seitentaste; die Input-Sicherung jeweils nur um den benoetigten Modulpfad erweitern.
+11. Weiteres Snapping ausserhalb des Modifier-Drags nur dort ergaenzen, wo Tahoe nativ nicht ausreicht; setzt S-04 und V-11 voraus.
+12. Projektprofile mit Apps, Layout und Space-Binding einfuehren; manueller Session-Restore bleibt die zweite Ausbaustufe.
+13. Reverse Scrolling und Scroll Speed mit Tap umsetzen; setzt S-05 voraus.
+14. Gesten als letzten Spike behandeln; Default-Aktivierung erst mit Helper-Prozess.
+
+Pointer Accel/Speed ist kein Schritt der linearen Abhaengigkeitskette. Der settings-basierte Spike S-03 darf nach Abschluss von Schritt 1 parallel zu Aktionskern, Spaces und Fensteroperationen laufen.
+
+Default-Settings, Reset-Verhalten und Migration werden nach jedem neuen Modul geprueft. Vor einer oeffentlichen Version folgt zusaetzlich ein Gesamtaudit aller Fork-Defaults.
 
 ## Geschlossene Fragen
 
@@ -576,7 +792,7 @@ Energiepruefung:
 | Intel und aeltere macOS-Versionen | Bewusst ausgeschlossen |
 | MultitouchSupport akzeptabel | Ja, versioniert und mit Helper-Prozess als Vorbedingung fuer Default-Aktivierung |
 | Magic Mouse im MVP | Nein |
-| Modifier fuer Move/Resize | Kein Default, Picker mit Kollisionspruefung |
+| Modifier fuer Move/Resize | Kein Default, Picker mit Kollisionspruefung; `Command+Control` explizit waehlbar und nur bei `NSWindowShouldDragOnGesture == false` |
 | Chrome-Workaround sofort | Ja, mit Restore und VoiceOver-Ausnahme |
 | Fenster-Identifikation | Fokus fuer Keyboard Layouts; Element unter Mousedown zuerst fuer Cursor-Module |
 | Edge-Toleranz | Modell in Points, getrennt fuer freie und geteilte Raender |
@@ -587,29 +803,37 @@ Energiepruefung:
 | Nur Maus im ersten Pointer-Spike | Ja |
 | Settings-Suche | View-basiert/generiert; unveraendert weiterverwenden |
 | Sidebar flach | Ja |
-| `_AXUIElementGetWindow` vorhanden | Ja, Wrapper existiert; weak/optional Binding bleibt Restarbeit |
+| `_AXUIElementGetWindow` vorhanden | Ja; der Wrapper loest das Symbol optional zur Laufzeit auf und degradiert bei Wegfall auf einen Fehler der jeweiligen Fenster-ID-Abfrage |
 | Produktarchitektur | Integrierte AltTab+-App; keine separate Companion-App und keine geplante Upstream-Rueckspielung |
-| Hyper-MVP | Dual-Role Caps Lock: kurzer Tap schaltet Caps Lock, Halten plus Taste erzeugt systemweites Hyper; Pfeilaktionen koennen intern geroutet werden |
+| Hyper-MVP | Dual-Role Caps Lock: kurzer Tap schaltet Caps Lock, Halten plus Taste erzeugt systemweites Hyper; Window Layouts verwenden dieselben globalen Shortcuts |
 | Caps-Lock-Tap | Bleibt fuer normales Caps Lock reserviert; Leader erhaelt einen eigenen Trigger |
 | Leader-Aktionen | Typisiertes Register, keine beliebigen Makros oder Shell-Kommandos im ersten Umfang |
 | FlickRing-MVP | Reservierte zusaetzliche Maustaste; Mittelklick-Passthrough erst nach Rekursionstest |
-| Moves-Integration | Funktionale Reimplementierung auf AltTab+-Queues; keine direkte Portierung des Referenz-Controllers |
+| Moves-Integration | Funktionale Reimplementierung auf AltTab+-Queues; Move und Modifier-Snapping teilen eine Drag-Sitzung; keine direkte Portierung des Referenz-Controllers |
+| Instant-Spaces-MVP | Aktionsgesteuerter Wechsel links/rechts/Index durch synthetische Dock-Swipes; kein permanenter Tap und kein nativer Swipe-Override |
+| Spaces-Menueleiste | Optional rechts neben AltTab+, aktiver Space hervorgehoben, Klick ueber gemeinsames Aktionsregister, Shortcuts als Fallback |
+| Mehrere Displays und Spaces | Standardmaessig macOS-Semantik folgen: gruppiert bei separaten Spaces, gemeinsame Reihe bei deaktivierter Systemeinstellung |
+| Projektprofile | Eigene stabile Objekte; Space-Alias bleibt reine Anzeige. Apps/Layout zuerst, manueller Session-Restore spaeter |
 
 ## Verifikationspunkte
 
 | ID | Punkt | Umgang |
 |---|---|---|
-| V-01 | Tahoe-Tiling-Feature-Matrix am Apple-Silicon-Zielgeraet | Manuelle Verifikation |
+| V-01 | Tahoe-Tiling-Feature-Matrix am Apple-Silicon-Zielgeraet | Manuelle Verifikation gemaess `docs/tahoe-tiling-checklist.md` |
 | V-02 | Versions-Policy nach Tahoe-only | Klaeren: nur aktuelle Major-Version `N` oder `N und N-1` |
-| V-03 | Private Symbolbindung | `_AXUIElementGetWindow` und weitere private Symbole optional/weak oder gleichwertig degradierbar machen |
-| V-04 | Provenienz-Register | `THIRD-PARTY.md` anlegen und Pflege im PR-Prozess erzwingen |
-| V-05 | Modul- und App-Klassen-Checklisten | Vor jeder oeffentlichen Version und nach jedem unterstuetzten macOS-Major-Update ausfuehren |
+| V-03 | Private Symbolbindung | `_AXUIElementGetWindow` ist optional zur Laufzeit gebunden; weitere private Symbole vor ihrer ersten neuen Modulnutzung gleichwertig degradierbar machen |
+| V-04 | Provenienz-Register | `THIRD-PARTY.md` ist fuer die bisher ausgewerteten Quellen angelegt; Pflege im PR-Prozess bleibt zu erzwingen |
+| V-05 | Modul- und App-Klassen-Checklisten | `docs/input-safety-checklist.md` und `docs/window-layout-checklist.md` vor jeder oeffentlichen Version und nach jedem unterstuetzten macOS-Major-Update ausfuehren |
 | V-06 | Energie-Baseline | Idle- und Aktivmessungen auf dem Tahoe-/Apple-Silicon-Zielgeraet dokumentieren |
 | V-07 | Distribution | Signing, Notarisierung, Vertriebskanal und Update-Strategie vor erster oeffentlicher Version abschliessen; Sparkle bleibt optional |
 | V-08 | Safe Start und Circuit Breaker | Vor dem ersten ausgelieferten Input-Modul mit Login-Start, verbliebenem Arming-Marker und wiederholtem Tap-Timeout pruefen |
 | V-09 | Berechtigungsentzug | Accessibility und Input Monitoring getrennt bei Start, Aktivierung, Wake und Laufzeit pruefen |
 | V-10 | Pointer State Ownership | Aenderung durch Systemeinstellungen oder paralleles Maus-Tool, persistiertes `relinquished`, erneute Besitzuebernahme, Disable, saubere Terminierung, Crash, `SIGKILL`, Wake und Device-Reconnect ohne Rueckschreibschleife oder destruktives Restore pruefen |
 | V-11 | Display-Topologien | Snapping-Checkliste ueber definierte Topologien, Separate-Spaces-Zustaende und dynamische Reconfiguration ausfuehren |
+| V-12 | Instant Spaces | Tahoe-Build, Separate Spaces ein/aus, Cursor-Display, Fullscreen-Space, Stage Manager, Mission Control/App Expose, Randwechsel und schnelle direkte Mehrfachwechsel pruefen |
+| V-13 | `Command+Control`-Move | `NSWindowShouldDragOnGesture` vor Aktivierung lesen, auf `false` setzen und verifizieren; Disable, externe Aenderung, Crash und Recovery ohne destruktives Restore pruefen |
+| V-14 | Spaces-Menueleiste | Ein bis 16 Spaces, mehrere Displays, Fullscreen-Spaces, Reorder, Create/Delete, Wake, Mission-Control-Ende, Statusleisten-Ueberlauf und VoiceOver pruefen |
+| V-15 | Profile und Session-Restore | Fenster-Matching, App-Start, verlorene Space-Bindings, geaenderte Titel, mehrere Fenster derselben App und geaenderte Display-Topologie ohne falsche Mutation pruefen |
 
 ## Provenienz-Register
 
@@ -629,6 +853,9 @@ Regeln:
 - Art A und B brauchen rechtlich meist nichts, werden aber fuer Auditierbarkeit erfasst.
 - `jmgao/metamove` ist GPL-2.0-or-later und damit mit einer GPL-3-Basis kompatibel. Code-Uebernahme ist rechtlich moeglich, aber strategisch eine Copyleft-Einbahnstrasse; daher vorerst nur als Verhaltens- und Architekturvorbild nutzen.
 - `mikusnuz/nudge` ist MIT-lizenziert; Code-Uebernahme nur nach eigenem Review, nicht auf Reputationsbasis.
+- `jurplel/InstantSpaceSwitcher` ist MIT-lizenziert; Typ B ist als funktionale Swift-Reimplementierung mit Quelle, Commit-SHA, Abrufdatum und Zieldateien im Provenienz-Register dokumentiert.
+- `xiamaz/YabaiIndicator` ist MIT-lizenziert; vorerst Typ A fuer Menueleisten-Darstellung, Multi-Display-Gruppierung und ereignisbasierte Aktualisierung. Keine yabai-, Socket- oder SIP-abhaengige Implementierung uebernehmen.
+- `royalbhati/HopTab` ist MIT-lizenziert; vorerst Typ A fuer Profile, Space-Binding und Session-Ablauf. Keine direkte Uebernahme des sitzungslokalen Space-ID- oder titelbasierten Fenster-Matchings.
 - PR-Template spaeter um Checkbox ergaenzen: Provenienz-Register aktualisiert oder n/a.
 
 ## Gelesene Inspirationsquellen
@@ -637,6 +864,9 @@ Regeln:
 - Apple Tiling shortcuts: https://support.apple.com/guide/mac-help/window-tiling-icons-keyboard-shortcuts-mchl9674d0b0/mac
 - Apple Tiling settings: https://support.apple.com/guide/mac-help/change-window-tiling-settings-mchl118087b0/mac
 - Apple Right-click / Control-click: https://support.apple.com/guide/mac-help/right-click-mh35853/mac
+- Apple Work in multiple spaces: https://support.apple.com/guide/mac-help/work-in-multiple-spaces-mh14112/mac
+- Apple Mission Control: https://support.apple.com/guide/mac-help/view-open-windows-and-spaces-mh35798/mac
+- Apple Desktop & Dock settings: https://support.apple.com/guide/mac-help/change-desktop-dock-settings-mchlp1119/mac
 - Apple Rosetta / Intel transition note: https://developer.apple.com/documentation/Apple-Silicon/about-the-rosetta-translation-environment
 - MiddleDrag: https://middledrag.app/
 - MiddleClick: https://github.com/artginzburg/MiddleClick
@@ -650,6 +880,9 @@ Regeln:
 - mikker/LeaderKey: https://github.com/mikker/LeaderKey
 - mikker/FlickRing: https://github.com/mikker/FlickRing
 - mikker/Moves: https://github.com/mikker/Moves
+- jurplel/InstantSpaceSwitcher: https://github.com/jurplel/InstantSpaceSwitcher
+- xiamaz/YabaiIndicator: https://github.com/xiamaz/YabaiIndicator
+- royalbhati/HopTab: https://github.com/royalbhati/HopTab
 
 ## Nicht-Ziele fuer die erste Iteration
 
@@ -658,6 +891,7 @@ Regeln:
 - Umfangreiche Makro- oder App-Launcher-Funktionen.
 - Vollstaendige LinearMouse-Kompatibilitaet.
 - App-, Display- oder Device-ID-spezifische Pointer-/Scroll-Regeln.
-- Ueberschreiben oder Unterdruecken nativer Apple-Snap-Zonen.
+- Ueberschreiben oder Unterdruecken nativer Apple-Snap-Zonen ausserhalb einer expliziten AltTab+-Modifier-Drag-Sitzung.
+- Abfangen oder Ersetzen nativer Space-Trackpad-Swipes im Instant-Spaces-MVP.
 - Intel-Support.
 - Support fuer macOS-Versionen vor Tahoe.

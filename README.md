@@ -19,7 +19,7 @@ AltTab brings Windows-style window switching to macOS. It lists open windows, su
 - The switcher shows the search field by default without focusing it. Normal Tab cycling continues until search is activated with the mouse, `S`, or the physical ISO Section key above Tab.
 - Mouse hover selection is enabled by default.
 - Apps with no open window are hidden by default for Shortcut 1, Shortcut 2, and gestures.
-- The new `Window Layouts` settings section provides unassigned global shortcuts for placing the focused window in the left or right third, the left or right two-thirds, and restoring its previous frame.
+- The `Window Layouts` settings section provides unassigned global shortcuts for thirds, two-thirds, three-quarters, edge-revealing focus layouts, and restoring the previous frame.
 - An optional dual-role Caps Lock key provides system-wide Hyper shortcuts while preserving normal Caps Lock toggling on a short tap.
 
 ## Window Layouts
@@ -30,13 +30,25 @@ Open `Settings > Window Layouts` and record the global shortcuts you want to use
 
 ### Dual-Role Hyper Key
 
-Keep Caps Lock mapped to `Caps Lock` in `System Settings > Keyboard > Keyboard Shortcuts > Modifier Keys`, then enable `Use Caps Lock as system-wide Hyper key` in `Settings > Window Layouts`. AltTab+ suppresses the native event while the module is enabled and emits a single Caps Lock tap only for a short physical press.
+Keep Caps Lock mapped to `Caps Lock` in `System Settings > Keyboard > Keyboard Shortcuts > Modifier Keys`, then enable `Use Caps Lock as system-wide Hyper key` in `Settings > Hyperkey`. AltTab+ suppresses the native event while the module is enabled and emits a single Caps Lock tap only for a short physical press. Once a press crosses the configured hold threshold, the Caps Lock indicator is kept off.
 
 A short Caps Lock tap still toggles Caps Lock on or off. Holding Caps Lock while pressing another key sends that key with Command, Control, Option, and Shift, so the combination can be used by macOS and other apps. The tap/hold threshold is configurable and defaults to 200 ms.
 
-The four arrow keys can optionally be handled directly by AltTab+ window layouts instead. Their defaults are left two-thirds for Left Arrow, right two-thirds for Right Arrow, Restore for Up Arrow, and no internal action for Down Arrow. An arrow set to `Do nothing` remains available as a system-wide Hyper shortcut. The module is disabled by default.
+Hyper combinations use the same global shortcuts configured in `Window Layouts`; there is no second set of arrow-action mappings. Left and Right focus reveal 24 pixels at the opposite edge, while Center focus leaves 12 pixels visible on both sides. AltTab+ keeps the last Center focus window between the two side windows in the stacking order so all three remain reachable by mouse. The module is disabled by default.
 
 The implementation adds Hyper modifiers to complete key-down/key-up pairs instead of posting standalone modifier-down events. Its own synthetic Caps Lock tap is tagged so AltTab+ does not process it recursively. Leader sequences, FlickRing, and mouse-driven move/resize remain planned work in [ROADMAP.md](ROADMAP.md).
+
+### Input Safety
+
+`Command+Control+Option+Shift+Escape` is a fixed emergency shortcut. It disables Hyper and gestures, closes the switcher, and blocks AltTab+ window-layout actions until an input extension is deliberately enabled again.
+
+Repeated keyboard event-tap failures disable Hyper instead of retrying indefinitely. A startup marker also puts input extensions into safe mode if AltTab+ did not finish the previous Hyper activation. Safe mode can be set before launch with:
+
+```bash
+defaults write com.gcolicig.alttab-plus inputModulesSafeMode -bool true
+```
+
+The manual verification procedure is in [docs/input-safety-checklist.md](docs/input-safety-checklist.md).
 
 ## Build
 

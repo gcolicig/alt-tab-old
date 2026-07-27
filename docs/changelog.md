@@ -7,13 +7,18 @@
 * open fuzzy search during `Focus selected window` switching with the physical ISO Section key above Tab while the configured Shortcut 1 or Shortcut 2 hold key is still pressed
 * show the search field by default without focusing it, preserving normal Tab cycling until search is activated
 * enable mouse hover window selection by default
-* add configurable global shortcuts for focused-window left/right thirds, left/right two-thirds, and restore
+* add configurable global shortcuts for thirds, two-thirds, three-quarters, Left/Center/Right focus layouts, and restore
 * add an optional dual-role Caps Lock key: short taps toggle Caps Lock, while held combinations work as system-wide Command-Control-Option-Shift shortcuts
-* allow the four Caps Lock plus arrow combinations to invoke configurable AltTab+ window-layout actions directly
+* move dual-role Caps Lock settings into a dedicated Hyperkey section and use the global Window Layout shortcuts for Hyper combinations
+* add a fixed Command-Control-Option-Shift-Escape emergency shortcut and externally configurable input safe mode
+* clarify background preview capture and enable its setting only when the active appearance uses image-based window previews
+* add Tahoe-gated Instant Spaces actions for adjacent and direct Space switching through the shared action registry
+* add optional clickable Space numbers next to the menubar icon with active-Space highlighting
 
 ### Defaults
 
 * force update checks and crash reporting to disabled fork defaults at launch
+* use Command-Tab for Shortcut 1 when no explicit shortcut preference exists
 * hide apps with no open window by default for Shortcut 1, Shortcut 2, and gestures
 * leave all window-layout shortcuts unassigned to avoid collisions with macOS and existing shortcuts
 
@@ -25,6 +30,10 @@
 * absorb both halves of handled Hyper key presses and reset internal key state across preference, event-tap, sleep/wake, and termination boundaries
 * detect physical Caps Lock press/release through raw HID events and guard synthetic Caps Lock taps against recursion
 * keep physical hold state separate from the persistent Caps Lock toggle state so enabled Caps Lock no longer turns ordinary typing into Hyper shortcuts
+* keep the Caps Lock LED off during Hyper holds and restore the Caps Lock state that was active before the Hyper combination
+* keep the Center focus window reachable below both side layouts without relying on macOS window stacking order
+* prevent window captures outside the visible switcher when background preview capture is disabled
+* disable Hyper visibly after repeated keyboard event-tap failures or an interrupted startup instead of retrying indefinitely
 
 # [10.12.0](https://github.com/lwouis/alt-tab-macos/compare/v10.11.0...v10.12.0) (2026-04-13)
 
