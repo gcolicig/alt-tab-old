@@ -10,6 +10,8 @@
 		C0DE10000000000000000001 /* WindowLayoutGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000001 /* WindowLayoutGeometry.swift */; };
 		C0DE10000000000000000002 /* WindowLayouts.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000002 /* WindowLayouts.swift */; };
 		C0DE10000000000000000003 /* WindowLayoutsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000003 /* WindowLayoutsTab.swift */; };
+		C0DE1000000000000000000E /* HyperkeyTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000000B /* HyperkeyTab.swift */; };
+		C0DE1000000000000000000F /* SpacesTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000000C /* SpacesTab.swift */; };
 		C0DE10000000000000000004 /* WindowLayoutGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000001 /* WindowLayoutGeometry.swift */; };
 		C0DE10000000000000000005 /* WindowLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000004 /* WindowLayoutTests.swift */; };
 		C0DE10000000000000000006 /* ActionRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000005 /* ActionRegistry.swift */; };
@@ -334,6 +336,8 @@
 		C0DE20000000000000000001 /* WindowLayoutGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowLayoutGeometry.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000002 /* WindowLayouts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowLayouts.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000003 /* WindowLayoutsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowLayoutsTab.swift; sourceTree = "<group>"; };
+		C0DE2000000000000000000B /* HyperkeyTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HyperkeyTab.swift; sourceTree = "<group>"; };
+		C0DE2000000000000000000C /* SpacesTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacesTab.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000004 /* WindowLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowLayoutTests.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000005 /* ActionRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionRegistry.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000006 /* Actions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Actions.swift; sourceTree = "<group>"; };
@@ -1649,6 +1653,8 @@
 				5F21C9DE2C6E93F10091F72F /* appearance */,
 				5F21C9DD2C6E93E60091F72F /* controls */,
 				C0DE20000000000000000003 /* WindowLayoutsTab.swift */,
+				C0DE2000000000000000000B /* HyperkeyTab.swift */,
+				C0DE2000000000000000000C /* SpacesTab.swift */,
 				D04BA4A26987F67DD94C827F /* AboutTab.swift */,
 				D04BACE22DC907F03D193075 /* GeneralTab.swift */,
 				D04BA788228BA86D9EFBD1ED /* AcknowledgmentsTab.swift */,
@@ -2635,6 +2641,8 @@
 				C0DE10000000000000000001 /* WindowLayoutGeometry.swift in Sources */,
 				C0DE10000000000000000002 /* WindowLayouts.swift in Sources */,
 				C0DE10000000000000000003 /* WindowLayoutsTab.swift in Sources */,
+				C0DE1000000000000000000E /* HyperkeyTab.swift in Sources */,
+				C0DE1000000000000000000F /* SpacesTab.swift in Sources */,
 				D04BAFBC862BA5FE0294EA7A /* AXUIElement.swift in Sources */,
 				D04BA73E90EFEF8247A5105D /* CGWindow.swift in Sources */,
 				D04BA004884A273D4D2D3EF1 /* HelperExtensions.swift in Sources */,
