@@ -82,6 +82,9 @@ class Menubar {
     }
 
     static func refreshSpaces() {
+        // a multi-step switch passes through every Space in between; rendering those would walk the
+        // highlight across the row. InstantSpaces refreshes once more when the sequence settles.
+        guard !InstantSpaces.isSwitching else { return }
         guard statusItem != nil, let statusButton = statusItem.button else { return }
         customIconView?.removeFromSuperview()
         spaceSegmentsView?.removeFromSuperview()

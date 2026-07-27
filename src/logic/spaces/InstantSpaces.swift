@@ -11,7 +11,7 @@ enum InstantSpaces {
     private static let gestureVelocity = Double(2000)
     /// The Dock coalesces swipe sequences that arrive back to back, so multi-step switches are paced
     /// and re-checked against the real Space instead of being posted as one burst. Calibrate on Tahoe (S-06).
-    private static let stepInterval = TimeInterval(0.07)
+    private static let stepInterval = TimeInterval(0.035)
     /// Longer than `SpacePredictionPolicy.validity`, so the check after the last step always compares
     /// the target against what the system actually reports and repeats a dropped step.
     private static let settleInterval = TimeInterval(0.6)
@@ -87,7 +87,11 @@ enum InstantSpaces {
         }
         let stepIndex = direction == .right ? baseIndex + 1 : baseIndex - 1
         setPrediction(SpacePrediction(sourceIndex: snapshot.currentIndex, targetIndex: stepIndex, timestamp: now()), for: displayId)
-        let delay = stepIndex == targetIndex ? settleInterval : stepInterval
+        let isLastStep = stepIndex == targetIndex
+        // release the menubar row as soon as the last swipe is out, so the highlight follows the arrival
+        // instead of the later verification pass
+        markSequenceInFlight(displayId, !isLastStep)
+        let delay = isLastStep ? settleInterval : stepInterval
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             step(towards: targetIndex, on: displayId, attemptsLeft: attemptsLeft - 1)
         }
@@ -150,6 +154,14 @@ enum InstantSpaces {
             histories[displayId, default: SpaceHistory()].record(settledIndex)
         }
         predictionLock.unlock()
+        // the menubar row skips its refresh while a sequence runs, so it needs the settled state here
+        DispatchQueue.main.async { Menubar.refreshSpaces() }
+    }
+
+    static var isSwitching: Bool {
+        predictionLock.lock()
+        defer { predictionLock.unlock() }
+        return !displaysWithSequenceInFlight.isEmpty
     }
 
     static func noteSystemSpaceChange() {

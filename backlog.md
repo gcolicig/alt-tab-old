@@ -307,6 +307,7 @@ Implementierungsstand:
 
 - `Space left`, `Space right`, `Last Space` und `Space 1` bis `Space 9` sind mit stabilen IDs im gemeinsamen Aktionsregister vorhanden.
 - Der Swift-Kern sendet die kurze Began-/Changed-/Ended-Sequenz nur bei einer Aktion und verwendet keinen permanenten Event-Tap.
+- Befund vom 2026-07-27 aus der Mausbedienung: bei grossen Spruengen liefen Bildschirm und Menueleiste sichtbar durch jeden Zwischen-Space. Die Leiste ueberspringt ihre Aktualisierung jetzt waehrend einer laufenden Sequenz und zeigt erst den Ankunfts-Space. Das Durchlaufen der Bildschirme selbst bleibt systembedingt: jeder Swipe ist ein echter Space-Wechsel; nur `stepInterval` verkuerzt die sichtbare Dauer.
 - Befund vom 2026-07-27 aus der Mausbedienung: Mehrschritt-Wechsel wurden als Burst gepostet und die Zielvorhersage als Tatsache gespeichert; verschluckte Swipes fuehrten dadurch zu Spruengen auf fremde Spaces. Der Kern schaltet jetzt schrittweise, liest den Ist-Space zwischen den Schritten und prueft nach dem letzten Schritt nach. `stepInterval` und `settleInterval` sind Schaetzwerte und am Zielgeraet zu kalibrieren.
 - CGS-Symbole werden ueber `dlopen`/`dlsym` optional aufgeloest; macOS-Major-Versionen ausserhalb Tahoe und fehlende Symbole bleiben fail-closed.
 - Planung, Randbegrenzung, direkte Ein-basierte Indizes, Dock-Overlay-Erkennung und eindeutige Action-IDs sind automatisiert getestet.
