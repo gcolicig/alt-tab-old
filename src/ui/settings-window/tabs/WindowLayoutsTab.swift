@@ -11,7 +11,13 @@ class WindowLayoutsTab {
         table.addRow(TableGroupView.Row(
             leftTitle: NSLocalizedString("Disable input extensions (safe mode)", comment: ""),
             rightViews: [LabelAndControl.makeSwitch("inputModulesSafeMode")]))
-        table.addNewTable()
+        return TableGroupSetView(originalViews: [table], bottomPadding: 0)
+    }
+}
+
+class HyperkeyTab {
+    static func initTab() -> NSView {
+        let table = TableGroupView(width: SettingsWindow.contentWidth)
         table.addRow(TableGroupView.Row(
             leftTitle: NSLocalizedString("Use Caps Lock as system-wide Hyper key", comment: ""),
             rightViews: [LabelAndControl.makeSwitch("hyperKeyEnabled")]))
