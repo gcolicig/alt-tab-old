@@ -360,6 +360,7 @@ Implementierungsstand:
 - Eigene Spaces-Settings bieten konfliktgepruefte globale Shortcuts fuer links, rechts und Space 1 bis 9; alle bleiben per Default unbelegt.
 - Manueller Befund vom 2026-07-27: Zum Aufzeichnen eines Space-Shortcuts musste Hyperkey in den Settings einmal aus- und wieder eingeschaltet werden. Ursache und Umfang sind noch nicht geklaert; der Befund wird beobachtet und loest in diesem Schritt keine App-Aenderung aus.
 - S-07 ist noch nicht bestanden: Display-Gruppierung, Separate-Spaces-Modi, Ueberlauf, Create/Delete/Reorder, VoiceOver und die reale Klickgeometrie in der System-Menueleiste bleiben manuell zu pruefen.
+- Konkreter S-07-Pruefpunkt: Findet sich fuer das Cursor-Display kein Eintrag in `Spaces.screenSpacesMap`, zeigt die Leiste still das erste bekannte Display, waehrend der Klick weiterhin auf das Cursor-Display zielt. Anzeige und Wirkung koennen dadurch auseinanderlaufen; das Verhalten ist am Zielgeraet zu pruefen, bevor die Display-Gruppierung gebaut wird.
 
 Mehrere Displays:
 
