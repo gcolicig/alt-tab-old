@@ -68,7 +68,7 @@ class Preferences {
             "settingsWindowShownOnFirstLaunch": "false",
         ]
         (0..<maxShortcutCount).forEach { index in
-            values[indexToName("holdShortcut", index)] = defaultShortcut("⌥")
+            values[indexToName("holdShortcut", index)] = defaultShortcut(index == 0 ? "⌘" : "⌥")
             values[indexToName("nextWindowShortcut", index)] = defaultShortcut(index == 0 ? "⇥" : (index == 1 ? keyAboveTabDependingOnInputSource() : ""))
         }
         SpaceAction.all.forEach { values[$0.shortcutPreferenceKey] = defaultShortcut("") }
