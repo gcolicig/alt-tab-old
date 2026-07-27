@@ -6,7 +6,7 @@ class WindowLayouts {
     private static let operationQueue = LabeledOperationQueue("windowLayouts", .userInteractive, 1)
 
     static func perform(_ action: WindowLayoutAction) {
-        guard !App.appIsBeingUsed else { return }
+        guard !App.appIsBeingUsed, !Preferences.inputModulesSafeMode else { return }
         DispatchQueue.main.async {
             guard let runningApplication = NSWorkspace.shared.frontmostApplication,
                   runningApplication.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return }

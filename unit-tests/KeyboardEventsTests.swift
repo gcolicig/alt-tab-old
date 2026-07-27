@@ -63,6 +63,25 @@ final class KeyboardEventsUtilsTests: XCTestCase {
         XCTAssertEqual(state.keyUp(UInt32(kVK_UpArrow)), .pass)
     }
 
+    func testInputTapCircuitBreakerTripsOnSecondRecentFailure() {
+        var circuitBreaker = InputTapCircuitBreaker()
+        XCTAssertEqual(circuitBreaker.recordFailure(at: 1), .recover)
+        XCTAssertEqual(circuitBreaker.recordFailure(at: 5), .trip)
+    }
+
+    func testInputTapCircuitBreakerForgetsOldFailures() {
+        var circuitBreaker = InputTapCircuitBreaker()
+        XCTAssertEqual(circuitBreaker.recordFailure(at: 1), .recover)
+        XCTAssertEqual(circuitBreaker.recordFailure(at: 12), .recover)
+    }
+
+    func testInputTapCircuitBreakerResetClearsFailures() {
+        var circuitBreaker = InputTapCircuitBreaker()
+        XCTAssertEqual(circuitBreaker.recordFailure(at: 1), .recover)
+        circuitBreaker.reset()
+        XCTAssertEqual(circuitBreaker.recordFailure(at: 2), .recover)
+    }
+
     // alt-down > tab-down > tab-up > alt-up
     func testMostCommonSequence() throws {
         resetState()

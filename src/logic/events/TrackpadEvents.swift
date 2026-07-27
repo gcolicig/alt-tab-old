@@ -20,6 +20,11 @@ class TrackpadEvents {
         }
     }
 
+    static func disableForSafety() {
+        guard eventTap != nil else { return }
+        toggle(false)
+    }
+
     static func reEnableTapIfNeeded() {
         guard let eventTap, shouldBeEnabled, !CGEvent.tapIsEnabled(tap: eventTap) else { return }
         Logger.warning { "" }

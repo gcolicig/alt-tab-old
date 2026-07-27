@@ -185,37 +185,6 @@ enum ShortcutStylePreference: CaseIterable, MacroPreference {
     }
 }
 
-enum HyperKeyActionPreference: CaseIterable, MacroPreference {
-    case none
-    case leftThird
-    case rightThird
-    case leftTwoThirds
-    case rightTwoThirds
-    case restore
-
-    var localizedString: LocalizedString {
-        switch self {
-        case .none: return NSLocalizedString("Do nothing", comment: "")
-        case .leftThird: return WindowLayoutAction.leftThird.localizedTitle
-        case .rightThird: return WindowLayoutAction.rightThird.localizedTitle
-        case .leftTwoThirds: return WindowLayoutAction.leftTwoThirds.localizedTitle
-        case .rightTwoThirds: return WindowLayoutAction.rightTwoThirds.localizedTitle
-        case .restore: return WindowLayoutAction.restore.localizedTitle
-        }
-    }
-
-    var windowLayoutAction: WindowLayoutAction? {
-        switch self {
-        case .none: return nil
-        case .leftThird: return .leftThird
-        case .rightThird: return .rightThird
-        case .leftTwoThirds: return .leftTwoThirds
-        case .rightTwoThirds: return .rightTwoThirds
-        case .restore: return .restore
-        }
-    }
-}
-
 enum HyperKeyHoldDurationPreference: CaseIterable, MacroPreference {
     case milliseconds150
     case milliseconds200

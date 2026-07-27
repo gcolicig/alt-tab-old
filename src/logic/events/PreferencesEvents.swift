@@ -35,7 +35,7 @@ class PreferencesEvents {
         ControlsTab.initializePreferencesDependentState()
         applyMenubarPreferencesIfReady()
         applyUpdatePolicyPreference()
-        TrackpadEvents.toggle(Preferences.nextWindowGesture != .disabled)
+        TrackpadEvents.toggle(Preferences.nextWindowGesture != .disabled && !Preferences.inputModulesSafeMode)
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             applyStartAtLoginPreference()
         }
@@ -53,9 +53,10 @@ class PreferencesEvents {
         ControlsTab.preferenceChanged(key)
         switch key {
         case "menubarIcon", "menubarIconShown": applyMenubarPreferencesIfReady()
-        case "nextWindowGesture": TrackpadEvents.toggle(Preferences.nextWindowGesture != .disabled)
+        case "nextWindowGesture": applyGesturePreference()
         case "hyperKeyEnabled": KeyboardEvents.hyperKeyEnabledChanged()
         case "hyperKeyHoldDuration": KeyboardEvents.resetHyperKeyState()
+        case "inputModulesSafeMode": KeyboardEvents.inputSafeModeChanged()
         case "startAtLogin": applyStartAtLoginPreference()
         case "updatePolicy": applyUpdatePolicyPreference()
         case let k where preferencesRequiringUiReset.contains(k) && TilesPanel.shared != nil: App.resetPreferencesDependentComponents()
@@ -66,6 +67,13 @@ class PreferencesEvents {
     private static func applyMenubarPreferencesIfReady() {
         guard Menubar.statusItem != nil else { return }
         Menubar.menubarIconCallback(nil)
+    }
+
+    private static func applyGesturePreference() {
+        if Preferences.nextWindowGesture != .disabled && Preferences.inputModulesSafeMode {
+            Preferences.set("inputModulesSafeMode", "false", false)
+        }
+        TrackpadEvents.toggle(Preferences.nextWindowGesture != .disabled)
     }
 
     private static func applyUpdatePolicyPreference() {

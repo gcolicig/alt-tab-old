@@ -91,6 +91,29 @@ struct HyperKeyStateMachine {
     }
 }
 
+enum InputTapRecoveryDecision: Equatable {
+    case recover
+    case trip
+}
+
+struct InputTapCircuitBreaker {
+    private var failures = [TimeInterval]()
+
+    mutating func recordFailure(at timestamp: TimeInterval, window: TimeInterval = 10, threshold: Int = 2) -> InputTapRecoveryDecision {
+        failures.removeAll { timestamp - $0 > window }
+        failures.append(timestamp)
+        if failures.count >= threshold {
+            failures.removeAll()
+            return .trip
+        }
+        return .recover
+    }
+
+    mutating func reset() {
+        failures.removeAll()
+    }
+}
+
 func cancelActiveFocusOnReleaseShortcutIfNeeded(_ keyCode: UInt32?, _ modifiers: NSEvent.ModifierFlags?) -> Bool {
     guard shouldCancelActiveFocusOnReleaseShortcut(keyCode, modifiers) else { return false }
     App.forceDoNothingOnRelease = true
