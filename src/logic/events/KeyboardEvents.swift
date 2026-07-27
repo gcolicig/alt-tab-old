@@ -95,8 +95,9 @@ class KeyboardEvents {
     }
 
     private static func handleHyperKeyDown(_ keyCode: UInt32, _ event: CGEvent) -> Bool {
+        let isAutorepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
         let decision = withHyperKeyState {
-            $0.keyDown(keyCode, internalActionIsConfigured: false, enabled: hyperKeyRuntimeEnabled)
+            $0.keyDown(keyCode, internalActionIsConfigured: false, enabled: hyperKeyRuntimeEnabled, isAutorepeat: isAutorepeat)
         }
         if decision == .systemWide {
             event.flags.formUnion(hyperKeyModifiers)

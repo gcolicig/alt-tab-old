@@ -60,12 +60,18 @@ struct HyperKeyStateMachine {
         return shouldToggle ? .toggle : .absorb
     }
 
-    mutating func keyDown(_ keyCode: UInt32, internalActionIsConfigured: Bool, enabled: Bool) -> HyperKeyDecision {
+    mutating func keyDown(_ keyCode: UInt32, internalActionIsConfigured: Bool, enabled: Bool, isAutorepeat: Bool = false) -> HyperKeyDecision {
         guard enabled else {
             reset()
             return .pass
         }
         if let route = routedKeyCodes[keyCode] {
+            // a route outlives its key-up when the event tap misses it, for example while secure input is active.
+            // a fresh press with Caps Lock up therefore means the route is stale and must not modify the key.
+            guard capsLockIsDown || isAutorepeat else {
+                routedKeyCodes.removeValue(forKey: keyCode)
+                return .pass
+            }
             return route == .systemWide ? .systemWide : .absorb
         }
         guard capsLockIsDown else { return .pass }
