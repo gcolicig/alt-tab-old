@@ -17,6 +17,8 @@ enum InstantSpaces {
     private static let settleInterval = TimeInterval(0.6)
     private static let predictionLock = NSLock()
     private static var predictions = [String: SpacePrediction]()
+    private static var histories = [String: SpaceHistory]()
+    private static var displaysWithSequenceInFlight = Set<String>()
     private static let eventTypeField = CGEventField(rawValue: 55)
     private static let gestureHidTypeField = CGEventField(rawValue: 110)
     private static let swipeMotionField = CGEventField(rawValue: 123)
@@ -28,11 +30,17 @@ enum InstantSpaces {
     static func availability(_ action: SpaceAction) -> ActionAvailability {
         let runtimeAvailability = runtimeAvailability()
         guard runtimeAvailability.isAvailable else { return runtimeAvailability }
-        guard let snapshot = snapshot(),
-              SpaceSwitchPlanner.plan(action, currentIndex: predictedIndex(snapshot), spaceCount: snapshot.spaceCount) != nil else {
+        guard let snapshot = snapshot(), plan(action, snapshot) != nil else {
             return .unavailable(NSLocalizedString("This Space is not available.", comment: ""))
         }
         return .available
+    }
+
+    private static func plan(_ action: SpaceAction, _ snapshot: Snapshot) -> SpaceSwitchPlan? {
+        SpaceSwitchPlanner.plan(action,
+                                currentIndex: predictedIndex(snapshot),
+                                spaceCount: snapshot.spaceCount,
+                                previousIndex: previousIndex(for: snapshot.displayId))
     }
 
     static func runtimeAvailability() -> ActionAvailability {
@@ -52,7 +60,8 @@ enum InstantSpaces {
         DispatchQueue.main.async {
             guard availability(action).isAvailable,
                   let snapshot = snapshot(),
-                  let plan = SpaceSwitchPlanner.plan(action, currentIndex: predictedIndex(snapshot), spaceCount: snapshot.spaceCount) else { return }
+                  let plan = plan(action, snapshot) else { return }
+            markSequenceInFlight(snapshot.displayId, true)
             // one extra attempt per step absorbs a dropped swipe without letting a blocked switch loop
             step(towards: plan.targetIndex, on: snapshot.displayId, attemptsLeft: plan.steps * 2)
         }
@@ -62,14 +71,20 @@ enum InstantSpaces {
     /// swipe cannot desynchronize the following steps. The target index belongs to the display the
     /// sequence started on; moving the cursor to another display stops it rather than switching there.
     private static func step(towards targetIndex: Int, on displayId: String, attemptsLeft: Int) {
-        guard attemptsLeft > 0, let snapshot = snapshot(), snapshot.displayId == displayId else { return }
+        guard attemptsLeft > 0, let snapshot = snapshot(), snapshot.displayId == displayId else {
+            finishSequence(on: displayId, settledIndex: nil)
+            return
+        }
         let baseIndex = predictedIndex(snapshot)
         guard let direction = SpaceSwitchPlanner.stepDirection(
             currentIndex: baseIndex, targetIndex: targetIndex, spaceCount: snapshot.spaceCount) else {
-            clearPrediction(for: displayId)
+            finishSequence(on: displayId, settledIndex: snapshot.currentIndex)
             return
         }
-        guard postStep(direction) else { return }
+        guard postStep(direction) else {
+            finishSequence(on: displayId, settledIndex: nil)
+            return
+        }
         let stepIndex = direction == .right ? baseIndex + 1 : baseIndex - 1
         setPrediction(SpacePrediction(sourceIndex: snapshot.currentIndex, targetIndex: stepIndex, timestamp: now()), for: displayId)
         let delay = stepIndex == targetIndex ? settleInterval : stepInterval
@@ -78,9 +93,12 @@ enum InstantSpaces {
         }
     }
 
+    /// Called when Space indexes lose their meaning: display reconfiguration and wake.
     static func synchronize() {
         predictionLock.lock()
         predictions.removeAll(keepingCapacity: true)
+        histories.removeAll(keepingCapacity: true)
+        displaysWithSequenceInFlight.removeAll(keepingCapacity: true)
         predictionLock.unlock()
     }
 
@@ -120,6 +138,44 @@ enum InstantSpaces {
         predictionLock.lock()
         predictions[displayId] = nil
         predictionLock.unlock()
+    }
+
+    /// Records the Space a display arrived at. Called when one of our sequences settles and, through
+    /// `noteSystemSpaceChange`, when the user switches Spaces natively.
+    private static func finishSequence(on displayId: String, settledIndex: Int?) {
+        predictionLock.lock()
+        predictions[displayId] = nil
+        displaysWithSequenceInFlight.remove(displayId)
+        if let settledIndex {
+            histories[displayId, default: SpaceHistory()].record(settledIndex)
+        }
+        predictionLock.unlock()
+    }
+
+    static func noteSystemSpaceChange() {
+        guard let snapshot = snapshot() else { return }
+        predictionLock.lock()
+        let isInFlight = displaysWithSequenceInFlight.contains(snapshot.displayId)
+        if !isInFlight {
+            histories[snapshot.displayId, default: SpaceHistory()].record(snapshot.currentIndex)
+        }
+        predictionLock.unlock()
+    }
+
+    private static func markSequenceInFlight(_ displayId: String, _ inFlight: Bool) {
+        predictionLock.lock()
+        if inFlight {
+            displaysWithSequenceInFlight.insert(displayId)
+        } else {
+            displaysWithSequenceInFlight.remove(displayId)
+        }
+        predictionLock.unlock()
+    }
+
+    private static func previousIndex(for displayId: String) -> Int? {
+        predictionLock.lock()
+        defer { predictionLock.unlock() }
+        return histories[displayId]?.previousIndex
     }
 
     private static func now() -> TimeInterval {

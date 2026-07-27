@@ -34,7 +34,7 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 - Umgesetzt fuer Window Layouts und Restore: typisierte stabile Action-IDs, zentraler Dispatch sowie Verfuegbarkeit mit Fehlergrund.
 - Umgesetzt: globale Window-Layout-Shortcuts verwenden das gemeinsame Register.
-- Umgesetzt: Space links/rechts und Space 1 bis 9 sind als typisierte Aktionen registriert.
+- Umgesetzt: Space links/rechts, `Last Space` und Space 1 bis 9 sind als typisierte Aktionen registriert.
 - Offen: Register um Display-Wechsel, Apps und URLs erweitern.
 - Spaces-Menueleiste, Leader-Sequenzen, FlickRing-Sektoren und spaetere Module verwenden danach dasselbe Register.
 - Die Menueleiste enthaelt keine eigene Fenster- oder Space-Aktionslogik.
@@ -42,7 +42,8 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 ## Phase 2A: Instant Spaces
 
-- Umgesetzt: Space links/rechts und direkter Wechsel zu Space 1 bis 9 ueber das gemeinsame Aktionsregister.
+- Umgesetzt: Space links/rechts, direkter Wechsel zu Space 1 bis 9 und `Last Space` ueber das gemeinsame Aktionsregister.
+- Umgesetzt: schrittweises Schalten mit Abgleich gegen den Ist-Space zwischen den Schritten; ein verschluckter Swipe verschiebt keine Folgeaktion mehr.
 - Umgesetzt: tap-freier Kern durch synthetische Dock-Swipe-Sequenzen, ohne permanenten Event-Tap und ohne Default-Shortcuts.
 - Umgesetzt: benoetigte private Symbole werden optional gebunden; unbekannte macOS-Major-Versionen und fehlende Symbole deaktivieren die Aktionen.
 - Umgesetzt: Zielwahl ueber das Cursor-Display, Randbegrenzung, kurzfristige Folgewechsel-Vorhersage und Resynchronisation bei tatsaechlichem Space-Wechsel.

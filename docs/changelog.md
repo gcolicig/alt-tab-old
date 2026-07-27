@@ -14,6 +14,7 @@
 * clarify background preview capture and enable its setting only when the active appearance uses image-based window previews
 * add Tahoe-gated Instant Spaces actions for adjacent and direct Space switching through the shared action registry
 * add optional clickable Space numbers next to the menubar icon with active-Space highlighting
+* add a `Last Space` action that toggles between the current and the previously settled Space
 
 ### Defaults
 

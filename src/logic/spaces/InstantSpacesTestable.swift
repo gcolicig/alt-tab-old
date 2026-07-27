@@ -3,16 +3,18 @@ import Foundation
 enum SpaceAction: Hashable {
     case left
     case right
+    case last
     case index(Int)
 
     static var all: [SpaceAction] {
-        [.left, .right] + (1...9).map { .index($0) }
+        [.left, .right, .last] + (1...9).map { .index($0) }
     }
 
     var stableId: String {
         switch self {
         case .left: return "left"
         case .right: return "right"
+        case .last: return "last"
         case .index(let index): return "index.\(index)"
         }
     }
@@ -21,6 +23,7 @@ enum SpaceAction: Hashable {
         switch self {
         case .left: return "spaceLeftShortcut"
         case .right: return "spaceRightShortcut"
+        case .last: return "spaceLastShortcut"
         case .index(let index): return "space\(index)Shortcut"
         }
     }
@@ -29,8 +32,22 @@ enum SpaceAction: Hashable {
         switch self {
         case .left: return NSLocalizedString("Space left", comment: "")
         case .right: return NSLocalizedString("Space right", comment: "")
+        case .last: return NSLocalizedString("Last Space", comment: "")
         case .index(let index): return String(format: NSLocalizedString("Space %d", comment: ""), index)
         }
+    }
+}
+
+/// Remembers the Space a display settled on, so `Last Space` can toggle back. Only settled Spaces are
+/// recorded: the intermediate Spaces of a multi-step switch must not become the toggle target.
+struct SpaceHistory: Equatable {
+    private(set) var currentIndex: Int?
+    private(set) var previousIndex: Int?
+
+    mutating func record(_ index: Int) {
+        guard index != currentIndex else { return }
+        previousIndex = currentIndex
+        currentIndex = index
     }
 }
 
@@ -72,12 +89,15 @@ struct SpaceSwitchPlanner {
         return targetIndex < currentIndex ? .left : .right
     }
 
-    static func plan(_ action: SpaceAction, currentIndex: Int, spaceCount: Int) -> SpaceSwitchPlan? {
+    static func plan(_ action: SpaceAction, currentIndex: Int, spaceCount: Int, previousIndex: Int? = nil) -> SpaceSwitchPlan? {
         guard spaceCount > 0, (0..<spaceCount).contains(currentIndex) else { return nil }
         let targetIndex: Int
         switch action {
         case .left: targetIndex = currentIndex - 1
         case .right: targetIndex = currentIndex + 1
+        case .last:
+            guard let previousIndex else { return nil }
+            targetIndex = previousIndex
         case .index(let oneBasedIndex): targetIndex = oneBasedIndex - 1
         }
         guard (0..<spaceCount).contains(targetIndex), targetIndex != currentIndex else { return nil }

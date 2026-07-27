@@ -283,7 +283,8 @@ Beschreibung:
 
 MVP-Scope:
 
-- `Space left`, `Space right` und `Space 1` bis `Space 9`.
+- `Space left`, `Space right`, `Last Space` und `Space 1` bis `Space 9`.
+- `Last Space` toggelt zwischen dem aktuellen und dem zuletzt abgeschlossenen Space desselben Displays. Zwischenstationen eines Mehrschritt-Wechsels zaehlen nicht; nach Displaywechsel, Wake und Neustart ist die Historie leer, bis ein Wechsel beobachtet wurde.
 - Kein Wrap am ersten oder letzten Space.
 - Keine Default-Shortcuts; ohne zugewiesenen Shortcut und bei ausgeblendeter Spaces-Menueleiste gibt es keinen aktiven Ausloeser.
 - Keine Aktion, solange Mission Control oder App Expose verlaesslich als aktiv erkannt wird.
@@ -304,8 +305,9 @@ Technischer Ansatz:
 
 Implementierungsstand:
 
-- `Space left`, `Space right` und `Space 1` bis `Space 9` sind mit stabilen IDs im gemeinsamen Aktionsregister vorhanden.
+- `Space left`, `Space right`, `Last Space` und `Space 1` bis `Space 9` sind mit stabilen IDs im gemeinsamen Aktionsregister vorhanden.
 - Der Swift-Kern sendet die kurze Began-/Changed-/Ended-Sequenz nur bei einer Aktion und verwendet keinen permanenten Event-Tap.
+- Befund vom 2026-07-27 aus der Mausbedienung: Mehrschritt-Wechsel wurden als Burst gepostet und die Zielvorhersage als Tatsache gespeichert; verschluckte Swipes fuehrten dadurch zu Spruengen auf fremde Spaces. Der Kern schaltet jetzt schrittweise, liest den Ist-Space zwischen den Schritten und prueft nach dem letzten Schritt nach. `stepInterval` und `settleInterval` sind Schaetzwerte und am Zielgeraet zu kalibrieren.
 - CGS-Symbole werden ueber `dlopen`/`dlsym` optional aufgeloest; macOS-Major-Versionen ausserhalb Tahoe und fehlende Symbole bleiben fail-closed.
 - Planung, Randbegrenzung, direkte Ein-basierte Indizes, Dock-Overlay-Erkennung und eindeutige Action-IDs sind automatisiert getestet.
 - S-06 und V-12 bleiben offen, bis die Event-Felder, sichtbare Animationsfreiheit, Multi-Display-Semantik und schnelle Folgewechsel ueber eine Bedienoberflaeche am Tahoe-Zielgeraet geprueft wurden.

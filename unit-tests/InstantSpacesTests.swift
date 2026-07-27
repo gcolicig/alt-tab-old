@@ -48,6 +48,29 @@ final class InstantSpacesTests: XCTestCase {
         XCTAssertEqual(SpacePredictionPolicy.baseIndex(observedIndex: 2, prediction: nil, now: 100), 2)
     }
 
+    func testLastSpaceTogglesBackToTheRecordedPreviousSpace() {
+        XCTAssertEqual(SpaceSwitchPlanner.plan(.last, currentIndex: 4, spaceCount: 5, previousIndex: 1),
+                       SpaceSwitchPlan(direction: .left, steps: 3, targetIndex: 1))
+        XCTAssertEqual(SpaceSwitchPlanner.plan(.last, currentIndex: 1, spaceCount: 5, previousIndex: 4),
+                       SpaceSwitchPlan(direction: .right, steps: 3, targetIndex: 4))
+        XCTAssertNil(SpaceSwitchPlanner.plan(.last, currentIndex: 2, spaceCount: 5, previousIndex: nil))
+        XCTAssertNil(SpaceSwitchPlanner.plan(.last, currentIndex: 2, spaceCount: 5, previousIndex: 2))
+        XCTAssertNil(SpaceSwitchPlanner.plan(.last, currentIndex: 2, spaceCount: 5, previousIndex: 9))
+    }
+
+    func testSpaceHistoryKeepsOnlySettledSpaces() {
+        var history = SpaceHistory()
+        history.record(0)
+        XCTAssertNil(history.previousIndex)
+        history.record(3)
+        XCTAssertEqual(history.previousIndex, 0)
+        history.record(3)
+        XCTAssertEqual(history.previousIndex, 0)
+        history.record(4)
+        XCTAssertEqual(history.previousIndex, 3)
+        XCTAssertEqual(history.currentIndex, 4)
+    }
+
     func testDockOverlayRequiresBothObservedLayers() {
         XCTAssertFalse(SpaceSwitchPlanner.dockOverlayIsActive([]))
         XCTAssertFalse(SpaceSwitchPlanner.dockOverlayIsActive([18, 18]))
