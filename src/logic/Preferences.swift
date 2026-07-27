@@ -141,6 +141,12 @@ class Preferences {
     static var exceptions: [ExceptionEntry] { CachedUserDefaults.json("exceptions", [ExceptionEntry].self) }
     static var previewSelectedWindow: Bool { CachedUserDefaults.bool("previewFocusedWindow") }
     static var captureWindowsInBackground: Bool { CachedUserDefaults.bool("captureWindowsInBackground") }
+    static var usesImageBasedWindowPreviews: Bool {
+        WindowPreviewCapturePolicy.usesImageBasedPreviews(
+            appearanceStyle == .thumbnails,
+            showAppsOrWindows == .windows,
+            previewSelectedWindow)
+    }
     static var screenRecordingPermissionSkipped: Bool { CachedUserDefaults.bool("screenRecordingPermissionSkipped") }
     static var settingsWindowShownOnFirstLaunch: Bool { CachedUserDefaults.bool("settingsWindowShownOnFirstLaunch") }
 

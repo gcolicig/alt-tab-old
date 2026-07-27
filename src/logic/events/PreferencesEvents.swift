@@ -50,6 +50,9 @@ class PreferencesEvents {
             }
             return
         }
+        if ["appearanceStyle", "showAppsOrWindows", "previewFocusedWindow"].contains(key) {
+            GeneralTab.updateCaptureWindowsInBackgroundState()
+        }
         ControlsTab.preferenceChanged(key)
         switch key {
         case "menubarIcon", "menubarIconShown", "spacesInMenubarShown": applyMenubarPreferencesIfReady()

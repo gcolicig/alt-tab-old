@@ -33,3 +33,13 @@ class AppearanceTestable {
         return (max(0.09, minRatio), min(0.30, maxRatio))
     }
 }
+
+struct WindowPreviewCapturePolicy {
+    static func usesImageBasedPreviews(_ usesThumbnails: Bool, _ showsWindows: Bool, _ previewsSelectedWindow: Bool) -> Bool {
+        usesThumbnails || (showsWindows && previewsSelectedWindow)
+    }
+
+    static func allowsCapture(_ usesImageBasedPreviews: Bool, _ capturesInBackground: Bool, _ switcherIsVisible: Bool) -> Bool {
+        usesImageBasedPreviews && (capturesInBackground || switcherIsVisible)
+    }
+}

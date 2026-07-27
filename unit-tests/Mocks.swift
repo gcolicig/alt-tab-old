@@ -68,7 +68,8 @@ class TilesView {
 }
 
 class ControlsTab {
-    private static let globalActionShortcutPreferences = Set(WindowLayoutAction.allCases.map(\.shortcutPreferenceKey))
+    private static let globalActionShortcutPreferences = Set(
+        WindowLayoutAction.allCases.map(\.shortcutPreferenceKey) + SpaceAction.all.map(\.shortcutPreferenceKey))
     static let defaultShortcuts: [String: ATShortcut] = {
         func shortcut(_ keyEquivalent: String) -> Shortcut {
             guard let shortcut = Shortcut(keyEquivalent: keyEquivalent) else { fatalError("Invalid test shortcut: \(keyEquivalent)") }

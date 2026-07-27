@@ -27,6 +27,28 @@ final class AppearanceTests: XCTestCase {
 
     }
 
+    func testImageBasedPreviewCombinations() {
+        for usesThumbnails in [false, true] {
+            for showsWindows in [false, true] {
+                for previewsSelectedWindow in [false, true] {
+                    let expected = usesThumbnails || (showsWindows && previewsSelectedWindow)
+                    XCTAssertEqual(
+                        WindowPreviewCapturePolicy.usesImageBasedPreviews(usesThumbnails, showsWindows, previewsSelectedWindow),
+                        expected)
+                }
+            }
+        }
+    }
+
+    func testCaptureRequiresImagesAndEitherBackgroundOrVisibleSwitcher() {
+        XCTAssertTrue(WindowPreviewCapturePolicy.allowsCapture(true, true, false))
+        XCTAssertTrue(WindowPreviewCapturePolicy.allowsCapture(true, false, true))
+        XCTAssertTrue(WindowPreviewCapturePolicy.allowsCapture(true, true, true))
+        XCTAssertFalse(WindowPreviewCapturePolicy.allowsCapture(true, false, false))
+        XCTAssertFalse(WindowPreviewCapturePolicy.allowsCapture(false, true, true))
+        XCTAssertFalse(WindowPreviewCapturePolicy.allowsCapture(false, true, false))
+    }
+
     private let screens: [(String, (CGFloat, CGFloat), (CGFloat, CGFloat), (CGFloat, CGFloat), [(Int, CGFloat, CGFloat)])] = [
         // screen model, (widthInPixels, heightInPixels), (physicalWidthInMM, physicalHeightInMM), (expectedWidthForHorizontal, expectedWidthForVertical), (rowCount, expectedMinWidth, expectedMaxWidth)
         ("11\" Laptop: MacBook Air 11\": HD", (1366, 768), (255.7, 178.6), (0.90, 0.90), [(3, 0.12, 0.25), (4, 0.09, 0.19), (5, 0.09, 0.15)]),
