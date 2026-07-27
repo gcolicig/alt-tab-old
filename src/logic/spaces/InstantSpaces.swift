@@ -4,7 +4,9 @@ enum InstantSpaces {
     private struct Snapshot {
         let displayId: String
         let currentIndex: Int
-        let spaceCount: Int
+        let spaceIds: [CGSSpaceID]
+
+        var spaceCount: Int { spaceIds.count }
     }
 
     private static let supportedMajorVersion = 26
@@ -15,6 +17,7 @@ enum InstantSpaces {
     /// Longer than `SpacePredictionPolicy.validity`, so the check after the last step always compares
     /// the target against what the system actually reports and repeats a dropped step.
     private static let settleInterval = TimeInterval(0.6)
+    private static let directSwitchVerifyInterval = TimeInterval(0.2)
     private static let predictionLock = NSLock()
     private static var predictions = [String: SpacePrediction]()
     private static var histories = [String: SpaceHistory]()
@@ -61,10 +64,30 @@ enum InstantSpaces {
             guard availability(action).isAvailable,
                   let snapshot = snapshot(),
                   let plan = plan(action, snapshot) else { return }
+            if switchDirectly(to: plan.targetIndex, snapshot) { return }
             markSequenceInFlight(snapshot.displayId, true)
             // one extra attempt per step absorbs a dropped swipe without letting a blocked switch loop
             step(towards: plan.targetIndex, on: snapshot.displayId, attemptsLeft: plan.steps * 2)
         }
+    }
+
+    /// Jumps to the target Space without passing through the ones in between, which is what makes large
+    /// jumps flicker. The result is verified: if the Space did not change, the swipe path takes over.
+    private static func switchDirectly(to targetIndex: Int, _ snapshot: Snapshot) -> Bool {
+        guard InstantSpacesPrivateApi.supportsDirectSwitch,
+              (0..<snapshot.spaceCount).contains(targetIndex),
+              InstantSpacesPrivateApi.switchDirectly(snapshot.displayId as CFString, to: snapshot.spaceIds[targetIndex]) else { return false }
+        DispatchQueue.main.asyncAfter(deadline: .now() + directSwitchVerifyInterval) {
+            guard let settled = self.snapshot(), settled.displayId == snapshot.displayId else { return }
+            if settled.currentIndex == targetIndex {
+                finishSequence(on: snapshot.displayId, settledIndex: targetIndex)
+            } else {
+                Logger.warning { "direct Space switch did not take effect; falling back to swipes" }
+                markSequenceInFlight(snapshot.displayId, true)
+                step(towards: targetIndex, on: snapshot.displayId, attemptsLeft: settled.spaceCount * 2)
+            }
+        }
+        return true
     }
 
     /// Posts one swipe at a time and re-reads the real Space between steps, so a coalesced or dropped
@@ -122,7 +145,7 @@ enum InstantSpaces {
         guard let spaceIds, !spaceIds.isEmpty,
               let currentSpaceId = InstantSpacesPrivateApi.currentSpaceId(displayId),
               let currentIndex = spaceIds.firstIndex(of: currentSpaceId) else { return nil }
-        return Snapshot(displayId: displayId as String, currentIndex: currentIndex, spaceCount: spaceIds.count)
+        return Snapshot(displayId: displayId as String, currentIndex: currentIndex, spaceIds: Array(spaceIds))
     }
 
     private static func predictedIndex(_ snapshot: Snapshot) -> Int {

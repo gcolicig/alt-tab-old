@@ -296,6 +296,7 @@ Technischer Ansatz:
 - Wechsel durch eine kurze synthetische Dock-Swipe-Sequenz mit hoher Geschwindigkeit.
 - Der MVP postet Events nur bei einer Aktion und benoetigt keinen permanenten Event-Tap.
 - Bestehende `Spaces`-/Display-Logik und `CGSCopyManagedDisplaySpaces`-Daten wiederverwenden.
+- Direkter Sprung und Swipe-Rueckfall verwenden dieselbe optionale Bindung; ein fehlendes `CGSManagedDisplaySetCurrentSpace` deaktiviert nur den direkten Pfad.
 - Private CGS-Symbole zentral im API-Wrapper-Layer optional binden; private Gesture-Event-Typen und -Feldnummern dort zentralisieren und nach macOS-Version gaten.
 - Nur auf verifizierten Tahoe-Builds aktivieren; bei unbekannter macOS-Major-Version oder fehlenden Symbolen Modul sichtbar deaktivieren.
 - Accessibility muss bereits erteilt sein; andernfalls bleibt die Aktion unverfuegbar und die bestehende Berechtigungsfuehrung des AltTab-Kerns greift.
@@ -307,6 +308,7 @@ Implementierungsstand:
 
 - `Space left`, `Space right`, `Last Space` und `Space 1` bis `Space 9` sind mit stabilen IDs im gemeinsamen Aktionsregister vorhanden.
 - Der Swift-Kern sendet die kurze Began-/Changed-/Ended-Sequenz nur bei einer Aktion und verwendet keinen permanenten Event-Tap.
+- Befund vom 2026-07-27 aus der Mausbedienung: bei grossen Spruengen flackerte der Bildschirm, weil jeder Swipe ein echter Space-Wechsel ist. Der Kern springt jetzt primaer direkt ueber `CGSManagedDisplaySetCurrentSpace`; die Swipe-Schritte bleiben Rueckfallpfad, wenn das Symbol fehlt oder der Sprung nicht wirkt. Offen zu pruefen: ob Fokus, Menueleiste und Mission Control nach einem direkten Sprung konsistent bleiben.
 - Befund vom 2026-07-27 aus der Mausbedienung: bei grossen Spruengen liefen Bildschirm und Menueleiste sichtbar durch jeden Zwischen-Space. Die Leiste ueberspringt ihre Aktualisierung jetzt waehrend einer laufenden Sequenz und zeigt erst den Ankunfts-Space. Das Durchlaufen der Bildschirme selbst bleibt systembedingt: jeder Swipe ist ein echter Space-Wechsel; nur `stepInterval` verkuerzt die sichtbare Dauer.
 - Befund vom 2026-07-27 aus der Mausbedienung: Mehrschritt-Wechsel wurden als Burst gepostet und die Zielvorhersage als Tatsache gespeichert; verschluckte Swipes fuehrten dadurch zu Spruengen auf fremde Spaces. Der Kern schaltet jetzt schrittweise, liest den Ist-Space zwischen den Schritten und prueft nach dem letzten Schritt nach. `stepInterval` und `settleInterval` sind Schaetzwerte und am Zielgeraet zu kalibrieren.
 - CGS-Symbole werden ueber `dlopen`/`dlsym` optional aufgeloest; macOS-Major-Versionen ausserhalb Tahoe und fehlende Symbole bleiben fail-closed.

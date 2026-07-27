@@ -86,6 +86,12 @@ class Menubar {
         // highlight across the row. InstantSpaces refreshes once more when the sequence settles.
         guard !InstantSpaces.isSwitching else { return }
         guard statusItem != nil, let statusButton = statusItem.button else { return }
+        if Preferences.menubarIconShown, Preferences.spacesInMenubarShown {
+            Spaces.refresh()
+            // rebuilding the row on every Space change tore down the buttons while the mouse was still
+            // on them, which swallowed clicks. Restyle in place whenever the segments still fit.
+            if let model = spaceModel(), restyleExistingSegments(model) { return }
+        }
         customIconView?.removeFromSuperview()
         spaceSegmentsView?.removeFromSuperview()
         customIconView = nil
@@ -116,6 +122,19 @@ class Menubar {
         spaceSegmentsView = container
     }
 
+    /// Updates the existing segments instead of recreating them. Returns false when the row has to be
+    /// rebuilt, for example after the number of Spaces changed.
+    private static func restyleExistingSegments(_ model: (spaceIds: [CGSSpaceID], activeSpaceId: CGSSpaceID?)) -> Bool {
+        guard let container = spaceSegmentsView, !model.spaceIds.isEmpty else { return false }
+        let buttons = container.subviews.compactMap { $0 as? NSButton }
+        guard buttons.count == model.spaceIds.count else { return false }
+        let switchingEnabled = InstantSpaces.runtimeAvailability().isAvailable
+        zip(buttons, model.spaceIds).enumerated().forEach { offset, pair in
+            styleSpaceButton(pair.0, offset + 1, pair.1 == model.activeSpaceId, switchingEnabled)
+        }
+        return true
+    }
+
     private static func preferredIcon() -> NSImage {
         let index = Preferences.menubarIcon.indexAsString
         let image = NSImage(named: "menubar-\(index)")!
@@ -132,14 +151,19 @@ class Menubar {
 
     private static func spaceButton(_ index: Int, _ active: Bool, _ enabled: Bool) -> NSButton {
         let button = NSButton(title: "\(index)", target: self, action: #selector(spaceSegmentOnClick(_:)))
-        button.tag = index
         button.isBordered = false
+        button.wantsLayer = true
+        button.layer?.cornerRadius = 5
+        styleSpaceButton(button, index, active, enabled)
+        return button
+    }
+
+    private static func styleSpaceButton(_ button: NSButton, _ index: Int, _ active: Bool, _ enabled: Bool) {
+        button.tag = index
         button.isEnabled = enabled
         let font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: active ? .semibold : .medium)
         button.toolTip = String(format: NSLocalizedString("Switch to Space %d", comment: ""), index)
         button.setAccessibilityLabel(button.toolTip)
-        button.wantsLayer = true
-        button.layer?.cornerRadius = 5
         let color: NSColor
         if #available(macOS 10.14, *) {
             color = NSApp.effectiveAppearance.getThemeName() == .dark ? .white : .black
@@ -150,7 +174,6 @@ class Menubar {
         button.layer?.backgroundColor = active ? color.withAlphaComponent(0.12).cgColor : NSColor.clear.cgColor
         button.layer?.borderColor = color.withAlphaComponent(active ? 0.9 : 0.28).cgColor
         button.layer?.borderWidth = 1
-        return button
     }
 
     @objc private static func spaceSegmentOnClick(_ sender: NSButton) {
