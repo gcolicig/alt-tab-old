@@ -6,26 +6,14 @@ enum InstantSpacesPrivateApi {
     private typealias CurrentSpaceFunction = @convention(c) (CGSConnectionID, CFString) -> CGSSpaceID
     private static let handle = dlopen("/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight", RTLD_LAZY)
     private static let mainConnection: MainConnectionFunction? = resolve("CGSMainConnectionID")
-    private typealias SetCurrentSpaceFunction = @convention(c) (CGSConnectionID, CFString, CGSSpaceID) -> Void
     private static let currentSpace: CurrentSpaceFunction? = resolve("CGSManagedDisplayGetCurrentSpace")
-    private static let setCurrentSpace: SetCurrentSpaceFunction? = resolve("CGSManagedDisplaySetCurrentSpace")
+
+    // CGSManagedDisplaySetCurrentSpace is deliberately not bound: switching that way desynchronized the
+    // Dock and the WindowServer on Tahoe, which composited the target Space's windows onto the visible
+    // one and broke native Mission Control switching until the Dock was restarted.
 
     static var isAvailable: Bool {
         handle != nil && mainConnection != nil && currentSpace != nil
-    }
-
-    /// Jumps straight to a Space instead of stepping through the ones in between. Optional: without
-    /// this symbol the caller keeps using synthetic swipes.
-    static var supportsDirectSwitch: Bool {
-        isAvailable && setCurrentSpace != nil
-    }
-
-    static func switchDirectly(_ displayId: CFString, to spaceId: CGSSpaceID) -> Bool {
-        guard let mainConnection, let setCurrentSpace else { return false }
-        let connection = mainConnection()
-        guard connection != 0 else { return false }
-        setCurrentSpace(connection, displayId, spaceId)
-        return true
     }
 
     static func currentSpaceId(_ displayId: CFString) -> CGSSpaceID? {

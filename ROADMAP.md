@@ -43,7 +43,7 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 ## Phase 2A: Instant Spaces
 
 - Umgesetzt: Space links/rechts, direkter Wechsel zu Space 1 bis 9 und `Last Space` ueber das gemeinsame Aktionsregister.
-- Umgesetzt: direkter Sprung ueber `CGSManagedDisplaySetCurrentSpace` ohne Durchlaufen der Zwischen-Spaces; das Ergebnis wird geprueft und faellt bei Wirkungslosigkeit auf die Swipe-Schritte zurueck.
+- Verworfen: direkter Sprung ueber `CGSManagedDisplaySetCurrentSpace`. Der Aufruf entkoppelt Dock und WindowServer; Fenster des Ziel-Space werden ueber den sichtbaren gelegt und auch die native Auswahl in Mission Control bleibt defekt, bis der Dock neu startet. Das Symbol wird bewusst nicht gebunden.
 - Umgesetzt: schrittweises Schalten mit Abgleich gegen den Ist-Space zwischen den Schritten; ein verschluckter Swipe verschiebt keine Folgeaktion mehr.
 - Umgesetzt: tap-freier Kern durch synthetische Dock-Swipe-Sequenzen, ohne permanenten Event-Tap und ohne Default-Shortcuts.
 - Umgesetzt: benoetigte private Symbole werden optional gebunden; unbekannte macOS-Major-Versionen und fehlende Symbole deaktivieren die Aktionen.
