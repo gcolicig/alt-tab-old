@@ -12,9 +12,10 @@ enum InstantSpaces {
     /// The Dock coalesces swipe sequences that arrive back to back, so multi-step switches are paced
     /// and re-checked against the real Space instead of being posted as one burst. Calibrate on Tahoe (S-06).
     private static let stepInterval = TimeInterval(0.035)
-    /// Longer than `SpacePredictionPolicy.validity`, so the check after the last step always compares
-    /// the target against what the system actually reports and repeats a dropped step.
-    private static let settleInterval = TimeInterval(0.6)
+    /// Arrival is polled in short checks; their total span exceeds `SpacePredictionPolicy.validity`,
+    /// so a dropped last swipe is always caught against what the system actually reports.
+    private static let settleCheckInterval = TimeInterval(0.15)
+    private static let settleCheckCount = 4
     private static let predictionLock = NSLock()
     private static var predictions = [String: SpacePrediction]()
     private static var histories = [String: SpaceHistory]()
@@ -26,6 +27,7 @@ enum InstantSpaces {
     private static let swipeVelocityXField = CGEventField(rawValue: 129)
     private static let swipeVelocityYField = CGEventField(rawValue: 130)
     private static let gesturePhaseField = CGEventField(rawValue: 132)
+    private static var fadeToken: CGDisplayFadeReservationToken?
 
     static func availability(_ action: SpaceAction) -> ActionAvailability {
         let runtimeAvailability = runtimeAvailability()
@@ -62,6 +64,9 @@ enum InstantSpaces {
                   let snapshot = snapshot(),
                   let plan = plan(action, snapshot) else { return }
             markSequenceInFlight(snapshot.displayId, true)
+            if plan.steps > 1 {
+                beginTraversalCover()
+            }
             // one extra attempt per step absorbs a dropped swipe without letting a blocked switch loop
             step(towards: plan.targetIndex, on: snapshot.displayId, attemptsLeft: plan.steps * 2)
         }
@@ -87,14 +92,56 @@ enum InstantSpaces {
         }
         let stepIndex = direction == .right ? baseIndex + 1 : baseIndex - 1
         setPrediction(SpacePrediction(sourceIndex: snapshot.currentIndex, targetIndex: stepIndex, timestamp: now()), for: displayId)
-        let isLastStep = stepIndex == targetIndex
-        // release the menubar row as soon as the last swipe is out, so the highlight follows the arrival
-        // instead of the later verification pass
-        markSequenceInFlight(displayId, !isLastStep)
-        let delay = isLastStep ? settleInterval : stepInterval
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-            step(towards: targetIndex, on: displayId, attemptsLeft: attemptsLeft - 1)
+        if stepIndex == targetIndex {
+            // the sequence stays in flight until arrival is observed: the swipes are asynchronous, and
+            // releasing the menubar row on posting let the trailing notifications repaint every
+            // intermediate Space. Poll briefly so the highlight still follows arrival closely.
+            verifyArrival(of: targetIndex, on: displayId, attemptsLeft: attemptsLeft - 1, checksLeft: settleCheckCount)
+        } else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + stepInterval) {
+                step(towards: targetIndex, on: displayId, attemptsLeft: attemptsLeft - 1)
+            }
         }
+    }
+
+    private static func verifyArrival(of targetIndex: Int, on displayId: String, attemptsLeft: Int, checksLeft: Int) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + settleCheckInterval) {
+            guard let snapshot = snapshot(), snapshot.displayId == displayId else {
+                finishSequence(on: displayId, settledIndex: nil)
+                return
+            }
+            if snapshot.currentIndex == targetIndex {
+                finishSequence(on: displayId, settledIndex: targetIndex)
+            } else if checksLeft > 1 {
+                verifyArrival(of: targetIndex, on: displayId, attemptsLeft: attemptsLeft, checksLeft: checksLeft - 1)
+            } else {
+                // the last swipe was dropped: retry through the normal step path
+                step(towards: targetIndex, on: displayId, attemptsLeft: attemptsLeft)
+            }
+        }
+    }
+
+    /// Hides the flicker of a multi-step traversal behind a short system fade: every intermediate Space
+    /// is still a real switch, so the frames in between cannot be avoided, only covered. The fade
+    /// reservation expires on its own after two seconds, so an aborted sequence cannot leave the
+    /// screen dark even if the release is never reached.
+    private static func beginTraversalCover() {
+        guard fadeToken == nil else { return }
+        var token = CGDisplayFadeReservationToken(kCGDisplayFadeReservationInvalidToken)
+        guard CGAcquireDisplayFadeReservation(2, &token) == CGError.success else { return }
+        fadeToken = token
+        CGDisplayFade(token, 0.06,
+                      CGDisplayBlendFraction(kCGDisplayBlendNormal), CGDisplayBlendFraction(kCGDisplayBlendSolidColor),
+                      0, 0, 0, boolean_t(1))
+    }
+
+    private static func endTraversalCover() {
+        guard let token = fadeToken else { return }
+        fadeToken = nil
+        CGDisplayFade(token, 0.15,
+                      CGDisplayBlendFraction(kCGDisplayBlendSolidColor), CGDisplayBlendFraction(kCGDisplayBlendNormal),
+                      0, 0, 0, boolean_t(0))
+        CGReleaseDisplayFadeReservation(token)
     }
 
     /// Called when Space indexes lose their meaning: display reconfiguration and wake.
@@ -104,6 +151,7 @@ enum InstantSpaces {
         histories.removeAll(keepingCapacity: true)
         displaysWithSequenceInFlight.removeAll(keepingCapacity: true)
         predictionLock.unlock()
+        DispatchQueue.main.async { endTraversalCover() }
     }
 
     private static var isSupportedOperatingSystem: Bool {
@@ -138,12 +186,6 @@ enum InstantSpaces {
         predictionLock.unlock()
     }
 
-    private static func clearPrediction(for displayId: String) {
-        predictionLock.lock()
-        predictions[displayId] = nil
-        predictionLock.unlock()
-    }
-
     /// Records the Space a display arrived at. Called when one of our sequences settles and, through
     /// `noteSystemSpaceChange`, when the user switches Spaces natively.
     private static func finishSequence(on displayId: String, settledIndex: Int?) {
@@ -155,7 +197,10 @@ enum InstantSpaces {
         }
         predictionLock.unlock()
         // the menubar row skips its refresh while a sequence runs, so it needs the settled state here
-        DispatchQueue.main.async { Menubar.refreshSpaces() }
+        DispatchQueue.main.async {
+            endTraversalCover()
+            Menubar.refreshSpaces()
+        }
     }
 
     static var isSwitching: Bool {

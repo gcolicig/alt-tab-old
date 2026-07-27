@@ -15,6 +15,7 @@
 * add Tahoe-gated Instant Spaces actions for adjacent and direct Space switching through the shared action registry
 * add optional clickable Space numbers next to the menubar icon with active-Space highlighting
 * add a `Last Space` action that toggles between the current and the previously settled Space
+* hide the traversal of multi-step Space switches behind a short display fade
 
 ### Defaults
 

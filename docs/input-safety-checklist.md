@@ -45,6 +45,7 @@ Current user-facing Hyper and Caps Lock behavior was manually accepted on 2026-0
 ## Known observations
 
 - On 2026-07-27, recording a Space shortcut only became possible after toggling Hyperkey off and on in Settings. The cause is still unverified.
+- On 2026-07-28 the observation recurred after the stale-route fix, so that fix did not remove the cause (or a second cause exists). Still to record on the next occurrence: whether Hyper itself was dead (Caps Lock + key had no effect anywhere) or only the recorder ignored input, and whether a safe-mode warning had appeared.
 - Static analysis found one path that produces exactly this symptom: a routed key code survived a missed key-up, so every later press of that key kept carrying the Hyper modifiers until `resetHyperKeyState` ran, which is what toggling Hyperkey does. The state machine now drops such a stale route on the next fresh press. Whether this was the observed cause is unconfirmed; re-check the recorder on the target machine.
 
 ## Stale Hyper routes
