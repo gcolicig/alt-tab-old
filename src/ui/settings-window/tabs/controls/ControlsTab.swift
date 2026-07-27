@@ -115,7 +115,8 @@ private class ShortcutSidebarRow: ClickHoverStackView {
 class ControlsTab {
     static var shortcuts = [String: ATShortcut]()
     static var shortcutControls = [String: (CustomRecorderControl, String)]()
-    static var shortcutsActions = [
+    static var shortcutsActions: [String: () -> Void] = {
+        var actions: [String: () -> Void] = [
         "focusWindowShortcut": { App.focusTarget() },
         "previousWindowShortcut": { App.previousWindowShortcutWithRepeatingKey() },
         "→": { App.cycleSelection(.right) },
@@ -134,17 +135,22 @@ class ControlsTab {
         "hideShowAppShortcut": { App.hideShowSelectedApp() },
         "searchShortcut": { App.toggleSearchMode() },
         "lockSearchShortcut": { App.lockSearchMode() },
-        "windowLayoutLeftThirdShortcut": { WindowLayouts.perform(.leftThird) },
-        "windowLayoutRightThirdShortcut": { WindowLayouts.perform(.rightThird) },
-        "windowLayoutLeftTwoThirdsShortcut": { WindowLayouts.perform(.leftTwoThirds) },
-        "windowLayoutRightTwoThirdsShortcut": { WindowLayouts.perform(.rightTwoThirds) },
-        "windowLayoutLeftThreeQuartersShortcut": { WindowLayouts.perform(.leftThreeQuarters) },
-        "windowLayoutRightThreeQuartersShortcut": { WindowLayouts.perform(.rightThreeQuarters) },
-        "windowLayoutLeftFocusShortcut": { WindowLayouts.perform(.leftFocus) },
-        "windowLayoutCenterFocusShortcut": { WindowLayouts.perform(.centerFocus) },
-        "windowLayoutRightFocusShortcut": { WindowLayouts.perform(.rightFocus) },
-        "windowLayoutRestoreShortcut": { WindowLayouts.perform(.restore) },
-    ]
+        "windowLayoutLeftThirdShortcut": { Actions.perform(.windowLayout(.leftThird)) },
+        "windowLayoutRightThirdShortcut": { Actions.perform(.windowLayout(.rightThird)) },
+        "windowLayoutLeftTwoThirdsShortcut": { Actions.perform(.windowLayout(.leftTwoThirds)) },
+        "windowLayoutRightTwoThirdsShortcut": { Actions.perform(.windowLayout(.rightTwoThirds)) },
+        "windowLayoutLeftThreeQuartersShortcut": { Actions.perform(.windowLayout(.leftThreeQuarters)) },
+        "windowLayoutRightThreeQuartersShortcut": { Actions.perform(.windowLayout(.rightThreeQuarters)) },
+        "windowLayoutLeftFocusShortcut": { Actions.perform(.windowLayout(.leftFocus)) },
+        "windowLayoutCenterFocusShortcut": { Actions.perform(.windowLayout(.centerFocus)) },
+        "windowLayoutRightFocusShortcut": { Actions.perform(.windowLayout(.rightFocus)) },
+        "windowLayoutRestoreShortcut": { Actions.perform(.windowLayout(.restore)) },
+        ]
+        SpaceAction.all.forEach { action in
+            actions[action.shortcutPreferenceKey] = { Actions.perform(.space(action)) }
+        }
+        return actions
+    }()
     static var arrowKeysCheckbox: Switch!
     static var vimKeysCheckbox: Switch!
 
@@ -166,8 +172,9 @@ class ControlsTab {
         "windowLayoutRightTwoThirdsShortcut", "windowLayoutLeftThreeQuartersShortcut", "windowLayoutRightThreeQuartersShortcut",
         "windowLayoutLeftFocusShortcut", "windowLayoutCenterFocusShortcut",
         "windowLayoutRightFocusShortcut", "windowLayoutRestoreShortcut",
-    ]
-    private static let globalActionShortcutPreferences = Set(WindowLayoutAction.allCases.map(\.shortcutPreferenceKey))
+    ] + SpaceAction.all.map(\.shortcutPreferenceKey)
+    private static let globalActionShortcutPreferences = Set(
+        WindowLayoutAction.allCases.map(\.shortcutPreferenceKey) + SpaceAction.all.map(\.shortcutPreferenceKey))
     private static let removableShortcutPreferences = [
         "holdShortcut", "nextWindowShortcut",
         "appsToShow", "spacesToShow", "screensToShow",

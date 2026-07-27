@@ -9,6 +9,9 @@ class KeyboardEventsTestable {
         WindowLayoutAction.allCases.enumerated().forEach {
             ids[$0.element.shortcutPreferenceKey] = Preferences.maxShortcutCount * 2 + $0.offset
         }
+        SpaceAction.all.enumerated().forEach {
+            ids[$0.element.shortcutPreferenceKey] = Preferences.maxShortcutCount * 2 + WindowLayoutAction.allCases.count + $0.offset
+        }
         return ids
     }
 }

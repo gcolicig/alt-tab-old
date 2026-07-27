@@ -12,6 +12,14 @@
 		C0DE10000000000000000003 /* WindowLayoutsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000003 /* WindowLayoutsTab.swift */; };
 		C0DE10000000000000000004 /* WindowLayoutGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000001 /* WindowLayoutGeometry.swift */; };
 		C0DE10000000000000000005 /* WindowLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000004 /* WindowLayoutTests.swift */; };
+		C0DE10000000000000000006 /* ActionRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000005 /* ActionRegistry.swift */; };
+		C0DE10000000000000000007 /* Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000006 /* Actions.swift */; };
+		C0DE10000000000000000008 /* ActionRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000005 /* ActionRegistry.swift */; };
+		C0DE10000000000000000009 /* InstantSpacesTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000007 /* InstantSpacesTestable.swift */; };
+		C0DE1000000000000000000A /* InstantSpaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000008 /* InstantSpaces.swift */; };
+		C0DE1000000000000000000B /* InstantSpacesPrivateApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000009 /* InstantSpacesPrivateApi.swift */; };
+		C0DE1000000000000000000C /* InstantSpacesTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000007 /* InstantSpacesTestable.swift */; };
+		C0DE1000000000000000000D /* InstantSpacesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000000A /* InstantSpacesTests.swift */; };
 		1C96101BC5817A7F85FA1F8D /* titles_show_running_applications_light@2x.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 1C961F57248D4E2377A9038E /* titles_show_running_applications_light@2x.jpg */; };
 		1C96108A0CB2565233FE100B /* TableGroupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C961FB3DCF4906FEEF4A23D /* TableGroupView.swift */; };
 		1C96109FD155140CBA709A16 /* app_icons_hide_tabs_as_windows_light@2x.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 1C961CABD14356E109102D56 /* app_icons_hide_tabs_as_windows_light@2x.jpg */; };
@@ -327,6 +335,12 @@
 		C0DE20000000000000000002 /* WindowLayouts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowLayouts.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000003 /* WindowLayoutsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowLayoutsTab.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000004 /* WindowLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowLayoutTests.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000005 /* ActionRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionRegistry.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000006 /* Actions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Actions.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000007 /* InstantSpacesTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpacesTestable.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000008 /* InstantSpaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpaces.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000009 /* InstantSpacesPrivateApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpacesPrivateApi.swift; sourceTree = "<group>"; };
+		C0DE2000000000000000000A /* InstantSpacesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpacesTests.swift; sourceTree = "<group>"; };
 		1C961003A0D16B9AE3932B3F /* thumbnails_show_colored_circles_light@2x.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "thumbnails_show_colored_circles_light@2x.jpg"; sourceTree = "<group>"; };
 		1C9610071E9F3434C893DC95 /* thumbnails_align_thumbnails_center_light@2x.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "thumbnails_align_thumbnails_center_light@2x.jpg"; sourceTree = "<group>"; };
 		1C961093FB75180759EC6972 /* app_icons_hide_app_badges_light@2x.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "app_icons_hide_app_badges_light@2x.jpg"; sourceTree = "<group>"; };
@@ -1183,6 +1197,7 @@
 		BF0C8719351B41D268CE8B70 /* unit-tests */ = {
 			isa = PBXGroup;
 			children = (
+				C0DE2000000000000000000A /* InstantSpacesTests.swift */,
 				C0DE20000000000000000004 /* WindowLayoutTests.swift */,
 				BF0C84933936C6FE676CD33C /* AppearanceTests.swift */,
 				BF0C899905524253DC170B56 /* KeyboardEventsTests.swift */,
@@ -1239,6 +1254,7 @@
 			children = (
 				BF0C83EE9730BCFA41D840A9 /* README.md */,
 				BF0C8C5C0FF5D567BF190DE5 /* ApplicationServices.HIServices.framework.swift */,
+				C0DE20000000000000000009 /* InstantSpacesPrivateApi.swift */,
 				BF0C8B94D7994AB9007F6391 /* SkyLight.framework.swift */,
 			);
 			path = "private-apis";
@@ -1429,6 +1445,8 @@
 		D04BA0D80B24E72B9B981A1D /* logic */ = {
 			isa = PBXGroup;
 			children = (
+				C0DE30000000000000000002 /* actions */,
+				C0DE30000000000000000003 /* spaces */,
 				C0DE30000000000000000001 /* window-layouts */,
 				5FBB24D22F389A0400BF7E14 /* Benchmark.swift */,
 				5F17452D2F1A907800128EF8 /* WindowDiscriminator.swift */,
@@ -1646,6 +1664,24 @@
 				C0DE20000000000000000002 /* WindowLayouts.swift */,
 			);
 			path = "window-layouts";
+			sourceTree = "<group>";
+		};
+		C0DE30000000000000000002 /* actions */ = {
+			isa = PBXGroup;
+			children = (
+				C0DE20000000000000000005 /* ActionRegistry.swift */,
+				C0DE20000000000000000006 /* Actions.swift */,
+			);
+			path = actions;
+			sourceTree = "<group>";
+		};
+		C0DE30000000000000000003 /* spaces */ = {
+			isa = PBXGroup;
+			children = (
+				C0DE20000000000000000007 /* InstantSpacesTestable.swift */,
+				C0DE20000000000000000008 /* InstantSpaces.swift */,
+			);
+			path = spaces;
 			sourceTree = "<group>";
 		};
 		D04BA4FB0047656BEA21F1BE /* codesign */ = {
@@ -2564,6 +2600,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C0DE10000000000000000008 /* ActionRegistry.swift in Sources */,
+				C0DE1000000000000000000C /* InstantSpacesTestable.swift in Sources */,
+				C0DE1000000000000000000D /* InstantSpacesTests.swift in Sources */,
 				C0DE10000000000000000004 /* WindowLayoutGeometry.swift in Sources */,
 				C0DE10000000000000000005 /* WindowLayoutTests.swift in Sources */,
 				5F882F382EC3C63400110A9F /* CustomRecorderControlTestable.swift in Sources */,
@@ -2588,6 +2627,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C0DE10000000000000000006 /* ActionRegistry.swift in Sources */,
+				C0DE10000000000000000007 /* Actions.swift in Sources */,
+				C0DE10000000000000000009 /* InstantSpacesTestable.swift in Sources */,
+				C0DE1000000000000000000A /* InstantSpaces.swift in Sources */,
+				C0DE1000000000000000000B /* InstantSpacesPrivateApi.swift in Sources */,
 				C0DE10000000000000000001 /* WindowLayoutGeometry.swift in Sources */,
 				C0DE10000000000000000002 /* WindowLayouts.swift in Sources */,
 				C0DE10000000000000000003 /* WindowLayoutsTab.swift in Sources */,

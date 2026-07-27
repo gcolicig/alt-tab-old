@@ -70,6 +70,7 @@ class Preferences {
             values[indexToName("holdShortcut", index)] = defaultShortcut("⌥")
             values[indexToName("nextWindowShortcut", index)] = defaultShortcut(index == 0 ? "⇥" : (index == 1 ? keyAboveTabDependingOnInputSource() : ""))
         }
+        SpaceAction.all.forEach { values[$0.shortcutPreferenceKey] = defaultShortcut("") }
         (0...maxShortcutCount).forEach { index in
             values[indexToName("appsToShow", index)] = index == 1 ? AppsToShowPreference.active.indexAsString : (index == 2 ? AppsToShowPreference.nonActive.indexAsString : AppsToShowPreference.all.indexAsString)
             values[indexToName("spacesToShow", index)] = SpacesToShowPreference.all.indexAsString
@@ -93,7 +94,7 @@ class Preferences {
         "windowLayoutRightTwoThirdsShortcut", "windowLayoutLeftThreeQuartersShortcut", "windowLayoutRightThreeQuartersShortcut",
         "windowLayoutLeftFocusShortcut", "windowLayoutCenterFocusShortcut",
         "windowLayoutRightFocusShortcut", "windowLayoutRestoreShortcut",
-    ]
+    ] + SpaceAction.all.map(\.shortcutPreferenceKey)
     static var allShortcutPreferenceKeys: [String] {
         staticShortcutKeys + (0..<maxShortcutCount).flatMap { [indexToName("holdShortcut", $0), indexToName("nextWindowShortcut", $0)] }
     }

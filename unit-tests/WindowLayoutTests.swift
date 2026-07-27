@@ -60,4 +60,33 @@ final class WindowLayoutTests: XCTestCase {
         XCTAssertEqual(Set(keys).count, WindowLayoutAction.allCases.count)
         XCTAssertEqual(Set(ids).count, WindowLayoutAction.allCases.count)
     }
+
+    func testActionRegistryDispatchesAvailableAction() {
+        var executionCount = 0
+        let id = ActionIdentifier.windowLayout(.leftThird)
+        let registry = ActionRegistry([
+            RegisteredAction(id: id, title: "Left third", availability: { .available }) { executionCount += 1 },
+        ])
+        XCTAssertTrue(registry.perform(id))
+        XCTAssertEqual(executionCount, 1)
+        XCTAssertEqual(registry.action(id)?.title, "Left third")
+    }
+
+    func testActionRegistryRefusesUnavailableAndUnknownActions() {
+        var executionCount = 0
+        let id = ActionIdentifier.windowLayout(.leftThird)
+        let registry = ActionRegistry([
+            RegisteredAction(id: id, title: "Left third", availability: { .unavailable("Unavailable") }) { executionCount += 1 },
+        ])
+        XCTAssertFalse(registry.perform(id))
+        XCTAssertFalse(registry.perform(.windowLayout(.rightThird)))
+        XCTAssertEqual(registry.availability(id), .unavailable("Unavailable"))
+        XCTAssertEqual(executionCount, 0)
+    }
+
+    func testActionIdentifiersAreStableAndUnique() {
+        let ids = WindowLayoutAction.allCases.map { ActionIdentifier.windowLayout($0).stableId }
+        XCTAssertEqual(Set(ids).count, WindowLayoutAction.allCases.count)
+        XCTAssertEqual(ActionIdentifier.windowLayout(.centerFocus).stableId, "windowLayout.centerFocus")
+    }
 }
