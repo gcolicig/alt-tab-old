@@ -45,7 +45,33 @@ struct SpaceSwitchPlan: Equatable {
     let targetIndex: Int
 }
 
+struct SpacePrediction: Equatable {
+    let sourceIndex: Int
+    let targetIndex: Int
+    let timestamp: TimeInterval
+}
+
+struct SpacePredictionPolicy {
+    /// A prediction only bridges the gap until the system reports the new Space. Anything older
+    /// describes a switch that already settled or silently failed, and must not seed the next plan.
+    static let validity = TimeInterval(0.5)
+
+    static func baseIndex(observedIndex: Int, prediction: SpacePrediction?, now: TimeInterval) -> Int {
+        guard let prediction, now - prediction.timestamp <= validity else { return observedIndex }
+        // trust the prediction while the switch is still in flight or has landed as expected;
+        // any other observation means a step was dropped, so plan from what the system reports.
+        guard observedIndex == prediction.sourceIndex || observedIndex == prediction.targetIndex else { return observedIndex }
+        return prediction.targetIndex
+    }
+}
+
 struct SpaceSwitchPlanner {
+    static func stepDirection(currentIndex: Int, targetIndex: Int, spaceCount: Int) -> SpaceSwitchDirection? {
+        guard spaceCount > 0, (0..<spaceCount).contains(currentIndex), (0..<spaceCount).contains(targetIndex),
+              currentIndex != targetIndex else { return nil }
+        return targetIndex < currentIndex ? .left : .right
+    }
+
     static func plan(_ action: SpaceAction, currentIndex: Int, spaceCount: Int) -> SpaceSwitchPlan? {
         guard spaceCount > 0, (0..<spaceCount).contains(currentIndex) else { return nil }
         let targetIndex: Int

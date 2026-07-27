@@ -11,7 +11,9 @@ class SpacesEvents {
         throttler.throttleOrProceed {
             Logger.debug { notification.name.rawValue }
             Spaces.refresh()
-            InstantSpaces.synchronize()
+            // no InstantSpaces.synchronize() here: this notification also fires for our own in-flight
+            // steps, and dropping the prediction mid-sequence made the next step plan from a stale index.
+            // SpacePredictionPolicy already discards a prediction that no longer matches the real Space.
             Menubar.refreshSpaces()
             // Workaround for Safari full-screen videos
             // when full-screening a video, Safari spawns a second full-screen window called "Safari"

@@ -25,6 +25,29 @@ final class InstantSpacesTests: XCTestCase {
         XCTAssertNil(SpaceSwitchPlanner.plan(.right, currentIndex: 3, spaceCount: 3))
     }
 
+    func testStepDirectionMovesOneStepTowardsTheTarget() {
+        XCTAssertEqual(SpaceSwitchPlanner.stepDirection(currentIndex: 0, targetIndex: 3, spaceCount: 5), .right)
+        XCTAssertEqual(SpaceSwitchPlanner.stepDirection(currentIndex: 4, targetIndex: 1, spaceCount: 5), .left)
+        XCTAssertNil(SpaceSwitchPlanner.stepDirection(currentIndex: 2, targetIndex: 2, spaceCount: 5))
+        XCTAssertNil(SpaceSwitchPlanner.stepDirection(currentIndex: 2, targetIndex: 5, spaceCount: 5))
+        XCTAssertNil(SpaceSwitchPlanner.stepDirection(currentIndex: 2, targetIndex: 1, spaceCount: 0))
+    }
+
+    func testPredictionBridgesTheReportingGapOfAnInFlightSwitch() {
+        let prediction = SpacePrediction(sourceIndex: 0, targetIndex: 3, timestamp: 100)
+        XCTAssertEqual(SpacePredictionPolicy.baseIndex(observedIndex: 0, prediction: prediction, now: 100.1), 3)
+        XCTAssertEqual(SpacePredictionPolicy.baseIndex(observedIndex: 3, prediction: prediction, now: 100.1), 3)
+    }
+
+    func testPredictionIsDiscardedWhenItExpiresOrRealityDisagrees() {
+        let prediction = SpacePrediction(sourceIndex: 0, targetIndex: 3, timestamp: 100)
+        // a dropped step lands somewhere else: plan from what the system reports
+        XCTAssertEqual(SpacePredictionPolicy.baseIndex(observedIndex: 1, prediction: prediction, now: 100.1), 1)
+        // an old prediction describes a switch that already settled or failed
+        XCTAssertEqual(SpacePredictionPolicy.baseIndex(observedIndex: 0, prediction: prediction, now: 101), 0)
+        XCTAssertEqual(SpacePredictionPolicy.baseIndex(observedIndex: 2, prediction: nil, now: 100), 2)
+    }
+
     func testDockOverlayRequiresBothObservedLayers() {
         XCTAssertFalse(SpaceSwitchPlanner.dockOverlayIsActive([]))
         XCTAssertFalse(SpaceSwitchPlanner.dockOverlayIsActive([18, 18]))

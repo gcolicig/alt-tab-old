@@ -9,8 +9,14 @@ enum InstantSpaces {
 
     private static let supportedMajorVersion = 26
     private static let gestureVelocity = Double(2000)
+    /// The Dock coalesces swipe sequences that arrive back to back, so multi-step switches are paced
+    /// and re-checked against the real Space instead of being posted as one burst. Calibrate on Tahoe (S-06).
+    private static let stepInterval = TimeInterval(0.07)
+    /// Longer than `SpacePredictionPolicy.validity`, so the check after the last step always compares
+    /// the target against what the system actually reports and repeats a dropped step.
+    private static let settleInterval = TimeInterval(0.6)
     private static let predictionLock = NSLock()
-    private static var predictions = [String: Int]()
+    private static var predictions = [String: SpacePrediction]()
     private static let eventTypeField = CGEventField(rawValue: 55)
     private static let gestureHidTypeField = CGEventField(rawValue: 110)
     private static let swipeMotionField = CGEventField(rawValue: 123)
@@ -46,9 +52,29 @@ enum InstantSpaces {
         DispatchQueue.main.async {
             guard availability(action).isAvailable,
                   let snapshot = snapshot(),
-                  let plan = SpaceSwitchPlanner.plan(action, currentIndex: predictedIndex(snapshot), spaceCount: snapshot.spaceCount),
-                  post(plan) else { return }
-            setPrediction(plan.targetIndex, for: snapshot.displayId)
+                  let plan = SpaceSwitchPlanner.plan(action, currentIndex: predictedIndex(snapshot), spaceCount: snapshot.spaceCount) else { return }
+            // one extra attempt per step absorbs a dropped swipe without letting a blocked switch loop
+            step(towards: plan.targetIndex, on: snapshot.displayId, attemptsLeft: plan.steps * 2)
+        }
+    }
+
+    /// Posts one swipe at a time and re-reads the real Space between steps, so a coalesced or dropped
+    /// swipe cannot desynchronize the following steps. The target index belongs to the display the
+    /// sequence started on; moving the cursor to another display stops it rather than switching there.
+    private static func step(towards targetIndex: Int, on displayId: String, attemptsLeft: Int) {
+        guard attemptsLeft > 0, let snapshot = snapshot(), snapshot.displayId == displayId else { return }
+        let baseIndex = predictedIndex(snapshot)
+        guard let direction = SpaceSwitchPlanner.stepDirection(
+            currentIndex: baseIndex, targetIndex: targetIndex, spaceCount: snapshot.spaceCount) else {
+            clearPrediction(for: displayId)
+            return
+        }
+        guard postStep(direction) else { return }
+        let stepIndex = direction == .right ? baseIndex + 1 : baseIndex - 1
+        setPrediction(SpacePrediction(sourceIndex: snapshot.currentIndex, targetIndex: stepIndex, timestamp: now()), for: displayId)
+        let delay = stepIndex == targetIndex ? settleInterval : stepInterval
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            step(towards: targetIndex, on: displayId, attemptsLeft: attemptsLeft - 1)
         }
     }
 
@@ -80,19 +106,28 @@ enum InstantSpaces {
     private static func predictedIndex(_ snapshot: Snapshot) -> Int {
         predictionLock.lock()
         defer { predictionLock.unlock() }
-        return predictions[snapshot.displayId] ?? snapshot.currentIndex
+        return SpacePredictionPolicy.baseIndex(
+            observedIndex: snapshot.currentIndex, prediction: predictions[snapshot.displayId], now: now())
     }
 
-    private static func setPrediction(_ index: Int, for displayId: String) {
+    private static func setPrediction(_ prediction: SpacePrediction, for displayId: String) {
         predictionLock.lock()
-        predictions[displayId] = index
+        predictions[displayId] = prediction
         predictionLock.unlock()
     }
 
-    private static func post(_ plan: SpaceSwitchPlan) -> Bool {
-        (0..<plan.steps).allSatisfy { _ in
-            post(.began, plan.direction) && post(.changed, plan.direction) && post(.ended, plan.direction)
-        }
+    private static func clearPrediction(for displayId: String) {
+        predictionLock.lock()
+        predictions[displayId] = nil
+        predictionLock.unlock()
+    }
+
+    private static func now() -> TimeInterval {
+        ProcessInfo.processInfo.systemUptime
+    }
+
+    private static func postStep(_ direction: SpaceSwitchDirection) -> Bool {
+        post(.began, direction) && post(.changed, direction) && post(.ended, direction)
     }
 
     private static func post(_ phase: GesturePhase, _ direction: SpaceSwitchDirection) -> Bool {
