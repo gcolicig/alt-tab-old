@@ -8,7 +8,12 @@ class SleepWakeEvents {
     @objc private static func handleWake(_ notification: Notification) {
         Logger.info { "" }
         reEnableAllTaps()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { reEnableAllTaps() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            reEnableAllTaps()
+            Spaces.refresh()
+            InstantSpaces.synchronize()
+            Menubar.refreshSpaces()
+        }
     }
 
     private static func reEnableAllTaps() {

@@ -12,6 +12,8 @@ class ScreensEvents {
         throttler.throttleOrProceed {
             Logger.debug { notification.name.rawValue }
             Spaces.refresh()
+            InstantSpaces.synchronize()
+            Menubar.refreshSpaces()
             Screens.refresh()
             // a screen added or removed, or screen resolution change can mess up layout; we reset components
             App.resetPreferencesDependentComponents()

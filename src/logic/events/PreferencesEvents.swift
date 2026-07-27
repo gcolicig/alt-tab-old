@@ -52,7 +52,7 @@ class PreferencesEvents {
         }
         ControlsTab.preferenceChanged(key)
         switch key {
-        case "menubarIcon", "menubarIconShown": applyMenubarPreferencesIfReady()
+        case "menubarIcon", "menubarIconShown", "spacesInMenubarShown": applyMenubarPreferencesIfReady()
         case "nextWindowGesture": applyGesturePreference()
         case "hyperKeyEnabled": KeyboardEvents.hyperKeyEnabledChanged()
         case "hyperKeyHoldDuration": KeyboardEvents.resetHyperKeyState()

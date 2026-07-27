@@ -4,6 +4,9 @@ class Menubar {
     static var statusItem: NSStatusItem!
     static var menu: NSMenu!
     static var permissionCalloutMenuItems: [NSMenuItem]?
+    private static let iconWidth = CGFloat(28)
+    private static var customIconView: NSImageView?
+    private static var spaceSegmentsView: NSView?
 
     static func addMenuItem(_ title: String, _ action: Selector, _ keyEquivalent: String, _ symbolName: String?, _ color: NSColor? = nil, _ target: AnyObject? = nil) {
         let item = menu.addItem(withTitle: title, action: action, keyEquivalent: keyEquivalent)
@@ -51,6 +54,7 @@ class Menubar {
     }
 
     @objc static func statusItemOnClick() {
+        refreshSpaces()
         // NSApp.currentEvent == nil if the icon is "clicked" through VoiceOver
         if let type = NSApp.currentEvent?.type, type != .leftMouseDown {
             App.showUiFromShortcut0()
@@ -65,18 +69,95 @@ class Menubar {
         } else {
             statusItem.isVisible = false
         }
+        refreshSpaces()
         if let menubarIconDropdown = GeneralTab.menubarIconDropdown {
             menubarIconDropdown.isEnabled = Preferences.menubarIconShown
         }
     }
 
     static private func loadPreferredIcon() {
-        let i = Preferences.menubarIcon.indexAsString
-        let image = NSImage(named: "menubar-\(i)")!
-        image.isTemplate = i != "2"
-        statusItem.button!.image = image
+        statusItem.button!.image = preferredIcon()
         statusItem.isVisible = true
         statusItem.button!.imageScaling = .scaleProportionallyUpOrDown
+    }
+
+    static func refreshSpaces() {
+        guard statusItem != nil, let statusButton = statusItem.button else { return }
+        customIconView?.removeFromSuperview()
+        spaceSegmentsView?.removeFromSuperview()
+        customIconView = nil
+        spaceSegmentsView = nil
+        statusButton.image = preferredIcon()
+        statusItem.length = NSStatusItem.squareLength
+        statusButton.alignment = .center
+        guard Preferences.menubarIconShown, Preferences.spacesInMenubarShown else { return }
+        Spaces.refresh()
+        guard let model = spaceModel(), !model.spaceIds.isEmpty else { return }
+        let segmentWidth = CGFloat(28)
+        let segmentsWidth = segmentWidth * CGFloat(model.spaceIds.count)
+        let container = NSView(frame: NSRect(x: iconWidth, y: 0, width: segmentsWidth, height: statusButton.bounds.height))
+        let switchingEnabled = InstantSpaces.runtimeAvailability().isAvailable
+        model.spaceIds.enumerated().forEach { offset, spaceId in
+            let button = spaceButton(offset + 1, spaceId == model.activeSpaceId, switchingEnabled)
+            button.frame = NSRect(x: CGFloat(offset) * segmentWidth + 2, y: 3, width: segmentWidth - 4, height: max(18, container.bounds.height - 6))
+            container.addSubview(button)
+        }
+        statusItem.length = iconWidth + segmentsWidth + 2
+        statusButton.image = nil
+        let iconView = PassthroughImageView(frame: NSRect(x: 4, y: 2, width: 20, height: max(18, statusButton.bounds.height - 4)))
+        iconView.image = preferredIcon()
+        iconView.imageScaling = .scaleProportionallyUpOrDown
+        statusButton.addSubview(iconView)
+        statusButton.addSubview(container)
+        customIconView = iconView
+        spaceSegmentsView = container
+    }
+
+    private static func preferredIcon() -> NSImage {
+        let index = Preferences.menubarIcon.indexAsString
+        let image = NSImage(named: "menubar-\(index)")!
+        image.isTemplate = index != "2"
+        return image
+    }
+
+    private static func spaceModel() -> (spaceIds: [CGSSpaceID], activeSpaceId: CGSSpaceID?)? {
+        guard let cursorUuid = NSScreen.withMouse()?.cachedUuid() else { return nil }
+        let spaceIds = Spaces.screenSpacesMap[cursorUuid] ?? Spaces.screenSpacesMap.first?.value
+        guard let spaceIds else { return nil }
+        return (Array(spaceIds.prefix(9)), spaceIds.first { Spaces.visibleSpaces.contains($0) })
+    }
+
+    private static func spaceButton(_ index: Int, _ active: Bool, _ enabled: Bool) -> NSButton {
+        let button = NSButton(title: "\(index)", target: self, action: #selector(spaceSegmentOnClick(_:)))
+        button.tag = index
+        button.isBordered = false
+        button.isEnabled = enabled
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: active ? .semibold : .medium)
+        button.toolTip = String(format: NSLocalizedString("Switch to Space %d", comment: ""), index)
+        button.setAccessibilityLabel(button.toolTip)
+        button.wantsLayer = true
+        button.layer?.cornerRadius = 5
+        let color: NSColor
+        if #available(macOS 10.14, *) {
+            color = NSApp.effectiveAppearance.getThemeName() == .dark ? .white : .black
+        } else {
+            color = .black
+        }
+        button.attributedTitle = NSAttributedString(string: "\(index)", attributes: [.font: font, .foregroundColor: color])
+        button.layer?.backgroundColor = active ? color.withAlphaComponent(0.12).cgColor : NSColor.clear.cgColor
+        button.layer?.borderColor = color.withAlphaComponent(active ? 0.9 : 0.28).cgColor
+        button.layer?.borderWidth = 1
+        return button
+    }
+
+    @objc private static func spaceSegmentOnClick(_ sender: NSButton) {
+        Actions.perform(.space(.index(sender.tag)))
+    }
+}
+
+private final class PassthroughImageView: NSImageView {
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
     }
 }
 
