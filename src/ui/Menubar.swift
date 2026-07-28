@@ -5,8 +5,18 @@ class Menubar {
     static var menu: NSMenu!
     static var permissionCalloutMenuItems: [NSMenuItem]?
     private static let iconWidth = CGFloat(28)
+    private static let segmentWidth = CGFloat(28)
+    private static let groupGap = CGFloat(6)
+    /// Segments beyond this count per display collapse into an overflow button.
+    private static let maxDirectSegmentsPerGroup = 9
     private static var customIconView: NSImageView?
     private static var spaceSegmentsView: NSView?
+
+    private struct SpaceGroup {
+        let displayUuid: ScreenUuid
+        let spaceIds: [CGSSpaceID]
+        let activeSpaceId: CGSSpaceID?
+    }
 
     static func addMenuItem(_ title: String, _ action: Selector, _ keyEquivalent: String, _ symbolName: String?, _ color: NSColor? = nil, _ target: AnyObject? = nil) {
         let item = menu.addItem(withTitle: title, action: action, keyEquivalent: keyEquivalent)
@@ -92,9 +102,11 @@ class Menubar {
             if !spacesAreFresh {
                 Spaces.refresh()
             }
+            let groups = spaceGroups()
             // rebuilding the row on every Space change tore down the buttons while the mouse was still
-            // on them, which swallowed clicks. Restyle in place whenever the segments still fit.
-            if let model = spaceModel(), restyleExistingSegments(model) { return }
+            // on them, which swallowed clicks. Restyle in place whenever the layout still fits; only a
+            // single-display row is restyled today, multi-group and overflow layouts always rebuild.
+            if groups.count == 1, restyleExistingSegments(groups[0]) { return }
         }
         customIconView?.removeFromSuperview()
         spaceSegmentsView?.removeFromSuperview()
@@ -104,17 +116,23 @@ class Menubar {
         statusItem.length = NSStatusItem.squareLength
         statusButton.alignment = .center
         guard Preferences.menubarIconShown, Preferences.spacesInMenubarShown else { return }
-        guard let model = spaceModel(), !model.spaceIds.isEmpty else { return }
-        let segmentWidth = CGFloat(28)
-        let segmentsWidth = segmentWidth * CGFloat(model.spaceIds.count)
-        let container = NSView(frame: NSRect(x: iconWidth, y: 0, width: segmentsWidth, height: statusButton.bounds.height))
+        let groups = spaceGroups()
+        guard !groups.isEmpty else { return }
         let switchingEnabled = InstantSpaces.runtimeAvailability().isAvailable
-        model.spaceIds.enumerated().forEach { offset, spaceId in
-            let button = spaceButton(offset + 1, spaceId == model.activeSpaceId, switchingEnabled)
-            button.frame = NSRect(x: CGFloat(offset) * segmentWidth + 2, y: 3, width: segmentWidth - 4, height: max(18, container.bounds.height - 6))
-            container.addSubview(button)
+        let cursorUuid = NSScreen.withMouse()?.cachedUuid()
+        let container = NSView(frame: .zero)
+        var x = CGFloat(0)
+        groups.enumerated().forEach { groupOffset, group in
+            if groupOffset > 0 {
+                x += groupGap
+                container.addSubview(groupDivider(x: x, height: statusButton.bounds.height))
+                x += groupGap
+            }
+            x += addGroupSegments(group, startX: x, height: statusButton.bounds.height, switchingEnabled: switchingEnabled,
+                                   isCursorGroup: cursorUuid == nil || cursorUuid == group.displayUuid, into: container)
         }
-        statusItem.length = iconWidth + segmentsWidth + 2
+        container.frame = NSRect(x: iconWidth, y: 0, width: x, height: statusButton.bounds.height)
+        statusItem.length = iconWidth + x + 2
         statusButton.image = nil
         let iconView = PassthroughImageView(frame: NSRect(x: 4, y: 2, width: 20, height: max(18, statusButton.bounds.height - 4)))
         iconView.image = preferredIcon()
@@ -125,15 +143,38 @@ class Menubar {
         spaceSegmentsView = container
     }
 
-    /// Updates the existing segments instead of recreating them. Returns false when the row has to be
-    /// rebuilt, for example after the number of Spaces changed.
-    private static func restyleExistingSegments(_ model: (spaceIds: [CGSSpaceID], activeSpaceId: CGSSpaceID?)) -> Bool {
-        guard let container = spaceSegmentsView, !model.spaceIds.isEmpty else { return false }
+    /// Adds the segments for one display group and returns the width consumed.
+    private static func addGroupSegments(_ group: SpaceGroup, startX: CGFloat, height: CGFloat, switchingEnabled: Bool,
+                                          isCursorGroup: Bool, into container: NSView) -> CGFloat {
+        let directCount = group.spaceIds.count > maxDirectSegmentsPerGroup ? maxDirectSegmentsPerGroup - 1 : group.spaceIds.count
+        let hasOverflow = group.spaceIds.count > directCount
+        (0..<directCount).forEach { offset in
+            let button = spaceButton(offset + 1, group.spaceIds[offset] == group.activeSpaceId, switchingEnabled && isCursorGroup, group.displayUuid)
+            button.frame = NSRect(x: startX + CGFloat(offset) * segmentWidth + 2, y: 3, width: segmentWidth - 4, height: max(18, height - 6))
+            container.addSubview(button)
+        }
+        guard hasOverflow else { return CGFloat(directCount) * segmentWidth }
+        let overflowIndexes = Array((directCount + 1)...group.spaceIds.count)
+        let overflowButton = overflowButton(overflowIndexes, group.spaceIds, group.activeSpaceId, switchingEnabled && isCursorGroup, group.displayUuid)
+        overflowButton.frame = NSRect(x: startX + CGFloat(directCount) * segmentWidth + 2, y: 3, width: segmentWidth - 4, height: max(18, height - 6))
+        container.addSubview(overflowButton)
+        return CGFloat(directCount + 1) * segmentWidth
+    }
+
+    private static func groupDivider(x: CGFloat, height: CGFloat) -> NSView {
+        let divider = NSBox(frame: NSRect(x: x, y: 4, width: 1, height: max(10, height - 8)))
+        divider.boxType = .separator
+        return divider
+    }
+
+    /// Updates the existing single-group segments in place. Returns false when the row has to be rebuilt.
+    private static func restyleExistingSegments(_ group: SpaceGroup) -> Bool {
+        guard let container = spaceSegmentsView, !group.spaceIds.isEmpty, group.spaceIds.count <= maxDirectSegmentsPerGroup else { return false }
         let buttons = container.subviews.compactMap { $0 as? NSButton }
-        guard buttons.count == model.spaceIds.count else { return false }
+        guard buttons.count == group.spaceIds.count else { return false }
         let switchingEnabled = InstantSpaces.runtimeAvailability().isAvailable
-        zip(buttons, model.spaceIds).enumerated().forEach { offset, pair in
-            styleSpaceButton(pair.0, offset + 1, pair.1 == model.activeSpaceId, switchingEnabled)
+        zip(buttons, group.spaceIds).enumerated().forEach { offset, pair in
+            styleSpaceButton(pair.0, offset + 1, pair.1 == group.activeSpaceId, switchingEnabled)
         }
         return true
     }
@@ -145,19 +186,55 @@ class Menubar {
         return image
     }
 
-    private static func spaceModel() -> (spaceIds: [CGSSpaceID], activeSpaceId: CGSSpaceID?)? {
-        guard let cursorUuid = NSScreen.withMouse()?.cachedUuid() else { return nil }
-        let spaceIds = Spaces.screenSpacesMap[cursorUuid] ?? Spaces.screenSpacesMap.first?.value
-        guard let spaceIds else { return nil }
-        return (Array(spaceIds.prefix(9)), spaceIds.first { Spaces.visibleSpaces.contains($0) })
+    /// Displays are ordered left to right, then top to bottom. Groups with separate Spaces collapse to a
+    /// single shared group when the system setting `Displays have separate Spaces` is off, since macOS
+    /// then reports one shared display identifier for all screens.
+    private static func spaceGroups() -> [SpaceGroup] {
+        guard !Spaces.screenSpacesMap.isEmpty else { return [] }
+        let orderedScreenUuids = NSScreen.screens
+            .sorted { $0.frame.origin.x != $1.frame.origin.x ? $0.frame.origin.x < $1.frame.origin.x : $0.frame.origin.y < $1.frame.origin.y }
+            .compactMap { $0.cachedUuid() }
+        var seen = Set<ScreenUuid>()
+        var orderedUuids = orderedScreenUuids.filter { Spaces.screenSpacesMap[$0] != nil && seen.insert($0).inserted }
+        Spaces.screenSpacesMap.keys.forEach { uuid in
+            if !seen.contains(uuid) {
+                orderedUuids.append(uuid)
+                seen.insert(uuid)
+            }
+        }
+        return orderedUuids.compactMap { uuid in
+            guard let spaceIds = Spaces.screenSpacesMap[uuid], !spaceIds.isEmpty else { return nil }
+            return SpaceGroup(displayUuid: uuid, spaceIds: spaceIds, activeSpaceId: spaceIds.first { Spaces.visibleSpaces.contains($0) })
+        }
     }
 
-    private static func spaceButton(_ index: Int, _ active: Bool, _ enabled: Bool) -> NSButton {
+    private static func spaceButton(_ index: Int, _ active: Bool, _ enabled: Bool, _ displayUuid: ScreenUuid) -> NSButton {
         let button = NSButton(title: "\(index)", target: self, action: #selector(spaceSegmentOnClick(_:)))
         button.isBordered = false
         button.wantsLayer = true
         button.layer?.cornerRadius = 5
+        button.identifier = NSUserInterfaceItemIdentifier(displayUuid as String)
         styleSpaceButton(button, index, active, enabled)
+        return button
+    }
+
+    private static func overflowButton(_ indexes: [Int], _ spaceIds: [CGSSpaceID], _ activeSpaceId: CGSSpaceID?, _ enabled: Bool, _ displayUuid: ScreenUuid) -> NSButton {
+        let button = NSButton(title: "…", target: self, action: #selector(spaceOverflowOnClick(_:)))
+        button.isBordered = false
+        button.wantsLayer = true
+        button.layer?.cornerRadius = 5
+        button.identifier = NSUserInterfaceItemIdentifier(displayUuid as String)
+        button.isEnabled = enabled
+        button.toolTip = NSLocalizedString("More Spaces", comment: "")
+        button.setAccessibilityLabel(button.toolTip)
+        let activeInOverflow = indexes.contains { spaceIds[$0 - 1] == activeSpaceId }
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: activeInOverflow ? .semibold : .medium)
+        let color: NSColor = if #available(macOS 10.14, *) { NSApp.effectiveAppearance.getThemeName() == .dark ? .white : .black } else { .black }
+        button.attributedTitle = NSAttributedString(string: "…", attributes: [.font: font, .foregroundColor: color])
+        button.layer?.backgroundColor = activeInOverflow ? color.withAlphaComponent(0.12).cgColor : NSColor.clear.cgColor
+        button.layer?.borderColor = color.withAlphaComponent(activeInOverflow ? 0.9 : 0.28).cgColor
+        button.layer?.borderWidth = 1
+        overflowIndexesByButton[ObjectIdentifier(button)] = indexes
         return button
     }
 
@@ -179,8 +256,42 @@ class Menubar {
         button.layer?.borderWidth = 1
     }
 
+    /// Segments are only wired to the shared action register up to Space 9; overflow indexes beyond
+    /// that reach the same underlying switch directly, since only a shortcut needs a registered action.
+    private static var overflowIndexesByButton = [ObjectIdentifier: [Int]]()
+
     @objc private static func spaceSegmentOnClick(_ sender: NSButton) {
-        Actions.perform(.space(.index(sender.tag)))
+        guard cursorMatchesGroup(sender) else { return }
+        if sender.tag <= 9 {
+            Actions.perform(.space(.index(sender.tag)))
+        } else {
+            InstantSpaces.perform(.index(sender.tag))
+        }
+    }
+
+    @objc private static func spaceOverflowOnClick(_ sender: NSButton) {
+        guard cursorMatchesGroup(sender), let indexes = overflowIndexesByButton[ObjectIdentifier(sender)] else { return }
+        let menu = NSMenu()
+        indexes.forEach { index in
+            let item = menu.addItem(withTitle: String(format: NSLocalizedString("Space %d", comment: ""), index), action: #selector(spaceOverflowItemOnClick(_:)), keyEquivalent: "")
+            item.target = self
+            item.tag = index
+        }
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
+    }
+
+    @objc private static func spaceOverflowItemOnClick(_ sender: NSMenuItem) {
+        InstantSpaces.perform(.index(sender.tag))
+    }
+
+    /// A single, unmirrored menu bar renders every display's group on whichever screen shows it; a click
+    /// there always has the cursor on that screen, not necessarily the group's own display. Instant
+    /// Spaces can only switch the display the cursor is physically on (it posts synthetic trackpad
+    /// gestures, which carry no target-display field), so a mismatched click is silently ignored rather
+    /// than switching the wrong display's Spaces.
+    private static func cursorMatchesGroup(_ button: NSButton) -> Bool {
+        guard let groupUuid = button.identifier?.rawValue, let cursorUuid = NSScreen.withMouse()?.cachedUuid() else { return true }
+        return groupUuid == cursorUuid as String
     }
 }
 

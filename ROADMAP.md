@@ -61,7 +61,8 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 - Umgesetzt: ereignisbasierte Aktualisierung bei Space-, Display- und Wake-Ereignissen ohne Polling.
 - Der erste Schnitt zeigt bis zu neun Spaces fuer das Display unter dem Cursor und deaktiviert Klicks bei nicht verfuegbarem Instant-Spaces-Kern.
 - Umgesetzt: konfigurierbare Shortcut-Fallbacks fuer links, rechts und Space 1 bis 9.
-- Offen: gruppierte Display-Reihen gemaess `Displays haben separate Spaces` und Ueberlauf fuer mehr als neun Spaces.
+- Umgesetzt: gruppierte Display-Reihen gemaess `Displays haben separate Spaces` (macOS liefert bei deaktivierter Option ohnehin eine gemeinsame Gruppe) und Ueberlauf-Menue ab dem neunten Space pro Display.
+- Klicks auf eine Nicht-Cursor-Display-Gruppe werden bei einer einzigen, nicht gespiegelten Menueleiste ignoriert statt das falsche Display zu schalten: Instant Spaces postet synthetische Trackpad-Gesten ohne Zieldisplay-Feld und kann nur das Display unter dem Cursor schalten. Bei gespiegelter Menueleiste (macOS-Einstellung) trifft der Klick immer das richtige Display, da der Cursor beim Klick bereits dort sitzt.
 - Beobachtung aus der manuellen Abnahme: Zum Aufzeichnen eines Space-Shortcuts musste Hyperkey einmal aus- und wieder eingeschaltet werden. Der Befund ist dokumentiert; es wurde bewusst keine Aenderung vorgenommen.
 - Stabile Managed-Space-Identitaet getrennt verifizieren; optionale Aliase erst danach persistieren.
 
