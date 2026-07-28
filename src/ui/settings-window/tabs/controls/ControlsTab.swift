@@ -870,6 +870,7 @@ class ControlsTab {
             shortcuts.removeValue(forKey: controlId)
             if atShortcut.scope == .global {
                 ControlsTab.toggleNativeCommandTabIfNeeded()
+                NativeSystemShortcuts.apply()
             }
         }
     }

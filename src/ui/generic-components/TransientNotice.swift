@@ -28,11 +28,12 @@ class TransientNotice: NSPanel {
         isOpaque = false
         ignoresMouseEvents = true
         collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
-        contentView = makeContentView(message)
-        setFrame(frameBelowMenubar(), display: false)
+        let (view, height) = makeContentView(message)
+        contentView = view
+        setFrame(frameBelowMenubar(height), display: false)
     }
 
-    private func makeContentView(_ message: String) -> NSView {
+    private func makeContentView(_ message: String) -> (NSView, CGFloat) {
         let label = NSTextField(labelWithString: message)
         label.lineBreakMode = .byWordWrapping
         label.maximumNumberOfLines = 0
@@ -53,12 +54,13 @@ class TransientNotice: NSPanel {
             label.topAnchor.constraint(equalTo: background.topAnchor, constant: Self.padding),
             label.bottomAnchor.constraint(equalTo: background.bottomAnchor, constant: -Self.padding),
         ])
-        return background
+        // measured against the final width, because the panel frame is set before layout runs
+        let labelHeight = label.sizeThatFits(NSSize(width: Self.width - 2 * Self.padding, height: .greatestFiniteMagnitude)).height
+        return (background, labelHeight + 2 * Self.padding)
     }
 
-    private func frameBelowMenubar() -> NSRect {
+    private func frameBelowMenubar(_ height: CGFloat) -> NSRect {
         let screen = NSScreen.main ?? NSScreen.screens.first!
-        let height = contentView?.fittingSize.height ?? 64
         let visible = screen.visibleFrame
         return NSRect(x: visible.maxX - Self.width - 20, y: visible.maxY - height - 12, width: Self.width, height: height)
     }

@@ -19,18 +19,18 @@ struct ShortcutPreset {
         }
     }
 
-    /// Assignments that would replace something the user already set. They are reported rather than
+    /// Preference keys that already carry a different shortcut. They are reported rather than
     /// overwritten, so applying a preset can never silently take a shortcut away.
-    func conflicts() -> [(key: String, existing: String)] {
+    func occupiedKeys() -> [String] {
         assignments.compactMap { assignment in
             guard let existing = Preferences.shortcut(assignment.key),
                   existing != Preferences.shortcutFromKeyEquivalent(assignment.keyEquivalent) else { return nil }
-            return (assignment.key, existing.description)
+            return assignment.key
         }
     }
 
     func apply() {
-        let occupied = Set(conflicts().map(\.key))
+        let occupied = Set(occupiedKeys())
         assignments.filter { !occupied.contains($0.key) }.forEach {
             Preferences.setShortcut($0.key, keyEquivalent: $0.keyEquivalent)
         }
