@@ -10,12 +10,22 @@ import ShortcutRecorder
 /// untouched.
 struct ShortcutPreset {
     let id: String
+    /// Presets of one domain assign the same preference keys, so only one of them can be active.
+    let domain: String
     let title: String
     let summary: String
     let assignments: [(key: String, shortcut: Shortcut)]
 
-    var isApplied: Bool {
-        assignments.allSatisfy { Preferences.shortcut($0.key) == $0.shortcut }
+    /// Stored rather than derived from the assignments: a preset stays active when single shortcuts are
+    /// changed afterwards, otherwise one edit would silently release the domain for another preset.
+    var isActive: Bool {
+        ShortcutPresets.activeId(in: domain) == id
+    }
+
+    /// Whether the shortcuts still are what this preset assigned. A difference means the user adjusted
+    /// something while it was active, which removing the preset would discard.
+    var hasCustomChanges: Bool {
+        isActive && !assignments.allSatisfy { Preferences.shortcut($0.key) == $0.shortcut }
     }
 
     private var backupKey: String { "presetBackup.\(id)" }
@@ -25,11 +35,13 @@ struct ShortcutPreset {
     func apply() {
         storeBackup()
         assignments.forEach { Preferences.setShortcut($0.key, $0.shortcut) }
+        ShortcutPresets.setActiveId(id, in: domain)
         NativeSystemShortcuts.apply()
     }
 
     func remove() {
         restoreBackup()
+        ShortcutPresets.setActiveId(nil, in: domain)
         NativeSystemShortcuts.apply()
     }
 
@@ -67,7 +79,26 @@ struct ShortcutPreset {
 }
 
 enum ShortcutPresets {
+    private static let activeKey = "activeShortcutPresets"
+    private static let spacesDomain = "spaces"
+    private static let layoutsDomain = "layouts"
     private static let hyper: NSEvent.ModifierFlags = [.command, .control, .option, .shift]
+
+    static func activeId(in domain: String) -> String? {
+        (UserDefaults.standard.dictionary(forKey: activeKey) as? [String: String])?[domain]
+    }
+
+    static func setActiveId(_ id: String?, in domain: String) {
+        var active = (UserDefaults.standard.dictionary(forKey: activeKey) as? [String: String]) ?? [:]
+        active[domain] = id
+        UserDefaults.standard.set(active, forKey: activeKey)
+    }
+
+    /// A preset can only be assigned while its domain is free, so the two sets of one domain cannot
+    /// overwrite each other unnoticed.
+    static func isAssignable(_ preset: ShortcutPreset) -> Bool {
+        activeId(in: preset.domain) == nil
+    }
     private static let digitKeyCodes: [KeyCode] = [.ansi0, .ansi1, .ansi2, .ansi3, .ansi4, .ansi5, .ansi6, .ansi7, .ansi8, .ansi9]
 
     static func shortcut(_ code: KeyCode, _ modifierFlags: NSEvent.ModifierFlags) -> Shortcut {
@@ -101,6 +132,7 @@ enum ShortcutPresets {
     /// those system shortcuts to AltTab+ until the preset is removed.
     static let macOsSpaces = ShortcutPreset(
         id: "macOsSpaces",
+        domain: spacesDomain,
         title: NSLocalizedString("macOS Spaces shortcuts", comment: ""),
         summary: NSLocalizedString("Control plus 1 to 9 switches to that Space, Control plus 0 toggles back to the last one, Control plus an arrow moves one Space. The matching system shortcuts, including native window tiling on the same combination, are disabled while this is assigned and restored when it is removed.", comment: ""),
         assignments: spaceAssignments(.control))
@@ -108,18 +140,21 @@ enum ShortcutPresets {
     /// Leaves every macOS shortcut alone, at the price of needing the Hyper key enabled.
     static let hyperSpaces = ShortcutPreset(
         id: "hyperSpaces",
+        domain: spacesDomain,
         title: NSLocalizedString("Hyper key Spaces shortcuts", comment: ""),
         summary: NSLocalizedString("The same set on the Hyper key instead of Control, so no macOS shortcut has to be disabled. Requires the Hyper key to be enabled.", comment: ""),
         assignments: spaceAssignments(hyper))
 
     static let rectangleLayouts = ShortcutPreset(
         id: "rectangleLayouts",
+        domain: layoutsDomain,
         title: NSLocalizedString("Rectangle-style layout shortcuts", comment: ""),
         summary: NSLocalizedString("Control and Option with D, G, E, T for thirds and two-thirds, and with Delete for restore, matching Rectangle and Magnet. Conflicts if one of those apps is running.", comment: ""),
         assignments: layoutAssignments([.control, .option]))
 
     static let hyperLayouts = ShortcutPreset(
         id: "hyperLayouts",
+        domain: layoutsDomain,
         title: NSLocalizedString("Hyper key layout shortcuts", comment: ""),
         summary: NSLocalizedString("The same letters on the Hyper key, which stays clear of Rectangle and Magnet. Requires the Hyper key to be enabled.", comment: ""),
         assignments: layoutAssignments(hyper))
