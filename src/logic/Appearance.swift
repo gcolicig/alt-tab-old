@@ -85,12 +85,7 @@ class Appearance {
         } else {
             lightTheme()
         }
-        // for Liquid Glass, we don't want a shadow around the panel
-        if #available(macOS 26.0, *), currentStyle == .appIcons && LiquidGlassEffectView.canUsePrivateLiquidGlassLook() {
-            enablePanelShadow = false
-        } else {
-            enablePanelShadow = true
-        }
+        enablePanelShadow = true
     }
 
     private static func thumbnailsSize(_ isHorizontalScreen: Bool, _ size: AppearanceSizePreference) {
