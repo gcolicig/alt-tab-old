@@ -123,7 +123,7 @@ If permissions appear enabled in System Settings but AltTab+ still says `Not all
 
 ## Interacting macOS Settings
 
-AltTab+ does not change system settings. A few of them do change how its modules behave, so they are listed here rather than silently worked around.
+AltTab+ changes exactly one class of system setting, and only on request: the keyboard shortcuts a preset needs, which it gives back when the preset is removed. Everything below is left alone, but it does change how the modules behave, so it is listed here rather than silently worked around.
 
 | Setting | Where | Effect on AltTab+ |
 |---|---|---|
