@@ -125,11 +125,12 @@ Vor Scope-Entscheidungen zu Snapping und Layouts am Zielgeraet klaeren:
 
 ### 0. Gemeinsamer Aktions- und Triggerkern
 
-Status: Geplant; Dual-Role-Hyper umgesetzt
+Status: Geplant; Dual-Role-Hyper und Apps/URLs-Register umgesetzt
 Prioritaet: Sehr hoch
 
 Beschreibung:
 
+- Umgesetzt: 9 App- und 9 URL-Slots im Aktionsregister, je mit eigenem globalem Shortcut und Settings-Tab `Apps & URLs`; Verfuegbarkeit meldet fehlende Installation bzw. ungueltige URL.
 - Typisiertes Aktionsregister fuer AltTab+-Fensteraktionen, Apps und URLs.
 - Getrennte Trigger fuer globale Shortcuts, Dual-Role-Hyper, Leader-Sequenzen und FlickRing.
 - Trigger liefern nur eine Aktions-ID; die Ausfuehrung geschieht ausserhalb des Event-Tap-Callbacks.

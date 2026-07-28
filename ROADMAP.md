@@ -37,7 +37,7 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 - Umgesetzt: globale Window-Layout-Shortcuts verwenden das gemeinsame Register.
 - Umgesetzt: Space links/rechts, `Last Space` und Space 1 bis 9 sind als typisierte Aktionen registriert.
 - Umgesetzt: `Move to next display` und `Move to previous display` sind als typisierte Aktionen registriert; sie behalten die relative Lage des Fensters und begrenzen es auf den Zielbildschirm.
-- Offen: Register um Apps und URLs erweitern.
+- Umgesetzt: Register um Apps und URLs erweitert; 9 App- und 9 URL-Slots mit je eigenem globalem Shortcut, konfigurierbar im Settings-Tab `Apps & URLs`.
 - Spaces-Menueleiste, Leader-Sequenzen, FlickRing-Sektoren und spaetere Module verwenden danach dasselbe Register.
 - Die Menueleiste enthaelt keine eigene Fenster- oder Space-Aktionslogik.
 - Keine beliebigen Makros oder Shell-Kommandos im ersten Umfang.
