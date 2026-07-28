@@ -147,6 +147,8 @@ macOS owns several shortcuts that overlap with what AltTab+ does. A system short
 | `Control+Down` | Application windows | 33, 198, 243 | Only worth taking over for a shortcut that shows the windows of the current application |
 | `Control+Up` | Mission Control | 32, 242 | No AltTab+ equivalent; leave it |
 
+AltTab+ assigns none of these by itself. The Spaces section offers them as a preset: assigning it takes the matching system shortcuts over, removing it gives them back, and a shortcut you assigned yourself is never replaced. Ownership is remembered across launches, so a system shortcut AltTab+ disabled is restored even if the app was killed.
+
 Disabling a symbolic hotkey persists after AltTab+ quits. Anything AltTab+ does not manage itself should therefore be changed in System Settings, so it stays visible where you expect it.
 
 Space switching moves through the Spaces in between, because the only mechanism available without disabling SIP is a synthetic swipe. Jumping straight to a Space is possible through a private call, but it desynchronizes the Dock and the WindowServer on Tahoe, so it is deliberately not used.

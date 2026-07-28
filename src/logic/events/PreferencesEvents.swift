@@ -32,7 +32,10 @@ class PreferencesEvents {
         guard !initialized else { return }
         initialized = true
         UserDefaultsEvents.observe()
+        // give back any system shortcut a previous run disabled, before the current assignments claim theirs
+        NativeSystemShortcuts.releaseAbandonedOwnership()
         ControlsTab.initializePreferencesDependentState()
+        NativeSystemShortcuts.apply()
         applyMenubarPreferencesIfReady()
         applyUpdatePolicyPreference()
         TrackpadEvents.toggle(Preferences.nextWindowGesture != .disabled && !Preferences.inputModulesSafeMode)

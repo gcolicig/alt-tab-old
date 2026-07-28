@@ -719,6 +719,7 @@ class ControlsTab {
         if scope == .global {
             KeyboardEvents.addGlobalShortcut(controlId, atShortcut.shortcut)
             ControlsTab.toggleNativeCommandTabIfNeeded()
+            NativeSystemShortcuts.apply()
         }
     }
 

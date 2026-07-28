@@ -21,6 +21,9 @@
 		C0DE1000000000000000000A /* InstantSpaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000008 /* InstantSpaces.swift */; };
 		C0DE1000000000000000000B /* InstantSpacesPrivateApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000009 /* InstantSpacesPrivateApi.swift */; };
 		C0DE10000000000000000010 /* SpacesTrace.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000000D /* SpacesTrace.swift */; };
+		C0DE10000000000000000014 /* ShortcutPresets.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000011 /* ShortcutPresets.swift */; };
+		C0DE10000000000000000013 /* TransientNotice.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000010 /* TransientNotice.swift */; };
+		C0DE10000000000000000012 /* NativeSystemShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000000F /* NativeSystemShortcuts.swift */; };
 		C0DE1000000000000000000C /* InstantSpacesTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000007 /* InstantSpacesTestable.swift */; };
 		C0DE1000000000000000000D /* InstantSpacesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000000A /* InstantSpacesTests.swift */; };
 		1C96101BC5817A7F85FA1F8D /* titles_show_running_applications_light@2x.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 1C961F57248D4E2377A9038E /* titles_show_running_applications_light@2x.jpg */; };
@@ -346,6 +349,9 @@
 		C0DE20000000000000000008 /* InstantSpaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpaces.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000009 /* InstantSpacesPrivateApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpacesPrivateApi.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000000D /* SpacesTrace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacesTrace.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000011 /* ShortcutPresets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutPresets.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000010 /* TransientNotice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransientNotice.swift; sourceTree = "<group>"; };
+		C0DE2000000000000000000F /* NativeSystemShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSystemShortcuts.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000000A /* InstantSpacesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpacesTests.swift; sourceTree = "<group>"; };
 		1C961003A0D16B9AE3932B3F /* thumbnails_show_colored_circles_light@2x.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "thumbnails_show_colored_circles_light@2x.jpg"; sourceTree = "<group>"; };
 		1C9610071E9F3434C893DC95 /* thumbnails_align_thumbnails_center_light@2x.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "thumbnails_align_thumbnails_center_light@2x.jpg"; sourceTree = "<group>"; };
@@ -1454,6 +1460,8 @@
 				C0DE30000000000000000002 /* actions */,
 				C0DE30000000000000000003 /* spaces */,
 				C0DE30000000000000000001 /* window-layouts */,
+				C0DE2000000000000000000F /* NativeSystemShortcuts.swift */,
+				C0DE20000000000000000011 /* ShortcutPresets.swift */,
 				5FBB24D22F389A0400BF7E14 /* Benchmark.swift */,
 				5F17452D2F1A907800128EF8 /* WindowDiscriminator.swift */,
 				5F791E4A2F1C65E100B6419C /* ApplicationDiscriminator.swift */,
@@ -1621,6 +1629,7 @@
 				BF0C8A479D2B7FB80531F037 /* PopupButtonLikeSystemSettings.swift */,
 				5F21C9E72C6E96A00091F72F /* SheetWindow.swift */,
 				1C96189273B7482124C36F4C /* Switch.swift */,
+				C0DE20000000000000000010 /* TransientNotice.swift */,
 				1C9617C5839903D752070CF2 /* ImageTextButtonView.swift */,
 				BF0C896FD4907CD85D62C124 /* WindowlessAppIndicator.swift */,
 				BF0C8E63BE7394A6591E74E0 /* LightImageView.swift */,
@@ -2642,6 +2651,9 @@
 				C0DE1000000000000000000A /* InstantSpaces.swift in Sources */,
 				C0DE1000000000000000000B /* InstantSpacesPrivateApi.swift in Sources */,
 				C0DE10000000000000000010 /* SpacesTrace.swift in Sources */,
+				C0DE10000000000000000014 /* ShortcutPresets.swift in Sources */,
+				C0DE10000000000000000013 /* TransientNotice.swift in Sources */,
+				C0DE10000000000000000012 /* NativeSystemShortcuts.swift in Sources */,
 				C0DE10000000000000000001 /* WindowLayoutGeometry.swift in Sources */,
 				C0DE10000000000000000002 /* WindowLayouts.swift in Sources */,
 				C0DE10000000000000000003 /* WindowLayoutsTab.swift in Sources */,

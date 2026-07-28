@@ -177,6 +177,10 @@ enum CGSSymbolicHotKey: Int, CaseIterable {
 @_silgen_name("CGSSetSymbolicHotKeyEnabled") @discardableResult
 func CGSSetSymbolicHotKeyEnabled(_ hotKey: CGSSymbolicHotKey.RawValue, _ isEnabled: Bool) -> CGError
 
+/// reads the current state, so AltTab+ can restore what a hotkey was set to before it took it over
+@_silgen_name("CGSIsSymbolicHotKeyEnabled")
+func CGSIsSymbolicHotKeyEnabled(_ hotKey: CGSSymbolicHotKey.RawValue) -> Bool
+
 func setNativeCommandTabEnabled(_ isEnabled: Bool, _ hotkeys: [CGSSymbolicHotKey] = CGSSymbolicHotKey.allCases) {
     for hotkey in hotkeys {
         CGSSetSymbolicHotKeyEnabled(hotkey.rawValue, isEnabled)

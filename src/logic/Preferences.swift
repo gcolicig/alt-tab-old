@@ -68,7 +68,8 @@ class Preferences {
             "settingsWindowShownOnFirstLaunch": "false",
         ]
         (0..<maxShortcutCount).forEach { index in
-            values[indexToName("holdShortcut", index)] = defaultShortcut(index == 0 ? "⌘" : "⌥")
+            // Shortcut 1 mirrors Command-Tab, Shortcut 2 the native Command plus key above Tab
+            values[indexToName("holdShortcut", index)] = defaultShortcut(index <= 1 ? "⌘" : "⌥")
             values[indexToName("nextWindowShortcut", index)] = defaultShortcut(index == 0 ? "⇥" : (index == 1 ? keyAboveTabDependingOnInputSource() : ""))
         }
         SpaceAction.all.forEach { values[$0.shortcutPreferenceKey] = defaultShortcut("") }

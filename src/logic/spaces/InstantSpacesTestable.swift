@@ -36,6 +36,16 @@ enum SpaceAction: Hashable {
         case .index(let index): return String(format: NSLocalizedString("Space %d", comment: ""), index)
         }
     }
+
+    /// Used by the `macOS Spaces` preset, not as a default: assigning it is an explicit decision,
+    /// because AltTab+ has to take the matching system shortcut over for it to work.
+    var presetKeyEquivalent: String {
+        switch self {
+        case .left, .right: return ""
+        case .last: return "⌃0"
+        case .index(let index): return "⌃\(index)"
+        }
+    }
 }
 
 /// Remembers the Space a display settled on, so `Last Space` can toggle back. Only settled Spaces are
