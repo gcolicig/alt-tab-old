@@ -69,7 +69,7 @@ final class WindowLayoutTests: XCTestCase {
         ])
         XCTAssertTrue(registry.perform(id))
         XCTAssertEqual(executionCount, 1)
-        XCTAssertEqual(registry.action(id)?.title, "Left third")
+        XCTAssertEqual(registry.action(id)?.title(), "Left third")
     }
 
     func testActionRegistryRefusesUnavailableAndUnknownActions() {

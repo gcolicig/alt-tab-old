@@ -120,22 +120,26 @@ class Menubar {
         guard !groups.isEmpty else { return }
         let switchingEnabled = InstantSpaces.runtimeAvailability().isAvailable
         let cursorUuid = NSScreen.withMouse()?.cachedUuid()
-        let container = NSView(frame: .zero)
+        // the row must never collapse: the status button can still be unsized the first time this runs,
+        // and since the icon moves into a subview here, a zero height renders as an empty menubar slot
+        let rowHeight = max(statusButton.bounds.height, NSStatusBar.system.thickness)
+        let totalWidth = groups.reduce(CGFloat(0)) { $0 + groupWidth($1) } + CGFloat(max(0, groups.count - 1)) * groupGap * 2
+        // the container carries its final frame before any segment goes in, like the single-row version did
+        let container = NSView(frame: NSRect(x: iconWidth, y: 0, width: totalWidth, height: rowHeight))
         var x = CGFloat(0)
         groups.enumerated().forEach { groupOffset, group in
             if groupOffset > 0 {
                 x += groupGap
-                container.addSubview(groupDivider(x: x, height: statusButton.bounds.height))
+                container.addSubview(groupDivider(x: x, height: rowHeight))
                 x += groupGap
             }
-            x += addGroupSegments(group, startX: x, height: statusButton.bounds.height, switchingEnabled: switchingEnabled,
+            x += addGroupSegments(group, startX: x, height: rowHeight, switchingEnabled: switchingEnabled,
                                    isCursorGroup: cursorUuid == nil || cursorUuid == group.displayUuid,
                                    displayOrdinal: groups.count > 1 ? groupOffset + 1 : nil, into: container)
         }
-        container.frame = NSRect(x: iconWidth, y: 0, width: x, height: statusButton.bounds.height)
-        statusItem.length = iconWidth + x + 2
+        statusItem.length = iconWidth + totalWidth + 2
         statusButton.image = nil
-        let iconView = PassthroughImageView(frame: NSRect(x: 4, y: 2, width: 20, height: max(18, statusButton.bounds.height - 4)))
+        let iconView = PassthroughImageView(frame: NSRect(x: 4, y: 2, width: 20, height: max(18, rowHeight - 4)))
         iconView.image = preferredIcon()
         iconView.imageScaling = .scaleProportionallyUpOrDown
         statusButton.addSubview(iconView)
@@ -144,11 +148,21 @@ class Menubar {
         spaceSegmentsView = container
     }
 
+    /// Width one display group occupies, including its overflow segment when it has one.
+    private static func groupWidth(_ group: SpaceGroup) -> CGFloat {
+        let directCount = directSegmentCount(group)
+        return CGFloat(group.spaceIds.count > directCount ? directCount + 1 : directCount) * segmentWidth
+    }
+
+    private static func directSegmentCount(_ group: SpaceGroup) -> Int {
+        group.spaceIds.count > maxDirectSegmentsPerGroup ? maxDirectSegmentsPerGroup - 1 : group.spaceIds.count
+    }
+
     /// Adds the segments for one display group and returns the width consumed. `displayOrdinal` is only
     /// set when more than one group is shown, so VoiceOver can name which display a segment belongs to.
     private static func addGroupSegments(_ group: SpaceGroup, startX: CGFloat, height: CGFloat, switchingEnabled: Bool,
                                           isCursorGroup: Bool, displayOrdinal: Int?, into container: NSView) -> CGFloat {
-        let directCount = group.spaceIds.count > maxDirectSegmentsPerGroup ? maxDirectSegmentsPerGroup - 1 : group.spaceIds.count
+        let directCount = directSegmentCount(group)
         let hasOverflow = group.spaceIds.count > directCount
         (0..<directCount).forEach { offset in
             let button = spaceButton(offset + 1, group.spaceIds[offset] == group.activeSpaceId, switchingEnabled && isCursorGroup, !isCursorGroup, displayOrdinal, group.displayUuid)
