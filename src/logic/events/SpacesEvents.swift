@@ -8,14 +8,16 @@ class SpacesEvents {
     }
 
     @objc private static func handleEvent(_ notification: Notification) {
+        // the visible Space marker must follow the Space itself, so it is refreshed on every event
+        // instead of behind the throttler, which delayed it by up to its full delay while zapping
+        Spaces.refresh()
+        // no InstantSpaces.synchronize() here: this notification also fires for our own in-flight
+        // steps, and dropping the prediction mid-sequence made the next step plan from a stale index.
+        // SpacePredictionPolicy already discards a prediction that no longer matches the real Space.
+        InstantSpaces.noteSystemSpaceChange()
+        Menubar.refreshSpaces()
         throttler.throttleOrProceed {
             Logger.debug { notification.name.rawValue }
-            Spaces.refresh()
-            // no InstantSpaces.synchronize() here: this notification also fires for our own in-flight
-            // steps, and dropping the prediction mid-sequence made the next step plan from a stale index.
-            // SpacePredictionPolicy already discards a prediction that no longer matches the real Space.
-            InstantSpaces.noteSystemSpaceChange()
-            Menubar.refreshSpaces()
             // Workaround for Safari full-screen videos
             // when full-screening a video, Safari spawns a second full-screen window called "Safari"
             // this window doesn't emit resize/move events. It doesn't pass isActualWindow on creation. It's added on focusedWindowChanged

@@ -130,7 +130,7 @@ AltTab+ does not change system settings. A few of them do change how its modules
 | When switching to an application, switch to a Space with open windows for the application | Desktop & Dock > Mission Control | Applies to app activation, not to focusing a window. On a Space without windows the previously active app stays active, so macOS pulls the screen back to that app's Space. Switching to an empty Space only stays put with this off. |
 | Automatically rearrange Spaces based on most recent use | Desktop & Dock > Mission Control | Reorders Spaces behind your back, which moves the target of `Space 1` to `Space 9` and of the menubar row. Keep it off if you use numbered Space actions. |
 | Displays have separate Spaces | Desktop & Dock | Decides whether a Space switch affects one display or all of them. AltTab+ follows the system semantics and does not offer its own mode. |
-| Reduce motion | Accessibility > Display | Replaces the Space switching animation with a cross-fade. Multi-step Space jumps traverse every Space in between, so this noticeably calms them. |
+| Reduce motion | Accessibility > Motion | Replaces the Space switching animation with a cross-fade. Multi-step Space jumps traverse every Space in between, so this noticeably calms them. |
 | Secure Keyboard Entry | Terminal > Terminal menu | While a terminal with this enabled is focused, macOS blocks keyboard monitoring. The Hyper key stops responding for that time. |
 | Group windows by application | Desktop & Dock > Mission Control | Only affects Mission Control itself, not the switcher. |
 
