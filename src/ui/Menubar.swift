@@ -177,13 +177,7 @@ class Menubar {
     }
 
     @objc private static func spaceSegmentOnClick(_ sender: NSButton) {
-        let appWasActive = NSApp.isActive
         Actions.perform(.space(.index(sender.tag)))
-        // clicking a status item activates AltTab+, and macOS then pulls the screen to the Space that
-        // holds an AltTab+ window, which undid the switch that was just performed
-        if !appWasActive {
-            NSApp.deactivate()
-        }
     }
 }
 
