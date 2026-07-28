@@ -221,7 +221,6 @@ enum InstantSpaces {
         }
         predictionLock.unlock()
         SpacesTrace.event("sequence finished: settled \(settledIndex.map(String.init) ?? "unknown")")
-        SpacesTrace.stopSampling()
         // the menubar row skips its refresh while a sequence runs, so it needs the settled state here
         DispatchQueue.main.async {
             endTraversalCover()

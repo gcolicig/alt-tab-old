@@ -13,8 +13,10 @@ enum SpacesTrace {
     private static var sequenceStartedAt = ProcessInfo.processInfo.systemUptime
     private static var samplingSequence = UInt64(0)
     private static var lastSampledSpaceId = CGSSpaceID(0)
+    private static var activationObserversInstalled = false
 
     static func beginSequence(_ description: String, displayId: String, spaceIds: [CGSSpaceID], generation: UInt64) {
+        installActivationObservers()
         sequenceStartedAt = ProcessInfo.processInfo.systemUptime
         write("")
         write("=== \(description) | display \(displayId) | generation \(generation)")
@@ -24,6 +26,19 @@ enum SpacesTrace {
 
     static func event(_ message: @autoclosure () -> String) {
         write("  \(elapsedMilliseconds())ms \(message())")
+    }
+
+    /// macOS pulls the screen to the Space holding a window of the app that just became active. If that
+    /// is what undoes a switch, the trace shows the activation right before the Space changes back.
+    private static func installActivationObservers() {
+        guard !activationObserversInstalled else { return }
+        activationObserversInstalled = true
+        [NSApplication.didBecomeActiveNotification, NSApplication.didResignActiveNotification].forEach { name in
+            NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { _ in
+                let windows = NSApp.windows.filter { $0.isVisible }.map { "\(type(of: $0))" }
+                event("app \(name == NSApplication.didBecomeActiveNotification ? "became active" : "resigned active"), visible windows: \(windows.isEmpty ? "none" : windows.joined(separator: ", "))")
+            }
+        }
     }
 
     /// Samples the reported Space far more often than the switching logic does, so the trace shows when
