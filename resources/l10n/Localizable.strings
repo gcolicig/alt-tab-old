@@ -101,6 +101,9 @@
 "Animations…" = "Animations…";
 
 /* No comment provided by engineer. */
+"App %d" = "App %d";
+
+/* No comment provided by engineer. */
 "App (BundleID starting with)" = "App (BundleID starting with)";
 
 /* No comment provided by engineer. */
@@ -128,6 +131,9 @@
 "Applications" = "Applications";
 
 /* No comment provided by engineer. */
+"Apps & URLs" = "Apps & URLs";
+
+/* No comment provided by engineer. */
 "Arrow keys" = "Arrow keys";
 
 /* No comment provided by engineer. */
@@ -140,10 +146,16 @@
 "Assign shortcuts for arranging the focused window." = "Assign shortcuts for arranging the focused window.";
 
 /* No comment provided by engineer. */
+"Assign shortcuts to launch apps or open URLs." = "Assign shortcuts to launch apps or open URLs.";
+
+/* No comment provided by engineer. */
 "Auto" = "Auto";
 
 /* No comment provided by engineer. */
 "Auto-install updates periodically" = "Auto-install updates periodically";
+
+/* No comment provided by engineer. */
+"Bundle identifier" = "Bundle identifier";
 
 /* No comment provided by engineer. */
 "Cancel" = "Cancel";
@@ -347,6 +359,9 @@
 "Latest releases" = "Latest releases";
 
 /* No comment provided by engineer. */
+"Launch app" = "Launch app";
+
+/* No comment provided by engineer. */
 "Leading" = "Leading";
 
 /* No comment provided by engineer. */
@@ -401,13 +416,22 @@
 "Multiple screens" = "Multiple screens";
 
 /* No comment provided by engineer. */
+"Name" = "Name";
+
+/* No comment provided by engineer. */
 "Never" = "Never";
 
 /* No comment provided by engineer. */
 "Never send crash reports" = "Never send crash reports";
 
 /* No comment provided by engineer. */
+"No application is configured." = "No application is configured.";
+
+/* No comment provided by engineer. */
 "No eligible foreground application." = "No eligible foreground application.";
+
+/* No comment provided by engineer. */
+"No URL is configured." = "No URL is configured.";
 
 /* No comment provided by engineer. */
 "No Window" = "No Window";
@@ -441,6 +465,9 @@
 
 /* No comment provided by engineer. */
 "Open Trackpad Settings…" = "Open Trackpad Settings…";
+
+/* No comment provided by engineer. */
+"Open URL" = "Open URL";
 
 /* No comment provided by engineer. */
 "Order windows by" = "Order windows by";
@@ -666,6 +693,9 @@
 "Tap/hold threshold" = "Tap/hold threshold";
 
 /* No comment provided by engineer. */
+"The application is not installed." = "The application is not installed.";
+
+/* No comment provided by engineer. */
 "The application needs to restart to apply the imported settings." = "The application needs to restart to apply the imported settings.";
 
 /* No comment provided by engineer. */
@@ -679,6 +709,9 @@
 
 /* No comment provided by engineer. */
 "The same set on the Hyper key instead of Control, so no macOS shortcut has to be disabled. Requires the Hyper key to be enabled." = "The same set on the Hyper key instead of Control, so no macOS shortcut has to be disabled. Requires the Hyper key to be enabled.";
+
+/* No comment provided by engineer. */
+"The URL is invalid." = "The URL is invalid.";
 
 /* No comment provided by engineer. */
 "The ⌘⎋ (command+escape) shortcut may be used by macOS for GameOverlay.\n\nYour change would assign it to: %@.\n\nIf you want to continue, make sure that the GameOverlay shortcut is disabled.\nAlso note that macOS has reported bugs where the shortcut may still interfere while disabled." = "The ⌘⎋ (command+escape) shortcut may be used by macOS for GameOverlay.\n\nYour change would assign it to: %@.\n\nIf you want to continue, make sure that the GameOverlay shortcut is disabled.\nAlso note that macOS has reported bugs where the shortcut may still interfere while disabled.";
@@ -718,6 +751,12 @@
 
 /* No comment provided by engineer. */
 "Unassign existing shortcut and continue" = "Unassign existing shortcut and continue";
+
+/* No comment provided by engineer. */
+"URL" = "URL";
+
+/* No comment provided by engineer. */
+"URL %d" = "URL %d";
 
 /* No comment provided by engineer. */
 "Usage" = "Usage";

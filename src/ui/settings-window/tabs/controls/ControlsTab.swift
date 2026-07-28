@@ -152,6 +152,12 @@ class ControlsTab {
         SpaceAction.all.forEach { action in
             actions[action.shortcutPreferenceKey] = { Actions.perform(.space(action)) }
         }
+        (0..<Preferences.maxLaunchAppCount).forEach { index in
+            actions[LaunchAppAction.shortcutPreferenceKey(index)] = { Actions.perform(.launchApp(index)) }
+        }
+        (0..<Preferences.maxOpenUrlCount).forEach { index in
+            actions[OpenUrlAction.shortcutPreferenceKey(index)] = { Actions.perform(.openUrl(index)) }
+        }
         return actions
     }()
     static var arrowKeysCheckbox: Switch!
@@ -176,10 +182,14 @@ class ControlsTab {
         "windowLayoutLeftFocusShortcut", "windowLayoutCenterFocusShortcut",
         "windowLayoutRightFocusShortcut", "windowLayoutRestoreShortcut",
     ] + DisplayMoveAction.allCases.map(\.shortcutPreferenceKey) + SpaceAction.all.map(\.shortcutPreferenceKey)
+        + (0..<Preferences.maxLaunchAppCount).map(LaunchAppAction.shortcutPreferenceKey)
+        + (0..<Preferences.maxOpenUrlCount).map(OpenUrlAction.shortcutPreferenceKey)
     private static let globalActionShortcutPreferences = Set(
         WindowLayoutAction.allCases.map(\.shortcutPreferenceKey)
             + DisplayMoveAction.allCases.map(\.shortcutPreferenceKey)
-            + SpaceAction.all.map(\.shortcutPreferenceKey))
+            + SpaceAction.all.map(\.shortcutPreferenceKey)
+            + (0..<Preferences.maxLaunchAppCount).map(LaunchAppAction.shortcutPreferenceKey)
+            + (0..<Preferences.maxOpenUrlCount).map(OpenUrlAction.shortcutPreferenceKey))
     private static let removableShortcutPreferences = [
         "holdShortcut", "nextWindowShortcut",
         "appsToShow", "spacesToShow", "screensToShow",

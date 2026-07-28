@@ -706,6 +706,7 @@ class SettingsWindow: NSWindow {
             SettingsSectionDefinition(id: "spaces", title: NSLocalizedString("Spaces", comment: ""), description: NSLocalizedString("Show, activate, and move between macOS Spaces.", comment: ""), imageName: "controls", systemSymbolName: "square.grid.2x2", view: SpacesTab.initTab()),
             SettingsSectionDefinition(id: "hyperkey", title: NSLocalizedString("Hyperkey", comment: ""), description: NSLocalizedString("Use Caps Lock as a system-wide combination of modifier keys.", comment: ""), imageName: "controls", systemSymbolName: "capslock", view: HyperkeyTab.initTab()),
             SettingsSectionDefinition(id: "exceptions", title: NSLocalizedString("Exceptions", comment: ""), description: NSLocalizedString("Choose apps whose windows should not appear in the switcher.", comment: ""), imageName: "exceptions", systemSymbolName: "hand.raised", view: ExceptionsTab.initTab()),
+            SettingsSectionDefinition(id: "apps-urls", title: NSLocalizedString("Apps & URLs", comment: ""), description: NSLocalizedString("Assign shortcuts to launch apps or open URLs.", comment: ""), imageName: "controls", systemSymbolName: "app.badge", view: AppsUrlsTab.initTab()),
             SettingsSectionDefinition(id: "general", title: NSLocalizedString("General", comment: ""), description: NSLocalizedString("Manage startup, menu bar, language, and settings files.", comment: ""), imageName: "general", systemSymbolName: "gearshape", view: GeneralTab.initTab()),
         ]
     }

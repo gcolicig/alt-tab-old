@@ -140,6 +140,8 @@ class Preferences {
     static var holdShortcut = ["⌥", "⌥", "⌥"]
     static let minShortcutCount = 1
     static let maxShortcutCount = 9
+    static let maxLaunchAppCount = 9
+    static let maxOpenUrlCount = 9
 
     static func indexToName(_ baseName: String, _ index: Int) -> String {
         return baseName + (index == 0 ? "" : String(index + 1))
@@ -155,6 +157,14 @@ enum ShortcutStylePreference: CaseIterable {
     case focusOnRelease
     case doNothingOnRelease
     case searchOnRelease
+}
+
+enum LaunchAppAction {
+    static func shortcutPreferenceKey(_ index: Int) -> String { Preferences.indexToName("launchAppShortcut", index) }
+}
+
+enum OpenUrlAction {
+    static func shortcutPreferenceKey(_ index: Int) -> String { Preferences.indexToName("openUrlShortcut", index) }
 }
 
 class ModifierFlags {

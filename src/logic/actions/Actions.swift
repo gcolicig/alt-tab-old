@@ -1,11 +1,16 @@
 import Cocoa
 
 enum Actions {
-    static let registry = ActionRegistry(
-        WindowLayoutAction.allCases.map(windowLayoutRegistration) +
-            DisplayMoveAction.allCases.map(displayMoveRegistration) +
-            SpaceAction.all.map(spaceRegistration)
-    )
+    /// recomputed on every access so launch-app/open-url slots reflect their current configuration
+    static var registry: ActionRegistry {
+        ActionRegistry(
+            WindowLayoutAction.allCases.map(windowLayoutRegistration) +
+                DisplayMoveAction.allCases.map(displayMoveRegistration) +
+                SpaceAction.all.map(spaceRegistration) +
+                (0..<Preferences.maxLaunchAppCount).map(launchAppRegistration) +
+                (0..<Preferences.maxOpenUrlCount).map(openUrlRegistration)
+        )
+    }
 
     @discardableResult
     static func perform(_ id: ActionIdentifier) -> Bool {
@@ -34,6 +39,18 @@ enum Actions {
     private static func spaceRegistration(_ action: SpaceAction) -> RegisteredAction {
         RegisteredAction(id: .space(action), title: action.localizedTitle, availability: { InstantSpaces.availability(action) }) {
             InstantSpaces.perform(action)
+        }
+    }
+
+    private static func launchAppRegistration(_ index: Int) -> RegisteredAction {
+        RegisteredAction(id: .launchApp(index), title: LaunchAppAction.localizedTitle(index), availability: { LaunchAppAction.availability(index) }) {
+            LaunchAppAction.perform(index)
+        }
+    }
+
+    private static func openUrlRegistration(_ index: Int) -> RegisteredAction {
+        RegisteredAction(id: .openUrl(index), title: OpenUrlAction.localizedTitle(index), availability: { OpenUrlAction.availability(index) }) {
+            OpenUrlAction.perform(index)
         }
     }
 

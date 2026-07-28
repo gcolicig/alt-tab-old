@@ -75,6 +75,16 @@ class Preferences {
             values[indexToName("nextWindowShortcut", index)] = defaultShortcut(index == 0 ? "⇥" : (index == 1 ? keyAboveTabDependingOnInputSource() : ""))
         }
         SpaceAction.all.forEach { values[$0.shortcutPreferenceKey] = defaultShortcut("") }
+        (0..<maxLaunchAppCount).forEach { index in
+            values[indexToName("launchAppBundleIdentifier", index)] = ""
+            values[indexToName("launchAppName", index)] = ""
+            values[LaunchAppAction.shortcutPreferenceKey(index)] = defaultShortcut("")
+        }
+        (0..<maxOpenUrlCount).forEach { index in
+            values[indexToName("openUrlValue", index)] = ""
+            values[indexToName("openUrlName", index)] = ""
+            values[OpenUrlAction.shortcutPreferenceKey(index)] = defaultShortcut("")
+        }
         (0...maxShortcutCount).forEach { index in
             values[indexToName("appsToShow", index)] = index == 1 ? AppsToShowPreference.active.indexAsString : (index == 2 ? AppsToShowPreference.nonActive.indexAsString : AppsToShowPreference.all.indexAsString)
             values[indexToName("spacesToShow", index)] = SpacesToShowPreference.all.indexAsString
@@ -122,6 +132,10 @@ class Preferences {
     static var searchShortcut: Shortcut? { CachedUserDefaults.shortcut("searchShortcut") }
     static var hyperKeyEnabled: Bool { CachedUserDefaults.bool("hyperKeyEnabled") }
     static var inputModulesSafeMode: Bool { CachedUserDefaults.bool("inputModulesSafeMode") }
+    static func launchAppBundleIdentifier(_ index: Int) -> String { CachedUserDefaults.string(indexToName("launchAppBundleIdentifier", index)) }
+    static func launchAppName(_ index: Int) -> String { CachedUserDefaults.string(indexToName("launchAppName", index)) }
+    static func openUrlValue(_ index: Int) -> String { CachedUserDefaults.string(indexToName("openUrlValue", index)) }
+    static func openUrlName(_ index: Int) -> String { CachedUserDefaults.string(indexToName("openUrlName", index)) }
     static var hyperKeyArmingMarker: Bool { CachedUserDefaults.bool("hyperKeyArmingMarker") }
     static var hyperKeyHoldDuration: TimeInterval { CachedUserDefaults.macroPref("hyperKeyHoldDuration", HyperKeyHoldDurationPreference.allCases).seconds }
     // periphery:ignore
@@ -182,6 +196,8 @@ class Preferences {
 
     static let minShortcutCount = 1
     static let maxShortcutCount = 9
+    static let maxLaunchAppCount = 9
+    static let maxOpenUrlCount = 9
     static var shortcutCount: Int {
         max(minShortcutCount, min(maxShortcutCount, CachedUserDefaults.int("shortcutCount")))
     }

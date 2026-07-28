@@ -16,6 +16,15 @@ class KeyboardEventsTestable {
             ids[$0.element.shortcutPreferenceKey] = Preferences.maxShortcutCount * 2 + WindowLayoutAction.allCases.count
                 + DisplayMoveAction.allCases.count + $0.offset
         }
+        let afterSpaceActions = Preferences.maxShortcutCount * 2 + WindowLayoutAction.allCases.count
+            + DisplayMoveAction.allCases.count + SpaceAction.all.count
+        (0..<Preferences.maxLaunchAppCount).forEach {
+            ids[LaunchAppAction.shortcutPreferenceKey($0)] = afterSpaceActions + $0
+        }
+        let afterLaunchApps = afterSpaceActions + Preferences.maxLaunchAppCount
+        (0..<Preferences.maxOpenUrlCount).forEach {
+            ids[OpenUrlAction.shortcutPreferenceKey($0)] = afterLaunchApps + $0
+        }
         return ids
     }
 }

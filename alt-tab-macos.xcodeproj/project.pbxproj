@@ -15,6 +15,8 @@
 		C0DE10000000000000000004 /* WindowLayoutGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000001 /* WindowLayoutGeometry.swift */; };
 		C0DE10000000000000000016 /* DisplayMoveGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000013 /* DisplayMoveGeometry.swift */; };
 		C0DE10000000000000000017 /* DisplayMoveGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000013 /* DisplayMoveGeometry.swift */; };
+		C0DE10000000000000000018 /* LaunchAppOpenUrlAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000014 /* LaunchAppOpenUrlAction.swift */; };
+		C0DE1000000000000000001A /* AppsUrlsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000015 /* AppsUrlsTab.swift */; };
 		C0DE10000000000000000005 /* WindowLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000004 /* WindowLayoutTests.swift */; };
 		C0DE10000000000000000006 /* ActionRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000005 /* ActionRegistry.swift */; };
 		C0DE10000000000000000007 /* Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000006 /* Actions.swift */; };
@@ -348,6 +350,8 @@
 		C0DE20000000000000000004 /* WindowLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowLayoutTests.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000005 /* ActionRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionRegistry.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000006 /* Actions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Actions.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000014 /* LaunchAppOpenUrlAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAppOpenUrlAction.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000015 /* AppsUrlsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppsUrlsTab.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000007 /* InstantSpacesTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpacesTestable.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000008 /* InstantSpaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpaces.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000009 /* InstantSpacesPrivateApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpacesPrivateApi.swift; sourceTree = "<group>"; };
@@ -1667,6 +1671,7 @@
 				5F21C9DE2C6E93F10091F72F /* appearance */,
 				5F21C9DD2C6E93E60091F72F /* controls */,
 				C0DE20000000000000000003 /* WindowLayoutsTab.swift */,
+				C0DE20000000000000000015 /* AppsUrlsTab.swift */,
 				C0DE20000000000000000012 /* PresetRow.swift */,
 				C0DE2000000000000000000B /* HyperkeyTab.swift */,
 				C0DE2000000000000000000C /* SpacesTab.swift */,
@@ -1693,6 +1698,7 @@
 			children = (
 				C0DE20000000000000000005 /* ActionRegistry.swift */,
 				C0DE20000000000000000006 /* Actions.swift */,
+				C0DE20000000000000000014 /* LaunchAppOpenUrlAction.swift */,
 			);
 			path = actions;
 			sourceTree = "<group>";
@@ -2652,6 +2658,7 @@
 			files = (
 				C0DE10000000000000000006 /* ActionRegistry.swift in Sources */,
 				C0DE10000000000000000007 /* Actions.swift in Sources */,
+				C0DE10000000000000000018 /* LaunchAppOpenUrlAction.swift in Sources */,
 				C0DE10000000000000000009 /* InstantSpacesTestable.swift in Sources */,
 				C0DE1000000000000000000A /* InstantSpaces.swift in Sources */,
 				C0DE1000000000000000000B /* InstantSpacesPrivateApi.swift in Sources */,
@@ -2663,6 +2670,7 @@
 				C0DE10000000000000000016 /* DisplayMoveGeometry.swift in Sources */,
 				C0DE10000000000000000002 /* WindowLayouts.swift in Sources */,
 				C0DE10000000000000000003 /* WindowLayoutsTab.swift in Sources */,
+				C0DE1000000000000000001A /* AppsUrlsTab.swift in Sources */,
 				C0DE1000000000000000000E /* HyperkeyTab.swift in Sources */,
 				C0DE1000000000000000000F /* SpacesTab.swift in Sources */,
 				D04BAFBC862BA5FE0294EA7A /* AXUIElement.swift in Sources */,
