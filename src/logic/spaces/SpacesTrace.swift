@@ -21,7 +21,8 @@ enum SpacesTrace {
         sequenceStartedAt = ProcessInfo.processInfo.systemUptime
         write("")
         write("=== \(description) | display \(displayId) | generation \(generation)")
-        write("    spaces: \(spaceIds.map(String.init).joined(separator: ", "))")
+        let described = spaceIds.map { "\($0)\(InstantSpacesPrivateApi.spaceType($0).map { "(type \($0))" } ?? "")" }
+        write("    spaces: \(described.joined(separator: ", ")) | frontmost \(frontmostApp())")
         startSampling(displayId, generation)
     }
 
@@ -52,7 +53,7 @@ enum SpacesTrace {
             guard samplingSequence == generation, ProcessInfo.processInfo.systemUptime < deadline else { return }
             if let spaceId = InstantSpacesPrivateApi.currentSpaceId(displayId as CFString), spaceId != lastSampledSpaceId {
                 lastSampledSpaceId = spaceId
-                write("  \(elapsedMilliseconds())ms sampled space id \(spaceId)")
+                write("  \(elapsedMilliseconds())ms sampled space id \(spaceId), frontmost \(frontmostApp())")
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + samplingInterval) { sample() }
         }
@@ -61,6 +62,10 @@ enum SpacesTrace {
 
     static func stopSampling() {
         samplingSequence = 0
+    }
+
+    private static func frontmostApp() -> String {
+        NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "unknown"
     }
 
     private static func elapsedMilliseconds() -> Int {
