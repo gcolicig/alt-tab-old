@@ -13,6 +13,8 @@
 		C0DE1000000000000000000E /* HyperkeyTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000000B /* HyperkeyTab.swift */; };
 		C0DE1000000000000000000F /* SpacesTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000000C /* SpacesTab.swift */; };
 		C0DE10000000000000000004 /* WindowLayoutGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000001 /* WindowLayoutGeometry.swift */; };
+		C0DE10000000000000000016 /* DisplayMoveGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000013 /* DisplayMoveGeometry.swift */; };
+		C0DE10000000000000000017 /* DisplayMoveGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000013 /* DisplayMoveGeometry.swift */; };
 		C0DE10000000000000000005 /* WindowLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000004 /* WindowLayoutTests.swift */; };
 		C0DE10000000000000000006 /* ActionRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000005 /* ActionRegistry.swift */; };
 		C0DE10000000000000000007 /* Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000006 /* Actions.swift */; };
@@ -21,6 +23,7 @@
 		C0DE1000000000000000000A /* InstantSpaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000008 /* InstantSpaces.swift */; };
 		C0DE1000000000000000000B /* InstantSpacesPrivateApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000009 /* InstantSpacesPrivateApi.swift */; };
 		C0DE10000000000000000014 /* ShortcutPresets.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000011 /* ShortcutPresets.swift */; };
+		C0DE10000000000000000015 /* PresetRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000012 /* PresetRow.swift */; };
 		C0DE10000000000000000013 /* TransientNotice.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000010 /* TransientNotice.swift */; };
 		C0DE10000000000000000012 /* NativeSystemShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000000F /* NativeSystemShortcuts.swift */; };
 		C0DE1000000000000000000C /* InstantSpacesTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000007 /* InstantSpacesTestable.swift */; };
@@ -337,6 +340,7 @@
 
 /* Begin PBXFileReference section */
 		C0DE20000000000000000001 /* WindowLayoutGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowLayoutGeometry.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000013 /* DisplayMoveGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayMoveGeometry.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000002 /* WindowLayouts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowLayouts.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000003 /* WindowLayoutsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowLayoutsTab.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000000B /* HyperkeyTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HyperkeyTab.swift; sourceTree = "<group>"; };
@@ -348,6 +352,7 @@
 		C0DE20000000000000000008 /* InstantSpaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpaces.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000009 /* InstantSpacesPrivateApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpacesPrivateApi.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000011 /* ShortcutPresets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutPresets.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000012 /* PresetRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetRow.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000010 /* TransientNotice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransientNotice.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000000F /* NativeSystemShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSystemShortcuts.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000000A /* InstantSpacesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpacesTests.swift; sourceTree = "<group>"; };
@@ -1662,6 +1667,7 @@
 				5F21C9DE2C6E93F10091F72F /* appearance */,
 				5F21C9DD2C6E93E60091F72F /* controls */,
 				C0DE20000000000000000003 /* WindowLayoutsTab.swift */,
+				C0DE20000000000000000012 /* PresetRow.swift */,
 				C0DE2000000000000000000B /* HyperkeyTab.swift */,
 				C0DE2000000000000000000C /* SpacesTab.swift */,
 				D04BA4A26987F67DD94C827F /* AboutTab.swift */,
@@ -1676,6 +1682,7 @@
 			isa = PBXGroup;
 			children = (
 				C0DE20000000000000000001 /* WindowLayoutGeometry.swift */,
+				C0DE20000000000000000013 /* DisplayMoveGeometry.swift */,
 				C0DE20000000000000000002 /* WindowLayouts.swift */,
 			);
 			path = "window-layouts";
@@ -2619,6 +2626,7 @@
 				C0DE1000000000000000000C /* InstantSpacesTestable.swift in Sources */,
 				C0DE1000000000000000000D /* InstantSpacesTests.swift in Sources */,
 				C0DE10000000000000000004 /* WindowLayoutGeometry.swift in Sources */,
+				C0DE10000000000000000017 /* DisplayMoveGeometry.swift in Sources */,
 				C0DE10000000000000000005 /* WindowLayoutTests.swift in Sources */,
 				5F882F382EC3C63400110A9F /* CustomRecorderControlTestable.swift in Sources */,
 				BF0C81FA62D810342F59291A /* AppearanceTests.swift in Sources */,
@@ -2648,9 +2656,11 @@
 				C0DE1000000000000000000A /* InstantSpaces.swift in Sources */,
 				C0DE1000000000000000000B /* InstantSpacesPrivateApi.swift in Sources */,
 				C0DE10000000000000000014 /* ShortcutPresets.swift in Sources */,
+				C0DE10000000000000000015 /* PresetRow.swift in Sources */,
 				C0DE10000000000000000013 /* TransientNotice.swift in Sources */,
 				C0DE10000000000000000012 /* NativeSystemShortcuts.swift in Sources */,
 				C0DE10000000000000000001 /* WindowLayoutGeometry.swift in Sources */,
+				C0DE10000000000000000016 /* DisplayMoveGeometry.swift in Sources */,
 				C0DE10000000000000000002 /* WindowLayouts.swift in Sources */,
 				C0DE10000000000000000003 /* WindowLayoutsTab.swift in Sources */,
 				C0DE1000000000000000000E /* HyperkeyTab.swift in Sources */,

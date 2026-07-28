@@ -146,6 +146,9 @@ class ControlsTab {
         "windowLayoutRightFocusShortcut": { Actions.perform(.windowLayout(.rightFocus)) },
         "windowLayoutRestoreShortcut": { Actions.perform(.windowLayout(.restore)) },
         ]
+        DisplayMoveAction.allCases.forEach { action in
+            actions[action.shortcutPreferenceKey] = { Actions.perform(.displayMove(action)) }
+        }
         SpaceAction.all.forEach { action in
             actions[action.shortcutPreferenceKey] = { Actions.perform(.space(action)) }
         }
@@ -172,9 +175,11 @@ class ControlsTab {
         "windowLayoutRightTwoThirdsShortcut", "windowLayoutLeftThreeQuartersShortcut", "windowLayoutRightThreeQuartersShortcut",
         "windowLayoutLeftFocusShortcut", "windowLayoutCenterFocusShortcut",
         "windowLayoutRightFocusShortcut", "windowLayoutRestoreShortcut",
-    ] + SpaceAction.all.map(\.shortcutPreferenceKey)
+    ] + DisplayMoveAction.allCases.map(\.shortcutPreferenceKey) + SpaceAction.all.map(\.shortcutPreferenceKey)
     private static let globalActionShortcutPreferences = Set(
-        WindowLayoutAction.allCases.map(\.shortcutPreferenceKey) + SpaceAction.all.map(\.shortcutPreferenceKey))
+        WindowLayoutAction.allCases.map(\.shortcutPreferenceKey)
+            + DisplayMoveAction.allCases.map(\.shortcutPreferenceKey)
+            + SpaceAction.all.map(\.shortcutPreferenceKey))
     private static let removableShortcutPreferences = [
         "holdShortcut", "nextWindowShortcut",
         "appsToShow", "spacesToShow", "screensToShow",

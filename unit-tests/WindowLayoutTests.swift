@@ -89,4 +89,36 @@ final class WindowLayoutTests: XCTestCase {
         XCTAssertEqual(Set(ids).count, WindowLayoutAction.allCases.count)
         XCTAssertEqual(ActionIdentifier.windowLayout(.centerFocus).stableId, "windowLayout.centerFocus")
     }
+
+    func testDisplayOrderFollowsThePhysicalArrangement() {
+        let left = CGRect(x: 0, y: 0, width: 1000, height: 800)
+        let right = CGRect(x: 1000, y: 0, width: 1000, height: 800)
+        let below = CGRect(x: 0, y: 800, width: 1000, height: 800)
+        XCTAssertEqual(DisplayMoveGeometry.orderedFrames([right, below, left]), [left, below, right])
+    }
+
+    func testDisplayMoveWrapsAndNeedsASecondDisplay() {
+        XCTAssertEqual(DisplayMoveGeometry.targetScreenIndex(.nextDisplay, currentIndex: 0, screenCount: 3), 1)
+        XCTAssertEqual(DisplayMoveGeometry.targetScreenIndex(.nextDisplay, currentIndex: 2, screenCount: 3), 0)
+        XCTAssertEqual(DisplayMoveGeometry.targetScreenIndex(.previousDisplay, currentIndex: 0, screenCount: 3), 2)
+        XCTAssertNil(DisplayMoveGeometry.targetScreenIndex(.nextDisplay, currentIndex: 0, screenCount: 1))
+        XCTAssertNil(DisplayMoveGeometry.targetScreenIndex(.nextDisplay, currentIndex: 5, screenCount: 3))
+    }
+
+    func testDisplayMoveKeepsTheRelativePlacement() {
+        let source = CGRect(x: 0, y: 0, width: 1000, height: 800)
+        let target = CGRect(x: 1000, y: 0, width: 2000, height: 1600)
+        let leftHalf = CGRect(x: 0, y: 0, width: 500, height: 800)
+        XCTAssertEqual(DisplayMoveGeometry.frame(leftHalf, from: source, to: target),
+                       CGRect(x: 1000, y: 0, width: 1000, height: 1600))
+    }
+
+    func testDisplayMoveBoundsAWindowLargerThanTheTarget() {
+        let source = CGRect(x: 0, y: 0, width: 2000, height: 1600)
+        let target = CGRect(x: 2000, y: 0, width: 1000, height: 800)
+        let full = CGRect(x: 0, y: 0, width: 2000, height: 1600)
+        let moved = DisplayMoveGeometry.frame(full, from: source, to: target)
+        XCTAssertEqual(moved, target)
+        XCTAssertNil(DisplayMoveGeometry.frame(full, from: .zero, to: target))
+    }
 }

@@ -7,21 +7,36 @@ import ShortcutRecorder
 /// had before AltTab+ touched it is stored, and it is restored as soon as the matching AltTab+ shortcut
 /// is unassigned, or at the next launch if the app was killed in between. AltTab+ therefore never leaves
 /// a system shortcut disabled that it did not disable itself.
+///
+/// Which hotkey belongs to which combination is read from the system rather than hardcoded, because
+/// several ids can share one combination and their meaning differs between macOS versions.
 enum NativeSystemShortcuts {
-    /// `Switch to Desktop 1` to `Switch to Desktop 10`, in the order of `SpaceAction.all` digits.
-    private static let spaceHotkeyIds = Array(118...127)
+    private static let scannedIds = 0...400
     private static let ownershipKey = "ownedSystemHotkeys"
+    private static let comparedModifiers: NSEvent.ModifierFlags = [.command, .control, .option, .shift]
+    /// handled by `ControlsTab.toggleNativeCommandTabIfNeeded`, which owns the switcher combinations
+    private static let excludedIds = Set(CGSSymbolicHotKey.allCases.map(\.rawValue))
+
+    private static let systemHotkeys: [Int: Shortcut] = {
+        var hotkeys = [Int: Shortcut]()
+        scannedIds.forEach { hotkeyId in
+            guard !excludedIds.contains(hotkeyId) else { return }
+            var options = UInt32(0), keyCode = UInt32(0), modifiers = UInt32(0)
+            guard CGSGetSymbolicHotKeyValue(hotkeyId, &options, &keyCode, &modifiers) == .success,
+                  keyCode != 0xFFFF, let code = KeyCode(rawValue: CGKeyCode(keyCode)) else { return }
+            let flags = NSEvent.ModifierFlags(rawValue: UInt(modifiers)).intersection(comparedModifiers)
+            hotkeys[hotkeyId] = Shortcut(code: code, modifierFlags: flags, characters: nil, charactersIgnoringModifiers: nil)
+        }
+        return hotkeys
+    }()
 
     static func apply() {
-        let assignedDigits = Set(SpaceAction.all.compactMap { action -> Int? in
-            guard let shortcut = ControlsTab.shortcuts[action.shortcutPreferenceKey]?.shortcut,
-                  let digit = controlDigit(of: shortcut) else { return nil }
-            return digit
-        })
-        spaceHotkeyIds.enumerated().forEach { offset, hotkeyId in
-            // id 118 is digit 1, id 127 is digit 0
-            let digit = offset == 9 ? 0 : offset + 1
-            if assignedDigits.contains(digit) {
+        let assigned = ControlsTab.shortcuts.values
+            .filter { $0.scope == .global && $0.shortcut.keyCode != .none }
+            .map { $0.shortcut }
+        systemHotkeys.forEach { hotkeyId, hotkeyShortcut in
+            let isClaimed = assigned.contains { matches(hotkeyShortcut, $0) }
+            if isClaimed {
                 takeOver(hotkeyId)
             } else {
                 release(hotkeyId)
@@ -35,11 +50,9 @@ enum NativeSystemShortcuts {
         ownership().keys.compactMap(Int.init).forEach { release($0) }
     }
 
-    private static func controlDigit(of shortcut: Shortcut) -> Int? {
-        guard shortcut.modifierFlags == NSEvent.ModifierFlags.control else { return nil }
-        guard let characters = shortcut.charactersIgnoringModifiers ?? shortcut.characters,
-              characters.count == 1, let digit = Int(characters) else { return nil }
-        return digit
+    private static func matches(_ hotkeyShortcut: Shortcut, _ assigned: Shortcut) -> Bool {
+        hotkeyShortcut.keyCode == assigned.keyCode
+            && hotkeyShortcut.modifierFlags == assigned.modifierFlags.intersection(comparedModifiers)
     }
 
     private static func takeOver(_ hotkeyId: Int) {

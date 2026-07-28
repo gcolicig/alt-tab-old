@@ -17,6 +17,7 @@ Der vollstaendige Scope und alle technischen Leitplanken stehen in `backlog.md`.
 - Umgesetzt: fokussierter AX-Fensterpfad, settable-Filter und sichtbare Display-Geometrie fuer einmalige Tastaturaktionen.
 - Umgesetzt: Window Layouts mit Thirds, Two-Thirds, Three-Quarters, Focus-Layouts und Ein-Schritt-Restore.
 - Umgesetzt: eigene Layout-Settings, globale Shortcut-Registrierung und Kollisionspruefung; keine Default-Shortcuts.
+- Umgesetzt: Presets weisen ein benanntes Set per Klick zu und wieder ab, fuer Spaces und Layouts je in einer macOS-nahen und einer Hyper-Variante.
 - Umgesetzt: Dual-Role-Hyper samt Safe Start, Arming-Marker, festem Kill-Switch und Circuit Breaker.
 - Automatisierte Tests und die manuelle Nutzerabnahme des aktuellen Stands sind abgeschlossen. Die formalen App-/Display-Matrizen bleiben Release-Gates und werden nach relevanten Aenderungen erneut ausgefuehrt.
 
@@ -35,7 +36,8 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 - Umgesetzt fuer Window Layouts und Restore: typisierte stabile Action-IDs, zentraler Dispatch sowie Verfuegbarkeit mit Fehlergrund.
 - Umgesetzt: globale Window-Layout-Shortcuts verwenden das gemeinsame Register.
 - Umgesetzt: Space links/rechts, `Last Space` und Space 1 bis 9 sind als typisierte Aktionen registriert.
-- Offen: Register um Display-Wechsel, Apps und URLs erweitern.
+- Umgesetzt: `Move to next display` und `Move to previous display` sind als typisierte Aktionen registriert; sie behalten die relative Lage des Fensters und begrenzen es auf den Zielbildschirm.
+- Offen: Register um Apps und URLs erweitern.
 - Spaces-Menueleiste, Leader-Sequenzen, FlickRing-Sektoren und spaetere Module verwenden danach dasselbe Register.
 - Die Menueleiste enthaelt keine eigene Fenster- oder Space-Aktionslogik.
 - Keine beliebigen Makros oder Shell-Kommandos im ersten Umfang.

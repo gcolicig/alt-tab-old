@@ -27,6 +27,8 @@ class Preferences {
             "windowLayoutCenterFocusShortcut": defaultShortcut(""),
             "windowLayoutRightFocusShortcut": defaultShortcut(""),
             "windowLayoutRestoreShortcut": defaultShortcut(""),
+            "windowMoveNextDisplayShortcut": defaultShortcut(""),
+            "windowMovePreviousDisplayShortcut": defaultShortcut(""),
             "hyperKeyEnabled": "false",
             "inputModulesSafeMode": "false",
             "hyperKeyArmingMarker": "false",
@@ -96,7 +98,7 @@ class Preferences {
         "windowLayoutRightTwoThirdsShortcut", "windowLayoutLeftThreeQuartersShortcut", "windowLayoutRightThreeQuartersShortcut",
         "windowLayoutLeftFocusShortcut", "windowLayoutCenterFocusShortcut",
         "windowLayoutRightFocusShortcut", "windowLayoutRestoreShortcut",
-    ] + SpaceAction.all.map(\.shortcutPreferenceKey)
+    ] + DisplayMoveAction.allCases.map(\.shortcutPreferenceKey) + SpaceAction.all.map(\.shortcutPreferenceKey)
     static var allShortcutPreferenceKeys: [String] {
         staticShortcutKeys + (0..<maxShortcutCount).flatMap { [indexToName("holdShortcut", $0), indexToName("nextWindowShortcut", $0)] }
     }

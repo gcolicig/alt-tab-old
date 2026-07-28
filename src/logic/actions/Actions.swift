@@ -3,6 +3,7 @@ import Cocoa
 enum Actions {
     static let registry = ActionRegistry(
         WindowLayoutAction.allCases.map(windowLayoutRegistration) +
+            DisplayMoveAction.allCases.map(displayMoveRegistration) +
             SpaceAction.all.map(spaceRegistration)
     )
 
@@ -15,6 +16,19 @@ enum Actions {
         RegisteredAction(id: .windowLayout(action), title: action.localizedTitle, availability: windowLayoutAvailability) {
             WindowLayouts.perform(action)
         }
+    }
+
+    private static func displayMoveRegistration(_ action: DisplayMoveAction) -> RegisteredAction {
+        RegisteredAction(id: .displayMove(action), title: action.localizedTitle, availability: displayMoveAvailability) {
+            WindowLayouts.perform(action)
+        }
+    }
+
+    private static func displayMoveAvailability() -> ActionAvailability {
+        guard NSScreen.screens.count > 1 else {
+            return .unavailable(NSLocalizedString("Only one display is connected.", comment: ""))
+        }
+        return windowLayoutAvailability()
     }
 
     private static func spaceRegistration(_ action: SpaceAction) -> RegisteredAction {

@@ -1,10 +1,12 @@
 enum ActionIdentifier: Hashable {
     case windowLayout(WindowLayoutAction)
+    case displayMove(DisplayMoveAction)
     case space(SpaceAction)
 
     var stableId: String {
         switch self {
         case .windowLayout(let action): return "windowLayout.\(action.rawValue)"
+        case .displayMove(let action): return "displayMove.\(action.rawValue)"
         case .space(let action): return "space.\(action.stableId)"
         }
     }

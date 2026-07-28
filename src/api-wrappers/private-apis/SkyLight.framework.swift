@@ -181,6 +181,11 @@ func CGSSetSymbolicHotKeyEnabled(_ hotKey: CGSSymbolicHotKey.RawValue, _ isEnabl
 @_silgen_name("CGSIsSymbolicHotKeyEnabled")
 func CGSIsSymbolicHotKeyEnabled(_ hotKey: CGSSymbolicHotKey.RawValue) -> Bool
 
+/// reads the combination a hotkey listens to, so a takeover can be matched to what the system reports
+/// instead of relying on ids whose meaning differs between macOS versions
+@_silgen_name("CGSGetSymbolicHotKeyValue") @discardableResult
+func CGSGetSymbolicHotKeyValue(_ hotKey: CGSSymbolicHotKey.RawValue, _ options: UnsafeMutablePointer<UInt32>, _ keyCode: UnsafeMutablePointer<UInt32>, _ modifiers: UnsafeMutablePointer<UInt32>) -> CGError
+
 func setNativeCommandTabEnabled(_ isEnabled: Bool, _ hotkeys: [CGSSymbolicHotKey] = CGSSymbolicHotKey.allCases) {
     for hotkey in hotkeys {
         CGSSetSymbolicHotKeyEnabled(hotkey.rawValue, isEnabled)
