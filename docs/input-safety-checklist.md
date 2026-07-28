@@ -46,8 +46,18 @@ Current user-facing Hyper and Caps Lock behavior was manually accepted on 2026-0
 
 - On 2026-07-27, recording a Space shortcut only became possible after toggling Hyperkey off and on in Settings. The cause is still unverified.
 - On 2026-07-28 the observation recurred twice after the stale-route fix, so that fix did not remove the cause. The event tap absorbs every physical Caps Lock event while Hyper is enabled and relies on the HID monitor to report the press, so a monitor that stopped delivering leaves both Caps Lock and Hyper dead until Hyper is toggled by hand, which re-registers it. A watchdog that re-armed the monitor was tried on 2026-07-28 and removed again: its liveness check could not tell the normal HID-before-tap ordering from a silent monitor, so it re-armed on ordinary presses and reset the Hyper hold mid-press, which broke Hyper shortcut recording. Any retry needs a liveness signal that survives that ordering.
-- On 2026-07-28 the target machine was found to have Secure Keyboard Entry enabled in Terminal. While such a terminal is focused, macOS blocks keyboard monitoring, so the HID monitor for Caps Lock delivers nothing and Hyper is dead for that time. This matches the reported symptom and its intermittency, and it is worth ruling out first: disable Secure Keyboard Entry in Terminal, then check whether Hyper still needs to be toggled by hand.
+- On 2026-07-28 the target machine was found to have Secure Keyboard Entry enabled in Terminal. While such a terminal is focused, macOS blocks keyboard monitoring, so the HID monitor for Caps Lock delivers nothing and Hyper is dead for that time. This matches the reported symptom and its intermittency. AltTab+ now re-arms the monitor when secure input ends, detected through `IsSecureEventInputEnabled` on application activation rather than through a timing heuristic. Whether this removes the observation is still to be confirmed on the target machine.
 - Static analysis found one path that produces exactly this symptom: a routed key code survived a missed key-up, so every later press of that key kept carrying the Hyper modifiers until `resetHyperKeyState` ran, which is what toggling Hyperkey does. The state machine now drops such a stale route on the next fresh press. Whether this was the observed cause is unconfirmed; re-check the recorder on the target machine.
+
+## Secure input recovery
+
+Run AltTab+ from a terminal so the log is visible: `/Applications/AltTab+.app/Contents/MacOS/alt-tab-macos --logs=warning`.
+
+- Enable Hyper and confirm that a Hyper combination works.
+- Focus a terminal that has `Secure Keyboard Entry` enabled, or open a password dialog.
+- Confirm that Hyper does nothing while that window is focused. This is macOS blocking keyboard monitoring and cannot be worked around.
+- Switch to another application and confirm that Hyper works again without toggling it in Settings.
+- Confirm that `secure input ended; re-arming the physical Caps Lock monitor` appears once per recovery, and never while a Hyper combination is held.
 
 ## Stale Hyper routes
 

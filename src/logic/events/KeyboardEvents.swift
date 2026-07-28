@@ -1,4 +1,5 @@
 import Cocoa
+import Carbon.HIToolbox
 import IOKit.hid
 import ShortcutRecorder
 
@@ -26,6 +27,7 @@ class KeyboardEvents {
     private static var hyperKeyHoldGeneration = UInt64(0)
     private static var capsLockWasForcedOffForCurrentHold = false
     private static var capsLockStateBeforeCurrentHold: Bool?
+    private static var secureInputWasEnabled = false
     private static let hyperKeyHidCallback: IOHIDValueCallback = { _, _, _, value in
         let element = IOHIDValueGetElement(value)
         guard IOHIDElementGetUsagePage(element) == kHIDPage_KeyboardOrKeypad,
@@ -304,6 +306,7 @@ class KeyboardEvents {
         addLocalMonitorForKeyDownAndKeyUp()
         addCgEventTapForModifierFlags()
         addPanicHotKey()
+        observeSecureInputChanges()
         hyperKeyEnabledChanged()
         if Preferences.recoveredInputModuleAtLaunch {
             DispatchQueue.main.async {
@@ -473,6 +476,33 @@ class KeyboardEvents {
 
     private static func hyperKeyIsActive() -> Bool {
         withHyperKeyState { _ in hyperKeyRuntimeEnabled }
+    }
+
+    /// macOS blocks keyboard monitoring while secure input is active, for example while a terminal with
+    /// Secure Keyboard Entry or a password dialog is focused. The HID monitor for Caps Lock can stay
+    /// silent after that, which used to require toggling Hyper by hand. The frontmost application
+    /// changing is the moment secure input starts or ends, so the state is compared there.
+    private static func observeSecureInputChanges() {
+        secureInputWasEnabled = IsSecureEventInputEnabled()
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main) { _ in
+            reArmHyperKeyAfterSecureInputIfNeeded()
+        }
+    }
+
+    private static func reArmHyperKeyAfterSecureInputIfNeeded() {
+        let secureInputIsEnabled = IsSecureEventInputEnabled()
+        let secureInputJustEnded = secureInputWasEnabled && !secureInputIsEnabled
+        secureInputWasEnabled = secureInputIsEnabled
+        guard secureInputJustEnded, Preferences.hyperKeyEnabled, hyperKeyIsActive() else { return }
+        // never re-arm during a hold: that would drop the routing of the keys currently held
+        guard !withHyperKeyState({ $0.capsLockIsDown }) else { return }
+        Logger.warning { "secure input ended; re-arming the physical Caps Lock monitor" }
+        resetHyperKeyState()
+        removeHyperKeyHidMonitor()
+        if !addHyperKeyHidMonitor() {
+            Logger.error { "could not re-arm the physical Caps Lock monitor after secure input" }
+        }
     }
 
     private static func setHyperKeyRuntimeEnabled(_ enabled: Bool) {
