@@ -1,16 +1,15 @@
 import Cocoa
 
 enum Actions {
-    /// recomputed on every access so launch-app/open-url slots reflect their current configuration
-    static var registry: ActionRegistry {
-        ActionRegistry(
-            WindowLayoutAction.allCases.map(windowLayoutRegistration) +
-                DisplayMoveAction.allCases.map(displayMoveRegistration) +
-                SpaceAction.all.map(spaceRegistration) +
-                (0..<Preferences.maxLaunchAppCount).map(launchAppRegistration) +
-                (0..<Preferences.maxOpenUrlCount).map(openUrlRegistration)
-        )
-    }
+    /// Built once: every entry reads its own mutable state through closures, so the registry itself
+    /// never goes stale and must not be rebuilt on the shortcut path.
+    static let registry = ActionRegistry(
+        WindowLayoutAction.allCases.map(windowLayoutRegistration) +
+            DisplayMoveAction.allCases.map(displayMoveRegistration) +
+            SpaceAction.all.map(spaceRegistration) +
+            (0..<Preferences.maxLaunchAppCount).map(launchAppRegistration) +
+            (0..<Preferences.maxOpenUrlCount).map(openUrlRegistration)
+    )
 
     @discardableResult
     static func perform(_ id: ActionIdentifier) -> Bool {
@@ -18,13 +17,13 @@ enum Actions {
     }
 
     private static func windowLayoutRegistration(_ action: WindowLayoutAction) -> RegisteredAction {
-        RegisteredAction(id: .windowLayout(action), title: action.localizedTitle, availability: windowLayoutAvailability) {
+        RegisteredAction(id: .windowLayout(action), title: { action.localizedTitle }, availability: windowLayoutAvailability) {
             WindowLayouts.perform(action)
         }
     }
 
     private static func displayMoveRegistration(_ action: DisplayMoveAction) -> RegisteredAction {
-        RegisteredAction(id: .displayMove(action), title: action.localizedTitle, availability: displayMoveAvailability) {
+        RegisteredAction(id: .displayMove(action), title: { action.localizedTitle }, availability: displayMoveAvailability) {
             WindowLayouts.perform(action)
         }
     }
@@ -37,19 +36,19 @@ enum Actions {
     }
 
     private static func spaceRegistration(_ action: SpaceAction) -> RegisteredAction {
-        RegisteredAction(id: .space(action), title: action.localizedTitle, availability: { InstantSpaces.availability(action) }) {
+        RegisteredAction(id: .space(action), title: { action.localizedTitle }, availability: { InstantSpaces.availability(action) }) {
             InstantSpaces.perform(action)
         }
     }
 
     private static func launchAppRegistration(_ index: Int) -> RegisteredAction {
-        RegisteredAction(id: .launchApp(index), title: LaunchAppAction.localizedTitle(index), availability: { LaunchAppAction.availability(index) }) {
+        RegisteredAction(id: .launchApp(index), title: { LaunchAppAction.localizedTitle(index) }, availability: { LaunchAppAction.availability(index) }) {
             LaunchAppAction.perform(index)
         }
     }
 
     private static func openUrlRegistration(_ index: Int) -> RegisteredAction {
-        RegisteredAction(id: .openUrl(index), title: OpenUrlAction.localizedTitle(index), availability: { OpenUrlAction.availability(index) }) {
+        RegisteredAction(id: .openUrl(index), title: { OpenUrlAction.localizedTitle(index) }, availability: { OpenUrlAction.availability(index) }) {
             OpenUrlAction.perform(index)
         }
     }

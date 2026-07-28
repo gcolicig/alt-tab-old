@@ -65,7 +65,7 @@ final class WindowLayoutTests: XCTestCase {
         var executionCount = 0
         let id = ActionIdentifier.windowLayout(.leftThird)
         let registry = ActionRegistry([
-            RegisteredAction(id: id, title: "Left third", availability: { .available }) { executionCount += 1 },
+            RegisteredAction(id: id, title: { "Left third" }, availability: { .available }) { executionCount += 1 },
         ])
         XCTAssertTrue(registry.perform(id))
         XCTAssertEqual(executionCount, 1)
@@ -76,7 +76,7 @@ final class WindowLayoutTests: XCTestCase {
         var executionCount = 0
         let id = ActionIdentifier.windowLayout(.leftThird)
         let registry = ActionRegistry([
-            RegisteredAction(id: id, title: "Left third", availability: { .unavailable("Unavailable") }) { executionCount += 1 },
+            RegisteredAction(id: id, title: { "Left third" }, availability: { .unavailable("Unavailable") }) { executionCount += 1 },
         ])
         XCTAssertFalse(registry.perform(id))
         XCTAssertFalse(registry.perform(.windowLayout(.rightThird)))

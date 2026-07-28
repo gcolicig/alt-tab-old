@@ -28,7 +28,9 @@ enum ActionAvailability: Equatable {
 
 struct RegisteredAction {
     let id: ActionIdentifier
-    let title: String
+    /// Evaluated on demand like `availability`: user-configured actions rename themselves at runtime,
+    /// so a title captured at registration would go stale.
+    let title: () -> String
     let availability: () -> ActionAvailability
     let execute: () -> Void
 }
