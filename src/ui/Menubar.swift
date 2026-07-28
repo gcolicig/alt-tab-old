@@ -129,7 +129,8 @@ class Menubar {
                 x += groupGap
             }
             x += addGroupSegments(group, startX: x, height: statusButton.bounds.height, switchingEnabled: switchingEnabled,
-                                   isCursorGroup: cursorUuid == nil || cursorUuid == group.displayUuid, into: container)
+                                   isCursorGroup: cursorUuid == nil || cursorUuid == group.displayUuid,
+                                   displayOrdinal: groups.count > 1 ? groupOffset + 1 : nil, into: container)
         }
         container.frame = NSRect(x: iconWidth, y: 0, width: x, height: statusButton.bounds.height)
         statusItem.length = iconWidth + x + 2
@@ -143,19 +144,20 @@ class Menubar {
         spaceSegmentsView = container
     }
 
-    /// Adds the segments for one display group and returns the width consumed.
+    /// Adds the segments for one display group and returns the width consumed. `displayOrdinal` is only
+    /// set when more than one group is shown, so VoiceOver can name which display a segment belongs to.
     private static func addGroupSegments(_ group: SpaceGroup, startX: CGFloat, height: CGFloat, switchingEnabled: Bool,
-                                          isCursorGroup: Bool, into container: NSView) -> CGFloat {
+                                          isCursorGroup: Bool, displayOrdinal: Int?, into container: NSView) -> CGFloat {
         let directCount = group.spaceIds.count > maxDirectSegmentsPerGroup ? maxDirectSegmentsPerGroup - 1 : group.spaceIds.count
         let hasOverflow = group.spaceIds.count > directCount
         (0..<directCount).forEach { offset in
-            let button = spaceButton(offset + 1, group.spaceIds[offset] == group.activeSpaceId, switchingEnabled && isCursorGroup, !isCursorGroup, group.displayUuid)
+            let button = spaceButton(offset + 1, group.spaceIds[offset] == group.activeSpaceId, switchingEnabled && isCursorGroup, !isCursorGroup, displayOrdinal, group.displayUuid)
             button.frame = NSRect(x: startX + CGFloat(offset) * segmentWidth + 2, y: 3, width: segmentWidth - 4, height: max(18, height - 6))
             container.addSubview(button)
         }
         guard hasOverflow else { return CGFloat(directCount) * segmentWidth }
         let overflowIndexes = Array((directCount + 1)...group.spaceIds.count)
-        let overflowButton = overflowButton(overflowIndexes, group.spaceIds, group.activeSpaceId, switchingEnabled && isCursorGroup, !isCursorGroup, group.displayUuid)
+        let overflowButton = overflowButton(overflowIndexes, group.spaceIds, group.activeSpaceId, switchingEnabled && isCursorGroup, !isCursorGroup, displayOrdinal, group.displayUuid)
         overflowButton.frame = NSRect(x: startX + CGFloat(directCount) * segmentWidth + 2, y: 3, width: segmentWidth - 4, height: max(18, height - 6))
         container.addSubview(overflowButton)
         return CGFloat(directCount + 1) * segmentWidth
@@ -164,6 +166,8 @@ class Menubar {
     private static func groupDivider(x: CGFloat, height: CGFloat) -> NSView {
         let divider = NSBox(frame: NSRect(x: x, y: 4, width: 1, height: max(10, height - 8)))
         divider.boxType = .separator
+        // decorative only: VoiceOver should skip straight from one display's segments to the next
+        divider.setAccessibilityElement(false)
         return divider
     }
 
@@ -208,17 +212,17 @@ class Menubar {
         }
     }
 
-    private static func spaceButton(_ index: Int, _ active: Bool, _ enabled: Bool, _ crossDisplay: Bool, _ displayUuid: ScreenUuid) -> NSButton {
+    private static func spaceButton(_ index: Int, _ active: Bool, _ enabled: Bool, _ crossDisplay: Bool, _ displayOrdinal: Int?, _ displayUuid: ScreenUuid) -> NSButton {
         let button = NSButton(title: "\(index)", target: self, action: #selector(spaceSegmentOnClick(_:)))
         button.isBordered = false
         button.wantsLayer = true
         button.layer?.cornerRadius = 5
         button.identifier = NSUserInterfaceItemIdentifier(displayUuid as String)
-        styleSpaceButton(button, index, active, enabled, crossDisplay)
+        styleSpaceButton(button, index, active, enabled, crossDisplay, displayOrdinal)
         return button
     }
 
-    private static func overflowButton(_ indexes: [Int], _ spaceIds: [CGSSpaceID], _ activeSpaceId: CGSSpaceID?, _ enabled: Bool, _ crossDisplay: Bool, _ displayUuid: ScreenUuid) -> NSButton {
+    private static func overflowButton(_ indexes: [Int], _ spaceIds: [CGSSpaceID], _ activeSpaceId: CGSSpaceID?, _ enabled: Bool, _ crossDisplay: Bool, _ displayOrdinal: Int?, _ displayUuid: ScreenUuid) -> NSButton {
         let button = NSButton(title: "…", target: self, action: #selector(spaceOverflowOnClick(_:)))
         button.isBordered = false
         button.wantsLayer = true
@@ -226,7 +230,8 @@ class Menubar {
         button.identifier = NSUserInterfaceItemIdentifier(displayUuid as String)
         button.isEnabled = enabled
         button.alphaValue = crossDisplay ? 0.4 : 1
-        button.toolTip = crossDisplay ? crossDisplayTooltip() : NSLocalizedString("More Spaces", comment: "")
+        let baseTooltip = crossDisplay ? crossDisplayTooltip() : NSLocalizedString("More Spaces", comment: "")
+        button.toolTip = displayOrdinal.map { String(format: NSLocalizedString("%@ (Display %d)", comment: ""), baseTooltip, $0) } ?? baseTooltip
         button.setAccessibilityLabel(button.toolTip)
         let activeInOverflow = indexes.contains { spaceIds[$0 - 1] == activeSpaceId }
         let font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: activeInOverflow ? .semibold : .medium)
@@ -239,11 +244,12 @@ class Menubar {
         return button
     }
 
-    private static func styleSpaceButton(_ button: NSButton, _ index: Int, _ active: Bool, _ enabled: Bool, _ crossDisplay: Bool) {
+    private static func styleSpaceButton(_ button: NSButton, _ index: Int, _ active: Bool, _ enabled: Bool, _ crossDisplay: Bool, _ displayOrdinal: Int? = nil) {
         button.tag = index
         button.isEnabled = enabled
         button.alphaValue = crossDisplay ? 0.4 : 1
-        button.toolTip = crossDisplay ? crossDisplayTooltip() : String(format: NSLocalizedString("Switch to Space %d", comment: ""), index)
+        let baseTooltip = crossDisplay ? crossDisplayTooltip() : String(format: NSLocalizedString("Switch to Space %d", comment: ""), index)
+        button.toolTip = displayOrdinal.map { String(format: NSLocalizedString("%@ (Display %d)", comment: ""), baseTooltip, $0) } ?? baseTooltip
         button.setAccessibilityLabel(button.toolTip)
         let font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: active ? .semibold : .medium)
         let color: NSColor
