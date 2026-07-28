@@ -27,6 +27,8 @@ The current user-facing Window Layout behavior was manually accepted on 2026-07-
 ## App Matrix
 
 - Repeat one layout and Restore in an AppKit app, a Catalyst app, Chromium or Electron, Java, Qt, and Terminal when installed.
+- Record each app as `full`, `partial`, or `none`, rather than pass or fail: apps with their own keymap or window handling honour part of what they are told. Electron apps, JetBrains IDEs, and terminal emulators are the ones that have to be in the table.
+- A `partial` or `none` result is a requirement, not a defect report: the action has to degrade visibly instead of half-applying.
 - Record missing classes instead of substituting an unverified result.
 - Confirm failure in one app does not block later layout actions in another app.
 

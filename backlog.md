@@ -144,6 +144,7 @@ Dual-Role-Hyper:
 - Das Modul startet deaktiviert.
 - Pfeiltasten koennen vorhandenen Thirds-, Two-Thirds- und Restore-Aktionen zugeordnet werden; konfigurierte interne Paare werden vollstaendig absorbiert.
 - Hyper-Kombinationen werden einheitlich als systemweite Shortcuts behandelt; Window Layouts nutzen dieselben globalen Shortcut-Felder wie andere Hyper-Ziele.
+- Folgeumfang nach S-09: optionale Variante ohne Dual-Role. Eine reine 1:1-Umbelegung von Caps Lock auf einen Modifier ueber `hidutil UserKeyMapping` liegt unterhalb des Event-Taps und wirkt deshalb auch bei aktivem Secure Input, wo der HID-Monitor nichts meldet. Preis ist der Verlust der Tap-Funktion, da `hidutil` keine Tap-Hold-Logik kann. Nur als bewusst gewaehlte Alternative anbieten, nie als Default, und den Vorwert wie jeden globalen Systemzustand besitzen und zurueckgeben.
 
 Leader:
 
@@ -268,6 +269,7 @@ Repo-Learnings:
 - Rectangle bietet viele explizite Aktionen, darunter Thirds, Two-Thirds, Viertel, Achtel, Neuntel, Center, Restore und Display-Wechsel.
 - Rectangle-Defaults sind bei Zielnutzern haeufig schon belegt; deshalb keine Default-Shortcuts.
 - `Fn-Control-*` gehoert ab aktuellen macOS-Versionen Apple und ist als Default ausgeschlossen.
+- Bewertetes Fremdkonzept (Vier-Schichten-Modell fuer Tastatur-Customizing): uebernommen werden die additive Ueberlagerung mit Rollback statt Abschalten von Systemdefaults sowie die Kompatibilitaetsklassen pro App. Nicht uebernommen werden das Generieren von `DefaultKeyBinding.dict` und das Schreiben von `NSUserKeyEquivalents` in fremde Preference-Domains: beides betrifft Textnavigation und Menueeintraege fremder Apps, vervielfacht das State Ownership ueber fremde Domains und faellt unter das Nicht-Ziel `beliebige Makros oder ein allgemeiner Launcher`. Eine deklarative Einzelquelle mit Dry-Run bleibt hoechstens Profil-Export in 2D.
 - Erhebung der Symbolic Hotkeys auf Tahoe (2026-07-28): `Control+1` bis `Control+0` (ids 118-127) sind standardmaessig deaktiviert und damit ohne Systemaenderung fuer `Space 1` bis `Space 9` verwendbar. `Control+Pfeil` traegt je drei ids (79/199/240 und 81/200/241); da `Fn-Control-Pfeil` zu Apples Tiling gehoert, sind sie einzeln abzuschalten und das native Tiling ist nach jedem Schritt zu pruefen.
 - Fehler in der Hotkey-Zuordnung gefunden und behoben: `CGSSymbolicHotKey.commandKeyAboveTab` zeigte auf id 6, die auf Tahoe `Shift+Option+Command+Escape` (Sofort beenden erzwingen) ist. Wer `Command` plus Taste ueber Tab zuwies, deaktivierte damit den Notausstieg des Systems, waehrend die eigentliche Kombination bei macOS blieb. Richtig sind 27 und, als Shift-Variante, 220.
 
@@ -773,6 +775,7 @@ Energiepruefung:
 | S-05 | Scroll-Tap Kosten | Tap-Recovery nachgewiesen; feste Scrollmessung bleibt innerhalb des unter Energiepruefung dokumentierten Budgets |
 | S-06 | Instant Spaces | Links/rechts und direkter Index wechseln auf verifiziertem Tahoe ohne sichtbare Animation; Display-Ziel, Randblockierung und Ist-Zustand konvergieren bei schnellen Folgen; fehlende Symbole oder unbekannte Version deaktivieren nur das Modul |
 | S-07 | Spaces-Menueleiste | Space-Anzahl und aktiver Zustand konvergieren ereignisbasiert ohne Polling; Klick aktiviert den erwarteten Space; Ueberlauf, Separate-Spaces-Modi und deaktiviertes Instant Spaces degradieren bedienbar |
+| S-09 | HID-Remapping unterhalb des Event-Taps | `hidutil UserKeyMapping` laesst sich auf Tahoe aus dem Agent-Prozess setzen und nach Keyboard-Hotplug erneuern, ohne Root und ohne LaunchAgent; die Zuordnung wirkt nachweislich auch bei aktivem Secure Input; Entzug und Absturz hinterlassen keine dauerhafte Umbelegung |
 | S-08 | Stabile Space-Identitaet | Managed-Space-UUID bleibt auf Tahoe ueber Neustart, Reorder sowie Hinzufuegen/Loeschen eindeutig genug fuer Aliase; andernfalls bleiben persistente Namen und Profile-Bindings deaktiviert |
 
 ## Umsetzungsreihenfolge
