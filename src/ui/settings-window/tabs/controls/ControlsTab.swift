@@ -727,10 +727,15 @@ class ControlsTab {
             .commandTab: { shortcut in shortcut.carbonModifierFlags == cmdKey && shortcut.carbonKeyCode == kVK_Tab },
             .commandShiftTab: { shortcut in CustomRecorderControlTestable.combinedModifiersMatch(shortcut.carbonModifierFlags, UInt32(cmdKey | shiftKey)) && shortcut.carbonKeyCode == kVK_Tab },
             .commandKeyAboveTab: { shortcut in shortcut.carbonModifierFlags == cmdKey && shortcut.carbonKeyCode == kVK_ANSI_Grave },
+            .commandShiftKeyAboveTab: { shortcut in CustomRecorderControlTestable.combinedModifiersMatch(shortcut.carbonModifierFlags, UInt32(cmdKey | shiftKey)) && shortcut.carbonKeyCode == kVK_ANSI_Grave },
         ]
         var overlappingHotkeys = shortcuts.values.compactMap { atShortcut in nativeHotkeys.first { $1(atShortcut.shortcut) }?.key }
         if overlappingHotkeys.contains(.commandTab) && !overlappingHotkeys.contains(.commandShiftTab) {
             overlappingHotkeys.append(.commandShiftTab)
+        }
+        // the same pairing as Command-Tab: taking the forward shortcut also takes its Shift variant
+        if overlappingHotkeys.contains(.commandKeyAboveTab) && !overlappingHotkeys.contains(.commandShiftKeyAboveTab) {
+            overlappingHotkeys.append(.commandShiftKeyAboveTab)
         }
         let nonOverlappingHotkeys: [CGSSymbolicHotKey] = Array(Set(nativeHotkeys.keys).symmetricDifference(Set(overlappingHotkeys)))
         setNativeCommandTabEnabled(false, overlappingHotkeys)

@@ -268,6 +268,8 @@ Repo-Learnings:
 - Rectangle bietet viele explizite Aktionen, darunter Thirds, Two-Thirds, Viertel, Achtel, Neuntel, Center, Restore und Display-Wechsel.
 - Rectangle-Defaults sind bei Zielnutzern haeufig schon belegt; deshalb keine Default-Shortcuts.
 - `Fn-Control-*` gehoert ab aktuellen macOS-Versionen Apple und ist als Default ausgeschlossen.
+- Erhebung der Symbolic Hotkeys auf Tahoe (2026-07-28): `Control+1` bis `Control+0` (ids 118-127) sind standardmaessig deaktiviert und damit ohne Systemaenderung fuer `Space 1` bis `Space 9` verwendbar. `Control+Pfeil` traegt je drei ids (79/199/240 und 81/200/241); da `Fn-Control-Pfeil` zu Apples Tiling gehoert, sind sie einzeln abzuschalten und das native Tiling ist nach jedem Schritt zu pruefen.
+- Fehler in der Hotkey-Zuordnung gefunden und behoben: `CGSSymbolicHotKey.commandKeyAboveTab` zeigte auf id 6, die auf Tahoe `Shift+Option+Command+Escape` (Sofort beenden erzwingen) ist. Wer `Command` plus Taste ueber Tab zuwies, deaktivierte damit den Notausstieg des Systems, waehrend die eigentliche Kombination bei macOS blieb. Richtig sind 27 und, als Shift-Variante, 220.
 
 ### 2B. Instant Spaces
 

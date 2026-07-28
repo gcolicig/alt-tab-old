@@ -161,10 +161,14 @@ func CGSGetWindowLevel(_ cid: CGSConnectionID, _ wid: CGWindowID, _ level: Unsaf
 @_silgen_name("SLSRequestScreenCaptureAccess") @discardableResult
 func SLSRequestScreenCaptureAccess() -> UInt8
 
+/// Verified on macOS Tahoe with `CGSGetSymbolicHotKeyValue`: 27 is Command plus the key above Tab
+/// (`Move focus to next window in application`) and 220 its Shift variant. Id 6 is
+/// `Shift+Option+Command+Escape` (force quit immediately) and must not be disabled for a shortcut.
 enum CGSSymbolicHotKey: Int, CaseIterable {
     case commandTab = 1
     case commandShiftTab = 2
-    case commandKeyAboveTab = 6 // see keyAboveTabDependingOnInputSource
+    case commandKeyAboveTab = 27 // see keyAboveTabDependingOnInputSource
+    case commandShiftKeyAboveTab = 220
 }
 
 /// enables/disables a symbolic hotkeys. These are system shortcuts such as command+tab or Spotlight

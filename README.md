@@ -134,6 +134,21 @@ AltTab+ does not change system settings. A few of them do change how its modules
 | Secure Keyboard Entry | Terminal > Terminal menu | While a terminal with this enabled is focused, macOS blocks keyboard monitoring. The Hyper key stops responding for that time. |
 | Group windows by application | Desktop & Dock > Mission Control | Only affects Mission Control itself, not the switcher. |
 
+### Native Shortcuts You Can Hand Over
+
+macOS owns several shortcuts that overlap with what AltTab+ does. A system shortcut wins over any app, so a combination has to be free before AltTab+ can use it. The ids below are symbolic hotkey ids, readable with `CGSGetSymbolicHotKeyValue`; the state was surveyed on macOS Tahoe.
+
+| Combination | macOS function | Ids | To use it in AltTab+ |
+|---|---|---|---|
+| `Control+1` … `Control+0` | Switch to Desktop 1-10 | 118-127 | Usually already off by default, so `Space 1` to `Space 9` can be assigned directly |
+| `Control+Left` / `Control+Right` | Move one Space left or right | 79, 199, 240 / 81, 200, 241 | Several ids share the combination. Disable them one at a time and check after each step that native window tiling still works, since `Fn+Control+Arrow` belongs to Apple |
+| `Command+Tab` / `Shift+Command+Tab` | App switcher | 1, 2 | Handled automatically when the shortcut is assigned |
+| `Command+§` / `Shift+Command+§` | Next or previous window in the application | 27, 220 | Handled automatically when the shortcut is assigned |
+| `Control+Down` | Application windows | 33, 198, 243 | Only worth taking over for a shortcut that shows the windows of the current application |
+| `Control+Up` | Mission Control | 32, 242 | No AltTab+ equivalent; leave it |
+
+Disabling a symbolic hotkey persists after AltTab+ quits. Anything AltTab+ does not manage itself should therefore be changed in System Settings, so it stays visible where you expect it.
+
 Space switching moves through the Spaces in between, because the only mechanism available without disabling SIP is a synthetic swipe. Jumping straight to a Space is possible through a private call, but it desynchronizes the Dock and the WindowServer on Tahoe, so it is deliberately not used.
 
 ## Data Flow
