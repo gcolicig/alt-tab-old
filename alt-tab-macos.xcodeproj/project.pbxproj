@@ -20,7 +20,6 @@
 		C0DE10000000000000000009 /* InstantSpacesTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000007 /* InstantSpacesTestable.swift */; };
 		C0DE1000000000000000000A /* InstantSpaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000008 /* InstantSpaces.swift */; };
 		C0DE1000000000000000000B /* InstantSpacesPrivateApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000009 /* InstantSpacesPrivateApi.swift */; };
-		C0DE10000000000000000010 /* SpacesTrace.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000000D /* SpacesTrace.swift */; };
 		C0DE10000000000000000014 /* ShortcutPresets.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000011 /* ShortcutPresets.swift */; };
 		C0DE10000000000000000013 /* TransientNotice.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000010 /* TransientNotice.swift */; };
 		C0DE10000000000000000012 /* NativeSystemShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000000F /* NativeSystemShortcuts.swift */; };
@@ -348,7 +347,6 @@
 		C0DE20000000000000000007 /* InstantSpacesTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpacesTestable.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000008 /* InstantSpaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpaces.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000009 /* InstantSpacesPrivateApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpacesPrivateApi.swift; sourceTree = "<group>"; };
-		C0DE2000000000000000000D /* SpacesTrace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacesTrace.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000011 /* ShortcutPresets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutPresets.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000010 /* TransientNotice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransientNotice.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000000F /* NativeSystemShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSystemShortcuts.swift; sourceTree = "<group>"; };
@@ -1697,7 +1695,6 @@
 			children = (
 				C0DE20000000000000000007 /* InstantSpacesTestable.swift */,
 				C0DE20000000000000000008 /* InstantSpaces.swift */,
-				C0DE2000000000000000000D /* SpacesTrace.swift */,
 			);
 			path = spaces;
 			sourceTree = "<group>";
@@ -2650,7 +2647,6 @@
 				C0DE10000000000000000009 /* InstantSpacesTestable.swift in Sources */,
 				C0DE1000000000000000000A /* InstantSpaces.swift in Sources */,
 				C0DE1000000000000000000B /* InstantSpacesPrivateApi.swift in Sources */,
-				C0DE10000000000000000010 /* SpacesTrace.swift in Sources */,
 				C0DE10000000000000000014 /* ShortcutPresets.swift in Sources */,
 				C0DE10000000000000000013 /* TransientNotice.swift in Sources */,
 				C0DE10000000000000000012 /* NativeSystemShortcuts.swift in Sources */,
