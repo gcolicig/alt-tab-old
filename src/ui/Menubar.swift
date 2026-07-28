@@ -149,13 +149,13 @@ class Menubar {
         let directCount = group.spaceIds.count > maxDirectSegmentsPerGroup ? maxDirectSegmentsPerGroup - 1 : group.spaceIds.count
         let hasOverflow = group.spaceIds.count > directCount
         (0..<directCount).forEach { offset in
-            let button = spaceButton(offset + 1, group.spaceIds[offset] == group.activeSpaceId, switchingEnabled && isCursorGroup, group.displayUuid)
+            let button = spaceButton(offset + 1, group.spaceIds[offset] == group.activeSpaceId, switchingEnabled && isCursorGroup, !isCursorGroup, group.displayUuid)
             button.frame = NSRect(x: startX + CGFloat(offset) * segmentWidth + 2, y: 3, width: segmentWidth - 4, height: max(18, height - 6))
             container.addSubview(button)
         }
         guard hasOverflow else { return CGFloat(directCount) * segmentWidth }
         let overflowIndexes = Array((directCount + 1)...group.spaceIds.count)
-        let overflowButton = overflowButton(overflowIndexes, group.spaceIds, group.activeSpaceId, switchingEnabled && isCursorGroup, group.displayUuid)
+        let overflowButton = overflowButton(overflowIndexes, group.spaceIds, group.activeSpaceId, switchingEnabled && isCursorGroup, !isCursorGroup, group.displayUuid)
         overflowButton.frame = NSRect(x: startX + CGFloat(directCount) * segmentWidth + 2, y: 3, width: segmentWidth - 4, height: max(18, height - 6))
         container.addSubview(overflowButton)
         return CGFloat(directCount + 1) * segmentWidth
@@ -174,7 +174,7 @@ class Menubar {
         guard buttons.count == group.spaceIds.count else { return false }
         let switchingEnabled = InstantSpaces.runtimeAvailability().isAvailable
         zip(buttons, group.spaceIds).enumerated().forEach { offset, pair in
-            styleSpaceButton(pair.0, offset + 1, pair.1 == group.activeSpaceId, switchingEnabled)
+            styleSpaceButton(pair.0, offset + 1, pair.1 == group.activeSpaceId, switchingEnabled, false)
         }
         return true
     }
@@ -208,24 +208,25 @@ class Menubar {
         }
     }
 
-    private static func spaceButton(_ index: Int, _ active: Bool, _ enabled: Bool, _ displayUuid: ScreenUuid) -> NSButton {
+    private static func spaceButton(_ index: Int, _ active: Bool, _ enabled: Bool, _ crossDisplay: Bool, _ displayUuid: ScreenUuid) -> NSButton {
         let button = NSButton(title: "\(index)", target: self, action: #selector(spaceSegmentOnClick(_:)))
         button.isBordered = false
         button.wantsLayer = true
         button.layer?.cornerRadius = 5
         button.identifier = NSUserInterfaceItemIdentifier(displayUuid as String)
-        styleSpaceButton(button, index, active, enabled)
+        styleSpaceButton(button, index, active, enabled, crossDisplay)
         return button
     }
 
-    private static func overflowButton(_ indexes: [Int], _ spaceIds: [CGSSpaceID], _ activeSpaceId: CGSSpaceID?, _ enabled: Bool, _ displayUuid: ScreenUuid) -> NSButton {
+    private static func overflowButton(_ indexes: [Int], _ spaceIds: [CGSSpaceID], _ activeSpaceId: CGSSpaceID?, _ enabled: Bool, _ crossDisplay: Bool, _ displayUuid: ScreenUuid) -> NSButton {
         let button = NSButton(title: "…", target: self, action: #selector(spaceOverflowOnClick(_:)))
         button.isBordered = false
         button.wantsLayer = true
         button.layer?.cornerRadius = 5
         button.identifier = NSUserInterfaceItemIdentifier(displayUuid as String)
         button.isEnabled = enabled
-        button.toolTip = NSLocalizedString("More Spaces", comment: "")
+        button.alphaValue = crossDisplay ? 0.4 : 1
+        button.toolTip = crossDisplay ? crossDisplayTooltip() : NSLocalizedString("More Spaces", comment: "")
         button.setAccessibilityLabel(button.toolTip)
         let activeInOverflow = indexes.contains { spaceIds[$0 - 1] == activeSpaceId }
         let font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: activeInOverflow ? .semibold : .medium)
@@ -238,12 +239,13 @@ class Menubar {
         return button
     }
 
-    private static func styleSpaceButton(_ button: NSButton, _ index: Int, _ active: Bool, _ enabled: Bool) {
+    private static func styleSpaceButton(_ button: NSButton, _ index: Int, _ active: Bool, _ enabled: Bool, _ crossDisplay: Bool) {
         button.tag = index
         button.isEnabled = enabled
-        let font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: active ? .semibold : .medium)
-        button.toolTip = String(format: NSLocalizedString("Switch to Space %d", comment: ""), index)
+        button.alphaValue = crossDisplay ? 0.4 : 1
+        button.toolTip = crossDisplay ? crossDisplayTooltip() : String(format: NSLocalizedString("Switch to Space %d", comment: ""), index)
         button.setAccessibilityLabel(button.toolTip)
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: active ? .semibold : .medium)
         let color: NSColor
         if #available(macOS 10.14, *) {
             color = NSApp.effectiveAppearance.getThemeName() == .dark ? .white : .black
@@ -292,6 +294,10 @@ class Menubar {
     private static func cursorMatchesGroup(_ button: NSButton) -> Bool {
         guard let groupUuid = button.identifier?.rawValue, let cursorUuid = NSScreen.withMouse()?.cachedUuid() else { return true }
         return groupUuid == cursorUuid as String
+    }
+
+    private static func crossDisplayTooltip() -> String {
+        NSLocalizedString("Move the cursor to this screen to switch its Spaces.", comment: "")
     }
 }
 
