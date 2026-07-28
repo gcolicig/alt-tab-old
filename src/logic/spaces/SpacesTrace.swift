@@ -14,6 +14,7 @@ enum SpacesTrace {
     private static var samplingSequence = UInt64(0)
     private static var lastSampledSpaceId = CGSSpaceID(0)
     private static var activationObserversInstalled = false
+    private static var headerWasWritten = false
 
     static func beginSequence(_ description: String, displayId: String, spaceIds: [CGSSpaceID], generation: UInt64) {
         installActivationObservers()
@@ -72,7 +73,16 @@ enum SpacesTrace {
             let manager = FileManager.default
             if !manager.fileExists(atPath: fileUrl.path) {
                 try? manager.createDirectory(at: fileUrl.deletingLastPathComponent(), withIntermediateDirectories: true)
-                manager.createFile(atPath: fileUrl.path, contents: header())
+                manager.createFile(atPath: fileUrl.path, contents: nil)
+            }
+            // one header per launch, so a trace always states which build produced it
+            if !headerWasWritten {
+                headerWasWritten = true
+                if let handle = try? FileHandle(forWritingTo: fileUrl), let header = header() {
+                    handle.seekToEndOfFile()
+                    handle.write(header)
+                    handle.closeFile()
+                }
             }
             guard let handle = try? FileHandle(forWritingTo: fileUrl) else { return }
             defer { handle.closeFile() }
@@ -82,8 +92,11 @@ enum SpacesTrace {
     }
 
     private static func header() -> Data? {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
         let system = ProcessInfo.processInfo.operatingSystemVersionString
-        return "AltTab+ \(version) | \(system) | started \(Date())\n".data(using: .utf8)
+        let executable = Bundle.main.executableURL
+        let builtAt = executable
+            .flatMap { try? FileManager.default.attributesOfItem(atPath: $0.path)[.modificationDate] as? Date }
+            .map(String.init(describing:)) ?? "unknown"
+        return "\n--- launch \(Date()) | \(system) | binary built \(builtAt)\n".data(using: .utf8)
     }
 }
