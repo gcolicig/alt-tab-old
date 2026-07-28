@@ -157,7 +157,7 @@ fi
 
 if [[ "$RUN_TESTS" == true ]]; then
   xcodebuild \
-    -project alt-tab-macos.xcodeproj \
+    -workspace alt-tab-macos.xcworkspace \
     -scheme Test \
     -configuration "$SCHEME" \
     -derivedDataPath "$DERIVED_DATA_PATH" \

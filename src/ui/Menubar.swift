@@ -81,13 +81,17 @@ class Menubar {
         statusItem.button!.imageScaling = .scaleProportionallyUpOrDown
     }
 
-    static func refreshSpaces() {
+    /// `spacesAreFresh` skips the `Spaces.refresh` when the caller just did it, which keeps the Space
+    /// change path down to a single query of the Space list.
+    static func refreshSpaces(spacesAreFresh: Bool = false) {
         // a multi-step switch passes through every Space in between; rendering those would walk the
         // highlight across the row. InstantSpaces refreshes once more when the sequence settles.
         guard !InstantSpaces.isSwitching else { return }
         guard statusItem != nil, let statusButton = statusItem.button else { return }
         if Preferences.menubarIconShown, Preferences.spacesInMenubarShown {
-            Spaces.refresh()
+            if !spacesAreFresh {
+                Spaces.refresh()
+            }
             // rebuilding the row on every Space change tore down the buttons while the mouse was still
             // on them, which swallowed clicks. Restyle in place whenever the segments still fit.
             if let model = spaceModel(), restyleExistingSegments(model) { return }
@@ -100,7 +104,6 @@ class Menubar {
         statusItem.length = NSStatusItem.squareLength
         statusButton.alignment = .center
         guard Preferences.menubarIconShown, Preferences.spacesInMenubarShown else { return }
-        Spaces.refresh()
         guard let model = spaceModel(), !model.spaceIds.isEmpty else { return }
         let segmentWidth = CGFloat(28)
         let segmentsWidth = segmentWidth * CGFloat(model.spaceIds.count)

@@ -178,8 +178,10 @@ enum InstantSpaces {
         ProcessInfo.processInfo.operatingSystemVersion.majorVersion == supportedMajorVersion
     }
 
-    private static func snapshot() -> Snapshot? {
-        Spaces.refresh()
+    private static func snapshot(refreshing: Bool = true) -> Snapshot? {
+        if refreshing {
+            Spaces.refresh()
+        }
         guard let cursorScreen = NSScreen.withMouse(), let cursorDisplayId = cursorScreen.cachedUuid() else { return nil }
         var displayId = cursorDisplayId
         var spaceIds = Spaces.screenSpacesMap[cursorDisplayId]
@@ -234,8 +236,9 @@ enum InstantSpaces {
         return !displaysWithSequenceInFlight.isEmpty
     }
 
+    /// Called from the Space change notification, which refreshes `Spaces` itself.
     static func noteSystemSpaceChange() {
-        guard let snapshot = snapshot() else { return }
+        guard let snapshot = snapshot(refreshing: false) else { return }
         SpacesTrace.event("system reported a Space change: observed \(snapshot.currentIndex)")
         predictionLock.lock()
         let isInFlight = displaysWithSequenceInFlight.contains(snapshot.displayId)
