@@ -19,12 +19,16 @@ AltTab brings Windows-style window switching to macOS. It lists open windows, su
 - The switcher shows the search field by default without focusing it. Normal Tab cycling continues until search is activated with the mouse, `S`, or the physical ISO Section key above Tab.
 - Mouse hover selection is enabled by default.
 - Apps with no open window are hidden by default for Shortcut 1, Shortcut 2, and gestures.
-- The `Window Layouts` settings section provides unassigned global shortcuts for thirds, two-thirds, three-quarters, edge-revealing focus layouts, and restoring the previous frame.
+- The `Window Layouts` settings section provides unassigned global shortcuts for thirds, two-thirds, three-quarters, edge-revealing focus layouts, moving a window between displays, and restoring the previous frame.
 - An optional dual-role Caps Lock key provides system-wide Hyper shortcuts while preserving normal Caps Lock toggling on a short tap.
 
 ## Window Layouts
 
 Open `Settings > Window Layouts` and record the global shortcuts you want to use. No shortcuts are assigned by default, so the feature does not take over existing macOS or AltTab+ key combinations.
+
+`Move to next display` and `Move to previous display` move the focused window between displays in their physical order, from left to right and then top to bottom. The window keeps its relative position and size, and is bounded by the target display when that one is smaller. A display move is not a layout, so it does not become the frame that `Restore` returns to.
+
+The `Window Layouts` and `Spaces` sections each offer presets that assign a whole set with one click and remove it the same way. A shortcut you assigned yourself is never replaced: it is reported and left alone. Presets that use `Control` also take the matching macOS shortcuts over for as long as they are assigned.
 
 `Restore` returns a window to the frame it had before its first AltTab+ layout action in the current app session. Fullscreen, minimized, non-standard, and non-resizable windows are left unchanged.
 

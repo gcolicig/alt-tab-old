@@ -56,6 +56,8 @@ class PreferencesEvents {
         if ["appearanceStyle", "showAppsOrWindows", "previewFocusedWindow"].contains(key) {
             GeneralTab.updateCaptureWindowsInBackgroundState()
         }
+        // a preset is only assigned as long as all its shortcuts are, so changing one changes its state
+        PresetRow.refreshAll()
         ControlsTab.preferenceChanged(key)
         switch key {
         case "menubarIcon", "menubarIconShown", "spacesInMenubarShown": applyMenubarPreferencesIfReady()

@@ -16,11 +16,14 @@
 * add optional clickable Space numbers next to the menubar icon with active-Space highlighting
 * add a `Last Space` action that toggles between the current and the previously settled Space
 * hide the traversal of multi-step Space switches behind a short display fade
+* add actions to move the focused window to the next or previous display, keeping its relative placement
+* add shortcut presets that assign and remove a named set in one step, for Spaces and layouts, each in a macOS-near and a Hyper variant
+* take the matching system shortcuts over only while a preset is assigned, and restore them when it is removed or after a crash
 
 ### Defaults
 
 * force update checks and crash reporting to disabled fork defaults at launch
-* use Command-Tab for Shortcut 1 when no explicit shortcut preference exists
+* use Command-Tab for Shortcut 1 and Command plus the key above Tab for Shortcut 2 when no explicit shortcut preference exists
 * hide apps with no open window by default for Shortcut 1, Shortcut 2, and gestures
 * leave all window-layout shortcuts unassigned to avoid collisions with macOS and existing shortcuts
 
