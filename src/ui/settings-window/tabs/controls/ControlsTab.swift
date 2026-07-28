@@ -233,6 +233,8 @@ class ControlsTab {
             }
             refreshShortcutRows()
         case let k where staticManagedShortcutPreferences.contains(k):
+            // the recorder has to show what a preset assigned, not only what the user typed into it
+            syncShortcutRecorderControlValue(k)
             applyShortcutPreference(k)
         case "arrowKeysEnabled":
             applyArrowKeysPreference()

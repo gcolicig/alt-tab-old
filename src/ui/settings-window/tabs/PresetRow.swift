@@ -24,12 +24,7 @@ class PresetRow {
         if preset.isApplied {
             preset.remove()
         } else {
-            let occupied = preset.occupiedKeys()
             preset.apply()
-            if !occupied.isEmpty {
-                // the user assigned these themselves, so they keep them; only say what was left out
-                TransientNotice.show(String(format: NSLocalizedString("%d shortcuts of this set were kept as you assigned them and not replaced.", comment: ""), occupied.count))
-            }
         }
         refreshAll()
     }

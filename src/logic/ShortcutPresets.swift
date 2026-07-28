@@ -18,29 +18,51 @@ struct ShortcutPreset {
         assignments.allSatisfy { Preferences.shortcut($0.key) == $0.shortcut }
     }
 
-    /// Preference keys that already carry a different shortcut. They are reported rather than
-    /// overwritten, so applying a preset can never silently take a shortcut away.
-    func occupiedKeys() -> [String] {
-        assignments.compactMap { assignment in
-            guard let existing = Preferences.shortcut(assignment.key), existing != assignment.shortcut else { return nil }
-            return assignment.key
-        }
-    }
+    private var backupKey: String { "presetBackup.\(id)" }
 
+    /// Overwrites whatever the keys carry. What they carried is kept, so removing the preset restores
+    /// the state from before it was assigned instead of just clearing the fields.
     func apply() {
-        let occupied = Set(occupiedKeys())
-        assignments.filter { !occupied.contains($0.key) }.forEach {
-            Preferences.setShortcut($0.key, $0.shortcut)
-        }
+        storeBackup()
+        assignments.forEach { Preferences.setShortcut($0.key, $0.shortcut) }
         NativeSystemShortcuts.apply()
     }
 
     func remove() {
-        assignments.forEach { assignment in
-            guard Preferences.shortcut(assignment.key) == assignment.shortcut else { return }
-            Preferences.setShortcut(assignment.key, nil)
-        }
+        restoreBackup()
         NativeSystemShortcuts.apply()
+    }
+
+    private func storeBackup() {
+        var backup = [String: [String: Int]]()
+        assignments.forEach { assignment in
+            guard let existing = Preferences.shortcut(assignment.key) else {
+                // an empty entry records that the key was unassigned before
+                backup[assignment.key] = [:]
+                return
+            }
+            backup[assignment.key] = ["code": Int(existing.keyCode.rawValue), "flags": Int(existing.modifierFlags.rawValue)]
+        }
+        UserDefaults.standard.set(backup, forKey: backupKey)
+    }
+
+    private func restoreBackup() {
+        let backup = UserDefaults.standard.dictionary(forKey: backupKey) as? [String: [String: Int]]
+        assignments.forEach { assignment in
+            guard let entry = backup?[assignment.key] else {
+                // no record of the previous state: at least take back what the preset assigned
+                if Preferences.shortcut(assignment.key) == assignment.shortcut {
+                    Preferences.setShortcut(assignment.key, nil)
+                }
+                return
+            }
+            guard let code = entry["code"], let flags = entry["flags"], let keyCode = KeyCode(rawValue: CGKeyCode(code)) else {
+                Preferences.setShortcut(assignment.key, nil)
+                return
+            }
+            Preferences.setShortcut(assignment.key, ShortcutPresets.shortcut(keyCode, NSEvent.ModifierFlags(rawValue: UInt(flags))))
+        }
+        UserDefaults.standard.removeObject(forKey: backupKey)
     }
 }
 

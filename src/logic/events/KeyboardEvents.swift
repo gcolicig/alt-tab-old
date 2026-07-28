@@ -118,6 +118,13 @@ class KeyboardEvents {
 
     private static func handlePhysicalCapsLockChange(_ isDown: Bool) {
         let stateBeforeHold = isDown ? currentCapsLockState() : nil
+        // temporary diagnostic: is the system Caps Lock state already toggled when this callback runs?
+        // the answer decides whether the state read at key-down describes before or after the press
+        if isDown, let stateBeforeHold {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.02) {
+                Logger.warning { "caps lock down: read \(stateBeforeHold), 20ms later \(currentCapsLockState())" }
+            }
+        }
         let result = withHyperKeyState { state -> (UInt64, HyperKeyCapsDecision, Bool?) in
             hyperKeyHoldGeneration &+= 1
             if isDown {
@@ -136,8 +143,10 @@ class KeyboardEvents {
             return (hyperKeyHoldGeneration, decision, stateToRestore)
         }
         if result.1 == .toggle {
+            Logger.warning { "caps lock tap: posting synthetic tap, currently \(currentCapsLockState())" }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) { postCapsLockTap() }
         } else if let stateToRestore = result.2 {
+            Logger.warning { "caps lock restore: setting \(stateToRestore), currently \(currentCapsLockState())" }
             setCapsLockState(stateToRestore)
         } else if isDown {
             DispatchQueue.main.asyncAfter(deadline: .now() + Preferences.hyperKeyHoldDuration) {

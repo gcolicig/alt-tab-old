@@ -28,7 +28,7 @@ Open `Settings > Window Layouts` and record the global shortcuts you want to use
 
 `Move to next display` and `Move to previous display` move the focused window between displays in their physical order, from left to right and then top to bottom. The window keeps its relative position and size, and is bounded by the target display when that one is smaller. A display move is not a layout, so it does not become the frame that `Restore` returns to.
 
-The `Window Layouts` and `Spaces` sections each offer presets that assign a whole set with one click and remove it the same way. A shortcut you assigned yourself is never replaced: it is reported and left alone. Presets that use `Control` also take the matching macOS shortcuts over for as long as they are assigned.
+The `Window Layouts` and `Spaces` sections each offer presets that assign a whole set with one click and remove it the same way. Assigning a preset overwrites what the keys carried, and removing it restores exactly that earlier state. Presets that use `Control` also take the matching macOS shortcuts over for as long as they are assigned.
 
 `Restore` returns a window to the frame it had before its first AltTab+ layout action in the current app session. Fullscreen, minimized, non-standard, and non-resizable windows are left unchanged.
 
