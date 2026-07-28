@@ -349,7 +349,7 @@ Repo-Learnings:
 
 ### 2C. Spaces in der Menueleiste
 
-Status: Erster einzeiliger MVP-Schnitt implementiert, Mehrdisplay und Ueberlauf offen
+Status: Mehrdisplay-Gruppierung und Ueberlauf implementiert; S-07 (VoiceOver, Create/Delete/Reorder, reale Klickgeometrie) manuell am Zielgeraet offen
 Prioritaet: Mittel bis hoch
 
 Beschreibung:
