@@ -22,7 +22,7 @@ enum LaunchAppAction {
             return .unavailable(NSLocalizedString("No application is configured.", comment: ""))
         }
         guard applicationUrl(index) != nil else {
-            return .unavailable(NSLocalizedString("The application is not installed.", comment: ""))
+            return .unavailable(NSLocalizedString("No installed application matches this bundle identifier or name.", comment: ""))
         }
         return .available
     }
@@ -34,10 +34,54 @@ enum LaunchAppAction {
     }
 
     private static func applicationUrl(_ index: Int) -> URL? {
-        let bundleIdentifier = Preferences.launchAppBundleIdentifier(index)
-        guard !bundleIdentifier.isEmpty else { return nil }
-        return NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier)
+        let value = Preferences.launchAppBundleIdentifier(index).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return nil }
+        if LaunchAppTarget.couldBeBundleIdentifier(value),
+           let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: value) {
+            return url
+        }
+        return applicationUrlByName(value)
     }
+
+    /// Running apps are already in memory and cover the common case; only otherwise do we consult the
+    /// indexed application folders.
+    private static func applicationUrlByName(_ name: String) -> URL? {
+        if let running = NSWorkspace.shared.runningApplications.first(where: {
+            guard let localizedName = $0.localizedName else { return false }
+            return LaunchAppTarget.matches(name, applicationName: localizedName)
+        })?.bundleURL {
+            return running
+        }
+        return applicationIndex()[LaunchAppTarget.normalizedName(name)]
+    }
+
+    /// Built once: scanning the application folders on every shortcut press would put disk I/O on the
+    /// input path. A newly installed app is picked up on the next launch.
+    private static func applicationIndex() -> [String: URL] {
+        if let applicationsByName { return applicationsByName }
+        var index = [String: URL]()
+        let fileManager = FileManager.default
+        let roots = [URL(fileURLWithPath: "/Applications"),
+                     URL(fileURLWithPath: "/System/Applications"),
+                     fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Applications")]
+        roots.forEach { root in
+            guard let entries = try? fileManager.contentsOfDirectory(at: root, includingPropertiesForKeys: nil) else { return }
+            entries.forEach { entry in
+                if entry.pathExtension == "app" {
+                    index[LaunchAppTarget.normalizedName(entry.deletingPathExtension().lastPathComponent)] = entry
+                } else if let nested = try? fileManager.contentsOfDirectory(at: entry, includingPropertiesForKeys: nil) {
+                    // one level down covers Utilities and similar grouping folders
+                    nested.filter { $0.pathExtension == "app" }.forEach {
+                        index[LaunchAppTarget.normalizedName($0.deletingPathExtension().lastPathComponent)] = $0
+                    }
+                }
+            }
+        }
+        applicationsByName = index
+        return index
+    }
+
+    private static var applicationsByName: [String: URL]?
 }
 
 enum OpenUrlAction {

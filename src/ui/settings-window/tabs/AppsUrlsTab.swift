@@ -16,9 +16,9 @@ class AppsUrlsTab {
     private static func makeLaunchAppRow(_ index: Int) -> TableGroupView.Row {
         let nameField = LabelAndControl.makeTextArea(14, 1, NSLocalizedString("Name", comment: ""), Preferences.indexToName("launchAppName", index))
         let warningLabel = makeWarningLabel()
-        let bundleIdField = LabelAndControl.makeTextArea(20, 1, NSLocalizedString("Bundle identifier", comment: ""), Preferences.indexToName("launchAppBundleIdentifier", index),
-                                                           extraAction: { _ in updateWarningLabel(warningLabel, LaunchAppAction.isMisconfigured(index), NSLocalizedString("The application is not installed.", comment: "")) })
-        updateWarningLabel(warningLabel, LaunchAppAction.isMisconfigured(index), NSLocalizedString("The application is not installed.", comment: ""))
+        let bundleIdField = LabelAndControl.makeTextArea(20, 1, NSLocalizedString("Bundle ID or name", comment: ""), Preferences.indexToName("launchAppBundleIdentifier", index),
+                                                           extraAction: { _ in updateWarningLabel(warningLabel, LaunchAppAction.isMisconfigured(index), NSLocalizedString("No installed application matches this bundle identifier or name.", comment: "")) })
+        updateWarningLabel(warningLabel, LaunchAppAction.isMisconfigured(index), NSLocalizedString("No installed application matches this bundle identifier or name.", comment: ""))
         let title = String(format: NSLocalizedString("App %d", comment: ""), index + 1)
         let recorderViews = LabelAndControl.makeLabelWithRecorder(title, LaunchAppAction.shortcutPreferenceKey(index), Preferences.shortcut(LaunchAppAction.shortcutPreferenceKey(index)))
         return TableGroupView.Row(leftTitle: title,

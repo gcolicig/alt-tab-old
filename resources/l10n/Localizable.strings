@@ -158,7 +158,7 @@
 "Auto-install updates periodically" = "Auto-install updates periodically";
 
 /* No comment provided by engineer. */
-"Bundle identifier" = "Bundle identifier";
+"Bundle ID or name" = "Bundle ID or name";
 
 /* No comment provided by engineer. */
 "Cancel" = "Cancel";
@@ -440,6 +440,9 @@
 "No eligible foreground application." = "No eligible foreground application.";
 
 /* No comment provided by engineer. */
+"No installed application matches this bundle identifier or name." = "No installed application matches this bundle identifier or name.";
+
+/* No comment provided by engineer. */
 "No URL is configured." = "No URL is configured.";
 
 /* No comment provided by engineer. */
@@ -700,9 +703,6 @@
 
 /* No comment provided by engineer. */
 "Tap/hold threshold" = "Tap/hold threshold";
-
-/* No comment provided by engineer. */
-"The application is not installed." = "The application is not installed.";
 
 /* No comment provided by engineer. */
 "The application needs to restart to apply the imported settings." = "The application needs to restart to apply the imported settings.";
