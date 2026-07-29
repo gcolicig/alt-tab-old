@@ -73,8 +73,6 @@ enum OpenUrlAction {
     }
 
     private static func targetUrl(_ index: Int) -> URL? {
-        let value = Preferences.openUrlValue(index)
-        guard !value.isEmpty, let url = URL(string: value), let scheme = url.scheme, !scheme.isEmpty else { return nil }
-        return url
+        OpenUrlTarget.normalized(Preferences.openUrlValue(index))
     }
 }

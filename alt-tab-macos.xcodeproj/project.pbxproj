@@ -20,6 +20,9 @@
 		C0DE1000000000000000001B /* MenubarTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000016 /* MenubarTestable.swift */; };
 		C0DE1000000000000000001C /* MenubarTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000016 /* MenubarTestable.swift */; };
 		C0DE1000000000000000001D /* MenubarSpaceRowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000017 /* MenubarSpaceRowTests.swift */; };
+		C0DE1000000000000000001E /* ActionTargetsTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000018 /* ActionTargetsTestable.swift */; };
+		C0DE1000000000000000001F /* ActionTargetsTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000018 /* ActionTargetsTestable.swift */; };
+		C0DE10000000000000000020 /* OpenUrlTargetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000019 /* OpenUrlTargetTests.swift */; };
 		C0DE10000000000000000005 /* WindowLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000004 /* WindowLayoutTests.swift */; };
 		C0DE10000000000000000006 /* ActionRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000005 /* ActionRegistry.swift */; };
 		C0DE10000000000000000007 /* Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000006 /* Actions.swift */; };
@@ -357,6 +360,8 @@
 		C0DE20000000000000000015 /* AppsUrlsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppsUrlsTab.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000016 /* MenubarTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenubarTestable.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000017 /* MenubarSpaceRowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenubarSpaceRowTests.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000018 /* ActionTargetsTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionTargetsTestable.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000019 /* OpenUrlTargetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenUrlTargetTests.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000007 /* InstantSpacesTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpacesTestable.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000008 /* InstantSpaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpaces.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000009 /* InstantSpacesPrivateApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpacesPrivateApi.swift; sourceTree = "<group>"; };
@@ -1224,6 +1229,7 @@
 				C0DE2000000000000000000A /* InstantSpacesTests.swift */,
 				C0DE20000000000000000004 /* WindowLayoutTests.swift */,
 				C0DE20000000000000000017 /* MenubarSpaceRowTests.swift */,
+				C0DE20000000000000000019 /* OpenUrlTargetTests.swift */,
 				BF0C84933936C6FE676CD33C /* AppearanceTests.swift */,
 				BF0C899905524253DC170B56 /* KeyboardEventsTests.swift */,
 				BF0CAAAA0000000000000001 /* SearchAcronymTests.swift */,
@@ -1706,6 +1712,7 @@
 				C0DE20000000000000000005 /* ActionRegistry.swift */,
 				C0DE20000000000000000006 /* Actions.swift */,
 				C0DE20000000000000000014 /* LaunchAppOpenUrlAction.swift */,
+				C0DE20000000000000000018 /* ActionTargetsTestable.swift */,
 			);
 			path = actions;
 			sourceTree = "<group>";
@@ -2643,6 +2650,8 @@
 				C0DE10000000000000000005 /* WindowLayoutTests.swift in Sources */,
 				C0DE1000000000000000001C /* MenubarTestable.swift in Sources */,
 				C0DE1000000000000000001D /* MenubarSpaceRowTests.swift in Sources */,
+				C0DE1000000000000000001F /* ActionTargetsTestable.swift in Sources */,
+				C0DE10000000000000000020 /* OpenUrlTargetTests.swift in Sources */,
 				5F882F382EC3C63400110A9F /* CustomRecorderControlTestable.swift in Sources */,
 				BF0C81FA62D810342F59291A /* AppearanceTests.swift in Sources */,
 				5F4753072CEE5A2E002C6C5E /* AppearanceTestable.swift in Sources */,
@@ -2668,6 +2677,7 @@
 				C0DE10000000000000000006 /* ActionRegistry.swift in Sources */,
 				C0DE10000000000000000007 /* Actions.swift in Sources */,
 				C0DE10000000000000000018 /* LaunchAppOpenUrlAction.swift in Sources */,
+				C0DE1000000000000000001E /* ActionTargetsTestable.swift in Sources */,
 				C0DE10000000000000000009 /* InstantSpacesTestable.swift in Sources */,
 				C0DE1000000000000000000A /* InstantSpaces.swift in Sources */,
 				C0DE1000000000000000000B /* InstantSpacesPrivateApi.swift in Sources */,
