@@ -5,10 +5,8 @@ class Menubar {
     static var menu: NSMenu!
     static var permissionCalloutMenuItems: [NSMenuItem]?
     private static let iconWidth = CGFloat(28)
-    private static let segmentWidth = CGFloat(28)
-    private static let groupGap = CGFloat(6)
-    /// Segments beyond this count per display collapse into an overflow button.
-    private static let maxDirectSegmentsPerGroup = 9
+    private static let segmentWidth = MenubarSpaceRow.segmentWidth
+    private static let groupGap = MenubarSpaceRow.groupGap
     private static var customIconView: NSImageView?
     private static var spaceSegmentsView: NSView?
 
@@ -123,7 +121,7 @@ class Menubar {
         // the row must never collapse: the status button can still be unsized the first time this runs,
         // and since the icon moves into a subview here, a zero height renders as an empty menubar slot
         let rowHeight = max(statusButton.bounds.height, NSStatusBar.system.thickness)
-        let totalWidth = groups.reduce(CGFloat(0)) { $0 + groupWidth($1) } + CGFloat(max(0, groups.count - 1)) * groupGap * 2
+        let totalWidth = MenubarSpaceRow.totalWidth(groups.map { $0.spaceIds.count })
         // the container carries its final frame before any segment goes in, like the single-row version did
         let container = NSView(frame: NSRect(x: iconWidth, y: 0, width: totalWidth, height: rowHeight))
         var x = CGFloat(0)
@@ -148,29 +146,19 @@ class Menubar {
         spaceSegmentsView = container
     }
 
-    /// Width one display group occupies, including its overflow segment when it has one.
-    private static func groupWidth(_ group: SpaceGroup) -> CGFloat {
-        let directCount = directSegmentCount(group)
-        return CGFloat(group.spaceIds.count > directCount ? directCount + 1 : directCount) * segmentWidth
-    }
-
-    private static func directSegmentCount(_ group: SpaceGroup) -> Int {
-        group.spaceIds.count > maxDirectSegmentsPerGroup ? maxDirectSegmentsPerGroup - 1 : group.spaceIds.count
-    }
-
     /// Adds the segments for one display group and returns the width consumed. `displayOrdinal` is only
     /// set when more than one group is shown, so VoiceOver can name which display a segment belongs to.
     private static func addGroupSegments(_ group: SpaceGroup, startX: CGFloat, height: CGFloat, switchingEnabled: Bool,
                                           isCursorGroup: Bool, displayOrdinal: Int?, into container: NSView) -> CGFloat {
-        let directCount = directSegmentCount(group)
-        let hasOverflow = group.spaceIds.count > directCount
+        let directCount = MenubarSpaceRow.directSegmentCount(group.spaceIds.count)
+        let hasOverflow = MenubarSpaceRow.hasOverflow(group.spaceIds.count)
         (0..<directCount).forEach { offset in
             let button = spaceButton(offset + 1, group.spaceIds[offset] == group.activeSpaceId, switchingEnabled && isCursorGroup, !isCursorGroup, displayOrdinal, group.displayUuid)
             button.frame = NSRect(x: startX + CGFloat(offset) * segmentWidth + 2, y: 3, width: segmentWidth - 4, height: max(18, height - 6))
             container.addSubview(button)
         }
         guard hasOverflow else { return CGFloat(directCount) * segmentWidth }
-        let overflowIndexes = Array((directCount + 1)...group.spaceIds.count)
+        let overflowIndexes = MenubarSpaceRow.overflowIndexes(group.spaceIds.count)
         let overflowButton = overflowButton(overflowIndexes, group.spaceIds, group.activeSpaceId, switchingEnabled && isCursorGroup, !isCursorGroup, displayOrdinal, group.displayUuid)
         overflowButton.frame = NSRect(x: startX + CGFloat(directCount) * segmentWidth + 2, y: 3, width: segmentWidth - 4, height: max(18, height - 6))
         container.addSubview(overflowButton)
@@ -187,7 +175,7 @@ class Menubar {
 
     /// Updates the existing single-group segments in place. Returns false when the row has to be rebuilt.
     private static func restyleExistingSegments(_ group: SpaceGroup) -> Bool {
-        guard let container = spaceSegmentsView, !group.spaceIds.isEmpty, group.spaceIds.count <= maxDirectSegmentsPerGroup else { return false }
+        guard let container = spaceSegmentsView, !group.spaceIds.isEmpty, !MenubarSpaceRow.hasOverflow(group.spaceIds.count) else { return false }
         let buttons = container.subviews.compactMap { $0 as? NSButton }
         guard buttons.count == group.spaceIds.count else { return false }
         let switchingEnabled = InstantSpaces.runtimeAvailability().isAvailable
@@ -211,18 +199,13 @@ class Menubar {
         guard !Spaces.screenSpacesMap.isEmpty else { return [] }
         let orderedScreenUuids = NSScreen.screens
             .sorted { $0.frame.origin.x != $1.frame.origin.x ? $0.frame.origin.x < $1.frame.origin.x : $0.frame.origin.y < $1.frame.origin.y }
-            .compactMap { $0.cachedUuid() }
-        var seen = Set<ScreenUuid>()
-        var orderedUuids = orderedScreenUuids.filter { Spaces.screenSpacesMap[$0] != nil && seen.insert($0).inserted }
-        Spaces.screenSpacesMap.keys.forEach { uuid in
-            if !seen.contains(uuid) {
-                orderedUuids.append(uuid)
-                seen.insert(uuid)
-            }
-        }
-        return orderedUuids.compactMap { uuid in
-            guard let spaceIds = Spaces.screenSpacesMap[uuid], !spaceIds.isEmpty else { return nil }
-            return SpaceGroup(displayUuid: uuid, spaceIds: spaceIds, activeSpaceId: spaceIds.first { Spaces.visibleSpaces.contains($0) })
+            .compactMap { $0.cachedUuid() as String? }
+        let ordered = MenubarSpaceRow.orderedDisplays(screensInOrder: orderedScreenUuids,
+                                                      displaysWithSpaces: Spaces.screenSpacesMap.keys.map { $0 as String })
+        return ordered.compactMap { uuid in
+            let key = uuid as ScreenUuid
+            guard let spaceIds = Spaces.screenSpacesMap[key], !spaceIds.isEmpty else { return nil }
+            return SpaceGroup(displayUuid: key, spaceIds: spaceIds, activeSpaceId: spaceIds.first { Spaces.visibleSpaces.contains($0) })
         }
     }
 
