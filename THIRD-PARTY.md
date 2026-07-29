@@ -14,5 +14,6 @@ This register records sources reviewed while developing AltTab+. It distinguishe
 | https://github.com/jurplel/InstantSpaceSwitcher | `fd37e7fed62ad862ec6326aa7dac9b7bc6b413e5` | 2026-07-27 | MIT | B: Dock-swipe event sequence and per-display planning independently reimplemented in Swift | `src/logic/spaces/InstantSpaces.swift`, `src/logic/spaces/InstantSpacesTestable.swift`, `src/api-wrappers/private-apis/InstantSpacesPrivateApi.swift` | n/a |
 | https://github.com/xiamaz/YabaiIndicator | `e525ef8448a25d33522c9075de420eb585173516` | 2026-07-27 | MIT | B: compact menu-bar presentation and event-driven refresh independently reimplemented with AppKit | `src/ui/Menubar.swift`, `src/logic/events/SpacesEvents.swift`, `src/logic/events/ScreensEvents.swift` | n/a |
 | https://github.com/royalbhati/HopTab | `b2bf2899207d23c4de92ef6bd17487d7e4cd2987` | 2026-07-27 | MIT | A: profiles, space binding, and session flow reviewed | n/a | n/a |
+| https://github.com/Anze/KeyCluCask | `4fc7acbbad060822782bab4c5e8bc71cf42458da` | 2026-07-29 | BSD-3-Clause-Clear | A: shortcut-overlay product concept and its menu-only data source reviewed | n/a | n/a |
 
 No source code from these repositories has been copied into AltTab+. Any future algorithmic reimplementation or code reuse must update this register before merge.

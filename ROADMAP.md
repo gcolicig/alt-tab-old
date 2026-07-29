@@ -66,6 +66,15 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 - Beobachtung aus der manuellen Abnahme: Zum Aufzeichnen eines Space-Shortcuts musste Hyperkey einmal aus- und wieder eingeschaltet werden. Der Befund ist dokumentiert; es wurde bewusst keine Aenderung vorgenommen.
 - Stabile Managed-Space-Identitaet getrennt verifizieren; optionale Aliase erst danach persistieren.
 
+## Paralleler Umfang: Shortcut Clues
+
+- Overlay mit den Tastenkuerzeln der aktiven App, solange ein Trigger gehalten wird; liest fremde
+  Shortcuts statt eigene auszufuehren und haengt daher nicht am Aktionsregister.
+- Datenquelle ist ausschliesslich die Menueleiste ueber die oeffentliche Accessibility API; keine
+  private API und kein dauerhafter Event-Tap.
+- Setzt die AX-Disziplin aus Phase 3A voraus und wird deshalb nicht davor begonnen.
+- Vollstaendige Spezifikation in `spec-shortcut-clues.md`.
+
 ## Phase 3A: Cursor-basierter AX-Fensterkern
 
 - Fenster unter dem Cursor zu Beginn einer Operation eindeutig bestimmen.

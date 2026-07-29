@@ -405,6 +405,15 @@ Nicht im MVP:
 - Erzwingen eines synchronen Wechsels aller Displays, wenn macOS separate Spaces verwendet.
 - Projektprofile, App-Zuordnungen und Session-Restore; diese bauen spaeter auf Alias- und Space-Identitaet auf.
 
+### 2E. Shortcut Clues
+
+Status: Spezifiziert, nicht begonnen
+Prioritaet: Mittel, sinnvoll erst nach Phase 3A
+
+Blendet die Tastenkuerzel der aktiven App als Overlay ein, solange ein Trigger gehalten wird. Erster
+Modulumfang, der fremde Shortcuts liest statt eigene auszufuehren, und deshalb ohne Anbindung an das
+Aktionsregister. Vollstaendige Spezifikation in `spec-shortcut-clues.md`.
+
 ### 2D. Projektprofile und Workspace-Restore
 
 Status: Spaeterer Folgeumfang
