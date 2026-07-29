@@ -10,6 +10,7 @@ class PreferencesMigrations {
 
     static func migratePreferences() {
         migrateAltTabPlusForkDefaults()
+        removeActionSlotNames()
         let preferencesKey = "preferencesVersion"
         if let versionInPlist = UserDefaults.standard.string(forKey: preferencesKey) {
             if versionInPlist != "#VERSION#" && versionInPlist.compare(App.version, options: .numeric) != .orderedDescending {
@@ -24,6 +25,20 @@ class PreferencesMigrations {
         guard UserDefaults.standard.string(forKey: key) == nil else { return }
         UserDefaults.standard.set("true", forKey: "previewFocusedWindow")
         UserDefaults.standard.set("true", forKey: "mouseHoverEnabled")
+        UserDefaults.standard.set("true", forKey: key)
+    }
+
+    /// The app and URL slots briefly had a free-text name that nothing ever displayed. The field is
+    /// gone; drop the stored values so they do not linger as orphans in the settings file.
+    private static func removeActionSlotNames() {
+        let key = "altTabPlusActionSlotNamesRemoved"
+        guard UserDefaults.standard.string(forKey: key) == nil else { return }
+        (0..<Preferences.maxLaunchAppCount).forEach {
+            UserDefaults.standard.removeObject(forKey: Preferences.indexToName("launchAppName", $0))
+        }
+        (0..<Preferences.maxOpenUrlCount).forEach {
+            UserDefaults.standard.removeObject(forKey: Preferences.indexToName("openUrlName", $0))
+        }
         UserDefaults.standard.set("true", forKey: key)
     }
 

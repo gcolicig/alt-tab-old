@@ -14,27 +14,25 @@ class AppsUrlsTab {
     }
 
     private static func makeLaunchAppRow(_ index: Int) -> TableGroupView.Row {
-        let nameField = LabelAndControl.makeTextArea(14, 1, NSLocalizedString("Name", comment: ""), Preferences.indexToName("launchAppName", index))
         let warningLabel = makeWarningLabel()
-        let bundleIdField = LabelAndControl.makeTextArea(20, 1, NSLocalizedString("Bundle ID or name", comment: ""), Preferences.indexToName("launchAppBundleIdentifier", index),
+        let bundleIdField = LabelAndControl.makeTextArea(30, 1, NSLocalizedString("Bundle ID or name", comment: ""), Preferences.indexToName("launchAppBundleIdentifier", index),
                                                            extraAction: { _ in updateWarningLabel(warningLabel, LaunchAppAction.isMisconfigured(index), NSLocalizedString("No installed application matches this bundle identifier or name.", comment: "")) })
         updateWarningLabel(warningLabel, LaunchAppAction.isMisconfigured(index), NSLocalizedString("No installed application matches this bundle identifier or name.", comment: ""))
         let title = String(format: NSLocalizedString("App %d", comment: ""), index + 1)
         let recorderViews = LabelAndControl.makeLabelWithRecorder(title, LaunchAppAction.shortcutPreferenceKey(index), Preferences.shortcut(LaunchAppAction.shortcutPreferenceKey(index)))
         return TableGroupView.Row(leftTitle: title,
-                                   rightViews: nameField + bundleIdField + [warningLabel, recorderViews[1]])
+                                   rightViews: bundleIdField + [warningLabel, recorderViews[1]])
     }
 
     private static func makeOpenUrlRow(_ index: Int) -> TableGroupView.Row {
-        let nameField = LabelAndControl.makeTextArea(14, 1, NSLocalizedString("Name", comment: ""), Preferences.indexToName("openUrlName", index))
         let warningLabel = makeWarningLabel()
-        let urlField = LabelAndControl.makeTextArea(20, 1, NSLocalizedString("URL", comment: ""), Preferences.indexToName("openUrlValue", index),
+        let urlField = LabelAndControl.makeTextArea(30, 1, NSLocalizedString("URL", comment: ""), Preferences.indexToName("openUrlValue", index),
                                                      extraAction: { _ in updateWarningLabel(warningLabel, OpenUrlAction.isMisconfigured(index), NSLocalizedString("The URL is invalid.", comment: "")) })
         updateWarningLabel(warningLabel, OpenUrlAction.isMisconfigured(index), NSLocalizedString("The URL is invalid.", comment: ""))
         let title = String(format: NSLocalizedString("URL %d", comment: ""), index + 1)
         let recorderViews = LabelAndControl.makeLabelWithRecorder(title, OpenUrlAction.shortcutPreferenceKey(index), Preferences.shortcut(OpenUrlAction.shortcutPreferenceKey(index)))
         return TableGroupView.Row(leftTitle: title,
-                                   rightViews: nameField + urlField + [warningLabel, recorderViews[1]])
+                                   rightViews: urlField + [warningLabel, recorderViews[1]])
     }
 
     private static func makeWarningLabel() -> NSTextField {

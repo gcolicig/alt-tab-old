@@ -3,9 +3,10 @@ import Cocoa
 enum LaunchAppAction {
     static func shortcutPreferenceKey(_ index: Int) -> String { Preferences.indexToName("launchAppShortcut", index) }
 
+    /// The configured target doubles as the label, so the slot needs no separate name field.
     static func localizedTitle(_ index: Int) -> String {
-        let name = Preferences.launchAppName(index)
-        return name.isEmpty ? NSLocalizedString("Launch app", comment: "") : name
+        let value = Preferences.launchAppBundleIdentifier(index).trimmingCharacters(in: .whitespacesAndNewlines)
+        return value.isEmpty ? String(format: NSLocalizedString("Launch app %d", comment: ""), index + 1) : value
     }
 
     static func perform(_ index: Int) {
@@ -99,9 +100,10 @@ enum LaunchAppAction {
 enum OpenUrlAction {
     static func shortcutPreferenceKey(_ index: Int) -> String { Preferences.indexToName("openUrlShortcut", index) }
 
+    /// The configured target doubles as the label, so the slot needs no separate name field.
     static func localizedTitle(_ index: Int) -> String {
-        let name = Preferences.openUrlName(index)
-        return name.isEmpty ? NSLocalizedString("Open URL", comment: "") : name
+        let value = Preferences.openUrlValue(index).trimmingCharacters(in: .whitespacesAndNewlines)
+        return value.isEmpty ? String(format: NSLocalizedString("Open URL %d", comment: ""), index + 1) : value
     }
 
     static func perform(_ index: Int) {

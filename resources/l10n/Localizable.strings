@@ -362,7 +362,7 @@
 "Latest releases" = "Latest releases";
 
 /* No comment provided by engineer. */
-"Launch app" = "Launch app";
+"Launch app %d" = "Launch app %d";
 
 /* No comment provided by engineer. */
 "Leading" = "Leading";
@@ -425,9 +425,6 @@
 "Multiple screens" = "Multiple screens";
 
 /* No comment provided by engineer. */
-"Name" = "Name";
-
-/* No comment provided by engineer. */
 "Never" = "Never";
 
 /* No comment provided by engineer. */
@@ -479,7 +476,7 @@
 "Open Trackpad Settings…" = "Open Trackpad Settings…";
 
 /* No comment provided by engineer. */
-"Open URL" = "Open URL";
+"Open URL %d" = "Open URL %d";
 
 /* No comment provided by engineer. */
 "Order windows by" = "Order windows by";

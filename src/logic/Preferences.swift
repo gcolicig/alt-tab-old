@@ -77,12 +77,10 @@ class Preferences {
         SpaceAction.all.forEach { values[$0.shortcutPreferenceKey] = defaultShortcut("") }
         (0..<maxLaunchAppCount).forEach { index in
             values[indexToName("launchAppBundleIdentifier", index)] = ""
-            values[indexToName("launchAppName", index)] = ""
             values[LaunchAppAction.shortcutPreferenceKey(index)] = defaultShortcut("")
         }
         (0..<maxOpenUrlCount).forEach { index in
             values[indexToName("openUrlValue", index)] = ""
-            values[indexToName("openUrlName", index)] = ""
             values[OpenUrlAction.shortcutPreferenceKey(index)] = defaultShortcut("")
         }
         (0...maxShortcutCount).forEach { index in
@@ -133,9 +131,7 @@ class Preferences {
     static var hyperKeyEnabled: Bool { CachedUserDefaults.bool("hyperKeyEnabled") }
     static var inputModulesSafeMode: Bool { CachedUserDefaults.bool("inputModulesSafeMode") }
     static func launchAppBundleIdentifier(_ index: Int) -> String { CachedUserDefaults.string(indexToName("launchAppBundleIdentifier", index)) }
-    static func launchAppName(_ index: Int) -> String { CachedUserDefaults.string(indexToName("launchAppName", index)) }
     static func openUrlValue(_ index: Int) -> String { CachedUserDefaults.string(indexToName("openUrlValue", index)) }
-    static func openUrlName(_ index: Int) -> String { CachedUserDefaults.string(indexToName("openUrlName", index)) }
     static var hyperKeyArmingMarker: Bool { CachedUserDefaults.bool("hyperKeyArmingMarker") }
     static var hyperKeyHoldDuration: TimeInterval { CachedUserDefaults.macroPref("hyperKeyHoldDuration", HyperKeyHoldDurationPreference.allCases).seconds }
     // periphery:ignore
