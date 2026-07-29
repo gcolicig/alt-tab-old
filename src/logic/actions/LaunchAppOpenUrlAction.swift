@@ -10,7 +10,19 @@ enum LaunchAppAction {
 
     static func perform(_ index: Int) {
         guard let appUrl = applicationUrl(index) else { return }
+        // launching an app that already runs returns its instance without focusing it, which reads as
+        // "the shortcut did nothing"; bring it forward the same way the switcher does
+        if let running = runningApplication(at: appUrl) {
+            running.activate(options: .activateAllWindows)
+            return
+        }
         _ = try? NSWorkspace.shared.launchApplication(at: appUrl, configuration: [:])
+    }
+
+    private static func runningApplication(at appUrl: URL) -> NSRunningApplication? {
+        NSWorkspace.shared.runningApplications.first {
+            $0.bundleURL?.standardizedFileURL == appUrl.standardizedFileURL
+        }
     }
 
     static func availability(_ index: Int) -> ActionAvailability {
