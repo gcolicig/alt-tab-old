@@ -83,7 +83,7 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 ## Phase 3B: Move und Modifier-Snapping
 
-- Fenster unter dem Cursor per Modifier bewegen; kein Default-Modifier und Modul startet deaktiviert.
+- Teilweise umgesetzt: Drag-Sitzung, Randmodell und Zielrahmen liegen als getestete reine Logik vor. Event-Tap, Overlay, Settings und das Besitzmodell fuer `NSWindowShouldDragOnGesture` fehlen; das Modul ist noch nicht aktivierbar.
 - Modifier-Move und Snapping bilden eine gemeinsame Drag-Sitzung und bestimmen das Fenster genau einmal.
 - Der eigene Modifier-Drag bietet `Left half`, `Right half` und `Fill`; normale Titelbalken-Drags und native Tahoe-Snap-Zonen bleiben unberuehrt.
 - `Command+Control` ist explizit waehlbar, konfliktbehaftet und nie Default. Vor Aktivierung muss `NSWindowShouldDragOnGesture` verifiziert auf `false` stehen; AltTab+ verwaltet den globalen Vorwert konfliktfrei.

@@ -474,6 +474,13 @@ Drag-Sitzung:
 7. Mouseup ohne aktives Randziel behaelt die frei verschobene Position; Mouseup mit aktivem Randziel setzt genau dessen Zielrahmen.
 8. Move samt Modifier-Drag-Snapping zuerst ausliefern; Resize und weitere Fenster-Fallbacks erst nach bestandener Move-Matrix.
 
+Umsetzungsstand 2026-07-31:
+
+- Umgesetzt als reine Logik mit 16 Tests: Zustandsautomat der Drag-Sitzung, Randmodell samt Dwell fuer geteilte Raender, Zielrahmen fuer `Left half`, `Right half` und `Fill` sowie die Modifier-Auswahl ohne Default.
+- Festgelegt und getestet: Loslassen des Modifiers waehrend des Drags beendet ihn nicht. Die Maustaste haelt die Sitzung; ein Fenster fallen zu lassen, sobald ein Finger hochgeht, waere unbedienbar.
+- Festgelegt und getestet: nur der Zustand `finishing` darf einen Rahmen schreiben. Eine abgebrochene Sitzung schreibt nie.
+- Noch nicht umgesetzt und bewusst noch nicht scharf: der dauerhafte Maus-Event-Tap, das Overlay, die Settings-Oberflaeche und das Besitzmodell fuer `NSWindowShouldDragOnGesture`. Damit ist Q-01, Q-04 und Q-11 bis Q-16 fuer diesen Pfad noch nicht erfuellt und das Modul nicht aktivierbar.
+
 Modifier-Regeln:
 
 | Kombination | Bewertung |
