@@ -97,7 +97,8 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 ## Paralleler Spike: Pointer
 
-- Pointer Acceleration und Speed fuer Maus und Trackpad per IOKit-Spike.
+- Umgesetzt: Pointer Acceleration und Speed fuer Maus und Trackpad ueber `NSGlobalDomain`; der vermutete IOKit-Pfad war nicht noetig.
+- Offen: V-10 am Zielgeraet; der schreibende Pfad ist bisher nur durch Entscheidungslogik abgedeckt, nicht ausgefuehrt.
 - Persistiertes State Ownership mit `unmanaged`, `managed` und `relinquished`.
 - Kein Release ohne konfliktfreies Restore sowie Crash-/Kill-Recovery.
 - Der Spike darf nach Phase 0 parallel zu Aktionskern, Spaces und Fensteroperationen laufen.

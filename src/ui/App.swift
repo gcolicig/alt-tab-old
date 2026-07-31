@@ -402,6 +402,9 @@ extension App: NSApplicationDelegate {
         #endif
         AXUIElement.setGlobalTimeout()
         Preferences.initialize()
+        // before anything re-applies a pointer value: a record still marked managed means the last session
+        // did not shut down cleanly, and recovery has to run against the untouched system value
+        PointerOwnership.recoverAfterUncleanExit()
         BackgroundWork.preStart()
         SystemPermissions.ensurePermissionsAreGranted()
     }

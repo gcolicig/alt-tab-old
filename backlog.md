@@ -513,7 +513,7 @@ Akzeptanzideen:
 
 ### 4. Pointer Acceleration und Speed
 
-Status: Settings-basierter Early-Win-Spike
+Status: Umgesetzt, manuelle Verifikation V-10 offen
 Prioritaet: Mittel bis hoch
 
 Beschreibung:
@@ -549,6 +549,14 @@ Anforderungen:
 - Werte nach jedem Schreiben zuruecklesen und vor Vergleichen kanonisieren, da das System Werte runden oder transformieren kann.
 - Besitzdaten werden vor dem Systemwert geschrieben und nach dem kanonischen Read-back aktualisiert. Bei einem Abbruch zwischen Write und Read-back wird nur restauriert, wenn der aktuelle Wert sicher dem persistierten erwarteten Schreibwert zugeordnet werden kann; sonst fail-closed zu `relinquished`.
 - Per-Device bleibt out of scope; Kategorie-Ebene ist der angestrebte oeffentliche Pfad, Per-Device wuerde private HID-Event-System-APIs erfordern.
+
+Umsetzungsstand 2026-07-31:
+
+- Befund zum Systempfad: nicht IOKit-hidsystem, sondern `NSGlobalDomain`. Die Werte stehen als `com.apple.mouse.scaling` und `com.apple.trackpad.scaling` und wurden auf macOS 26.5.1 (Build 25F80) lesend verifiziert (3 bzw. 0.6875). Geschrieben wird ueber `CFPreferences` gegen `kCFPreferencesAnyApplication`, also die strukturierte API ohne Shell-Prozess, ohne Event-Tap, ohne private API und ohne zusaetzliche TCC-Berechtigung.
+- macOS kodiert beide Einstellungen in einem Wert: negativ schaltet die Beschleunigung ab, positiv ist die Geschwindigkeit. `System default` bedeutet deshalb, dass AltTab+ den Wert gar nicht besitzt, statt einen neutralen Wert zu schreiben.
+- Geschwindigkeit wird als Rasterindex gespeichert, weil macOS selbst nur diskrete Stufen anbietet; der geschriebene Wert bleibt exakt.
+- Der Besitz-Zustandsautomat ist vollstaendig als reine Entscheidungslogik umgesetzt und mit 19 Tests abgedeckt: Erwerb, Read-back, Abbruch zwischen Write und Read-back, Fremdaenderung, `relinquished` ueber Neustart, Wiedererwerb mit neuer Baseline, Disable, Crash-Recovery in beide Richtungen.
+- Der Pfad, der das System tatsaechlich beschreibt, ist von keinem Test ausgefuehrt worden. V-10 ist damit die erste Ausfuehrung dieses Pfades; Checkliste in `docs/pointer-ownership-checklist.md`.
 
 Exit-Kriterium:
 

@@ -565,3 +565,25 @@ struct ThemeParameters {
 }
 
 typealias LocalizedString = String
+
+enum PointerAccelerationPreference: CaseIterable, MacroPreference {
+    case systemDefault
+    case disabled
+    case custom
+
+    var localizedString: LocalizedString {
+        switch self {
+            case .systemDefault: return NSLocalizedString("System default", comment: "")
+            case .disabled: return NSLocalizedString("Disabled", comment: "")
+            case .custom: return NSLocalizedString("Custom", comment: "")
+        }
+    }
+
+    var mode: PointerAccelerationMode {
+        switch self {
+            case .systemDefault: return .systemDefault
+            case .disabled: return .disabled
+            case .custom: return .custom
+        }
+    }
+}

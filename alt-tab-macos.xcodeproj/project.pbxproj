@@ -28,6 +28,12 @@
 		C0DE10000000000000000007 /* Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000006 /* Actions.swift */; };
 		C0DE10000000000000000008 /* ActionRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000005 /* ActionRegistry.swift */; };
 		C0DE10000000000000000009 /* InstantSpacesTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000007 /* InstantSpacesTestable.swift */; };
+		C0DE10000000000000000024 /* PointerSystemSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000001C /* PointerSystemSettings.swift */; };
+		C0DE10000000000000000025 /* PointerOwnership.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000001D /* PointerOwnership.swift */; };
+		C0DE10000000000000000026 /* PointerScrollTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000001E /* PointerScrollTab.swift */; };
+		C0DE10000000000000000021 /* PointerOwnershipTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000001A /* PointerOwnershipTestable.swift */; };
+		C0DE10000000000000000022 /* PointerOwnershipTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000001A /* PointerOwnershipTestable.swift */; };
+		C0DE10000000000000000023 /* PointerOwnershipTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000001B /* PointerOwnershipTests.swift */; };
 		C0DE1000000000000000000A /* InstantSpaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000008 /* InstantSpaces.swift */; };
 		C0DE1000000000000000000B /* InstantSpacesPrivateApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000009 /* InstantSpacesPrivateApi.swift */; };
 		C0DE10000000000000000014 /* ShortcutPresets.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000011 /* ShortcutPresets.swift */; };
@@ -363,6 +369,11 @@
 		C0DE20000000000000000018 /* ActionTargetsTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionTargetsTestable.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000019 /* OpenUrlTargetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenUrlTargetTests.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000007 /* InstantSpacesTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpacesTestable.swift; sourceTree = "<group>"; };
+		C0DE2000000000000000001C /* PointerSystemSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointerSystemSettings.swift; sourceTree = "<group>"; };
+		C0DE2000000000000000001D /* PointerOwnership.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointerOwnership.swift; sourceTree = "<group>"; };
+		C0DE2000000000000000001E /* PointerScrollTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointerScrollTab.swift; sourceTree = "<group>"; };
+		C0DE2000000000000000001A /* PointerOwnershipTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointerOwnershipTestable.swift; sourceTree = "<group>"; };
+		C0DE2000000000000000001B /* PointerOwnershipTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointerOwnershipTests.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000008 /* InstantSpaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpaces.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000009 /* InstantSpacesPrivateApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpacesPrivateApi.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000011 /* ShortcutPresets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutPresets.swift; sourceTree = "<group>"; };
@@ -1226,6 +1237,7 @@
 		BF0C8719351B41D268CE8B70 /* unit-tests */ = {
 			isa = PBXGroup;
 			children = (
+				C0DE2000000000000000001B /* PointerOwnershipTests.swift */,
 				C0DE2000000000000000000A /* InstantSpacesTests.swift */,
 				C0DE20000000000000000004 /* WindowLayoutTests.swift */,
 				C0DE20000000000000000017 /* MenubarSpaceRowTests.swift */,
@@ -1477,6 +1489,7 @@
 			isa = PBXGroup;
 			children = (
 				C0DE30000000000000000002 /* actions */,
+				C0DE30000000000000000004 /* pointer */,
 				C0DE30000000000000000003 /* spaces */,
 				C0DE30000000000000000001 /* window-layouts */,
 				C0DE2000000000000000000F /* NativeSystemShortcuts.swift */,
@@ -1688,6 +1701,7 @@
 				C0DE20000000000000000012 /* PresetRow.swift */,
 				C0DE2000000000000000000B /* HyperkeyTab.swift */,
 				C0DE2000000000000000000C /* SpacesTab.swift */,
+				C0DE2000000000000000001E /* PointerScrollTab.swift */,
 				D04BA4A26987F67DD94C827F /* AboutTab.swift */,
 				D04BACE22DC907F03D193075 /* GeneralTab.swift */,
 				D04BA788228BA86D9EFBD1ED /* AcknowledgmentsTab.swift */,
@@ -1724,6 +1738,16 @@
 				C0DE20000000000000000008 /* InstantSpaces.swift */,
 			);
 			path = spaces;
+			sourceTree = "<group>";
+		};
+		C0DE30000000000000000004 /* pointer */ = {
+			isa = PBXGroup;
+			children = (
+				C0DE2000000000000000001A /* PointerOwnershipTestable.swift */,
+				C0DE2000000000000000001C /* PointerSystemSettings.swift */,
+				C0DE2000000000000000001D /* PointerOwnership.swift */,
+			);
+			path = pointer;
 			sourceTree = "<group>";
 		};
 		D04BA4FB0047656BEA21F1BE /* codesign */ = {
@@ -2645,6 +2669,8 @@
 				C0DE10000000000000000008 /* ActionRegistry.swift in Sources */,
 				C0DE1000000000000000000C /* InstantSpacesTestable.swift in Sources */,
 				C0DE1000000000000000000D /* InstantSpacesTests.swift in Sources */,
+				C0DE10000000000000000022 /* PointerOwnershipTestable.swift in Sources */,
+				C0DE10000000000000000023 /* PointerOwnershipTests.swift in Sources */,
 				C0DE10000000000000000004 /* WindowLayoutGeometry.swift in Sources */,
 				C0DE10000000000000000017 /* DisplayMoveGeometry.swift in Sources */,
 				C0DE10000000000000000005 /* WindowLayoutTests.swift in Sources */,
@@ -2679,6 +2705,10 @@
 				C0DE10000000000000000018 /* LaunchAppOpenUrlAction.swift in Sources */,
 				C0DE1000000000000000001E /* ActionTargetsTestable.swift in Sources */,
 				C0DE10000000000000000009 /* InstantSpacesTestable.swift in Sources */,
+				C0DE10000000000000000021 /* PointerOwnershipTestable.swift in Sources */,
+				C0DE10000000000000000024 /* PointerSystemSettings.swift in Sources */,
+				C0DE10000000000000000025 /* PointerOwnership.swift in Sources */,
+				C0DE10000000000000000026 /* PointerScrollTab.swift in Sources */,
 				C0DE1000000000000000000A /* InstantSpaces.swift in Sources */,
 				C0DE1000000000000000000B /* InstantSpacesPrivateApi.swift in Sources */,
 				C0DE10000000000000000014 /* ShortcutPresets.swift in Sources */,

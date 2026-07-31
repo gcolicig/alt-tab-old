@@ -68,6 +68,12 @@ class Preferences {
             "screenRecordingPermissionSkipped": "false",
             "trackpadHapticFeedbackEnabled": "true",
             "settingsWindowShownOnFirstLaunch": "false",
+            "pointerMouseAcceleration": PointerAccelerationPreference.systemDefault.indexAsString,
+            "pointerTrackpadAcceleration": PointerAccelerationPreference.systemDefault.indexAsString,
+            "pointerMouseSpeed": String(PointerSpeedSteps.maximumIndex),
+            "pointerTrackpadSpeed": "4",
+            "pointerOwnershipMouse": "",
+            "pointerOwnershipTrackpad": "",
         ]
         (0..<maxShortcutCount).forEach { index in
             // Shortcut 1 mirrors Command-Tab, Shortcut 2 the native Command plus key above Tab
@@ -130,6 +136,23 @@ class Preferences {
     static var searchShortcut: Shortcut? { CachedUserDefaults.shortcut("searchShortcut") }
     static var hyperKeyEnabled: Bool { CachedUserDefaults.bool("hyperKeyEnabled") }
     static var inputModulesSafeMode: Bool { CachedUserDefaults.bool("inputModulesSafeMode") }
+    static var pointerMouseAcceleration: PointerAccelerationPreference { CachedUserDefaults.macroPref("pointerMouseAcceleration", PointerAccelerationPreference.allCases) }
+    static var pointerTrackpadAcceleration: PointerAccelerationPreference { CachedUserDefaults.macroPref("pointerTrackpadAcceleration", PointerAccelerationPreference.allCases) }
+    static var pointerMouseSpeed: Double { PointerSpeedSteps.value(CachedUserDefaults.int("pointerMouseSpeed")) }
+    static var pointerTrackpadSpeed: Double { PointerSpeedSteps.value(CachedUserDefaults.int("pointerTrackpadSpeed")) }
+
+    static func pointerAcceleration(_ category: PointerCategory) -> PointerAccelerationPreference {
+        category == .mouse ? pointerMouseAcceleration : pointerTrackpadAcceleration
+    }
+
+    static func pointerSpeed(_ category: PointerCategory) -> Double {
+        category == .mouse ? pointerMouseSpeed : pointerTrackpadSpeed
+    }
+
+    /// `nil` means the user asked for the system default, so AltTab+ owns nothing for that category.
+    static func pointerDesiredValue(_ category: PointerCategory) -> Double? {
+        pointerAcceleration(category).mode.desiredValue(speed: pointerSpeed(category))
+    }
     static func launchAppBundleIdentifier(_ index: Int) -> String { CachedUserDefaults.string(indexToName("launchAppBundleIdentifier", index)) }
     static func openUrlValue(_ index: Int) -> String { CachedUserDefaults.string(indexToName("openUrlValue", index)) }
     static var hyperKeyArmingMarker: Bool { CachedUserDefaults.bool("hyperKeyArmingMarker") }
