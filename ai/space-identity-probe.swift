@@ -111,14 +111,18 @@ private func readSnapshot(_ label: String) throws -> Snapshot {
 // MARK: - Reporting
 
 private func printTable(_ spaces: [SpaceRecord]) {
-    print("  #  display                               idx  type  cur  uuid                                  id64")
+    print("  #  display                               idx  type  cur  uuid                                  id64   managedSpaceId")
     spaces.forEach {
         let display = $0.display.padding(toLength: 36, withPad: " ", startingAt: 0)
         let uuid = ($0.uuid.isEmpty ? "<missing>" : $0.uuid).padding(toLength: 37, withPad: " ", startingAt: 0)
         let index = String($0.indexOnDisplay).padding(toLength: 4, withPad: " ", startingAt: 0)
         let type = String($0.type).padding(toLength: 5, withPad: " ", startingAt: 0)
-        print(String(format: "%3d  ", $0.globalIndex) + display + " " + index + " " + type + " " + ($0.isCurrent ? " *   " : "     ") + uuid + " " + $0.id64)
+        let id64 = $0.id64.padding(toLength: 6, withPad: " ", startingAt: 0)
+        print(String(format: "%3d  ", $0.globalIndex) + display + " " + index + " " + type + " " + ($0.isCurrent ? " *   " : "     ") + uuid + " " + id64 + " " + $0.managedSpaceId)
     }
+    let shadowsId64 = spaces.allSatisfy { $0.managedSpaceId == $0.id64 }
+    print(shadowsId64 ? "  note: managedSpaceId equals id64 for every Space, so it is no more stable than id64"
+                      : "  note: managedSpaceId diverges from id64 — worth evaluating as an identity key")
 }
 
 private func reportUniqueness(_ snapshot: Snapshot) {

@@ -21,6 +21,14 @@ A first probe run on the target machine already answers two of the open question
   as unresolved. Do not fall back to `id64` silently — that is the failure mode S-08 exists to prevent.
 - Because the first Space has no uuid, `Current Space` is matched on `id64` in the probe, not on uuid.
 - Spaces without a uuid are excluded from every `diff`; the diff output states how many were excluded.
+- **`ManagedSpaceID` is not an alternative key.** It held exactly the same value as `id64` for every Space
+  (1, 131, 202), so it is session-local in the same way and cannot rescue the Space that has no uuid. The
+  probe prints this check on every capture, so a future macOS build that diverges will show up.
+
+That leaves `uuid` as the only identity candidate, and it is absent on the first Space. The steps below
+decide whether that is a property of the login Space specifically or of whichever Space sits at position 1 —
+step 3 answers it: if the Space that moves into position 1 keeps its uuid, the gap belongs to one particular
+Space and an alias simply cannot cover it.
 
 ## Preparation
 
