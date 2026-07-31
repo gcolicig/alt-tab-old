@@ -1,3 +1,4 @@
+import AppKit
 import CoreGraphics
 import Foundation
 
@@ -131,6 +132,11 @@ enum DragModifierPreference: String, CaseIterable {
     case fn
     case commandControl
 
+    /// What the settings picker offers today. `commandControl` is deliberately absent: it needs ownership
+    /// of the global `NSWindowShouldDragOnGesture` value first. Appending to this list later keeps the
+    /// stored indexes of the existing entries stable.
+    static let selectable: [DragModifierPreference] = [.disabled, .commandShift, .fn]
+
     /// `Command+Control` consumes the primary mouse down, which macOS otherwise delivers as a secondary
     /// click, and it only works once the global drag-on-gesture setting is off.
     var requiresWindowDragOnGestureDisabled: Bool {
@@ -139,5 +145,22 @@ enum DragModifierPreference: String, CaseIterable {
 
     var isEnabled: Bool {
         self != .disabled
+    }
+
+    var requiredFlags: NSEvent.ModifierFlags? {
+        switch self {
+            case .disabled: return nil
+            case .commandShift: return [.command, .shift]
+            case .fn: return [.function]
+            case .commandControl: return [.command, .control]
+        }
+    }
+
+    /// Exact match on the modifiers that matter: a stray Option or Shift must not arm a drag the user did
+    /// not ask for.
+    func matches(_ flags: NSEvent.ModifierFlags) -> Bool {
+        guard let required = requiredFlags else { return false }
+        let relevant: NSEvent.ModifierFlags = [.command, .shift, .control, .option, .function]
+        return flags.intersection(relevant) == required
     }
 }

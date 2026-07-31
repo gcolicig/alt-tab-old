@@ -587,3 +587,14 @@ enum PointerAccelerationPreference: CaseIterable, MacroPreference {
         }
     }
 }
+
+extension DragModifierPreference: MacroPreference {
+    var localizedString: LocalizedString {
+        switch self {
+            case .disabled: return NSLocalizedString("Disabled", comment: "")
+            case .commandShift: return "⌘⇧"
+            case .fn: return "fn"
+            case .commandControl: return "⌘⌃"
+        }
+    }
+}

@@ -74,6 +74,8 @@ class Preferences {
             "pointerTrackpadSpeed": "4",
             "pointerOwnershipMouse": "",
             "pointerOwnershipTrackpad": "",
+            "windowDragModifier": "0",
+            "windowDragArmingMarker": "false",
         ]
         (0..<maxShortcutCount).forEach { index in
             // Shortcut 1 mirrors Command-Tab, Shortcut 2 the native Command plus key above Tab
@@ -136,6 +138,8 @@ class Preferences {
     static var searchShortcut: Shortcut? { CachedUserDefaults.shortcut("searchShortcut") }
     static var hyperKeyEnabled: Bool { CachedUserDefaults.bool("hyperKeyEnabled") }
     static var inputModulesSafeMode: Bool { CachedUserDefaults.bool("inputModulesSafeMode") }
+    static var windowDragModifier: DragModifierPreference { CachedUserDefaults.macroPref("windowDragModifier", DragModifierPreference.selectable) }
+    static var windowDragArmingMarker: Bool { CachedUserDefaults.bool("windowDragArmingMarker") }
     static var pointerMouseAcceleration: PointerAccelerationPreference { CachedUserDefaults.macroPref("pointerMouseAcceleration", PointerAccelerationPreference.allCases) }
     static var pointerTrackpadAcceleration: PointerAccelerationPreference { CachedUserDefaults.macroPref("pointerTrackpadAcceleration", PointerAccelerationPreference.allCases) }
     static var pointerMouseSpeed: Double { PointerSpeedSteps.value(CachedUserDefaults.int("pointerMouseSpeed")) }
@@ -246,12 +250,14 @@ class Preferences {
     }
 
     private static func applyInputSafetyOverrides() {
-        recoveredInputModuleAtLaunch = hyperKeyArmingMarker
+        recoveredInputModuleAtLaunch = hyperKeyArmingMarker || windowDragArmingMarker
         guard inputModulesSafeMode || recoveredInputModuleAtLaunch else { return }
         set("inputModulesSafeMode", "true", false)
         set("hyperKeyEnabled", "false", false)
         set("nextWindowGesture", GesturePreference.disabled.indexAsString, false)
         set("hyperKeyArmingMarker", "false", false)
+        set("windowDragModifier", "0", false)
+        set("windowDragArmingMarker", "false", false)
     }
 
     static func markSettingsWindowShownOnFirstLaunch() {

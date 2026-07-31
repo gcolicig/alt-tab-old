@@ -542,6 +542,7 @@ class KeyboardEvents {
         removeHyperKeyHidMonitor()
         TrackpadEvents.disableForSafety()
         ScrollwheelEvents.disableForSafety()
+        WindowDragEvents.disableForSafety()
         App.hideUi()
         if let message { showSafetyAlert(message) }
     }

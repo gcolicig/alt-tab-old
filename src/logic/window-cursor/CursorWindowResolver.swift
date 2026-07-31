@@ -11,6 +11,30 @@ enum CursorWindowResolver {
     /// of levels above the element under the cursor.
     private static let maximumAncestorDepth = 12
 
+    /// The drag session needs the element itself, not just its id, and it needs it exactly once at the
+    /// start. Runs off the event callback: this makes blocking AX calls.
+    static func resolveElement(at position: CGPoint) -> (element: AXUIElement, pid: pid_t)? {
+        var hit: AXUIElement?
+        guard AXUIElementCopyElementAtPosition(AXUIElementCreateSystemWide(), Float(position.x), Float(position.y), &hit) == .success,
+              let element = hit,
+              let window = ancestorWindow(element),
+              let pid = try? window.pid(),
+              isEligible(window) else { return nil }
+        return (window, pid)
+    }
+
+    /// The exclusion filters from backlog section 1. A window that cannot be moved is left alone rather
+    /// than mutated and hoped for.
+    private static func isEligible(_ window: AXUIElement) -> Bool {
+        guard let attributes = try? window.attributes([kAXRoleAttribute, kAXSubroleAttribute, kAXMinimizedAttribute, kAXFullscreenAttribute]),
+              attributes.role == kAXWindowRole,
+              attributes.isMinimized != true,
+              attributes.isFullscreen != true,
+              (try? window.isAttributeSettable(kAXPositionAttribute)) == true,
+              (try? window.isAttributeSettable(kAXSizeAttribute)) == true else { return false }
+        return true
+    }
+
     static func resolve(at position: CGPoint) -> CursorWindowResolution {
         var candidates = CursorWindowCandidates()
         candidates.elementWindow = windowUnderCursor(position)

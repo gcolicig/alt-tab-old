@@ -101,6 +101,33 @@ final class DragSessionTests: XCTestCase {
         XCTAssertNil(DragSnapPolicy.frame(.leftHalf, in: empty))
     }
 
+    func testTheModifierMatchesOnlyItsExactCombination() {
+        XCTAssertTrue(DragModifierPreference.commandShift.matches([.command, .shift]))
+        XCTAssertFalse(DragModifierPreference.commandShift.matches([.command]))
+        XCTAssertFalse(DragModifierPreference.commandShift.matches([.shift]))
+        // a stray modifier must not arm a drag the user did not ask for
+        XCTAssertFalse(DragModifierPreference.commandShift.matches([.command, .shift, .option]))
+        XCTAssertTrue(DragModifierPreference.fn.matches([.function]))
+    }
+
+    func testAnIrrelevantFlagDoesNotBreakTheMatch() {
+        // caps lock and numeric pad are not part of the combination and must be ignored
+        XCTAssertTrue(DragModifierPreference.commandShift.matches([.command, .shift, .capsLock]))
+    }
+
+    func testTheDisabledModifierNeverMatches() {
+        XCTAssertFalse(DragModifierPreference.disabled.matches([]))
+        XCTAssertFalse(DragModifierPreference.disabled.matches([.command, .shift]))
+        XCTAssertNil(DragModifierPreference.disabled.requiredFlags)
+    }
+
+    /// Command+Control stays out of the picker until ownership of NSWindowShouldDragOnGesture exists.
+    func testThePickerOffersOnlyTheModifiersThatCanBeArmedToday() {
+        XCTAssertEqual(DragModifierPreference.selectable, [.disabled, .commandShift, .fn])
+        XCTAssertFalse(DragModifierPreference.selectable.contains(.commandControl))
+        XCTAssertEqual(DragModifierPreference.selectable.first, .disabled)
+    }
+
     func testTheModuleIsOffByDefaultAndOnlyCommandControlNeedsTheGlobalSetting() {
         XCTAssertFalse(DragModifierPreference.disabled.isEnabled)
         XCTAssertTrue(DragModifierPreference.commandControl.requiresWindowDragOnGestureDisabled)

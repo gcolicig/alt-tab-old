@@ -3,6 +3,11 @@ import Cocoa
 class WindowLayoutsTab {
     static func initTab() -> NSView {
         let table = TableGroupView(width: SettingsWindow.contentWidth)
+        table.addRow(TableGroupView.Row(
+            leftTitle: NSLocalizedString("Move the window under the cursor while holding", comment: ""),
+            subTitle: NSLocalizedString("Off by default. Every candidate collides with something, so pick one knowingly.", comment: ""),
+            rightViews: [LabelAndControl.makeDropdown("windowDragModifier", DragModifierPreference.selectable) { _ in WindowDragEvents.modifierPreferenceChanged() }]))
+        table.addNewTable()
         ShortcutPresets.layouts.forEach { table.addRow(PresetRow.make($0)) }
         table.addNewTable()
         WindowLayoutAction.allCases.forEach {

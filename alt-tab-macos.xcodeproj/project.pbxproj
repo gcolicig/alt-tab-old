@@ -31,6 +31,7 @@
 		C0DE10000000000000000024 /* PointerSystemSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000001C /* PointerSystemSettings.swift */; };
 		C0DE10000000000000000025 /* PointerOwnership.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000001D /* PointerOwnership.swift */; };
 		C0DE10000000000000000026 /* PointerScrollTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000001E /* PointerScrollTab.swift */; };
+		C0DE1000000000000000002E /* WindowDragEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000024 /* WindowDragEvents.swift */; };
 		C0DE1000000000000000002B /* DragSessionTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000022 /* DragSessionTestable.swift */; };
 		C0DE1000000000000000002C /* DragSessionTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000022 /* DragSessionTestable.swift */; };
 		C0DE1000000000000000002D /* DragSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000023 /* DragSessionTests.swift */; };
@@ -379,6 +380,7 @@
 		C0DE2000000000000000001C /* PointerSystemSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointerSystemSettings.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000001D /* PointerOwnership.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointerOwnership.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000001E /* PointerScrollTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointerScrollTab.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000024 /* WindowDragEvents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowDragEvents.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000022 /* DragSessionTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragSessionTestable.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000023 /* DragSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragSessionTests.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000001F /* CursorWindowTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorWindowTestable.swift; sourceTree = "<group>"; };
@@ -1760,6 +1762,7 @@
 			isa = PBXGroup;
 			children = (
 				C0DE20000000000000000022 /* DragSessionTestable.swift */,
+				C0DE20000000000000000024 /* WindowDragEvents.swift */,
 			);
 			path = "window-drag";
 			sourceTree = "<group>";
@@ -2745,6 +2748,7 @@
 				C0DE10000000000000000021 /* PointerOwnershipTestable.swift in Sources */,
 				C0DE10000000000000000027 /* CursorWindowTestable.swift in Sources */,
 				C0DE1000000000000000002B /* DragSessionTestable.swift in Sources */,
+				C0DE1000000000000000002E /* WindowDragEvents.swift in Sources */,
 				C0DE10000000000000000029 /* CursorWindowResolver.swift in Sources */,
 				C0DE10000000000000000024 /* PointerSystemSettings.swift in Sources */,
 				C0DE10000000000000000025 /* PointerOwnership.swift in Sources */,
