@@ -119,8 +119,10 @@ class Menubar {
         let switchingEnabled = InstantSpaces.runtimeAvailability().isAvailable
         let cursorUuid = NSScreen.withMouse()?.cachedUuid()
         // the row must never collapse: the status button can still be unsized the first time this runs,
-        // and since the icon moves into a subview here, a zero height renders as an empty menubar slot
-        let rowHeight = max(statusButton.bounds.height, NSStatusBar.system.thickness)
+        // and since the icon moves into a subview here, a zero height renders as an empty menubar slot.
+        // Beyond that the button's own height wins: `thickness` reports 22 on a menubar that is 32pt tall,
+        // and taking the larger of the two placed the row above the button's centre.
+        let rowHeight = statusButton.bounds.height > 0 ? statusButton.bounds.height : NSStatusBar.system.thickness
         let totalWidth = MenubarSpaceRow.totalWidth(groups.map { $0.spaceIds.count })
         // the container carries its final frame before any segment goes in, like the single-row version did
         let container = NSView(frame: NSRect(x: iconWidth, y: 0, width: totalWidth, height: rowHeight))
@@ -137,7 +139,7 @@ class Menubar {
         }
         statusItem.length = iconWidth + totalWidth + 2
         statusButton.image = nil
-        let iconView = PassthroughImageView(frame: NSRect(x: 4, y: 2, width: 20, height: max(18, rowHeight - 4)))
+        let iconView = PassthroughImageView(frame: MenubarSpaceRow.centeredRect(x: 4, width: 20, availableHeight: rowHeight, preferredHeight: MenubarSpaceRow.iconHeight))
         iconView.image = preferredIcon()
         iconView.imageScaling = .scaleProportionallyUpOrDown
         statusButton.addSubview(iconView)
@@ -154,19 +156,19 @@ class Menubar {
         let hasOverflow = MenubarSpaceRow.hasOverflow(group.spaceIds.count)
         (0..<directCount).forEach { offset in
             let button = spaceButton(offset + 1, group.spaceIds[offset] == group.activeSpaceId, switchingEnabled && isCursorGroup, !isCursorGroup, displayOrdinal, group.displayUuid)
-            button.frame = NSRect(x: startX + CGFloat(offset) * segmentWidth + 2, y: 3, width: segmentWidth - 4, height: max(18, height - 6))
+            button.frame = MenubarSpaceRow.centeredRect(x: startX + CGFloat(offset) * segmentWidth + 2, width: segmentWidth - 4, availableHeight: height, preferredHeight: MenubarSpaceRow.segmentHeight)
             container.addSubview(button)
         }
         guard hasOverflow else { return CGFloat(directCount) * segmentWidth }
         let overflowIndexes = MenubarSpaceRow.overflowIndexes(group.spaceIds.count)
         let overflowButton = overflowButton(overflowIndexes, group.spaceIds, group.activeSpaceId, switchingEnabled && isCursorGroup, !isCursorGroup, displayOrdinal, group.displayUuid)
-        overflowButton.frame = NSRect(x: startX + CGFloat(directCount) * segmentWidth + 2, y: 3, width: segmentWidth - 4, height: max(18, height - 6))
+        overflowButton.frame = MenubarSpaceRow.centeredRect(x: startX + CGFloat(directCount) * segmentWidth + 2, width: segmentWidth - 4, availableHeight: height, preferredHeight: MenubarSpaceRow.segmentHeight)
         container.addSubview(overflowButton)
         return CGFloat(directCount + 1) * segmentWidth
     }
 
     private static func groupDivider(x: CGFloat, height: CGFloat) -> NSView {
-        let divider = NSBox(frame: NSRect(x: x, y: 4, width: 1, height: max(10, height - 8)))
+        let divider = NSBox(frame: MenubarSpaceRow.centeredRect(x: x, width: 1, availableHeight: height, preferredHeight: MenubarSpaceRow.dividerHeight))
         divider.boxType = .separator
         // decorative only: VoiceOver should skip straight from one display's segments to the next
         divider.setAccessibilityElement(false)

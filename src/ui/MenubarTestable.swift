@@ -36,6 +36,23 @@ struct MenubarSpaceRow {
             + CGFloat(max(0, spaceCounts.count - 1)) * groupGap * 2
     }
 
+    /// Optical heights, measured against the system status items on a Tahoe menubar: the shield sits at
+    /// about 14pt and the keyboard glyph at 11pt, while the status button AltTab+ draws into is only 22pt
+    /// tall inside a 33pt bar. Deriving a height by insetting that button produced a 17pt bordered box,
+    /// the tallest thing in the menubar, which reads as misaligned next to smaller unbordered glyphs.
+    /// Fixed target heights keep the row in the same optical band whatever the button turns out to be.
+    static let segmentHeight = CGFloat(16)
+    static let iconHeight = CGFloat(18)
+    static let dividerHeight = CGFloat(12)
+
+    /// Vertical placement of one element inside the status button. `y` follows from the height so the
+    /// element is centred by construction: pinning `y` and clamping the height upwards, as this did
+    /// before, moves the element up by half the clamp.
+    static func centeredRect(x: CGFloat, width: CGFloat, availableHeight: CGFloat, preferredHeight: CGFloat) -> NSRect {
+        let height = min(preferredHeight, availableHeight)
+        return NSRect(x: x, y: (availableHeight - height) / 2, width: width, height: height)
+    }
+
     /// Displays that currently have a screen come first, left to right. A display that still owns
     /// Spaces but has no live screen is appended in a stable order: taking them in dictionary order
     /// would let the row reshuffle between refreshes for no visible reason.
