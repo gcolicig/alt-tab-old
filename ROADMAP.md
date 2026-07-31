@@ -77,9 +77,9 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 ## Phase 3A: Cursor-basierter AX-Fensterkern
 
-- Fenster unter dem Cursor zu Beginn einer Operation eindeutig bestimmen.
-- AX-Schreibvorgaenge coalescen und ueber eine serielle Queue ausfuehren.
-- Diagnose und App-Klassen-Pruefraster vor kontinuierlichen Move-/Resize-Operationen vervollstaendigen.
+- Umgesetzt: Fenster unter dem Cursor wird zu Beginn einer Operation ueber die Element-at-position-Kette bestimmt; bei Mehrdeutigkeit erfolgt keine Aktion.
+- Umgesetzt: Coalescing der AX-Schreibvorgaenge und der Diagnose-Ringpuffer als reine, getestete Logik.
+- Offen: S-01 und S-02 am Zielgeraet sowie das App-Klassen-Pruefraster; der Kern hat bisher keinen Aufrufer, die Drag-Sitzung folgt in Phase 3B.
 
 ## Phase 3B: Move und Modifier-Snapping
 

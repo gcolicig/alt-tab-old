@@ -196,7 +196,10 @@ Fenster-Identifikation nach Modul:
 Umsetzungsstand 2026-07-26:
 
 - Fuer Keyboard Layouts umgesetzt: Frontmost-App, fokussiertes AX-Fenster, eigene AX-Queue, globaler AX-Timeout, Rollen-/Zustands-/Settable-Filter und sichtbare Display-Geometrie.
-- Fuer kontinuierliche Cursor-Module offen: Element-at-position-Kette, Coalescing, erweiterter Diagnose-Ringbuffer und die vollstaendige App-Klassen-Matrix.
+- Umgesetzt 2026-07-31 fuer kontinuierliche Cursor-Module: Element-at-position-Kette mit begrenztem Ancestor-Walk bis `AXWindow`, CGWindowID-Korrelation, Fokus-Fallback und eindeutiger Bounds-Match als letzte Stufe; Mehrdeutigkeit fuehrt zu keiner Aktion. Dazu das Q-06-Coalescing (hoechstens ein offener Set, nur der neueste Zielrahmen, Zielrate 60 Hz, Flush bei Mouseup) und der Q-07-Ringpuffer mit Fenster-ID, Bundle-ID, Display, vorgeschlagenem und tatsaechlichem Rahmen.
+- Die Reihenfolge der Stufen, das Coalescing und der Ringpuffer sind reine Logik und mit 12 Tests abgedeckt. Die Kette selbst ist nur so gut wie die manuelle Pruefung: S-01 (20 von 20 ueber die Kompatibilitaetsmatrix) und S-02 (Drag-Latenz) sind unveraendert offen.
+- Noch nicht angebunden: es gibt bisher keinen Aufrufer. Die Drag-Sitzung, die diesen Kern benutzt, gehoert zu Phase 3B.
+- Offen bleibt die vollstaendige App-Klassen-Matrix.
 
 Ausschlussfilter:
 
