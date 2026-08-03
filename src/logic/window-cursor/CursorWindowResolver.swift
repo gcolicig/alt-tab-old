@@ -19,6 +19,10 @@ enum CursorWindowResolver {
             Logger.debug { "drag resolve: no element at position" }
             return nil
         }
+        guard let hitPid = try? element.pid(), !CursorWindowOwnProcess.shouldRefuse(hitPid: hitPid, ownPid: ProcessInfo.processInfo.processIdentifier) else {
+            Logger.debug { "drag resolve: element belongs to AltTab+ itself, refusing to avoid a self-query deadlock" }
+            return nil
+        }
         guard let window = windowFor(element, at: position) else {
             Logger.debug { "drag resolve: no AXWindow ancestor, hit role:\(describeRole(element))" }
             return nil
@@ -60,6 +64,9 @@ enum CursorWindowResolver {
     static func resolve(at position: CGPoint) -> CursorWindowResolution {
         var candidates = CursorWindowCandidates()
         candidates.elementWindow = windowUnderCursor(position)
+        if candidates.elementWindow == nil, isOverOwnApplication(position) {
+            return .refused(.ownApplication)
+        }
         if candidates.elementWindow == nil {
             candidates.focusedWindow = focusedWindow()
         }
@@ -67,6 +74,13 @@ enum CursorWindowResolver {
             candidates.boundsMatches = windowsContaining(position)
         }
         return CursorWindowResolutionPolicy.resolve(candidates)
+    }
+
+    private static func isOverOwnApplication(_ position: CGPoint) -> Bool {
+        var element: AXUIElement?
+        guard AXUIElementCopyElementAtPosition(AXUIElementCreateSystemWide(), Float(position.x), Float(position.y), &element) == .success,
+              let hit = element, let pid = try? hit.pid() else { return false }
+        return CursorWindowOwnProcess.shouldRefuse(hitPid: pid, ownPid: ProcessInfo.processInfo.processIdentifier)
     }
 
     private static func windowUnderCursor(_ position: CGPoint) -> CGWindowID? {

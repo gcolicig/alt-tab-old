@@ -37,12 +37,17 @@ enum WindowDragGestureOwnership {
 
     /// Called before `Command+Control` may arm. Returns false when the switch could not be turned off or
     /// verified, which per the backlog leaves the modifier unavailable rather than half-working.
+    /// `deliberate` is true only when the user just picked the modifier. Coming back from `relinquished`
+    /// requires that: the state exists precisely to record that somebody else owns the value now, and
+    /// silently retaking it at every launch would defeat it.
     @discardableResult
-    static func acquire() -> Bool {
+    static func acquire(deliberate: Bool) -> Bool {
+        let stored = record()
+        guard stored.state != .relinquished || deliberate else { return false }
         // already off without us: nothing to own, and nothing to restore later
-        if read() == false, !record().isManaged { return true }
+        if read() == false, !stored.isManaged { return true }
         let current = read() ?? true
-        guard let pending = Ownership.beginAcquisition(record(), current: current, desired: false) else { return isSatisfied }
+        guard let pending = Ownership.beginAcquisition(stored, current: current, desired: false) else { return isSatisfied }
         persist(pending)
         guard let readBack = write(false) else {
             persist(Ownership.abandonWrite(pending))

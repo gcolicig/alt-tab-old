@@ -19,6 +19,13 @@ final class CursorWindowTests: XCTestCase {
         XCTAssertEqual(CursorWindowResolutionPolicy.resolve(CursorWindowCandidates()), .refused(.nothingUnderCursor))
     }
 
+    /// A synchronous AX query into our own process has to be answered by the very thread that is waiting
+    /// for the answer, so it deadlocks. The switcher path already excludes us; the cursor path must too.
+    func testOurOwnProcessIsRefusedBeforeAnyFurtherQuery() {
+        XCTAssertTrue(CursorWindowOwnProcess.shouldRefuse(hitPid: 42, ownPid: 42))
+        XCTAssertFalse(CursorWindowOwnProcess.shouldRefuse(hitPid: 43, ownPid: 42))
+    }
+
     private func rect(_ x: CGFloat) -> CGRect {
         CGRect(x: x, y: 0, width: 100, height: 100)
     }

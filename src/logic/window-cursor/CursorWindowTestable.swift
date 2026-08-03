@@ -11,6 +11,17 @@ enum CursorWindowResolution: Equatable {
 enum CursorWindowRefusal: String, Equatable {
     case nothingUnderCursor
     case ambiguousBoundsMatch
+    case ownApplication
+}
+
+enum CursorWindowOwnProcess {
+    /// Querying our own AX tree deadlocks: the call is synchronous IPC that our own main thread has to
+    /// answer, and it is already the thread waiting for the reply. The switcher path guards against this
+    /// by excluding the frontmost app when it is us; the cursor path needs the same guard, because the
+    /// element under the cursor is whatever happens to be there — including our own settings window.
+    static func shouldRefuse(hitPid: pid_t, ownPid: pid_t) -> Bool {
+        hitPid == ownPid
+    }
 }
 
 /// The outcome of each stage of the identification chain, gathered by the impure resolver. Kept as plain

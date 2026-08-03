@@ -48,3 +48,21 @@ final class SystemValueOwnershipTests: XCTestCase {
         XCTAssertEqual(Ownership.disable(acquired(from: false), current: false), .restore(false))
     }
 }
+
+extension SystemValueOwnershipTests {
+    /// The whole point of `relinquished`: an automatic path must not take the value back. Only a fresh
+    /// deliberate activation may, and it then treats the current value as its new baseline.
+    func testReacquisitionFromRelinquishedStartsANewOwnershipPeriod() {
+        let relinquished = SystemValueOwnership<Bool>.detectForeignChange(acquiredForReacquisition(), current: true)
+        XCTAssertEqual(relinquished.state, .relinquished)
+        XCTAssertNil(relinquished.baseline)
+        let begun = SystemValueOwnership<Bool>.beginAcquisition(relinquished, current: true, desired: false)
+        XCTAssertEqual(begun?.baseline, true)
+        XCTAssertEqual(SystemValueOwnership<Bool>.confirmWrite(begun!, readBack: false).state, .managed)
+    }
+
+    private func acquiredForReacquisition() -> SystemValueOwnershipRecord<Bool> {
+        let begun = SystemValueOwnership<Bool>.beginAcquisition(.unmanaged, current: true, desired: false)!
+        return SystemValueOwnership<Bool>.confirmWrite(begun, readBack: false)
+    }
+}

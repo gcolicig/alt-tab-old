@@ -17,6 +17,10 @@ enum WindowDragEvents {
     private static var circuitBreaker = InputTapCircuitBreaker()
     private static var window: AXUIElement?
     private static var windowPid: pid_t?
+    /// Resolved once per session. Asking AX for it per frame cost a blocking round trip inside a global
+    /// HIServices lock, which stalled every other AX caller including the main thread.
+    private static var windowId: CGWindowID = 0
+    private static var windowBundleId = ""
     private static var originWindowFrame: CGRect?
     private static var originMouse: CGPoint?
     private static var coalescer = AxWriteCoalescer()
@@ -66,7 +70,7 @@ enum WindowDragEvents {
             WindowDragGestureOwnership.release()
             return true
         }
-        guard WindowDragGestureOwnership.acquire() else {
+        guard WindowDragGestureOwnership.acquire(deliberate: announce) else {
             if announce {
                 TransientNotice.show(NSLocalizedString("Command+Control needs the system setting for dragging windows by gesture to be off, and it could not be changed. Pick another modifier.", comment: ""))
             }
@@ -175,6 +179,8 @@ enum WindowDragEvents {
         }
         window = resolved.element
         windowPid = resolved.pid
+        windowId = (try? resolved.element.cgWindowId()) ?? 0
+        windowBundleId = NSRunningApplication(processIdentifier: resolved.pid)?.bundleIdentifier ?? ""
         originWindowFrame = CGRect(origin: position, size: size)
         originMouse = location
         coalescer = AxWriteCoalescer()
@@ -201,11 +207,11 @@ enum WindowDragEvents {
         guard DragSessionMachine.mayApplyFrame(reached) else { return }
         // an active snap target wins over the freely dragged position: it is what the user aimed at
         if let snapFrame {
-            applyFrame(snapFrame)
+            applyFrame(snapFrame, readBack: true)
             return
         }
         if let last = coalescer.flush(now: ProcessInfo.processInfo.systemUptime) {
-            applyFrame(last)
+            applyFrame(last, readBack: true)
         }
     }
 
@@ -268,14 +274,19 @@ enum WindowDragEvents {
         DragScreenLookup.visibleFrame(containing: point, screens: quartzScreens())
     }
 
-    private static func applyFrame(_ frame: CGRect) {
+    /// `readBack` is only set for the frame that actually commits. Reading position and size back costs an
+    /// AX round trip, and doing that per frame put two blocking calls on a 60 Hz path: they queued up
+    /// behind a global HIServices lock and hung the app. Intermediate frames are recorded without it.
+    private static func applyFrame(_ frame: CGRect, readBack: Bool = false) {
         guard let window, let pid = windowPid else { return }
         // Chromium reflows and fights the write while its enhanced-interface flag is on
         AxAppCompatibility.withEnhancedUserInterfaceSuspended(pid) { try? window.setFrame(frame) }
-        let actual = try? window.attributes([kAXPositionAttribute, kAXSizeAttribute])
-        let result = (actual?.position).flatMap { position in (actual?.size).map { CGRect(origin: position, size: $0) } }
-        let bundleId = NSRunningApplication(processIdentifier: pid)?.bundleIdentifier ?? ""
-        diagnostics.record(AxDiagnosticEntry(windowId: (try? window.cgWindowId()) ?? 0, bundleId: bundleId,
+        var result: CGRect?
+        if readBack {
+            let actual = try? window.attributes([kAXPositionAttribute, kAXSizeAttribute])
+            result = (actual?.position).flatMap { position in (actual?.size).map { CGRect(origin: position, size: $0) } }
+        }
+        diagnostics.record(AxDiagnosticEntry(windowId: windowId, bundleId: windowBundleId,
                                              displayIndex: 0, proposed: frame, result: result))
     }
 
@@ -302,6 +313,8 @@ enum WindowDragEvents {
         stateLock.unlock()
         window = nil
         windowPid = nil
+        windowId = 0
+        windowBundleId = ""
         originWindowFrame = nil
         originMouse = nil
         coalescer = AxWriteCoalescer()
