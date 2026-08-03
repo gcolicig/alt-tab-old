@@ -149,6 +149,14 @@ Dual-Role-Hyper:
 
 Leader:
 
+Umsetzungsstand 2026-08-03, Kern:
+
+- Befund mit Folgen fuer den Zuschnitt: Der Tastatur-Tap in `KeyboardEvents` wird beim App-Start unbedingt erzeugt und deckt `keyDown`, `keyUp` und `flagsChanged` bereits ab; Hyper ist darin nur ein Laufzeit-Flag. Leader faehrt deshalb auf demselben Tap mit, statt einen zweiten zu oeffnen. Damit entfallen ein eigener Arming-Marker, ein eigener Circuit Breaker und eine zweite Stelle, an der ein haengender Callback das System blockieren koennte.
+- Umgesetzt als reine Logik mit 12 Tests: Trie fuer verschachtelte Sequenzen, Sitzungsautomat, Timeout, Escape.
+- Festgelegt: Ein Knoten fuehrt entweder eine Aktion aus oder fuehrt zu weiteren Tasten, nie beides. Ein Praefix, das zugleich Bindung ist, waere mehrdeutig und der Nutzer koennte nicht erkennen, ob noch Tasten folgen duerfen.
+- Festgelegt: Eine Taste ohne Treffer bricht die Sequenz ab, statt ignoriert zu werden. Tastenanschlaege stillschweigend zu schlucken ist schlechter, als den Nutzer neu ansetzen zu lassen.
+- Noch nicht umgesetzt: Trigger-Anbindung, Interception im Tap-Callback, die kompakte AppKit-Uebersicht und die Settings-Oberflaeche zum Pflegen der Sequenzen. Ohne diese ist das Modul nicht aktivierbar.
+
 - Leader erhaelt einen eigenen, noch festzulegenden Trigger; Caps-Lock-Tap bleibt fuer normales Caps Lock reserviert.
 - Verschachtelte, deterministische Sequenzen verwenden einen Trie oder eine gleichwertige Zustandsmaschine.
 - `Escape`, Timeout und Sleep/Wake brechen die Sequenz ab.
