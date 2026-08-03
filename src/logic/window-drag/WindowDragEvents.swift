@@ -210,6 +210,7 @@ enum WindowDragEvents {
                                                               dwellElapsed: now - (edgeEnteredAt ?? now)))
         snapTarget = confirmed
         snapFrame = DragSnapPolicy.frame(confirmed, in: screen)
+        presentOverlay()
     }
 
     private static func clearSnap() {
@@ -217,18 +218,31 @@ enum WindowDragEvents {
         snapFrame = nil
         edgeSide = .none
         edgeEnteredAt = nil
+        presentOverlay()
+    }
+
+    /// The overlay is AppKit and belongs on the main thread. The drag events already arrive there, but the
+    /// session also ends from the AX queue, so the hop is not optional.
+    private static func presentOverlay() {
+        let frame = snapFrame
+        let show = { frame.map { DragSnapOverlay.show(quartzFrame: $0) } ?? DragSnapOverlay.hide() }
+        Thread.isMainThread ? show() : DispatchQueue.main.async(execute: show)
+    }
+
+    private static func quartzScreens() -> [DragScreenGeometry] {
+        guard let primaryFrame = NSScreen.screens.first?.frame else { return [] }
+        let toQuartz = { (rect: CGRect) in
+            CGRect(x: rect.minX, y: primaryFrame.maxY - rect.maxY, width: rect.width, height: rect.height)
+        }
+        return NSScreen.screens.map { DragScreenGeometry(full: toQuartz($0.frame), visible: toQuartz($0.visibleFrame)) }
     }
 
     private static func quartzVisibleFrames() -> [CGRect] {
-        guard let primaryFrame = NSScreen.screens.first?.frame else { return [] }
-        return NSScreen.screens.map {
-            CGRect(x: $0.visibleFrame.minX, y: primaryFrame.maxY - $0.visibleFrame.maxY,
-                   width: $0.visibleFrame.width, height: $0.visibleFrame.height)
-        }
+        quartzScreens().map { $0.visible }
     }
 
     private static func quartzVisibleFrame(containing point: CGPoint) -> CGRect? {
-        quartzVisibleFrames().first { $0.contains(point) }
+        DragScreenLookup.visibleFrame(containing: point, screens: quartzScreens())
     }
 
     private static func applyFrame(_ frame: CGRect) {
@@ -268,6 +282,10 @@ enum WindowDragEvents {
         originWindowFrame = nil
         originMouse = nil
         coalescer = AxWriteCoalescer()
-        clearSnap()
+        snapTarget = .none
+        snapFrame = nil
+        edgeSide = .none
+        edgeEnteredAt = nil
+        DispatchQueue.main.async { DragSnapOverlay.dismiss() }
     }
 }

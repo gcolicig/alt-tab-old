@@ -490,7 +490,9 @@ Umsetzungsstand 2026-07-31:
 - Festgelegt und getestet: nur der Zustand `finishing` darf einen Rahmen schreiben. Eine abgebrochene Sitzung schreibt nie.
 - Umgesetzt: dauerhafter Maus-Event-Tap mit Arming-Marker, Circuit Breaker und Anbindung an den Not-Aus; Settings-Auswahl ohne Default; Snapping auf `Left half`, `Right half` und `Fill` innerhalb der eigenen Drag-Sitzung.
 - Korrigiert vor der ersten Nutzung: Das Randmodell rechnete in AppKit-Koordinaten, waehrend `CGEvent.location` und die AX-Rahmen Quartz-Koordinaten mit y nach unten liefern. Oberer und unterer Rand waren dadurch vertauscht, `Fill` haette am Dock-Rand ausgeloest.
-- Noch offen: das Overlay fuer den Zielrahmen und das Besitzmodell fuer `NSWindowShouldDragOnGesture`, das `Command+Control` voraussetzt. Der Modifier bleibt bis dahin aus der Auswahl.
+- Umgesetzt: Overlay fuer den Zielrahmen als nicht aktivierendes `NSPanel` mit `NSVisualEffectView`, das Mausereignisse ignoriert, nicht im Fensterwechsel erscheint und bei jedem Sitzungsende freigegeben wird. Reduce Transparency ersetzt die Vibrancy durch eine deckende Flaeche, Increase Contrast verstaerkt den Rahmen.
+- Noch offen: das Besitzmodell fuer `NSWindowShouldDragOnGesture`, das `Command+Control` voraussetzt. Der Modifier bleibt bis dahin aus der Auswahl.
+- Befund zur Verifikation, 2026-08-01: Innerhalb dieser Story traten drei Koordinatenfehler auf, die alle Unit-Tests passierten. Erstens rechnete das Randmodell in AppKit- statt Quartz-Koordinaten, wodurch oberer und unterer Rand vertauscht waren. Zweitens war der Flip im Overlay zu pruefen. Drittens wurde das Display ueber seinen sichtbaren statt seinen vollen Rahmen gesucht, wodurch der Cursor im Menueleistenstreifen kein Display mehr traf und genau die Fill-Zone tot blieb. Alle drei fand die manuelle Pruefung am Geraet, keiner davon ein Test: die reine Logik war jeweils in sich stimmig, nur ihre Annahme ueber die Aussenwelt war falsch. Fuer Move und Resize ist Unit-Testabdeckung deshalb keine ausreichende Qualitaetsaussage; die App-Klassen- und Display-Matrizen bleiben das entscheidende Gate.
 
 Modifier-Regeln:
 

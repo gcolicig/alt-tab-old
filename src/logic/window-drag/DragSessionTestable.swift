@@ -150,6 +150,20 @@ enum DragScreenNeighbours {
     }
 }
 
+/// A screen contributes two rects: the full frame decides which screen the cursor is on, the visible frame
+/// decides where a window may go. Looking the screen up by its visible frame instead loses the cursor as
+/// soon as it moves over the menubar, which is exactly where the fill edge lives.
+struct DragScreenGeometry: Equatable {
+    let full: CGRect
+    let visible: CGRect
+}
+
+enum DragScreenLookup {
+    static func visibleFrame(containing point: CGPoint, screens: [DragScreenGeometry]) -> CGRect? {
+        screens.first { $0.full.contains(point) }?.visible
+    }
+}
+
 enum DragModifierPreference: String, CaseIterable {
     case disabled
     case commandShift

@@ -83,7 +83,8 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 ## Phase 3B: Move und Modifier-Snapping
 
-- Teilweise umgesetzt: Drag-Sitzung, Randmodell und Zielrahmen liegen als getestete reine Logik vor. Event-Tap, Overlay, Settings und das Besitzmodell fuer `NSWindowShouldDragOnGesture` fehlen; das Modul ist noch nicht aktivierbar.
+- Umgesetzt: Drag-Sitzung, Event-Tap mit Not-Aus und Circuit Breaker, Snapping auf `Left half`, `Right half` und `Fill` sowie das Zielrahmen-Overlay. Am Zielgeraet bedient und bestaetigt.
+- Offen: `Command+Control` samt Besitzmodell fuer `NSWindowShouldDragOnGesture`, sowie die App-Klassen- und Display-Matrizen.
 - Modifier-Move und Snapping bilden eine gemeinsame Drag-Sitzung und bestimmen das Fenster genau einmal.
 - Der eigene Modifier-Drag bietet `Left half`, `Right half` und `Fill`; normale Titelbalken-Drags und native Tahoe-Snap-Zonen bleiben unberuehrt.
 - `Command+Control` ist explizit waehlbar, konfliktbehaftet und nie Default. Vor Aktivierung muss `NSWindowShouldDragOnGesture` verifiziert auf `false` stehen; AltTab+ verwaltet den globalen Vorwert konfliktfrei.

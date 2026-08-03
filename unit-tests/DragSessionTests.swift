@@ -123,6 +123,23 @@ final class DragSessionTests: XCTestCase {
         XCTAssertNil(DragSnapPolicy.frame(.leftHalf, in: empty))
     }
 
+    /// The menubar strip belongs to the screen but not to its visible frame, and the fill edge sits exactly
+    /// there. Looking the screen up by visible frame lost the cursor at the top of the screen.
+    func testTheScreenIsFoundByItsFullFrameSoTheMenubarStripStillCounts() {
+        let screen = DragScreenGeometry(full: CGRect(x: 0, y: 0, width: 1512, height: 982),
+                                        visible: CGRect(x: 0, y: 33, width: 1512, height: 949))
+        XCTAssertEqual(DragScreenLookup.visibleFrame(containing: CGPoint(x: 700, y: 5), screens: [screen]), screen.visible)
+        XCTAssertEqual(DragScreenLookup.visibleFrame(containing: CGPoint(x: 700, y: 500), screens: [screen]), screen.visible)
+        XCTAssertNil(DragScreenLookup.visibleFrame(containing: CGPoint(x: 700, y: 2000), screens: [screen]))
+    }
+
+    func testACursorInTheMenubarStripStillReportsTheFillEdge() {
+        let visible = CGRect(x: 0, y: 33, width: 1512, height: 949)
+        XCTAssertEqual(DragSnapPolicy.edge(CGPoint(x: 700, y: 5), visible), .fill)
+        XCTAssertEqual(DragSnapPolicy.edge(CGPoint(x: 700, y: 34), visible), .fill)
+        XCTAssertEqual(DragSnapPolicy.edge(CGPoint(x: 700, y: 300), visible), .none)
+    }
+
     func testTheModifierMatchesOnlyItsExactCombination() {
         XCTAssertTrue(DragModifierPreference.commandShift.matches([.command, .shift]))
         XCTAssertFalse(DragModifierPreference.commandShift.matches([.command]))
