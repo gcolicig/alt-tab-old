@@ -4,6 +4,7 @@ import Foundation
 class Logger {
     private static let logger = SwiftyBeaver.self
     static let flag = "--logs="
+    static let fileFlag = "--logs-file="
     static let longDateTimeFormat = "yyyy-MM-dd HH:mm:ss.SSS"
     static let shortDateTimeFormat = "HH:mm:ss.SSS"
 
@@ -14,6 +15,20 @@ class Logger {
         console.format = "$C$D\(shortDateTimeFormat)$d $L$c $N.swift:$l $F $M"
         console.minLevel = decideLevel()
         logger.addDestination(console)
+        addFileDestinationIfRequested()
+    }
+
+    /// A GUI app launched through LaunchServices has no usable stdout, and launching its binary from a
+    /// terminal instead breaks TCC attribution: the permission is then credited to the terminal, and the
+    /// app reports missing accessibility. So diagnosis writes to a file, enabled by `--logs-file=<path>`.
+    private static func addFileDestinationIfRequested() {
+        guard let argument = CommandLine.arguments.first(where: { $0.starts(with: fileFlag) }) else { return }
+        let path = String(argument.dropFirst(fileFlag.count))
+        guard !path.isEmpty else { return }
+        let file = FileDestination(logFileURL: URL(fileURLWithPath: path))
+        configureDestination(file)
+        file.minLevel = decideLevel()
+        logger.addDestination(file)
     }
 
     static func configureDestination(_ dest: BaseDestination) {

@@ -163,7 +163,8 @@ enum WindowDragEvents {
 
     private static func applyFrame(_ frame: CGRect) {
         guard let window, let pid = windowPid else { return }
-        try? window.setFrame(frame)
+        // Chromium reflows and fights the write while its enhanced-interface flag is on
+        AxAppCompatibility.withEnhancedUserInterfaceSuspended(pid) { try? window.setFrame(frame) }
         let actual = try? window.attributes([kAXPositionAttribute, kAXSizeAttribute])
         let result = (actual?.position).flatMap { position in (actual?.size).map { CGRect(origin: position, size: $0) } }
         let bundleId = NSRunningApplication(processIdentifier: pid)?.bundleIdentifier ?? ""

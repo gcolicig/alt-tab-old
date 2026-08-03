@@ -37,6 +37,7 @@
 		C0DE1000000000000000002D /* DragSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000023 /* DragSessionTests.swift */; };
 		C0DE10000000000000000027 /* CursorWindowTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000001F /* CursorWindowTestable.swift */; };
 		C0DE10000000000000000028 /* CursorWindowTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000001F /* CursorWindowTestable.swift */; };
+		C0DE1000000000000000002F /* AxAppCompatibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000025 /* AxAppCompatibility.swift */; };
 		C0DE10000000000000000029 /* CursorWindowResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000020 /* CursorWindowResolver.swift */; };
 		C0DE1000000000000000002A /* CursorWindowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000021 /* CursorWindowTests.swift */; };
 		C0DE10000000000000000021 /* PointerOwnershipTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000001A /* PointerOwnershipTestable.swift */; };
@@ -384,6 +385,7 @@
 		C0DE20000000000000000022 /* DragSessionTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragSessionTestable.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000023 /* DragSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragSessionTests.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000001F /* CursorWindowTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorWindowTestable.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000025 /* AxAppCompatibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AxAppCompatibility.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000020 /* CursorWindowResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorWindowResolver.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000021 /* CursorWindowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorWindowTests.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000001A /* PointerOwnershipTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointerOwnershipTestable.swift; sourceTree = "<group>"; };
@@ -1772,6 +1774,7 @@
 			children = (
 				C0DE2000000000000000001F /* CursorWindowTestable.swift */,
 				C0DE20000000000000000020 /* CursorWindowResolver.swift */,
+				C0DE20000000000000000025 /* AxAppCompatibility.swift */,
 			);
 			path = "window-cursor";
 			sourceTree = "<group>";
@@ -2750,6 +2753,7 @@
 				C0DE1000000000000000002B /* DragSessionTestable.swift in Sources */,
 				C0DE1000000000000000002E /* WindowDragEvents.swift in Sources */,
 				C0DE10000000000000000029 /* CursorWindowResolver.swift in Sources */,
+				C0DE1000000000000000002F /* AxAppCompatibility.swift in Sources */,
 				C0DE10000000000000000024 /* PointerSystemSettings.swift in Sources */,
 				C0DE10000000000000000025 /* PointerOwnership.swift in Sources */,
 				C0DE10000000000000000026 /* PointerScrollTab.swift in Sources */,

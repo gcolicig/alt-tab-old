@@ -15,12 +15,34 @@ enum CursorWindowResolver {
     /// start. Runs off the event callback: this makes blocking AX calls.
     static func resolveElement(at position: CGPoint) -> (element: AXUIElement, pid: pid_t)? {
         var hit: AXUIElement?
-        guard AXUIElementCopyElementAtPosition(AXUIElementCreateSystemWide(), Float(position.x), Float(position.y), &hit) == .success,
-              let element = hit,
-              let window = ancestorWindow(element),
-              let pid = try? window.pid(),
-              isEligible(window) else { return nil }
+        guard AXUIElementCopyElementAtPosition(AXUIElementCreateSystemWide(), Float(position.x), Float(position.y), &hit) == .success, let element = hit else {
+            Logger.debug { "drag resolve: no element at position" }
+            return nil
+        }
+        guard let window = windowFor(element, at: position) else {
+            Logger.debug { "drag resolve: no AXWindow ancestor, hit role:\(describeRole(element))" }
+            return nil
+        }
+        guard let pid = try? window.pid() else {
+            Logger.debug { "drag resolve: window has no pid" }
+            return nil
+        }
+        guard isEligible(window) else {
+            Logger.debug { "drag resolve: window rejected by filters, pid:\(pid) \(describeEligibility(window))" }
+            return nil
+        }
         return (window, pid)
+    }
+
+    private static func describeRole(_ element: AXUIElement) -> String {
+        ((try? element.attributes([kAXRoleAttribute]))?.role) ?? "unknown"
+    }
+
+    private static func describeEligibility(_ window: AXUIElement) -> String {
+        let attributes = try? window.attributes([kAXRoleAttribute, kAXSubroleAttribute, kAXMinimizedAttribute, kAXFullscreenAttribute])
+        let positionSettable = (try? window.isAttributeSettable(kAXPositionAttribute)).map(String.init) ?? "error"
+        let sizeSettable = (try? window.isAttributeSettable(kAXSizeAttribute)).map(String.init) ?? "error"
+        return "role:\(attributes?.role ?? "nil") subrole:\(attributes?.subrole ?? "nil") minimized:\(String(describing: attributes?.isMinimized)) fullscreen:\(String(describing: attributes?.isFullscreen)) positionSettable:\(positionSettable) sizeSettable:\(sizeSettable)"
     }
 
     /// The exclusion filters from backlog section 1. A window that cannot be moved is left alone rather
@@ -54,6 +76,36 @@ enum CursorWindowResolver {
               let hit = element,
               let window = ancestorWindow(hit) else { return nil }
         return try? window.cgWindowId()
+    }
+
+    /// Electron hands back a detached subtree until `AXManualAccessibility` is on, so a failed walk is
+    /// retried once after enabling it. If the chain still does not reach a window, the application's own
+    /// window list decides — but only when exactly one of its windows contains the point.
+    private static func windowFor(_ element: AXUIElement, at position: CGPoint) -> AXUIElement? {
+        if let window = ancestorWindow(element) { return window }
+        guard let pid = try? element.pid() else { return nil }
+        if AxAppCompatibility.enableManualAccessibilityIfNeeded(pid) {
+            var retried: AXUIElement?
+            if AXUIElementCopyElementAtPosition(AXUIElementCreateSystemWide(), Float(position.x), Float(position.y), &retried) == .success,
+               let hit = retried, let window = ancestorWindow(hit) {
+                return window
+            }
+        }
+        return windowOfApplication(pid, containing: position)
+    }
+
+    private static func windowOfApplication(_ pid: pid_t, containing position: CGPoint) -> AXUIElement? {
+        guard let windows = try? AXUIElementCreateApplication(pid).attributes([kAXWindowsAttribute]).windows else { return nil }
+        let matches = windows.filter { window in
+            guard let attributes = try? window.attributes([kAXPositionAttribute, kAXSizeAttribute]),
+                  let origin = attributes.position, let size = attributes.size else { return false }
+            return CGRect(origin: origin, size: size).contains(position)
+        }
+        guard matches.count == 1 else {
+            Logger.debug { "drag resolve: application window fallback found \(matches.count) candidates, refusing" }
+            return nil
+        }
+        return matches[0]
     }
 
     private static func ancestorWindow(_ element: AXUIElement) -> AXUIElement? {
