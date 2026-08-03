@@ -32,6 +32,7 @@ class DebugProfile {
             ("Active CPU count", Sysctl.run("hw.activecpu", UInt.self).flatMap { (cpu: UInt) -> String in String(cpu) } ?? "nil"),
             ("Current CPU frequency", Sysctl.run("hw.cpufrequency", Int.self).map { (frequency: Int) -> String in String(format: "%.1f", Double(frequency) / Double(1_000_000_000)) + " Ghz" } ?? "nil"),
             ("Resource utilization", resourcesUtilization()),
+            ("Window drag AX deviations", windowDragDeviations()),
         ]
         return listLevel1(tuples)
     }
@@ -90,6 +91,16 @@ class DebugProfile {
             ("spaceIds", window.spaceIds.map(String.init).joined(separator: interSeparator)),
             ("spaceIndexes", window.spaceIndexes.map(String.init).joined(separator: interSeparator)),
         ])
+    }
+
+    /// Only the writes an app did not apply as proposed. A clamped or ignored frame is indistinguishable
+    /// from a bug in our own geometry without this.
+    private static func windowDragDeviations() -> String {
+        let deviations = WindowDragEvents.diagnosticDeviations()
+        guard !deviations.isEmpty else { return "none" }
+        return listLevel2(deviations.suffix(20)) { entry in
+            "\(entry.bundleId) wid:\(entry.windowId) proposed:\(entry.proposed) result:\(entry.result.map { "\($0)" } ?? "no answer")"
+        }
     }
 
     private static func resourcesUtilization() -> String {

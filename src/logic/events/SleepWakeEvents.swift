@@ -13,6 +13,9 @@ class SleepWakeEvents {
             Spaces.refresh()
             InstantSpaces.synchronize()
             Menubar.refreshSpaces()
+            // the backlog requires a re-apply after wake; it runs through the same ownership check as any
+            // write, so a value somebody else took over while asleep is left alone
+            PointerOwnership.reapplyAfterSystemEvent()
         }
     }
 

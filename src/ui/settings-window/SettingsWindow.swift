@@ -1188,6 +1188,7 @@ class SettingsWindow: NSWindow {
 
     private func refreshControlsFromSettings() {
         GeneralTab.refreshControlsFromPreferences()
+        PointerScrollTab.refreshControlsFromPreferences()
     }
 
     func beginSheetWithSearchHighlight(_ sheet: SheetWindow) {

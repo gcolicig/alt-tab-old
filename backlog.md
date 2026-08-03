@@ -491,6 +491,8 @@ Umsetzungsstand 2026-07-31:
 - Festgelegt und getestet: nur der Zustand `finishing` darf einen Rahmen schreiben. Eine abgebrochene Sitzung schreibt nie.
 - Umgesetzt: dauerhafter Maus-Event-Tap mit Arming-Marker, Circuit Breaker und Anbindung an den Not-Aus; Settings-Auswahl ohne Default; Snapping auf `Left half`, `Right half` und `Fill` innerhalb der eigenen Drag-Sitzung.
 - Korrigiert vor der ersten Nutzung: Das Randmodell rechnete in AppKit-Koordinaten, waehrend `CGEvent.location` und die AX-Rahmen Quartz-Koordinaten mit y nach unten liefern. Oberer und unterer Rand waren dadurch vertauscht, `Fill` haette am Dock-Rand ausgeloest.
+- Nachgezogen 2026-08-03: Der Q-07-Ringpuffer erscheint im Debug-Profil unter `Window drag AX deviations`, beschraenkt auf die letzten 20 Schreibvorgaenge, die eine App nicht wie vorgeschlagen uebernommen hat. Er wurde zuvor nur befuellt und nie gelesen.
+- Nachgezogen 2026-08-03: Der `AXManualAccessibility`-Cache wird bei App-Beendigung geleert. PIDs werden wiederverwendet, ein veralteter Eintrag haette eine frisch gestartete Electron-App als bereits umgestellt gelten lassen.
 - Umgesetzt: Overlay fuer den Zielrahmen als nicht aktivierendes `NSPanel` mit `NSVisualEffectView`, das Mausereignisse ignoriert, nicht im Fensterwechsel erscheint und bei jedem Sitzungsende freigegeben wird. Reduce Transparency ersetzt die Vibrancy durch eine deckende Flaeche, Increase Contrast verstaerkt den Rahmen.
 - Umgesetzt: `Command+Control` steht in der Auswahl und setzt Besitz ueber `NSWindowShouldDragOnGesture` voraus. Der Schalter wird ueber `CFPreferences` in `NSGlobalDomain` gelesen und geschrieben; laesst er sich nicht auf `false` setzen und zurueckverifizieren, wird der Modifier abgelehnt statt halb zu funktionieren, mit sichtbarem Hinweis. Jeder andere Modifier gibt den Schalter zurueck.
 - Das Besitzmodell ist dasselbe wie beim Pointer: es wurde als `SystemValueOwnership` generisch herausgezogen, weil zwei Kopien eines sicherheitskritischen Zustandsautomaten auseinanderdriften und der Schaden einer gedrifteten Kopie das Zerstoeren einer fremden Systemeinstellung ist. Die 19 Pointer-Tests liefen unveraendert durch die Refaktorierung und bewachen sie.
@@ -590,6 +592,8 @@ Umsetzungsstand 2026-07-31:
 - Geschwindigkeit wird als Rasterindex gespeichert, weil macOS selbst nur diskrete Stufen anbietet; der geschriebene Wert bleibt exakt.
 - Der Besitz-Zustandsautomat ist vollstaendig als reine Entscheidungslogik umgesetzt und mit 19 Tests abgedeckt: Erwerb, Read-back, Abbruch zwischen Write und Read-back, Fremdaenderung, `relinquished` ueber Neustart, Wiedererwerb mit neuer Baseline, Disable, Crash-Recovery in beide Richtungen.
 - Der Pfad, der das System tatsaechlich beschreibt, ist von keinem Test ausgefuehrt worden. V-10 ist damit die erste Ausfuehrung dieses Pfades; Checkliste in `docs/pointer-ownership-checklist.md`.
+- Nachgezogen 2026-08-03: Das Re-Apply nach Wake ist an `SleepWakeEvents` angebunden. Es war zuvor geschrieben, aber nirgends aufgerufen, und sah damit nach einer erfuellten Anforderung aus, ohne eine zu sein.
+- Nachgezogen 2026-08-03: Der Besitz-Text im Settings-Tab wird beim Oeffnen des Fensters aktualisiert. Zuvor wurde er einmal beim Aufbau ausgewertet und haette dauerhaft `Managed by AltTab+` behauptet, auch nachdem ein anderes Werkzeug den Wert uebernommen hat.
 
 Exit-Kriterium:
 

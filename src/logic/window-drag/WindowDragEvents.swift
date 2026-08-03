@@ -25,6 +25,15 @@ enum WindowDragEvents {
     private static var originMouse: CGPoint?
     private static var coalescer = AxWriteCoalescer()
     private static var diagnostics = AxDiagnosticsRing()
+    private static let diagnosticsLock = NSLock()
+
+    /// Q-07 exists so an app-compatibility report can say what a window actually did with a frame. A ring
+    /// nobody can read does not do that, so the debug profile carries the writes an app did not honor.
+    static func diagnosticDeviations() -> [AxDiagnosticEntry] {
+        diagnosticsLock.lock()
+        defer { diagnosticsLock.unlock() }
+        return diagnostics.deviations
+    }
     private static var snapTarget = DragSnapTarget.none
     private static var snapFrame: CGRect?
     /// When the cursor first reached the current edge, so a shared edge can require dwell.
@@ -303,8 +312,10 @@ enum WindowDragEvents {
             let actual = try? window.attributes([kAXPositionAttribute, kAXSizeAttribute])
             result = (actual?.position).flatMap { position in (actual?.size).map { CGRect(origin: position, size: $0) } }
         }
+        diagnosticsLock.lock()
         diagnostics.record(AxDiagnosticEntry(windowId: windowId, bundleId: windowBundleId,
                                              displayIndex: 0, proposed: frame, result: result))
+        diagnosticsLock.unlock()
     }
 
     private static var state: DragSessionState {
