@@ -42,9 +42,27 @@ class GeneralTab {
         exportButton.onAction = { _ in exportSettings() }
         let importButton = NSButton(title: NSLocalizedString("Import settings…", comment: ""), target: nil, action: nil)
         importButton.onAction = { _ in importSettings() }
-        let tools = StackView([exportButton, importButton], .horizontal)
+        let creatorButton = NSButton(title: NSLocalizedString("Creator's settings…", comment: ""), target: nil, action: nil)
+        creatorButton.onAction = { _ in applyCreatorSettings() }
+        let tools = StackView([creatorButton, exportButton, importButton], .horizontal)
         let view = TableGroupSetView(originalViews: [table, tools], bottomPadding: 0)
         return view
+    }
+
+    /// Overwrites shortcut assignments and appearance, so it asks first. Input modules are named as
+    /// excluded rather than silently missing: somebody who reads that the author uses the modifier move
+    /// should be able to find out why it did not appear.
+    private static func applyCreatorSettings() {
+        let alert = NSAlert()
+        alert.messageText = NSLocalizedString("Apply the creator's settings?", comment: "")
+        alert.informativeText = CreatorSettings.summary + "\n\n"
+            + NSLocalizedString("This replaces your current appearance and shortcut assignments. Input extensions such as moving windows by modifier stay off; switch them on yourself if you want them.", comment: "")
+        alert.addButton(withTitle: NSLocalizedString("Apply", comment: ""))
+        alert.addButton(withTitle: NSLocalizedString("Cancel", comment: ""))
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        CreatorSettings.apply()
+        refreshControlsFromPreferences()
+        App.restart()
     }
 
     static func refreshControlsFromPreferences() {
