@@ -405,7 +405,7 @@ extension App: NSApplicationDelegate {
         // before anything re-applies a pointer value: a record still marked managed means the last session
         // did not shut down cleanly, and recovery has to run against the untouched system value
         PointerOwnership.recoverAfterUncleanExit()
-        WindowDragGestureOwnership.recoverAfterUncleanExit()
+        WindowDragEvents.recoverAtLaunch()
         WindowDragEvents.modifierPreferenceChanged()
         BackgroundWork.preStart()
         SystemPermissions.ensurePermissionsAreGranted()

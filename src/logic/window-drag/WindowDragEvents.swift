@@ -79,6 +79,17 @@ enum WindowDragEvents {
         return true
     }
 
+    /// Startup path. A leftover ownership record means the previous session did not shut down cleanly, so
+    /// the switch is handed back and the module stays off until the user picks a modifier again.
+    static func recoverAtLaunch() {
+        guard WindowDragGestureOwnership.recoverAfterUncleanExit() else { return }
+        Preferences.set("windowDragModifier", disabledModifierIndex, false)
+        Logger.info { "Window drag was left armed by an unclean exit; the system drag-on-gesture setting was handed back and the module starts off" }
+        DispatchQueue.main.async {
+            TransientNotice.show(NSLocalizedString("AltTab+ did not quit cleanly. The system setting for dragging windows by gesture was restored and moving windows is off.", comment: ""))
+        }
+    }
+
     static func disableForSafety() {
         Preferences.set("windowDragModifier", disabledModifierIndex, false)
         Preferences.set("windowDragArmingMarker", "false", false)
@@ -149,6 +160,12 @@ enum WindowDragEvents {
     }
 
     private static func handleMouseDown(_ cgEvent: CGEvent) -> Unmanaged<CGEvent>? {
+        // The mouse down carries its own modifier flags, so arming does not depend on the flagsChanged
+        // event arriving first. Pressing both at once used to race: the session was still idle, the click
+        // went through untouched, and macOS ran its own title-bar drag and snapping instead.
+        if state != .armed, Preferences.windowDragModifier.matches(NSEvent.ModifierFlags(rawValue: UInt(cgEvent.flags.rawValue))) {
+            advance(.modifierEngaged)
+        }
         guard state == .armed else { return Unmanaged.passUnretained(cgEvent) }
         advance(.mouseDown)
         let location = cgEvent.location

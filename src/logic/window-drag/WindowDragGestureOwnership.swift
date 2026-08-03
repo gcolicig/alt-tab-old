@@ -72,17 +72,24 @@ enum WindowDragGestureOwnership {
 
     /// Runs at startup before the module may arm, so an unclean exit cannot leave the user's system switch
     /// silently turned off.
-    static func recoverAfterUncleanExit() {
+    ///
+    /// Returns true when a record from a previous session had to be dealt with. The caller must then leave
+    /// the module switched off: restoring the value and immediately taking it again in the same launch
+    /// would undo the restore, which is exactly what happened before this returned anything.
+    @discardableResult
+    static func recoverAfterUncleanExit() -> Bool {
         let stored = record()
-        guard stored.state == .managed || stored.pendingWrite != nil else { return }
-        guard let current = read() ?? Optional(false) else { return }
+        guard stored.state == .managed || stored.pendingWrite != nil else { return false }
+        guard let current = read() ?? Optional(false) else { return false }
         switch Ownership.recover(stored, current: current) {
-            case .nothingToDo: return
-            case .relinquishWithoutRestore: persist(Ownership.afterRestore(stored, succeeded: false))
+            case .nothingToDo: return false
+            case .relinquishWithoutRestore:
+                persist(Ownership.afterRestore(stored, succeeded: false))
             case .restore(let baseline):
                 let readBack = write(baseline)
                 persist(Ownership.afterRestore(stored, succeeded: Ownership.equal(readBack, baseline)))
         }
+        return true
     }
 
     private static func persist(_ record: SystemValueOwnershipRecord<Bool>) {
