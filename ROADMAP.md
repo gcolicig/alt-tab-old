@@ -64,7 +64,7 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 - Umgesetzt: gruppierte Display-Reihen gemaess `Displays haben separate Spaces` (macOS liefert bei deaktivierter Option ohnehin eine gemeinsame Gruppe) und Ueberlauf-Menue ab dem neunten Space pro Display.
 - Klicks auf eine Nicht-Cursor-Display-Gruppe werden bei einer einzigen, nicht gespiegelten Menueleiste ignoriert statt das falsche Display zu schalten: Instant Spaces postet synthetische Trackpad-Gesten ohne Zieldisplay-Feld und kann nur das Display unter dem Cursor schalten. Bei gespiegelter Menueleiste (macOS-Einstellung) trifft der Klick immer das richtige Display, da der Cursor beim Klick bereits dort sitzt.
 - Beobachtung aus der manuellen Abnahme: Zum Aufzeichnen eines Space-Shortcuts musste Hyperkey einmal aus- und wieder eingeschaltet werden. Der Befund ist dokumentiert; es wurde bewusst keine Aenderung vorgenommen.
-- Stabile Managed-Space-Identitaet getrennt verifizieren; optionale Aliase erst danach persistieren.
+- Umgesetzt: Stabile Managed-Space-Identitaet ist verifiziert (S-08, 2026-08-03). UUIDs ueberleben Neustart, Reorder, Create und Delete; `id64` wechselt dabei. Aliase duerfen auf der UUID aufbauen, ein Space ohne UUID bleibt unbenennbar und wird sichtbar so markiert.
 
 ## Paralleler Umfang: Shortcut Clues
 

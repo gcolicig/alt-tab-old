@@ -401,7 +401,8 @@ Mehrere Displays:
 Optionale Namen:
 
 - Space-Aliase sind AltTab+-Metadaten; macOS selbst erhaelt dadurch keine benannten Spaces.
-- Aliase werden nur persistiert, wenn eine auf Tahoe verifizierte stabile Managed-Space-UUID verfuegbar ist.
+- Aliase werden nur persistiert, wenn eine auf Tahoe verifizierte stabile Managed-Space-UUID verfuegbar ist. Der Nachweis liegt seit 2026-08-03 vor (S-08).
+- Ein Space ohne UUID ist moeglich: am 2026-07-31 trug der damalige Login-Space (`id64` 1) keine, und ein Reorder belegte, dass die Luecke an diesem einen Space hing und nicht an der Position 1. Nach dem Neustart war er verschwunden und alle Spaces trugen wieder eine UUID. Die Umsetzung muss den Fall trotzdem tragen: kein Alias fuer diesen Space, sichtbar als ungeklaert markiert, und niemals ein stiller Rueckfall auf `id64` oder die Nummer.
 - Reine numerische Indizes oder sitzungsgebundene CGS-Space-IDs duerfen nach Reorder, Neustart, Hinzufuegen oder Loeschen nicht still einem alten Namen zugeordnet werden. Bei unsicherer Identitaet auf Nummern degradieren und die Zuordnung sichtbar als ungeklaert markieren.
 
 Repo-Learnings:
@@ -778,6 +779,8 @@ App-Klassen-Matrix:
 - Qt.
 - Terminal mit Zeichenraster-Clamping.
 
+Befund 2026-08-03 zu Electron im Switcher: Kurz nach einem Systemstart zeigte Claude (`com.anthropic.claudefordesktop`) zwei Eintraege. Das zweite Fenster war 800x600, ohne Titel, nicht auf dem Bildschirm, trug aber Rolle `AXWindow` und Subrolle `AXStandardWindow` und passierte damit jede generische Pruefung. Weder Sichtbarkeit noch Space-Zugehoerigkeit taugen zur Unterscheidung: `CGSCopySpacesForWindows` meldete fuer dieses Fenster den aktuellen Space, und ein legitim minimiertes Fenster einer anderen App ist genauso wenig auf dem Bildschirm. Einziges belastbares Unterscheidungsmerkmal war der leere Titel. Rund 17 Minuten spaeter war das Fenster von selbst verschwunden, der Fall ist seither nicht reproduzierbar und vermutlich auf die Startphase der App beschraenkt. Vor einer Regel im Discriminator ist ein reproduzierbarer Fall abzuwarten.
+
 Testmittel:
 
 - Kleine native Test-App mit normalen, nicht skalierbaren, groessenbegrenzten, modalen und mehreren Fenstern in definierten Ausgangsrects.
@@ -820,7 +823,7 @@ Energiepruefung:
 | S-06 | Instant Spaces | Links/rechts und direkter Index wechseln auf verifiziertem Tahoe ohne sichtbare Animation; Display-Ziel, Randblockierung und Ist-Zustand konvergieren bei schnellen Folgen; fehlende Symbole oder unbekannte Version deaktivieren nur das Modul |
 | S-07 | Spaces-Menueleiste | Space-Anzahl und aktiver Zustand konvergieren ereignisbasiert ohne Polling; Klick aktiviert den erwarteten Space; Ueberlauf, Separate-Spaces-Modi und deaktiviertes Instant Spaces degradieren bedienbar |
 | S-09 | HID-Remapping unterhalb des Event-Taps | `hidutil UserKeyMapping` laesst sich auf Tahoe aus dem Agent-Prozess setzen und nach Keyboard-Hotplug erneuern, ohne Root und ohne LaunchAgent; die Zuordnung wirkt nachweislich auch bei aktivem Secure Input; Entzug und Absturz hinterlassen keine dauerhafte Umbelegung |
-| S-08 | Stabile Space-Identitaet | Managed-Space-UUID bleibt auf Tahoe ueber Neustart, Reorder sowie Hinzufuegen/Loeschen eindeutig genug fuer Aliase; andernfalls bleiben persistente Namen und Profile-Bindings deaktiviert |
+| S-08 | Stabile Space-Identitaet | **Bestanden 2026-08-03** auf macOS 26.5.1 (Build 25F80). Drei Spaces ueberlebten einen Neustart mit unveraenderter UUID, waehrend zwei ihre `id64` wechselten (31→7, 33→6). Reorder, Create, Delete, Fullscreen und natives Wechseln liessen die UUIDs ebenfalls unveraendert. Aliase und Profil-Bindings duerfen auf die UUID zeigen, niemals auf `id64` oder den Index. Nicht geprueft: Umschalten von `Displays haben separate Spaces` und Display-Wechsel, beides mangels zweitem Display |
 
 ## Umsetzungsreihenfolge
 
@@ -829,7 +832,7 @@ Energiepruefung:
 3. Minimalen gemeinsamen Aktionskern gemaess Q-01 aufbauen: Die erste Ausbaustufe fuer Window Layouts, Restore und globale Shortcuts ist umgesetzt; Display-, Space-, App-, URL- und Menueleisten-Verbraucher folgen. Keine beliebigen Makros oder Shell-Kommandos.
 4. Instant-Spaces-Kern ist als tap-freie Private-Event-Reimplementierung ueber das Aktionsregister umgesetzt; S-06/V-12 bleiben als manuelle Tahoe-Pruefung offen, Swipe-Override bleibt Folgeumfang.
 5. Teilweise abgeschlossen: Spaces-Menueleiste mit Nummern, monochrom aktivem Zustand, Klick und Shortcut-Fallback ist umgesetzt. S-07 bleibt fuer Mehrdisplay, Ueberlauf, Create/Delete/Reorder, VoiceOver und Degradation offen.
-6. Stabile Space-Identitaet S-08 pruefen; Aliase und persistente Profil-Bindings erst nach bestandenem Spike aktivieren.
+6. Abgeschlossen: Stabile Space-Identitaet S-08 ist am 2026-08-03 bestanden. Aliase und persistente Profil-Bindings duerfen auf der Managed-Space-UUID aufbauen.
 7. Cursor-basierten AX-Fensterkern und AX-Latenz-Spikes S-01/S-02 fuer kontinuierliche Operationen abschliessen.
 8. Move samt gemeinsamer Modifier-Drag-Sitzung und den exklusiven Zielen `Left half`, `Right half` und `Fill` umsetzen; sichere Input-Laufzeit gemaess Q-04 und Q-11 bis Q-16 fuer diesen Pfad erweitern.
 9. Resize auf derselben Cursor-Erkennung, AX-Queue und Input-Sicherung aufbauen; jeweils ohne Default-Trigger.
