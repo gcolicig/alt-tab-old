@@ -160,11 +160,13 @@ final class DragSessionTests: XCTestCase {
         XCTAssertNil(DragModifierPreference.disabled.requiredFlags)
     }
 
-    /// Command+Control stays out of the picker until ownership of NSWindowShouldDragOnGesture exists.
-    func testThePickerOffersOnlyTheModifiersThatCanBeArmedToday() {
-        XCTAssertEqual(DragModifierPreference.selectable, [.disabled, .commandShift, .fn])
-        XCTAssertFalse(DragModifierPreference.selectable.contains(.commandControl))
+    /// Order matters beyond looks: the preference stores an index into this list, so appending is the only
+    /// safe way to add a modifier without repointing everybody's stored choice.
+    func testThePickerStartsDisabledAndOnlyGrowsAtTheEnd() {
+        XCTAssertEqual(DragModifierPreference.selectable, [.disabled, .commandShift, .fn, .commandControl])
         XCTAssertEqual(DragModifierPreference.selectable.first, .disabled)
+        XCTAssertEqual(DragModifierPreference.selectable.firstIndex(of: .commandShift), 1)
+        XCTAssertEqual(DragModifierPreference.selectable.firstIndex(of: .fn), 2)
     }
 
     func testTheModuleIsOffByDefaultAndOnlyCommandControlNeedsTheGlobalSetting() {

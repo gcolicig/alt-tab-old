@@ -50,13 +50,36 @@ enum WindowDragEvents {
             }
             return
         }
+        guard acquireGestureOwnershipIfNeeded(announceSuppression) else {
+            Preferences.set("windowDragModifier", disabledModifierIndex, false)
+            stop()
+            return
+        }
         start()
+    }
+
+    /// `Command+Control` needs the global drag-on-gesture switch off, otherwise macOS drags background
+    /// windows on the same mouse down. If that cannot be achieved and verified, the modifier is refused
+    /// outright rather than left half-working; every other modifier hands the switch back.
+    private static func acquireGestureOwnershipIfNeeded(_ announce: Bool) -> Bool {
+        guard Preferences.windowDragModifier.requiresWindowDragOnGestureDisabled else {
+            WindowDragGestureOwnership.release()
+            return true
+        }
+        guard WindowDragGestureOwnership.acquire() else {
+            if announce {
+                TransientNotice.show(NSLocalizedString("Command+Control needs the system setting for dragging windows by gesture to be off, and it could not be changed. Pick another modifier.", comment: ""))
+            }
+            return false
+        }
+        return true
     }
 
     static func disableForSafety() {
         Preferences.set("windowDragModifier", disabledModifierIndex, false)
         Preferences.set("windowDragArmingMarker", "false", false)
         stop()
+        WindowDragGestureOwnership.release()
     }
 
     private static func start() {

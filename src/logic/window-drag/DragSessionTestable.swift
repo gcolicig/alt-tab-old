@@ -170,10 +170,9 @@ enum DragModifierPreference: String, CaseIterable {
     case fn
     case commandControl
 
-    /// What the settings picker offers today. `commandControl` is deliberately absent: it needs ownership
-    /// of the global `NSWindowShouldDragOnGesture` value first. Appending to this list later keeps the
-    /// stored indexes of the existing entries stable.
-    static let selectable: [DragModifierPreference] = [.disabled, .commandShift, .fn]
+    /// What the settings picker offers. `commandControl` is last because appending keeps the stored
+    /// indexes of the existing entries stable across versions.
+    static let selectable: [DragModifierPreference] = [.disabled, .commandShift, .fn, .commandControl]
 
     /// `Command+Control` consumes the primary mouse down, which macOS otherwise delivers as a secondary
     /// click, and it only works once the global drag-on-gesture setting is off.

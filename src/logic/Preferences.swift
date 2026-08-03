@@ -76,6 +76,7 @@ class Preferences {
             "pointerOwnershipTrackpad": "",
             "windowDragModifier": "0",
             "windowDragArmingMarker": "false",
+            "windowDragGestureOwnership": "",
         ]
         (0..<maxShortcutCount).forEach { index in
             // Shortcut 1 mirrors Command-Tab, Shortcut 2 the native Command plus key above Tab

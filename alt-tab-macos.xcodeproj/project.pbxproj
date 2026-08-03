@@ -33,6 +33,7 @@
 		C0DE10000000000000000026 /* PointerScrollTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000001E /* PointerScrollTab.swift */; };
 		C0DE10000000000000000031 /* CreatorSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000027 /* CreatorSettings.swift */; };
 		C0DE10000000000000000030 /* DragSnapOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000026 /* DragSnapOverlay.swift */; };
+		C0DE10000000000000000034 /* WindowDragGestureOwnership.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000029 /* WindowDragGestureOwnership.swift */; };
 		C0DE1000000000000000002E /* WindowDragEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000024 /* WindowDragEvents.swift */; };
 		C0DE1000000000000000002B /* DragSessionTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000022 /* DragSessionTestable.swift */; };
 		C0DE1000000000000000002C /* DragSessionTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000022 /* DragSessionTestable.swift */; };
@@ -42,8 +43,11 @@
 		C0DE1000000000000000002F /* AxAppCompatibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000025 /* AxAppCompatibility.swift */; };
 		C0DE10000000000000000029 /* CursorWindowResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000020 /* CursorWindowResolver.swift */; };
 		C0DE1000000000000000002A /* CursorWindowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000021 /* CursorWindowTests.swift */; };
+		C0DE10000000000000000032 /* SystemValueOwnership.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000028 /* SystemValueOwnership.swift */; };
+		C0DE10000000000000000033 /* SystemValueOwnership.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000028 /* SystemValueOwnership.swift */; };
 		C0DE10000000000000000021 /* PointerOwnershipTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000001A /* PointerOwnershipTestable.swift */; };
 		C0DE10000000000000000022 /* PointerOwnershipTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000001A /* PointerOwnershipTestable.swift */; };
+		C0DE10000000000000000035 /* SystemValueOwnershipTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000002A /* SystemValueOwnershipTests.swift */; };
 		C0DE10000000000000000023 /* PointerOwnershipTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000001B /* PointerOwnershipTests.swift */; };
 		C0DE1000000000000000000A /* InstantSpaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000008 /* InstantSpaces.swift */; };
 		C0DE1000000000000000000B /* InstantSpacesPrivateApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000009 /* InstantSpacesPrivateApi.swift */; };
@@ -385,6 +389,7 @@
 		C0DE2000000000000000001E /* PointerScrollTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointerScrollTab.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000027 /* CreatorSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorSettings.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000026 /* DragSnapOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragSnapOverlay.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000029 /* WindowDragGestureOwnership.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowDragGestureOwnership.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000024 /* WindowDragEvents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowDragEvents.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000022 /* DragSessionTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragSessionTestable.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000023 /* DragSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragSessionTests.swift; sourceTree = "<group>"; };
@@ -392,7 +397,9 @@
 		C0DE20000000000000000025 /* AxAppCompatibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AxAppCompatibility.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000020 /* CursorWindowResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorWindowResolver.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000021 /* CursorWindowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorWindowTests.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000028 /* SystemValueOwnership.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemValueOwnership.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000001A /* PointerOwnershipTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointerOwnershipTestable.swift; sourceTree = "<group>"; };
+		C0DE2000000000000000002A /* SystemValueOwnershipTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemValueOwnershipTests.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000001B /* PointerOwnershipTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointerOwnershipTests.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000008 /* InstantSpaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpaces.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000009 /* InstantSpacesPrivateApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantSpacesPrivateApi.swift; sourceTree = "<group>"; };
@@ -1258,6 +1265,7 @@
 			isa = PBXGroup;
 			children = (
 				C0DE2000000000000000001B /* PointerOwnershipTests.swift */,
+				C0DE2000000000000000002A /* SystemValueOwnershipTests.swift */,
 				C0DE20000000000000000021 /* CursorWindowTests.swift */,
 				C0DE20000000000000000023 /* DragSessionTests.swift */,
 				C0DE2000000000000000000A /* InstantSpacesTests.swift */,
@@ -1518,6 +1526,7 @@
 				C0DE30000000000000000001 /* window-layouts */,
 				C0DE2000000000000000000F /* NativeSystemShortcuts.swift */,
 				C0DE20000000000000000011 /* ShortcutPresets.swift */,
+				C0DE20000000000000000028 /* SystemValueOwnership.swift */,
 				C0DE20000000000000000027 /* CreatorSettings.swift */,
 				5FBB24D22F389A0400BF7E14 /* Benchmark.swift */,
 				5F17452D2F1A907800128EF8 /* WindowDiscriminator.swift */,
@@ -1771,6 +1780,7 @@
 			children = (
 				C0DE20000000000000000022 /* DragSessionTestable.swift */,
 				C0DE20000000000000000024 /* WindowDragEvents.swift */,
+				C0DE20000000000000000029 /* WindowDragGestureOwnership.swift */,
 			);
 			path = "window-drag";
 			sourceTree = "<group>";
@@ -2715,7 +2725,9 @@
 				C0DE1000000000000000000C /* InstantSpacesTestable.swift in Sources */,
 				C0DE1000000000000000000D /* InstantSpacesTests.swift in Sources */,
 				C0DE10000000000000000022 /* PointerOwnershipTestable.swift in Sources */,
+				C0DE10000000000000000033 /* SystemValueOwnership.swift in Sources */,
 				C0DE10000000000000000023 /* PointerOwnershipTests.swift in Sources */,
+				C0DE10000000000000000035 /* SystemValueOwnershipTests.swift in Sources */,
 				C0DE10000000000000000028 /* CursorWindowTestable.swift in Sources */,
 				C0DE1000000000000000002C /* DragSessionTestable.swift in Sources */,
 				C0DE1000000000000000002D /* DragSessionTests.swift in Sources */,
@@ -2755,9 +2767,11 @@
 				C0DE1000000000000000001E /* ActionTargetsTestable.swift in Sources */,
 				C0DE10000000000000000009 /* InstantSpacesTestable.swift in Sources */,
 				C0DE10000000000000000021 /* PointerOwnershipTestable.swift in Sources */,
+				C0DE10000000000000000032 /* SystemValueOwnership.swift in Sources */,
 				C0DE10000000000000000027 /* CursorWindowTestable.swift in Sources */,
 				C0DE1000000000000000002B /* DragSessionTestable.swift in Sources */,
 				C0DE1000000000000000002E /* WindowDragEvents.swift in Sources */,
+				C0DE10000000000000000034 /* WindowDragGestureOwnership.swift in Sources */,
 				C0DE10000000000000000030 /* DragSnapOverlay.swift in Sources */,
 				C0DE10000000000000000031 /* CreatorSettings.swift in Sources */,
 				C0DE10000000000000000029 /* CursorWindowResolver.swift in Sources */,
