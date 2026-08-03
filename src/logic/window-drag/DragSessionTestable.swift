@@ -71,6 +71,9 @@ enum DragSnapTarget: Equatable {
     case fill
 }
 
+/// Coordinates here are Quartz, matching `CGEvent.location` and the AX position attribute: the origin is
+/// the top-left of the primary display and y grows downward. So the top edge of a screen is `minY`, not
+/// `maxY` — getting this backwards silently swaps the fill zone with the deliberately inert bottom edge.
 struct DragSnapContext: Equatable {
     let cursor: CGPoint
     let visibleFrame: CGRect
@@ -93,21 +96,29 @@ enum DragSnapPolicy {
     static let edgeTolerance = CGFloat(3)
     static let sharedEdgeDwell = 0.2
 
-    static func target(_ context: DragSnapContext) -> DragSnapTarget {
-        let frame = context.visibleFrame
-        guard frame.width > 0, frame.height > 0 else { return .none }
-        // the bottom edge collides with Dock auto-hide and magnification, so it carries no zone at all
-        if context.cursor.y >= frame.maxY - edgeTolerance { return .fill }
-        if context.cursor.x <= frame.minX + edgeTolerance {
-            return edgeIsAvailable(shared: context.hasNeighbourLeft, dwell: context.dwellElapsed) ? .leftHalf : .none
-        }
-        if context.cursor.x >= frame.maxX - edgeTolerance {
-            return edgeIsAvailable(shared: context.hasNeighbourRight, dwell: context.dwellElapsed) ? .rightHalf : .none
-        }
+    /// Which edge the cursor is on, ignoring whether that edge is currently usable. Separated from
+    /// `target` so the caller can track how long the cursor has been on one edge without asking the same
+    /// question twice with a fake dwell.
+    static func edge(_ cursor: CGPoint, _ visibleFrame: CGRect) -> DragSnapTarget {
+        guard visibleFrame.width > 0, visibleFrame.height > 0 else { return .none }
+        // the bottom edge (maxY in Quartz) collides with Dock auto-hide and magnification, so it carries
+        // no zone at all; only the top edge fills
+        if cursor.y <= visibleFrame.minY + edgeTolerance { return .fill }
+        if cursor.x <= visibleFrame.minX + edgeTolerance { return .leftHalf }
+        if cursor.x >= visibleFrame.maxX - edgeTolerance { return .rightHalf }
         return .none
     }
 
-    private static func edgeIsAvailable(shared: Bool, dwell: Double) -> Bool {
+    static func target(_ context: DragSnapContext) -> DragSnapTarget {
+        let edge = edge(context.cursor, context.visibleFrame)
+        switch edge {
+            case .none, .fill: return edge
+            case .leftHalf: return isAvailable(shared: context.hasNeighbourLeft, dwell: context.dwellElapsed) ? edge : .none
+            case .rightHalf: return isAvailable(shared: context.hasNeighbourRight, dwell: context.dwellElapsed) ? edge : .none
+        }
+    }
+
+    private static func isAvailable(shared: Bool, dwell: Double) -> Bool {
         shared ? dwell >= sharedEdgeDwell : true
     }
 
@@ -126,6 +137,19 @@ enum DragSnapPolicy {
 
 /// No default: every candidate collides with something, so the user picks one knowingly or the module
 /// stays off. The assessment behind each case is in the backlog's modifier table.
+enum DragScreenNeighbours {
+    /// An edge shared with another display is an ordinary cursor route onto that display, so it must not
+    /// snap on distance alone. Adjacency needs the edges to touch and the vertical ranges to overlap:
+    /// displays stacked diagonally do not share a usable edge.
+    static func hasNeighbour(left: Bool, of frame: CGRect, among frames: [CGRect], tolerance: CGFloat = 2) -> Bool {
+        frames.contains { other in
+            guard other != frame else { return false }
+            let touches = left ? abs(other.maxX - frame.minX) <= tolerance : abs(other.minX - frame.maxX) <= tolerance
+            return touches && other.minY < frame.maxY && other.maxY > frame.minY
+        }
+    }
+}
+
 enum DragModifierPreference: String, CaseIterable {
     case disabled
     case commandShift

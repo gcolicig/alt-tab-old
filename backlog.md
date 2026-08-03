@@ -488,7 +488,9 @@ Umsetzungsstand 2026-07-31:
 - Umgesetzt als reine Logik mit 16 Tests: Zustandsautomat der Drag-Sitzung, Randmodell samt Dwell fuer geteilte Raender, Zielrahmen fuer `Left half`, `Right half` und `Fill` sowie die Modifier-Auswahl ohne Default.
 - Festgelegt und getestet: Loslassen des Modifiers waehrend des Drags beendet ihn nicht. Die Maustaste haelt die Sitzung; ein Fenster fallen zu lassen, sobald ein Finger hochgeht, waere unbedienbar.
 - Festgelegt und getestet: nur der Zustand `finishing` darf einen Rahmen schreiben. Eine abgebrochene Sitzung schreibt nie.
-- Noch nicht umgesetzt und bewusst noch nicht scharf: der dauerhafte Maus-Event-Tap, das Overlay, die Settings-Oberflaeche und das Besitzmodell fuer `NSWindowShouldDragOnGesture`. Damit ist Q-01, Q-04 und Q-11 bis Q-16 fuer diesen Pfad noch nicht erfuellt und das Modul nicht aktivierbar.
+- Umgesetzt: dauerhafter Maus-Event-Tap mit Arming-Marker, Circuit Breaker und Anbindung an den Not-Aus; Settings-Auswahl ohne Default; Snapping auf `Left half`, `Right half` und `Fill` innerhalb der eigenen Drag-Sitzung.
+- Korrigiert vor der ersten Nutzung: Das Randmodell rechnete in AppKit-Koordinaten, waehrend `CGEvent.location` und die AX-Rahmen Quartz-Koordinaten mit y nach unten liefern. Oberer und unterer Rand waren dadurch vertauscht, `Fill` haette am Dock-Rand ausgeloest.
+- Noch offen: das Overlay fuer den Zielrahmen und das Besitzmodell fuer `NSWindowShouldDragOnGesture`, das `Command+Control` voraussetzt. Der Modifier bleibt bis dahin aus der Auswahl.
 
 Modifier-Regeln:
 

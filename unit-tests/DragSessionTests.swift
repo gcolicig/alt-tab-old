@@ -69,9 +69,31 @@ final class DragSessionTests: XCTestCase {
         XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: atEdge, visibleFrame: screen, hasNeighbourLeft: true, dwellElapsed: 0.25)), .leftHalf)
     }
 
+    /// Quartz coordinates: the top edge is minY. Swapping these would put the fill zone on the Dock edge.
     func testTheTopEdgeFillsAndTheBottomEdgeIsInert() {
-        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: CGPoint(x: 500, y: 799), visibleFrame: screen)), .fill)
-        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: CGPoint(x: 500, y: 0), visibleFrame: screen)), .none)
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: CGPoint(x: 500, y: 0), visibleFrame: screen)), .fill)
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: CGPoint(x: 500, y: 799), visibleFrame: screen)), .none)
+    }
+
+    func testNeighbourDetectionNeedsTouchingEdgesAndOverlappingRows() {
+        let main = CGRect(x: 0, y: 0, width: 1000, height: 800)
+        let leftOf = CGRect(x: -1000, y: 0, width: 1000, height: 800)
+        let rightOf = CGRect(x: 1000, y: 0, width: 1000, height: 800)
+        let diagonal = CGRect(x: -1000, y: 900, width: 1000, height: 800)
+        XCTAssertTrue(DragScreenNeighbours.hasNeighbour(left: true, of: main, among: [main, leftOf]))
+        XCTAssertTrue(DragScreenNeighbours.hasNeighbour(left: false, of: main, among: [main, rightOf]))
+        XCTAssertFalse(DragScreenNeighbours.hasNeighbour(left: true, of: main, among: [main, rightOf]))
+        // stacked diagonally: the edges touch in x but the rows do not overlap
+        XCTAssertFalse(DragScreenNeighbours.hasNeighbour(left: true, of: main, among: [main, diagonal]))
+        XCTAssertFalse(DragScreenNeighbours.hasNeighbour(left: true, of: main, among: [main]))
+    }
+
+    func testEdgeReportsThePositionEvenWhereTheTargetWouldBeUnavailable() {
+        // the edge is still an edge; only `target` decides whether it may be used yet
+        XCTAssertEqual(DragSnapPolicy.edge(CGPoint(x: 1, y: 400), screen), .leftHalf)
+        XCTAssertEqual(DragSnapPolicy.edge(CGPoint(x: 999, y: 400), screen), .rightHalf)
+        XCTAssertEqual(DragSnapPolicy.edge(CGPoint(x: 500, y: 0), screen), .fill)
+        XCTAssertEqual(DragSnapPolicy.edge(CGPoint(x: 500, y: 400), screen), .none)
     }
 
     func testTheMiddleOfTheScreenSnapsToNothing() {

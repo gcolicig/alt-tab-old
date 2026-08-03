@@ -21,6 +21,11 @@ enum WindowDragEvents {
     private static var originMouse: CGPoint?
     private static var coalescer = AxWriteCoalescer()
     private static var diagnostics = AxDiagnosticsRing()
+    private static var snapTarget = DragSnapTarget.none
+    private static var snapFrame: CGRect?
+    /// When the cursor first reached the current edge, so a shared edge can require dwell.
+    private static var edgeEnteredAt: TimeInterval?
+    private static var edgeSide: DragSnapTarget = .none
     private static let stabilityWindowSeconds = 5.0
     /// The preference stores an index into `DragModifierPreference.selectable`, not a raw value: writing
     /// the case name here would leave the emergency path relying on a parse failure resetting to default.
@@ -155,6 +160,7 @@ enum WindowDragEvents {
 
     private static func publishTarget(_ location: CGPoint) {
         guard let origin = originWindowFrame, let start = originMouse else { return }
+        updateSnapTarget(location)
         let target = CGRect(x: origin.minX + location.x - start.x, y: origin.minY + location.y - start.y,
                             width: origin.width, height: origin.height)
         guard let due = coalescer.submit(target, now: ProcessInfo.processInfo.systemUptime) else { return }
@@ -170,9 +176,59 @@ enum WindowDragEvents {
     private static func finishOnQueue(_ reached: DragSessionState) {
         defer { endSession() }
         guard DragSessionMachine.mayApplyFrame(reached) else { return }
+        // an active snap target wins over the freely dragged position: it is what the user aimed at
+        if let snapFrame {
+            applyFrame(snapFrame)
+            return
+        }
         if let last = coalescer.flush(now: ProcessInfo.processInfo.systemUptime) {
             applyFrame(last)
         }
+    }
+
+    /// Recomputed per drag event against the display under the cursor, so dragging onto another screen
+    /// re-evaluates against that screen's geometry rather than the one the drag started on.
+    private static func updateSnapTarget(_ location: CGPoint) {
+        guard let screen = quartzVisibleFrame(containing: location) else {
+            clearSnap()
+            return
+        }
+        let now = ProcessInfo.processInfo.systemUptime
+        let side = DragSnapPolicy.edge(location, screen)
+        guard side != .none else {
+            clearSnap()
+            return
+        }
+        if edgeSide != side {
+            edgeSide = side
+            edgeEnteredAt = now
+        }
+        let frames = quartzVisibleFrames()
+        let confirmed = DragSnapPolicy.target(DragSnapContext(cursor: location, visibleFrame: screen,
+                                                              hasNeighbourLeft: DragScreenNeighbours.hasNeighbour(left: true, of: screen, among: frames),
+                                                              hasNeighbourRight: DragScreenNeighbours.hasNeighbour(left: false, of: screen, among: frames),
+                                                              dwellElapsed: now - (edgeEnteredAt ?? now)))
+        snapTarget = confirmed
+        snapFrame = DragSnapPolicy.frame(confirmed, in: screen)
+    }
+
+    private static func clearSnap() {
+        snapTarget = .none
+        snapFrame = nil
+        edgeSide = .none
+        edgeEnteredAt = nil
+    }
+
+    private static func quartzVisibleFrames() -> [CGRect] {
+        guard let primaryFrame = NSScreen.screens.first?.frame else { return [] }
+        return NSScreen.screens.map {
+            CGRect(x: $0.visibleFrame.minX, y: primaryFrame.maxY - $0.visibleFrame.maxY,
+                   width: $0.visibleFrame.width, height: $0.visibleFrame.height)
+        }
+    }
+
+    private static func quartzVisibleFrame(containing point: CGPoint) -> CGRect? {
+        quartzVisibleFrames().first { $0.contains(point) }
     }
 
     private static func applyFrame(_ frame: CGRect) {
@@ -212,5 +268,6 @@ enum WindowDragEvents {
         originWindowFrame = nil
         originMouse = nil
         coalescer = AxWriteCoalescer()
+        clearSnap()
     }
 }
