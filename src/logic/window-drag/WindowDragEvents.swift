@@ -30,8 +30,22 @@ enum WindowDragEvents {
         Preferences.windowDragModifier.isEnabled && !Preferences.inputModulesSafeMode
     }
 
-    static func modifierPreferenceChanged() {
-        isEnabled ? start() : stop()
+    /// `announceSuppression` is set only when the user just picked a modifier. Safe mode silently keeping
+    /// the module off is how a chosen modifier ends up looking broken: the dropdown says the feature is on
+    /// while nothing happens. At launch the notice would be noise, so it stays off there.
+    static func modifierPreferenceChanged(announceSuppression: Bool = false) {
+        guard Preferences.windowDragModifier.isEnabled else {
+            stop()
+            return
+        }
+        guard !Preferences.inputModulesSafeMode else {
+            stop()
+            if announceSuppression {
+                TransientNotice.show(NSLocalizedString("Input extensions are in safe mode, so moving windows stays off. Turn safe mode off to use it.", comment: ""))
+            }
+            return
+        }
+        start()
     }
 
     static func disableForSafety() {

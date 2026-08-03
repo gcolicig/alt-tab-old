@@ -217,7 +217,7 @@ Umsetzungsstand 2026-08-01, am Zielgeraet verifiziert:
 - Ergaenzt: Scheitert die Kette weiterhin, entscheidet die Fensterliste der App ueber den enthaltenen Punkt, aber nur bei genau einem Treffer.
 - `AXEnhancedUserInterface` wird nur fuer die Dauer des Schreibvorgangs abgeschaltet und nur, wenn es vorher gesetzt war; bei laufendem VoiceOver entfaellt der Workaround.
 - Beobachtung fuer die App-Klassen-Matrix: Gemini (`com.google.GeminiMacOS`) klemmt die y-Koordinate hart auf den Displayrand, waehrend x folgt. Das ist eine Randbegrenzung des Fensters, kein AX-Fehler, und wird nicht umgangen.
-- Offener Mangel: Safe Mode unterdrueckt das Move-Modul unsichtbar. Das Dropdown zeigt weiter einen aktiven Modifier, waehrend nichts geschieht. Vor Auslieferung muss der Zustand in den Settings sichtbar sein.
+- Behoben: Safe Mode unterdrueckte das Move-Modul unsichtbar. Die Auswahl eines Modifiers meldet die Unterdrueckung jetzt als selbst verschwindender Hinweis, und das Verlassen des Safe Mode baut den Tap eines bereits gewaehlten Modifiers sofort wieder auf statt erst beim naechsten Start.
 
 Chrome/Electron/AX:
 
