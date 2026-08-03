@@ -93,7 +93,7 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 ## Phase 3C: Resize
 
-- Resize auf derselben Cursor-Erkennung, AX-Queue und sicheren Input-Laufzeit aufbauen.
+- Umgesetzt: Resize auf derselben Cursor-Erkennung, AX-Queue und sicheren Input-Laufzeit; eigener Modifier, per Default aus, Ankerecke aus dem Startquadranten.
 - Fluessigkeit und Degradation ueber die definierte App-Klassen-Matrix pruefen.
 - Erweiterte Fenster-Fallbacks erst nach stabilem Move und Resize.
 

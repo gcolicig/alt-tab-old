@@ -6,7 +6,11 @@ class WindowLayoutsTab {
         table.addRow(TableGroupView.Row(
             leftTitle: NSLocalizedString("Move the window under the cursor while holding", comment: ""),
             subTitle: NSLocalizedString("Off by default. Every candidate collides with something, so pick one knowingly.", comment: ""),
-            rightViews: [LabelAndControl.makeDropdown("windowDragModifier", DragModifierPreference.selectable) { _ in WindowDragEvents.modifierPreferenceChanged(announceSuppression: true) }]))
+            rightViews: [LabelAndControl.makeDropdown("windowDragModifier", DragModifierPreference.selectable) { _ in modifierChanged(resize: false) }]))
+        table.addRow(TableGroupView.Row(
+            leftTitle: NSLocalizedString("Resize the window under the cursor while holding", comment: ""),
+            subTitle: NSLocalizedString("The corner you start near is the one that follows; the opposite corner stays put.", comment: ""),
+            rightViews: [LabelAndControl.makeDropdown("windowResizeModifier", DragModifierPreference.selectable) { _ in modifierChanged(resize: true) }]))
         table.addNewTable()
         ShortcutPresets.layouts.forEach { table.addRow(PresetRow.make($0)) }
         table.addNewTable()
@@ -24,6 +28,16 @@ class WindowLayoutsTab {
             leftTitle: NSLocalizedString("Disable input extensions (safe mode)", comment: ""),
             rightViews: [LabelAndControl.makeSwitch("inputModulesSafeMode") { _ in safeModeChanged() }]))
         return TableGroupSetView(originalViews: [table], bottomPadding: 0)
+    }
+
+    /// Both modules share one tap and one session, so the same combination cannot drive both: whichever
+    /// module was just changed gives way, and says why rather than silently doing nothing.
+    private static func modifierChanged(resize: Bool) {
+        if DragModeSelection.conflict(move: Preferences.windowDragModifier, resize: Preferences.windowResizeModifier) {
+            Preferences.set(resize ? "windowResizeModifier" : "windowDragModifier", "0", false)
+            TransientNotice.show(NSLocalizedString("Moving and resizing cannot use the same modifier.", comment: ""))
+        }
+        WindowDragEvents.modifierPreferenceChanged(announceSuppression: true)
     }
 
     /// Leaving safe mode has to rebuild the tap of an already chosen modifier. Without this the dropdown

@@ -462,7 +462,7 @@ HopTab-Learnings:
 
 ### 3. Modifier-basierter Window Move/Resize
 
-Status: Revidierter MVP-Kandidat
+Status: Move und Resize umgesetzt, manuelle Abnahme von Resize offen
 Prioritaet: Hoch
 
 Beschreibung:
@@ -504,6 +504,15 @@ V-13-Stand 2026-08-03, am Zielgeraet geprueft:
 - Bestanden: externe Aenderung des Schalters waehrend `managed` fuehrt beim naechsten Start zu `relinquished` ohne Rueckschreiben.
 - Gefunden und behoben: Nach einer erfolgreichen Kill-Recovery hat der Startvorgang den Wert sofort wieder uebernommen, weil der Modifier noch gesetzt war. Der Restore wurde dadurch in derselben Sitzung rueckgaengig gemacht. Das Modul startet nach einer Recovery jetzt deaktiviert und meldet die Wiederherstellung, wie es das Besitzmodell verlangt.
 - Offen: Wake und erneute Aktivierung aus `relinquished` heraus.
+
+Resize, umgesetzt 2026-08-03:
+
+- Eigener Modifier, per Default aus, getrennt von Move konfigurierbar. Beide Module teilen sich Tap, Drag-Sitzung, Cursor-Aufloesung, AX-Queue, Coalescing und alle Sicherungen; nur die Zielgeometrie unterscheidet sich.
+- Der Quadrant, in dem der Drag beginnt, bestimmt die Ecke, die dem Cursor folgt. Die gegenueberliegende Ecke bleibt fest, sonst wandert das Fenster beim Groessenaendern. Der Anker wird einmal je Sitzung bestimmt, damit ein Ueberqueren der Fenstermitte die wachsende Kante nicht mittendrin umschaltet.
+- Mindestgroesse 120x80; das Klemmen schiebt die Kante unter dem Cursor zurueck, nie die verankerte.
+- Snapping bleibt Move vorbehalten: ein Resize zielt auf eine Groesse, nicht auf einen Bildschirmrand.
+- Dieselbe Kombination kann nicht beide Module treiben; die Settings weisen das mit Hinweis ab.
+- Nicht geprueft: die manuelle Abnahme am Zielgeraet und die App-Klassen-Matrix, insbesondere Apps mit eigenen Mindestgroessen oder Zeichenraster-Clamping.
 - Befund zur Verifikation, 2026-08-01: Innerhalb dieser Story traten drei Koordinatenfehler auf, die alle Unit-Tests passierten. Erstens rechnete das Randmodell in AppKit- statt Quartz-Koordinaten, wodurch oberer und unterer Rand vertauscht waren. Zweitens war der Flip im Overlay zu pruefen. Drittens wurde das Display ueber seinen sichtbaren statt seinen vollen Rahmen gesucht, wodurch der Cursor im Menueleistenstreifen kein Display mehr traf und genau die Fill-Zone tot blieb. Alle drei fand die manuelle Pruefung am Geraet, keiner davon ein Test: die reine Logik war jeweils in sich stimmig, nur ihre Annahme ueber die Aussenwelt war falsch. Fuer Move und Resize ist Unit-Testabdeckung deshalb keine ausreichende Qualitaetsaussage; die App-Klassen- und Display-Matrizen bleiben das entscheidende Gate.
 
 Modifier-Regeln:

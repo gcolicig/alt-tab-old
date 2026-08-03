@@ -34,6 +34,8 @@ enum WindowDragEvents {
         defer { diagnosticsLock.unlock() }
         return diagnostics.deviations
     }
+    private static var mode = DragMode.move
+    private static var resizeAnchor = ResizeAnchor.bottomRight
     private static var snapTarget = DragSnapTarget.none
     private static var snapFrame: CGRect?
     /// When the cursor first reached the current edge, so a shared edge can require dwell.
@@ -45,7 +47,11 @@ enum WindowDragEvents {
     private static let disabledModifierIndex = String(DragModifierPreference.selectable.firstIndex(of: .disabled) ?? 0)
 
     static var isEnabled: Bool {
-        Preferences.windowDragModifier.isEnabled && !Preferences.inputModulesSafeMode
+        (Preferences.windowDragModifier.isEnabled || Preferences.windowResizeModifier.isEnabled) && !Preferences.inputModulesSafeMode
+    }
+
+    private static func modeFor(_ flags: NSEvent.ModifierFlags) -> DragMode? {
+        DragModeSelection.mode(flags, move: Preferences.windowDragModifier, resize: Preferences.windowResizeModifier)
     }
 
     /// `announceSuppression` is set only when the user just picked a modifier. Safe mode silently keeping
@@ -75,7 +81,9 @@ enum WindowDragEvents {
     /// windows on the same mouse down. If that cannot be achieved and verified, the modifier is refused
     /// outright rather than left half-working; every other modifier hands the switch back.
     private static func acquireGestureOwnershipIfNeeded(_ announce: Bool) -> Bool {
-        guard Preferences.windowDragModifier.requiresWindowDragOnGestureDisabled else {
+        let needsSwitch = Preferences.windowDragModifier.requiresWindowDragOnGestureDisabled
+            || Preferences.windowResizeModifier.requiresWindowDragOnGestureDisabled
+        guard needsSwitch else {
             WindowDragGestureOwnership.release()
             return true
         }
@@ -93,6 +101,7 @@ enum WindowDragEvents {
     static func recoverAtLaunch() {
         guard WindowDragGestureOwnership.recoverAfterUncleanExit() else { return }
         Preferences.set("windowDragModifier", disabledModifierIndex, false)
+        Preferences.set("windowResizeModifier", disabledModifierIndex, false)
         Logger.info { "Window drag was left armed by an unclean exit; the system drag-on-gesture setting was handed back and the module starts off" }
         DispatchQueue.main.async {
             TransientNotice.show(NSLocalizedString("AltTab+ did not quit cleanly. The system setting for dragging windows by gesture was restored and moving windows is off.", comment: ""))
@@ -101,6 +110,7 @@ enum WindowDragEvents {
 
     static func disableForSafety() {
         Preferences.set("windowDragModifier", disabledModifierIndex, false)
+        Preferences.set("windowResizeModifier", disabledModifierIndex, false)
         Preferences.set("windowDragArmingMarker", "false", false)
         stop()
         WindowDragGestureOwnership.release()
@@ -162,8 +172,9 @@ enum WindowDragEvents {
     }
 
     private static func handleFlagsChanged(_ cgEvent: CGEvent) -> Unmanaged<CGEvent> {
-        let engaged = Preferences.windowDragModifier.matches(NSEvent.ModifierFlags(rawValue: UInt(cgEvent.flags.rawValue)))
-        advance(engaged ? .modifierEngaged : .modifierReleased)
+        let engagedMode = modeFor(NSEvent.ModifierFlags(rawValue: UInt(cgEvent.flags.rawValue)))
+        if let engagedMode, state == .idle { mode = engagedMode }
+        advance(engagedMode != nil ? .modifierEngaged : .modifierReleased)
         // never consumed: the modifier keeps its normal meaning for every other app
         return Unmanaged.passUnretained(cgEvent)
     }
@@ -172,7 +183,8 @@ enum WindowDragEvents {
         // The mouse down carries its own modifier flags, so arming does not depend on the flagsChanged
         // event arriving first. Pressing both at once used to race: the session was still idle, the click
         // went through untouched, and macOS ran its own title-bar drag and snapping instead.
-        if state != .armed, Preferences.windowDragModifier.matches(NSEvent.ModifierFlags(rawValue: UInt(cgEvent.flags.rawValue))) {
+        if state != .armed, let engagedMode = modeFor(NSEvent.ModifierFlags(rawValue: UInt(cgEvent.flags.rawValue))) {
+            mode = engagedMode
             advance(.modifierEngaged)
         }
         guard state == .armed else { return Unmanaged.passUnretained(cgEvent) }
@@ -207,17 +219,22 @@ enum WindowDragEvents {
         windowPid = resolved.pid
         windowId = (try? resolved.element.cgWindowId()) ?? 0
         windowBundleId = NSRunningApplication(processIdentifier: resolved.pid)?.bundleIdentifier ?? ""
-        originWindowFrame = CGRect(origin: position, size: size)
+        let frame = CGRect(origin: position, size: size)
+        originWindowFrame = frame
         originMouse = location
+        resizeAnchor = WindowResizeGeometry.anchor(for: location, in: frame)
         coalescer = AxWriteCoalescer()
         advance(.windowResolved)
     }
 
     private static func publishTarget(_ location: CGPoint) {
         guard let origin = originWindowFrame, let start = originMouse else { return }
-        updateSnapTarget(location)
-        let target = CGRect(x: origin.minX + location.x - start.x, y: origin.minY + location.y - start.y,
-                            width: origin.width, height: origin.height)
+        let delta = CGSize(width: location.x - start.x, height: location.y - start.y)
+        // snapping belongs to move: a resize aims at a size, not at a screen edge
+        if mode == .move { updateSnapTarget(location) } else { clearSnap() }
+        let target = mode == .move
+            ? CGRect(x: origin.minX + delta.width, y: origin.minY + delta.height, width: origin.width, height: origin.height)
+            : WindowResizeGeometry.frame(from: origin, anchor: resizeAnchor, delta: delta)
         guard let due = coalescer.submit(target, now: ProcessInfo.processInfo.systemUptime) else { return }
         AXCallScheduler.shared.submit { writeOnQueue(due) }
     }

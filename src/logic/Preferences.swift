@@ -77,6 +77,7 @@ class Preferences {
             "windowDragModifier": "0",
             "windowDragArmingMarker": "false",
             "windowDragGestureOwnership": "",
+            "windowResizeModifier": "0",
         ]
         (0..<maxShortcutCount).forEach { index in
             // Shortcut 1 mirrors Command-Tab, Shortcut 2 the native Command plus key above Tab
@@ -140,6 +141,7 @@ class Preferences {
     static var hyperKeyEnabled: Bool { CachedUserDefaults.bool("hyperKeyEnabled") }
     static var inputModulesSafeMode: Bool { CachedUserDefaults.bool("inputModulesSafeMode") }
     static var windowDragModifier: DragModifierPreference { CachedUserDefaults.macroPref("windowDragModifier", DragModifierPreference.selectable) }
+    static var windowResizeModifier: DragModifierPreference { CachedUserDefaults.macroPref("windowResizeModifier", DragModifierPreference.selectable) }
     static var windowDragArmingMarker: Bool { CachedUserDefaults.bool("windowDragArmingMarker") }
     static var pointerMouseAcceleration: PointerAccelerationPreference { CachedUserDefaults.macroPref("pointerMouseAcceleration", PointerAccelerationPreference.allCases) }
     static var pointerTrackpadAcceleration: PointerAccelerationPreference { CachedUserDefaults.macroPref("pointerTrackpadAcceleration", PointerAccelerationPreference.allCases) }
@@ -258,6 +260,7 @@ class Preferences {
         set("nextWindowGesture", GesturePreference.disabled.indexAsString, false)
         set("hyperKeyArmingMarker", "false", false)
         set("windowDragModifier", "0", false)
+        set("windowResizeModifier", "0", false)
         set("windowDragArmingMarker", "false", false)
     }
 
