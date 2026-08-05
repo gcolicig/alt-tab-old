@@ -177,3 +177,25 @@ final class DragSessionTests: XCTestCase {
         }
     }
 }
+
+extension DragSessionTests {
+    func testTheStatusItemIsOnlyADropTargetWhereItActuallyIs() {
+        let item = CGRect(x: 1400, y: 0, width: 110, height: 24)
+        XCTAssertTrue(MenubarDropTarget.isOver(CGPoint(x: 1450, y: 10), statusItemFrame: item))
+        XCTAssertFalse(MenubarDropTarget.isOver(CGPoint(x: 1450, y: 40), statusItemFrame: item))
+        XCTAssertFalse(MenubarDropTarget.isOver(CGPoint(x: 100, y: 10), statusItemFrame: item))
+        XCTAssertFalse(MenubarDropTarget.isOver(CGPoint(x: 1450, y: 10), statusItemFrame: nil))
+        XCTAssertFalse(MenubarDropTarget.isOver(.zero, statusItemFrame: .zero))
+    }
+
+    /// A window straddling two screens belongs to the one it covers most, not to the one holding its origin.
+    func testTheSourceDisplayIsTheOneTheWindowMostlyCovers() {
+        let left = CGRect(x: 0, y: 0, width: 1000, height: 800)
+        let right = CGRect(x: 1000, y: 0, width: 1000, height: 800)
+        let mostlyRight = CGRect(x: 900, y: 100, width: 600, height: 400)
+        XCTAssertEqual(MenubarDropTarget.sourceIndex(of: mostlyRight, in: [left, right]), 1)
+        let mostlyLeft = CGRect(x: 700, y: 100, width: 600, height: 400)
+        XCTAssertEqual(MenubarDropTarget.sourceIndex(of: mostlyLeft, in: [left, right]), 0)
+        XCTAssertNil(MenubarDropTarget.sourceIndex(of: CGRect(x: 5000, y: 0, width: 10, height: 10), in: [left, right]))
+    }
+}

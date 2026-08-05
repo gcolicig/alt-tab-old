@@ -265,6 +265,13 @@ enum WindowDragEvents {
             clearSnap()
             return
         }
+        // a drop on the menubar wins over any edge: the cursor is on the menubar, not on a screen edge
+        if let dropFrame = menubarDropFrame(location) {
+            snapTarget = .fill
+            snapFrame = dropFrame
+            presentOverlay()
+            return
+        }
         let now = ProcessInfo.processInfo.systemUptime
         let side = DragSnapPolicy.edge(location, screen)
         guard side != .none else {
@@ -283,6 +290,23 @@ enum WindowDragEvents {
         snapTarget = confirmed
         snapFrame = DragSnapPolicy.frame(confirmed, in: screen)
         presentOverlay()
+    }
+
+    /// The AltTab+ status item as a drop target: the window lands on the next display in physical order,
+    /// keeping how it sat on its old one.
+    private static func menubarDropFrame(_ location: CGPoint) -> CGRect? {
+        guard let origin = originWindowFrame, MenubarDropTarget.isOver(location, statusItemFrame: quartzStatusItemFrame()) else { return nil }
+        let ordered = DisplayMoveGeometry.orderedFrames(quartzVisibleFrames())
+        guard let sourceIndex = MenubarDropTarget.sourceIndex(of: origin, in: ordered),
+              let targetIndex = DisplayMoveGeometry.targetScreenIndex(.nextDisplay, currentIndex: sourceIndex, screenCount: ordered.count) else { return nil }
+        return DisplayMoveGeometry.frame(origin, from: ordered[sourceIndex], to: ordered[targetIndex])
+    }
+
+    private static func quartzStatusItemFrame() -> CGRect? {
+        guard let primaryFrame = NSScreen.screens.first?.frame,
+              let window = Menubar.statusItem?.button?.window else { return nil }
+        let frame = window.frame
+        return CGRect(x: frame.minX, y: primaryFrame.maxY - frame.maxY, width: frame.width, height: frame.height)
     }
 
     private static func clearSnap() {

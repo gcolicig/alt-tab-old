@@ -137,6 +137,24 @@ enum DragSnapPolicy {
 
 /// No default: every candidate collides with something, so the user picks one knowingly or the module
 /// stays off. The assessment behind each case is in the backlog's modifier table.
+/// Dropping a dragged window on the menubar moves it to another display. Stage one always picks the next
+/// display in physical order, which is enough while there is one obvious "somewhere else"; choosing a
+/// specific screen comes with the per-display segments in stage two.
+enum MenubarDropTarget {
+    static func isOver(_ cursor: CGPoint, statusItemFrame: CGRect?) -> Bool {
+        guard let statusItemFrame, statusItemFrame.width > 0, statusItemFrame.height > 0 else { return false }
+        return statusItemFrame.contains(cursor)
+    }
+
+    /// The display a window sits on is the one it overlaps most, not the one holding its origin: a window
+    /// straddling a boundary would otherwise be moved away from the screen it is mostly on.
+    static func sourceIndex(of windowFrame: CGRect, in orderedFrames: [CGRect]) -> Int? {
+        let overlaps = orderedFrames.enumerated().map { ($0.offset, $0.element.intersection(windowFrame)) }
+            .filter { !$0.1.isNull && $0.1.width > 0 && $0.1.height > 0 }
+        return overlaps.max { $0.1.width * $0.1.height < $1.1.width * $1.1.height }?.0
+    }
+}
+
 enum DragScreenNeighbours {
     /// An edge shared with another display is an ordinary cursor route onto that display, so it must not
     /// snap on distance alone. Adjacency needs the edges to touch and the vertical ranges to overlap:
