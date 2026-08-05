@@ -78,16 +78,20 @@ struct DragSnapContext: Equatable {
     let cursor: CGPoint
     let visibleFrame: CGRect
     /// A shared edge continues onto another display, so crossing it is a normal cursor move and must not
-    /// snap on distance alone.
+    /// snap on distance alone. The top edge shares this: a display sitting directly above turns the fill
+    /// zone into a route, not a target.
     let hasNeighbourLeft: Bool
     let hasNeighbourRight: Bool
+    let hasNeighbourAbove: Bool
     let dwellElapsed: Double
 
-    init(cursor: CGPoint, visibleFrame: CGRect, hasNeighbourLeft: Bool = false, hasNeighbourRight: Bool = false, dwellElapsed: Double = 0) {
+    init(cursor: CGPoint, visibleFrame: CGRect, hasNeighbourLeft: Bool = false, hasNeighbourRight: Bool = false,
+         hasNeighbourAbove: Bool = false, dwellElapsed: Double = 0) {
         self.cursor = cursor
         self.visibleFrame = visibleFrame
         self.hasNeighbourLeft = hasNeighbourLeft
         self.hasNeighbourRight = hasNeighbourRight
+        self.hasNeighbourAbove = hasNeighbourAbove
         self.dwellElapsed = dwellElapsed
     }
 }
@@ -112,7 +116,11 @@ enum DragSnapPolicy {
     static func target(_ context: DragSnapContext) -> DragSnapTarget {
         let edge = edge(context.cursor, context.visibleFrame)
         switch edge {
-            case .none, .fill: return edge
+            case .none: return edge
+            // not merely delayed: with a display above, the top edge is a route to it. Dwell still let the
+            // overlay appear while the cursor was passing through, and the window flickered between screens
+            // while our target and its actual position disagreed. There is no fill zone there at all.
+            case .fill: return context.hasNeighbourAbove ? .none : edge
             case .leftHalf: return isAvailable(shared: context.hasNeighbourLeft, dwell: context.dwellElapsed) ? edge : .none
             case .rightHalf: return isAvailable(shared: context.hasNeighbourRight, dwell: context.dwellElapsed) ? edge : .none
         }
@@ -157,13 +165,25 @@ enum MenubarDropTarget {
 
 enum DragScreenNeighbours {
     /// An edge shared with another display is an ordinary cursor route onto that display, so it must not
-    /// snap on distance alone. Adjacency needs the edges to touch and the vertical ranges to overlap:
-    /// displays stacked diagonally do not share a usable edge.
+    /// snap on distance alone.
+    ///
+    /// Displays stack vertically as readily as horizontally — measured on a setup with one screen directly
+    /// above the other, where checking only left and right reported no neighbour at all and the top edge
+    /// behaved as if it were free. The cursor then crosses to the other screen instead of resting in the
+    /// zone, so both fill and the menubar drop became unreachable.
     static func hasNeighbour(left: Bool, of frame: CGRect, among frames: [CGRect], tolerance: CGFloat = 2) -> Bool {
         frames.contains { other in
             guard other != frame else { return false }
             let touches = left ? abs(other.maxX - frame.minX) <= tolerance : abs(other.minX - frame.maxX) <= tolerance
             return touches && other.minY < frame.maxY && other.maxY > frame.minY
+        }
+    }
+
+    /// Quartz coordinates: above means smaller y.
+    static func hasNeighbourAbove(_ frame: CGRect, among frames: [CGRect], tolerance: CGFloat = 2) -> Bool {
+        frames.contains { other in
+            guard other != frame else { return false }
+            return abs(other.maxY - frame.minY) <= tolerance && other.minX < frame.maxX && other.maxX > frame.minX
         }
     }
 }

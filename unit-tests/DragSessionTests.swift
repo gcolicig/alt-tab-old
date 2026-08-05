@@ -70,6 +70,27 @@ final class DragSessionTests: XCTestCase {
     }
 
     /// Quartz coordinates: the top edge is minY. Swapping these would put the fill zone on the Dock edge.
+    /// Displays stack vertically too. With one directly above, the top edge is a route to it rather than a
+    /// fill target, and treating it as free made both fill and the menubar drop unreachable.
+    /// A display above turns the top edge into a route, and no amount of dwell makes it a target: while the
+    /// cursor passes through, the overlay appeared and the window flickered between the two screens.
+    func testThereIsNoFillZoneWhenADisplaySitsAbove() {
+        let atTop = CGPoint(x: 500, y: 1)
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: atTop, visibleFrame: screen, hasNeighbourAbove: true, dwellElapsed: 0.05)), .none)
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: atTop, visibleFrame: screen, hasNeighbourAbove: true, dwellElapsed: 5)), .none)
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: atTop, visibleFrame: screen, hasNeighbourAbove: false)), .fill)
+    }
+
+    func testNeighbourDetectionSeesDisplaysStackedAbove() {
+        let lower = CGRect(x: 0, y: 0, width: 2560, height: 1707)
+        let upper = CGRect(x: 0, y: -1440, width: 2560, height: 1440)
+        XCTAssertTrue(DragScreenNeighbours.hasNeighbourAbove(lower, among: [lower, upper]))
+        XCTAssertFalse(DragScreenNeighbours.hasNeighbourAbove(upper, among: [lower, upper]))
+        // side by side is not above, however close
+        let beside = CGRect(x: 2560, y: 0, width: 1000, height: 1707)
+        XCTAssertFalse(DragScreenNeighbours.hasNeighbourAbove(lower, among: [lower, beside]))
+    }
+
     func testTheTopEdgeFillsAndTheBottomEdgeIsInert() {
         XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: CGPoint(x: 500, y: 0), visibleFrame: screen)), .fill)
         XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: CGPoint(x: 500, y: 799), visibleFrame: screen)), .none)

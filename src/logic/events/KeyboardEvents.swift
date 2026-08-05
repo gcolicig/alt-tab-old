@@ -42,6 +42,11 @@ class KeyboardEvents {
         if type == .keyDown {
             let keyCode = UInt32(cgEvent.getIntegerValueField(.keyboardEventKeycode))
             let modifiers = NSEvent.ModifierFlags(rawValue: UInt(cgEvent.flags.rawValue))
+            // Escape cancels a running modifier drag. The key is not absorbed: it keeps meaning whatever
+            // it means to the app in front, and a drag is only ever cancelled if one is actually running.
+            if keyCode == UInt32(kVK_Escape) {
+                DispatchQueue.main.async { WindowDragEvents.abortIfActive() }
+            }
             if handleHyperKeyDown(keyCode, cgEvent) {
                 return nil
             }

@@ -55,6 +55,8 @@ changes. It is the manual half of `V-14`.
 
 - Note the value of "Displays have separate Spaces", the display count and the Spaces per display: nearly
   every expectation above is conditional on those three.
-- The grouping rule came from a measurement, not from documentation: with separate Spaces off, macOS still
-  reports one group per display and the secondary ones carry a single Space each. If a future macOS reports
-  something else, steps 1 to 3 are where it will show first.
+- Read the setting with `defaults read com.apple.spaces spans-displays` (1 means displays share Spaces, so
+  separate Spaces is off) rather than from a helper script: `NSScreen.screensHaveSeparateSpaces` returns a
+  default value outside an app bundle and reported the opposite of the truth on 2026-08-05, which is how a
+  grouping rule came to be built on a misreading.
+- Steps 1 and 2 have never been observed in the state they describe. They are the ones to run first.

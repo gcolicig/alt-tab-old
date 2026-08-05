@@ -108,6 +108,19 @@ enum WindowDragEvents {
         }
     }
 
+    /// Escape during a drag puts the window back where it started. Preventing the closing write is not
+    /// enough: intermediate frames have already been applied, so the window would simply stay wherever it
+    /// was dragged to. The original frame has to be written back.
+    static func abortIfActive() {
+        guard DragSessionMachine.isActive(state) else { return }
+        let restore = originWindowFrame
+        advance(.aborted)
+        AXCallScheduler.shared.submit {
+            if let restore { applyFrame(restore, readBack: true) }
+            endSession()
+        }
+    }
+
     static func disableForSafety() {
         Preferences.set("windowDragModifier", disabledModifierIndex, false)
         Preferences.set("windowResizeModifier", disabledModifierIndex, false)
@@ -217,6 +230,13 @@ enum WindowDragEvents {
         }
         window = resolved.element
         windowPid = resolved.pid
+        // deliberately grabbing a window is not an unintended focus change: leaving it behind its
+        // neighbours while it moves under the cursor reads as a bug. Raising alone is not enough — that
+        // only reorders within the owning app, so a background app's window stays visually behind.
+        try? resolved.element.focusWindow()
+        DispatchQueue.main.async {
+            NSRunningApplication(processIdentifier: resolved.pid)?.activate()
+        }
         windowId = (try? resolved.element.cgWindowId()) ?? 0
         windowBundleId = NSRunningApplication(processIdentifier: resolved.pid)?.bundleIdentifier ?? ""
         let frame = CGRect(origin: position, size: size)
@@ -286,6 +306,7 @@ enum WindowDragEvents {
         let confirmed = DragSnapPolicy.target(DragSnapContext(cursor: location, visibleFrame: screen,
                                                               hasNeighbourLeft: DragScreenNeighbours.hasNeighbour(left: true, of: screen, among: frames),
                                                               hasNeighbourRight: DragScreenNeighbours.hasNeighbour(left: false, of: screen, among: frames),
+                                                              hasNeighbourAbove: DragScreenNeighbours.hasNeighbourAbove(screen, among: frames),
                                                               dwellElapsed: now - (edgeEnteredAt ?? now)))
         snapTarget = confirmed
         snapFrame = DragSnapPolicy.frame(confirmed, in: screen)
