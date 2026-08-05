@@ -527,6 +527,47 @@ Folgeumfang natives Ziehen, Kandidatenpfade:
 - Alternativ Korrelation ueber die bereits abonnierten `AXWindowMoved`-Ereignisse: ein Fenster, dessen Position waehrend des Drags dem Cursor folgt, ist das gezogene. Ereignisbasiert, aber Zustellverzoegerung der AX-Notifications einplanen.
 - In beiden Faellen Fehltreffer ausschliessen (Text- und Datei-Drags, die ueber der Menueleiste enden), etwa ueber die Bedingung, dass ein Fenster dem Cursor gefolgt sein muss.
 
+### 2H. Fenster per Drag auf eine Switcher-Kachel auf deren Space verschieben
+
+Status: Spezifiziert, nicht gebaut
+Prioritaet: Mittel
+
+Beschreibung:
+
+- Waehrend einer AltTab+-Modifier-Drag-Sitzung wird das gezogene Fenster auf einer Kachel des Switchers fallen gelassen. Es wandert auf den Space, auf dem das Fenster dieser Kachel liegt.
+- Motivation: Der native Weg dafuer ist umstaendlich und in diesem Dokument bereits als solcher festgehalten (siehe Nichtziele der Spaces-Stories) — an den Bildschirmrand ziehen und halten erreicht nur den Nachbar-Space, fuer ein beliebiges Ziel muss Mission Control geoeffnet werden. Der Switcher zeigt die Spaces ohnehin schon an; die Kachel ist damit ein Ziel, das der Nutzer bereits sieht.
+- Das Ziel ist der Space der Kachel, nicht die Kachel selbst. Das gezogene Fenster ersetzt nichts und stapelt sich nicht auf das Zielfenster.
+
+Was die Architektur bereits entscheidet:
+
+- **Der bestehende Drop-Pfad kann das nicht ausdruecken.** Menubar-Drop und Snapping enden beide in `snapFrame: CGRect`, und `finishOnQueue` kennt nur `applyFrame`. Ein Space-Wechsel ist kein Rahmen. Die Drag-Sitzung braucht daher erstmals ein Abschlussergebnis, das kein Rahmen ist — etwa ein `DragOutcome` mit den Faellen `frame(CGRect)` und `space(CGSSpaceID)`. Das ist der eigentliche Umbau; die Trefferpruefung ist der kleinere Teil.
+- Die Kachel-zu-Fenster-Zuordnung liegt vor (`TileView.window_`), ebenso die Space-Zugehoerigkeit (`Window.spaceIds`, `Window.spaceIndexes`). Eine Kachel mit `isOnAllSpaces` ist kein sinnvolles Ziel und wird nicht angeboten.
+- Der Drag-Pfad prueft `App.appIsBeingUsed` nicht, anders als die Layout-Aktionen im Aktionsregister. Eine Drag-Sitzung kann also laufen, waehrend der Switcher offen ist; das Feature ist erreichbar, ohne diese Sperre zu lockern.
+- Vorrang wie beim Menubar-Drop: ein getroffenes Kachel-Ziel gewinnt gegen Snap-Ziel und freie Position. Zwischen Kachel-Ziel und Menubar-Drop kann nicht beides zugleich getroffen sein.
+
+Offene Entscheidung, vor dem Bauen zu treffen:
+
+- **Wie der Switcher waehrend eines Drags erscheint.** Ohne eine Antwort darauf ist das Feature nicht bedienbar, denn der Switcher oeffnet heute ueber ein gehaltenes Tastenkuerzel, waehrend Maustaste und Drag-Modifier bereits gehalten werden. Kandidatenpfade:
+  - Der Nutzer drueckt das Switcher-Kuerzel mitten im Drag. Kein neuer Mechanismus, aber eine Handhaltung aus Drag-Modifier, Maustaste und Kuerzel gleichzeitig; am Geraet auf Bedienbarkeit zu pruefen, bevor darauf gebaut wird.
+  - Der Switcher oeffnet selbsttaetig, sobald eine Drag-Sitzung laeuft, hinter einer eigenen Einstellung und per Default aus. Bequem, aber er verdeckt waehrend jedes Drags den Bildschirm.
+  - Ein eigener Modifier waehrend des Drags blendet ihn ein. Erfordert eine dritte Modifier-Zuweisung neben Move und Resize, mit derselben Konfliktpruefung.
+- Ob das gezogene Fenster dem Space folgt (Wechsel dorthin) oder nur verschoben wird und der Nutzer bleibt. Beides ist vertretbar; die Entscheidung gehoert vor die Umsetzung, weil sie den Ausfuehrungspfad und das Overlay bestimmt.
+
+Risiko, das die Umsetzung bestimmt:
+
+- `CGSAddWindowsToSpaces` ist in `SkyLight.framework.swift` deklariert, hat aber **keinen Aufrufer**. Der Pfad ist damit unbelegt — dasselbe Muster wie beim Pointer-Schreibpfad (V-10) und bei den drei Faellen im Handover, in denen Code eine Faehigkeit behauptete, die er nie lieferte. Vor jeder UI-Arbeit ist zu belegen, dass der Aufruf ein Fenster tatsaechlich auf einen anderen Space verschiebt, und zwar auf dem Tahoe-Zielgeraet.
+- Zu klaeren ist dabei mindestens: Verhalten bei Fullscreen-Spaces, bei Fenstern auf allen Spaces, bei einem Fenster auf einem anderen Display, und ob der Aufruf ohne zusaetzliche Berechtigung durchgeht.
+- Faellt dieser Beleg negativ aus, ist die Story hinfaellig oder braucht einen anderen Systempfad; das ist vor der Trefferpruefung und dem Overlay zu entscheiden, nicht danach.
+
+Nicht in dieser Story:
+
+- Natives Titelbalken-Ziehen auf eine Kachel. Gleiche Begruendung wie bei 2G: Fenster-Drags erzeugen keine Pasteboard-Drags.
+- Umsortieren von Spaces oder Erzeugen eines neuen Space durch Drop auf eine leere Flaeche.
+
+Verifikation:
+
+- Erst der Systempfad-Beleg (siehe Risiko), dann eine manuelle Abnahme am Zielgeraet mit mehreren Displays und mehreren Spaces. Unit-Tests decken die Trefferpruefung und die Zielauswahl ab, nicht den Systempfad — die Erfahrung in diesem Projekt ist, dass genau dort die Fehler sitzen.
+
 ### 3. Modifier-basierter Window Move/Resize
 
 Status: Move und Resize umgesetzt, manuelle Abnahme von Resize offen
