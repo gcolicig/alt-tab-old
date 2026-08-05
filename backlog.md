@@ -403,7 +403,8 @@ Mehrere Displays:
 
 - Standard ist `macOS folgen`, kein eigener globaler Umschaltmodus.
 - Bei aktivem `Displays haben separate Spaces` werden Spaces nach Display gruppiert. Ein Klick wechselt nur das Display der angeklickten Gruppe.
-- Bei deaktiviertem `Displays haben separate Spaces` wird eine gemeinsame Reihe gezeigt; ein Wechsel betrifft gemaess macOS-Semantik den gesamten Displayverbund.
+- Befund 2026-08-05, am Zielgeraet mit drei Bildschirmen gemessen: Bei deaktiviertem `Displays haben separate Spaces` liefert `CGSCopyManagedDisplaySpaces` entgegen der frueheren Annahme weiterhin eine Gruppe je Display. Das interne Display trug drei Spaces, die beiden externen je genau einen; eine gemeinsame Reihe gibt es auf Tahoe nicht.
+- Festgelegt, noch nicht umgesetzt: Solange `Displays haben separate Spaces` deaktiviert ist, werden Gruppen mit genau einem Space nicht gezeigt. Sie bieten keine Wahl an, weil der Wechsel ohnehin den ganzen Verbund betrifft. Bleibt genau eine Gruppe uebrig, entfaellt auch der Trenner. Bei aktivierter Einstellung bleibt jede Gruppe sichtbar, auch mit nur einem Space: dort ist die Nummer eine echte Zustandsanzeige, weil das Display unabhaengig wechselt.
 - Da macOS dieselbe Statusleiste auf mehreren Displays spiegeln kann, zeigt der MVP in einem Status-Item kompakte Display-Gruppen statt pro Menueleistenkopie unterschiedlichen Inhalt zu versprechen. Die Darstellung pro physischem Display ist ein separater Machbarkeitscheck.
 
 Optionale Namen:
@@ -467,6 +468,49 @@ HopTab-Learnings:
 - HopTab speichert pro Profil Fensterrahmen, Minimized-Zustand und Z-Reihenfolge und restauriert nach Profilwechsel beziehungsweise App-Start zeitversetzt.
 - Fuer AltTab+ sind Produktmodell und Ablauf gute Vorbilder. Die konkrete Implementierung wird nicht direkt uebernommen: HopTabs Space-ID ist laut Quelltext sitzungslokal, und das Fenster-Matching per Bundle-ID, Titel und Reihenfolge ist fuer ein dauerhaftes Restore zu schwach.
 - Profile sind keine allgemeine Automationsplattform. Kalender-, Zeitplan-, Focus-Mode- oder frei skriptbare Regeln bleiben ausserhalb dieses Umfangs.
+
+### 2F. Verknuepfte Spaces ueber alle Displays
+
+Status: Spike erforderlich; Messpunkt offen
+Prioritaet: Mittel
+
+Produktmodell (a-Modell):
+
+- Gleiche Space-Anzahl auf jedem Bildschirm. Anlegen und Loeschen wirkt auf allen Displays; neu angeschlossene Displays erhalten die Anzahl des Verbunds.
+- Ein Wechsel auf Space n wechselt alle Bildschirme gemeinsam auf ihren Space n.
+- Das b-Modell (unabhaengige Spaces je Display) ist das native Verhalten bei aktiviertem `Displays haben separate Spaces` und braucht keine eigene Umsetzung.
+
+Messpunkt vor jeder Umsetzung:
+
+- Am Desk mit deaktiviertem `Displays haben separate Spaces` einen Space wechseln und beobachten, ob die externen Bildschirme mitwechseln. Wechseln sie mit, liegt das a-Modell nahe am nativen Verhalten und der Umfang schrumpft auf die Anzahl-Synchronisation. Bleiben sie stehen, ist das a-Modell eine vollstaendige Emulation ueber aktivierte separate Spaces.
+
+Technische Huerden im Emulationsfall:
+
+- Synchrones Wechseln: die synthetischen Dock-Swipes koennen kein Zieldisplay adressieren (dokumentiert in 2C). Einziger bekannter Weg ohne das verworfene `CGSManagedDisplaySetCurrentSpace`: Cursor per `CGWarpMouseCursorPosition` nacheinander auf jedes Display setzen, dort swipen, Cursor zurueckgeben. Sichtbare Mehrfachanimation; am Zielgeraet zu verifizieren (S-10).
+- Anzahl-Synchronisation: Spaces programmatisch anlegen und loeschen erfordert `CGSSpaceCreate`/`CGSSpaceDestroy`, die erste schreibende private Space-API des Forks. Nur als eigener Spike (S-11), optional gebunden und fail-closed; der `CGSManagedDisplaySetCurrentSpace`-Befund mit dem entkoppelten Dock ist die Referenz dafuer, wie so ein Symbol scheitern kann.
+- Resynchronisation nach Sleep/Wake, Display-Hotplug und manuellen Aenderungen in Mission Control; bei Abweichung sichtbar degradieren statt still anzugleichen.
+
+### 2G. Fenster per Drag auf die Menueleiste verschieben
+
+Status: Geplant; Stufe 1 baut auf vorhandenen Teilen auf
+Prioritaet: Mittel
+
+Beschreibung:
+
+- Ein Fenster wird waehrend einer AltTab+-Modifier-Drag-Sitzung auf der Menueleiste fallen gelassen, um es auf einen anderen Bildschirm zu verschieben.
+- Stufe 1: Drop auf das AltTab+-Statusitem verschiebt auf den ersten anderen aktiven Bildschirm; `DisplayMoveGeometry` mit relativer Lage und Clamping wird wiederverwendet.
+- Stufe 2: Drop auf ein bestimmtes Display-Segment waehlt den Zielbildschirm.
+- Mechanik wie beim Snapping: die Drag-Sitzung prueft beim Mouseup, ob der Cursor ueber dem Statusitem liegt; ein Drop-Ziel gewinnt gegen Snap-Ziel und freie Position.
+
+Nicht in Stufe 1 und 2:
+
+- Natives Titelbalken-Ziehen auf die Menueleiste. Fenster-Drags erzeugen keine Pasteboard-Drags; eine Status-Item-View bekommt davon nichts mit.
+
+Folgeumfang natives Ziehen, Kandidatenpfade:
+
+- Beobachtender listen-only Maus-Tap: beim Mousedown die Fensteraufloesung asynchron auf der AX-Queue anstossen; landet das Mouseup auf dem Statusitem und ist das aufgeloeste Fenster dem Cursor gefolgt, gilt es als Drop. Kein Konsumieren, aber ein dauerhafter Tap, solange das Feature aktiv ist; Q-04, Q-10 und Q-12 gelten.
+- Alternativ Korrelation ueber die bereits abonnierten `AXWindowMoved`-Ereignisse: ein Fenster, dessen Position waehrend des Drags dem Cursor folgt, ist das gezogene. Ereignisbasiert, aber Zustellverzoegerung der AX-Notifications einplanen.
+- In beiden Faellen Fehltreffer ausschliessen (Text- und Datei-Drags, die ueber der Menueleiste enden), etwa ueber die Bedingung, dass ein Fenster dem Cursor gefolgt sein muss.
 
 ### 3. Modifier-basierter Window Move/Resize
 
@@ -854,6 +898,8 @@ Energiepruefung:
 | S-07 | Spaces-Menueleiste | Space-Anzahl und aktiver Zustand konvergieren ereignisbasiert ohne Polling; Klick aktiviert den erwarteten Space; Ueberlauf, Separate-Spaces-Modi und deaktiviertes Instant Spaces degradieren bedienbar |
 | S-09 | HID-Remapping unterhalb des Event-Taps | `hidutil UserKeyMapping` laesst sich auf Tahoe aus dem Agent-Prozess setzen und nach Keyboard-Hotplug erneuern, ohne Root und ohne LaunchAgent; die Zuordnung wirkt nachweislich auch bei aktivem Secure Input; Entzug und Absturz hinterlassen keine dauerhafte Umbelegung |
 | S-08 | Stabile Space-Identitaet | **Bestanden 2026-08-03** auf macOS 26.5.1 (Build 25F80). Drei Spaces ueberlebten einen Neustart mit unveraenderter UUID, waehrend zwei ihre `id64` wechselten (31→7, 33→6). Reorder, Create, Delete, Fullscreen und natives Wechseln liessen die UUIDs ebenfalls unveraendert. Aliase und Profil-Bindings duerfen auf die UUID zeigen, niemals auf `id64` oder den Index. Nicht geprueft: Umschalten von `Displays haben separate Spaces` und Display-Wechsel, beides mangels zweitem Display |
+| S-10 | Synchroner Mehrdisplay-Space-Wechsel | Cursor-Warp plus Swipe schaltet alle Displays in einer Aktion auf denselben Index, ohne haengenden Cursor und ohne Mission-Control-Stoerung; andernfalls bleibt das a-Modell aus 2F deaktiviert |
+| S-11 | Programmatisches Anlegen/Loeschen von Spaces | `CGSSpaceCreate`/`CGSSpaceDestroy` optional gebunden; Anlegen und Loeschen wirkt korrekt, Dock und Mission Control bleiben konsistent, Symbolwegfall degradiert nur dieses Feature |
 
 ## Umsetzungsreihenfolge
 
@@ -924,7 +970,7 @@ Default-Settings, Reset-Verhalten und Migration werden nach jedem neuen Modul ge
 | V-11 | Display-Topologien | Snapping-Checkliste ueber definierte Topologien, Separate-Spaces-Zustaende und dynamische Reconfiguration ausfuehren |
 | V-12 | Instant Spaces | Tahoe-Build, Separate Spaces ein/aus, Cursor-Display, Fullscreen-Space, Stage Manager, Mission Control/App Expose, Randwechsel und schnelle direkte Mehrfachwechsel pruefen |
 | V-13 | `Command+Control`-Move | `NSWindowShouldDragOnGesture` vor Aktivierung lesen, auf `false` setzen und verifizieren; Disable, externe Aenderung, Crash und Recovery ohne destruktives Restore pruefen |
-| V-14 | Spaces-Menueleiste | Ein bis 16 Spaces, mehrere Displays, Fullscreen-Spaces, Reorder, Create/Delete, Wake, Mission-Control-Ende, Statusleisten-Ueberlauf und VoiceOver pruefen |
+| V-14 | Spaces-Menueleiste | Ein bis 16 Spaces, mehrere Displays, Fullscreen-Spaces, Reorder, Create/Delete, Wake, Mission-Control-Ende, Statusleisten-Ueberlauf und VoiceOver pruefen; mit drei Bildschirmen und deaktivierten separaten Spaces pruefen, dass nur Gruppen mit mehr als einem Space erscheinen und kein Trenner uebrig bleibt |
 | V-15 | Profile und Session-Restore | Fenster-Matching, App-Start, verlorene Space-Bindings, geaenderte Titel, mehrere Fenster derselben App und geaenderte Display-Topologie ohne falsche Mutation pruefen |
 
 ## Provenienz-Register
