@@ -175,16 +175,23 @@ class ControlsTab {
     private static var shortcutEditorWidth: CGFloat { SettingsWindow.contentWidth - shortcutSidebarWidth - 1 }
     private static var shortcutEditorContentWidth: CGFloat { shortcutEditorWidth - shortcutEditorRightPadding }
     private static let gestureSelectionIndex = -1
-    private static let staticManagedShortcutPreferences = [
-        "focusWindowShortcut", "previousWindowShortcut", "cancelShortcut", "searchShortcut", "lockSearchShortcut",
-        "closeWindowShortcut", "minDeminWindowShortcut", "toggleFullscreenWindowShortcut", "quitAppShortcut", "hideShowAppShortcut",
-        "windowLayoutLeftThirdShortcut", "windowLayoutRightThirdShortcut", "windowLayoutLeftTwoThirdsShortcut",
-        "windowLayoutRightTwoThirdsShortcut", "windowLayoutLeftThreeQuartersShortcut", "windowLayoutRightThreeQuartersShortcut",
-        "windowLayoutLeftFocusShortcut", "windowLayoutCenterFocusShortcut",
-        "windowLayoutRightFocusShortcut", "windowLayoutRestoreShortcut",
-    ] + DisplayMoveAction.allCases.map(\.shortcutPreferenceKey) + SpaceAction.all.map(\.shortcutPreferenceKey)
-        + (0..<Preferences.maxLaunchAppCount).map(LaunchAppAction.shortcutPreferenceKey)
-        + (0..<Preferences.maxOpenUrlCount).map(OpenUrlAction.shortcutPreferenceKey)
+    /// Built statement by statement rather than as one concatenated expression: chaining the literal and the
+    /// four mapped lists with `+` made the type checker exceed the 250ms limit the build enforces as an error.
+    private static let staticManagedShortcutPreferences: [String] = {
+        var keys: [String] = [
+            "focusWindowShortcut", "previousWindowShortcut", "cancelShortcut", "searchShortcut", "lockSearchShortcut",
+            "closeWindowShortcut", "minDeminWindowShortcut", "toggleFullscreenWindowShortcut", "quitAppShortcut", "hideShowAppShortcut",
+            "windowLayoutLeftThirdShortcut", "windowLayoutRightThirdShortcut", "windowLayoutLeftTwoThirdsShortcut",
+            "windowLayoutRightTwoThirdsShortcut", "windowLayoutLeftThreeQuartersShortcut", "windowLayoutRightThreeQuartersShortcut",
+            "windowLayoutLeftFocusShortcut", "windowLayoutCenterFocusShortcut",
+            "windowLayoutRightFocusShortcut", "windowLayoutRestoreShortcut",
+        ]
+        keys += DisplayMoveAction.allCases.map(\.shortcutPreferenceKey)
+        keys += SpaceAction.all.map(\.shortcutPreferenceKey)
+        keys += (0..<Preferences.maxLaunchAppCount).map(LaunchAppAction.shortcutPreferenceKey)
+        keys += (0..<Preferences.maxOpenUrlCount).map(OpenUrlAction.shortcutPreferenceKey)
+        return keys
+    }()
     private static let globalActionShortcutPreferences = Set(
         WindowLayoutAction.allCases.map(\.shortcutPreferenceKey)
             + DisplayMoveAction.allCases.map(\.shortcutPreferenceKey)
