@@ -509,6 +509,8 @@ Prioritaet: Mittel
 Beschreibung:
 
 - Ein Fenster wird waehrend einer AltTab+-Modifier-Drag-Sitzung auf der Menueleiste fallen gelassen, um es auf einen anderen Bildschirm zu verschieben.
+- **Am Zielgeraet bestaetigt 2026-08-05**: Der Drop auf die AltTab+-Icons verschiebt das Fenster auf den anderen Bildschirm. Ein Loslassen in der Menueleiste neben den Icons trifft die Fill-Zone und maximiert; das ist korrekt, solange ueber diesem Bildschirm kein weiterer liegt.
+- Dazu noetig war eine Halteschaltung: der 30pt hohe Streifen grenzt direkt an das Display darueber, und der Cursor rutschte auf dem Weg zum Loslassen wieder heraus. Die Erkennung selbst war von Anfang an korrekt, was erst die Instrumentierung zeigte.
 - Umgesetzt 2026-08-05, Stufe 1: Drop auf das AltTab+-Statusitem verschiebt auf den naechsten Bildschirm in physischer Reihenfolge; `DisplayMoveGeometry` mit relativer Lage und Clamping wird wiederverwendet. Der Drop erzeugt keinen eigenen Anwendungspfad, sondern nur einen weiteren Weg, `snapFrame` zu berechnen, und laeuft danach durch dieselbe Ausfuehrung wie das Snapping. Das Overlay zeigt den Zielbildschirm, solange der Cursor ueber dem Statusitem steht.
 - Das Quelldisplay ist dasjenige, das das Fenster flaechenmaessig am meisten ueberdeckt, nicht das mit dem Fensterursprung: ein Fenster ueber der Displaygrenze wuerde sonst von dem Bildschirm weggeschoben, auf dem es ueberwiegend liegt.
 - Nicht geprueft: manuelle Abnahme am Zielgeraet mit mehreren Bildschirmen.
