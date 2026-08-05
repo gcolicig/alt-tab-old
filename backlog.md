@@ -566,7 +566,7 @@ Resize, umgesetzt 2026-08-03:
 - Mindestgroesse 120x80; das Klemmen schiebt die Kante unter dem Cursor zurueck, nie die verankerte.
 - Snapping bleibt Move vorbehalten: ein Resize zielt auf eine Groesse, nicht auf einen Bildschirmrand.
 - Dieselbe Kombination kann nicht beide Module treiben; die Settings weisen das mit Hinweis ab.
-- Nicht geprueft: die manuelle Abnahme am Zielgeraet und die App-Klassen-Matrix, insbesondere Apps mit eigenen Mindestgroessen oder Zeichenraster-Clamping.
+- Nicht geprueft: die manuelle Abnahme am Zielgeraet und die App-Klassen-Matrix, insbesondere Apps mit eigenen Mindestgroessen oder Zeichenraster-Clamping. Checkliste dafuer: `docs/window-drag-checklist.md`.
 - Befund zur Verifikation, 2026-08-01: Innerhalb dieser Story traten drei Koordinatenfehler auf, die alle Unit-Tests passierten. Erstens rechnete das Randmodell in AppKit- statt Quartz-Koordinaten, wodurch oberer und unterer Rand vertauscht waren. Zweitens war der Flip im Overlay zu pruefen. Drittens wurde das Display ueber seinen sichtbaren statt seinen vollen Rahmen gesucht, wodurch der Cursor im Menueleistenstreifen kein Display mehr traf und genau die Fill-Zone tot blieb. Alle drei fand die manuelle Pruefung am Geraet, keiner davon ein Test: die reine Logik war jeweils in sich stimmig, nur ihre Annahme ueber die Aussenwelt war falsch. Fuer Move und Resize ist Unit-Testabdeckung deshalb keine ausreichende Qualitaetsaussage; die App-Klassen- und Display-Matrizen bleiben das entscheidende Gate.
 
 Modifier-Regeln:
@@ -963,7 +963,7 @@ Default-Settings, Reset-Verhalten und Migration werden nach jedem neuen Modul ge
 | V-02 | Versions-Policy nach Tahoe-only | Klaeren: nur aktuelle Major-Version `N` oder `N und N-1` |
 | V-03 | Private Symbolbindung | `_AXUIElementGetWindow` ist optional zur Laufzeit gebunden; weitere private Symbole vor ihrer ersten neuen Modulnutzung gleichwertig degradierbar machen |
 | V-04 | Provenienz-Register | `THIRD-PARTY.md` ist fuer die bisher ausgewerteten Quellen angelegt; Pflege im PR-Prozess bleibt zu erzwingen |
-| V-05 | Modul- und App-Klassen-Checklisten | `docs/input-safety-checklist.md` und `docs/window-layout-checklist.md` vor jeder oeffentlichen Version und nach jedem unterstuetzten macOS-Major-Update ausfuehren |
+| V-05 | Modul- und App-Klassen-Checklisten | `docs/input-safety-checklist.md`, `docs/window-layout-checklist.md` und `docs/window-drag-checklist.md` vor jeder oeffentlichen Version und nach jedem unterstuetzten macOS-Major-Update ausfuehren |
 | V-06 | Energie-Baseline | Idle- und Aktivmessungen auf dem Tahoe-/Apple-Silicon-Zielgeraet dokumentieren |
 | V-07 | Distribution | Signing, Notarisierung, Vertriebskanal und Update-Strategie vor erster oeffentlicher Version abschliessen; Sparkle bleibt optional |
 | V-08 | Safe Start und Circuit Breaker | Vor dem ersten ausgelieferten Input-Modul mit Login-Start, verbliebenem Arming-Marker und wiederholtem Tap-Timeout pruefen |
