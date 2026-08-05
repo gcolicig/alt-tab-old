@@ -35,6 +35,10 @@
 		C0DE10000000000000000030 /* DragSnapOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000026 /* DragSnapOverlay.swift */; };
 		C0DE10000000000000000034 /* WindowDragGestureOwnership.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000029 /* WindowDragGestureOwnership.swift */; };
 		C0DE1000000000000000002E /* WindowDragEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000024 /* WindowDragEvents.swift */; };
+		C0DE1000000000000000003C /* MenuShortcutTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000002F /* MenuShortcutTestable.swift */; };
+		C0DE1000000000000000003D /* MenuShortcutTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000002F /* MenuShortcutTestable.swift */; };
+		C0DE1000000000000000003E /* MenuShortcutReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000030 /* MenuShortcutReader.swift */; };
+		C0DE1000000000000000003F /* MenuShortcutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000031 /* MenuShortcutTests.swift */; };
 		C0DE10000000000000000039 /* LeaderSequenceTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000002D /* LeaderSequenceTestable.swift */; };
 		C0DE1000000000000000003A /* LeaderSequenceTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000002D /* LeaderSequenceTestable.swift */; };
 		C0DE1000000000000000003B /* LeaderSequenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000002E /* LeaderSequenceTests.swift */; };
@@ -397,6 +401,9 @@
 		C0DE20000000000000000026 /* DragSnapOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragSnapOverlay.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000029 /* WindowDragGestureOwnership.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowDragGestureOwnership.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000024 /* WindowDragEvents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowDragEvents.swift; sourceTree = "<group>"; };
+		C0DE2000000000000000002F /* MenuShortcutTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuShortcutTestable.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000030 /* MenuShortcutReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuShortcutReader.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000031 /* MenuShortcutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuShortcutTests.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000002D /* LeaderSequenceTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderSequenceTestable.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000002E /* LeaderSequenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderSequenceTests.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000002B /* WindowResizeTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowResizeTestable.swift; sourceTree = "<group>"; };
@@ -1280,6 +1287,7 @@
 				C0DE20000000000000000023 /* DragSessionTests.swift */,
 				C0DE2000000000000000002C /* WindowResizeTests.swift */,
 				C0DE2000000000000000002E /* LeaderSequenceTests.swift */,
+				C0DE20000000000000000031 /* MenuShortcutTests.swift */,
 				C0DE2000000000000000000A /* InstantSpacesTests.swift */,
 				C0DE20000000000000000004 /* WindowLayoutTests.swift */,
 				C0DE20000000000000000017 /* MenubarSpaceRowTests.swift */,
@@ -1535,6 +1543,7 @@
 				C0DE30000000000000000005 /* window-cursor */,
 				C0DE30000000000000000006 /* window-drag */,
 				C0DE30000000000000000007 /* leader */,
+				C0DE30000000000000000008 /* shortcut-clues */,
 				C0DE30000000000000000003 /* spaces */,
 				C0DE30000000000000000001 /* window-layouts */,
 				C0DE2000000000000000000F /* NativeSystemShortcuts.swift */,
@@ -1786,6 +1795,15 @@
 				C0DE20000000000000000008 /* InstantSpaces.swift */,
 			);
 			path = spaces;
+			sourceTree = "<group>";
+		};
+		C0DE30000000000000000008 /* shortcut-clues */ = {
+			isa = PBXGroup;
+			children = (
+				C0DE2000000000000000002F /* MenuShortcutTestable.swift */,
+				C0DE20000000000000000030 /* MenuShortcutReader.swift */,
+			);
+			path = "shortcut-clues";
 			sourceTree = "<group>";
 		};
 		C0DE30000000000000000007 /* leader */ = {
@@ -2754,6 +2772,8 @@
 				C0DE1000000000000000002C /* DragSessionTestable.swift in Sources */,
 				C0DE10000000000000000037 /* WindowResizeTestable.swift in Sources */,
 				C0DE1000000000000000003A /* LeaderSequenceTestable.swift in Sources */,
+				C0DE1000000000000000003D /* MenuShortcutTestable.swift in Sources */,
+				C0DE1000000000000000003F /* MenuShortcutTests.swift in Sources */,
 				C0DE1000000000000000003B /* LeaderSequenceTests.swift in Sources */,
 				C0DE1000000000000000002D /* DragSessionTests.swift in Sources */,
 				C0DE10000000000000000038 /* WindowResizeTests.swift in Sources */,
@@ -2798,6 +2818,8 @@
 				C0DE1000000000000000002B /* DragSessionTestable.swift in Sources */,
 				C0DE10000000000000000036 /* WindowResizeTestable.swift in Sources */,
 				C0DE10000000000000000039 /* LeaderSequenceTestable.swift in Sources */,
+				C0DE1000000000000000003C /* MenuShortcutTestable.swift in Sources */,
+				C0DE1000000000000000003E /* MenuShortcutReader.swift in Sources */,
 				C0DE1000000000000000002E /* WindowDragEvents.swift in Sources */,
 				C0DE10000000000000000034 /* WindowDragGestureOwnership.swift in Sources */,
 				C0DE10000000000000000030 /* DragSnapOverlay.swift in Sources */,

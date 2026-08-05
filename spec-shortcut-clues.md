@@ -70,13 +70,23 @@ Auslesepfad:
    `AXMenuItemCmdVirtualKey`, `AXMenuItemCmdGlyph`, `AXMenuItemCmdModifiers`.
 4. Eintraege ohne Kuerzel und deaktivierte Eintraege verwerfen, Gruppen nach Menuetitel behalten.
 
-Zu verifizieren, bevor implementiert wird:
+Verifiziert am 2026-08-05 gegen Finders echte Menues auf macOS 26.5.1, bevor die Darstellung darauf
+aufgebaut wurde:
 
-- Die Modifier-Kodierung von `AXMenuItemCmdModifiers` ist ein Bitfeld, in dem `Command` invertiert
-  kodiert sein soll (gesetztes Bit bedeutet *kein* Command). Das ist am Zielgeraet gegen echte Menues
-  zu pruefen, bevor die Darstellung darauf aufbaut.
-- Ob `AXMenuItemCmdGlyph` fuer Sondertasten wie Pfeile oder Tabulator zuverlaessig gefuellt ist, oder ob
-  `AXMenuItemCmdVirtualKey` der belastbarere Weg ist.
+- `AXMenuItemCmdModifiers` ist ein Bitfeld, und `Command` ist tatsaechlich invertiert kodiert — aber auf
+  **Bit 8**, nicht auf Bit 1. Belegende Eintraege: `Settings…` = 0 fuer `⌘`, `Log Out…` = 1 fuer `⇧⌘`,
+  `Force Quit…` = 2 fuer `⌥⌘`, `Lock Screen` = 4 fuer `⌃⌘`, die Option-Alternativen = 10 fuer ein blosses
+  `⌥` ohne Command. Damit gilt: 1 = Shift, 2 = Option, 4 = Control, 8 = kein Command. Eine Annahme, die
+  Command auf Bit 1 gelegt haette, haette praktisch jedes Kuerzel im System falsch beschriftet.
+- `AXMenuItemCmdChar` ist der belastbarere Weg und traegt Symbole wie `⎋` bereits selbst.
+  `AXMenuItemCmdGlyph` dient als Rueckfall; belegt sind 23 fuer `⌫` und 27 fuer `⎋`, die uebrigen
+  Zuordnungen stammen aus den Carbon-Konstanten und sind einzeln unbelegt. Eine unbekannte Glyphe liefert
+  deshalb nichts statt eines plausiblen Symbols: ein fehlendes Zeichen ist ehrlich, ein falsches lehrt ein
+  Kuerzel, das es nicht gibt.
+- Befund aus derselben Messung: Eintraege mit Sondertaste melden in `AXMenuItemCmdChar` ein unsichtbares
+  Steuerzeichen statt gar nichts. Wird das als brauchbar behandelt, erscheint `Empty Trash…` als `⇧⌘` ohne
+  Taste. Solche Zeichen gelten deshalb als abwesend, damit der Glyph-Rueckfall greift.
+- Messumfang: Finder lieferte 113 Kuerzel aus 251 durchlaufenen Eintraegen ohne Abschneiden.
 - Ob Menues vieler Apps erst nach dem Oeffnen vollstaendig befuellt sind. Falls ja, ist zu dokumentieren,
   welche Apps unvollstaendig bleiben, statt Menues heimlich zu oeffnen.
 

@@ -429,7 +429,7 @@ Nicht im MVP:
 
 ### 2E. Shortcut Clues
 
-Status: Spezifiziert, nicht begonnen
+Status: Menueleser und Formatierung umgesetzt und am Zielgeraet verifiziert; Trigger, Overlay und Settings offen
 Prioritaet: Mittel, sinnvoll erst nach Phase 3A
 
 Blendet die Tastenkuerzel der aktiven App als Overlay ein, solange ein Trigger gehalten wird. Erster
