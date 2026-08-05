@@ -24,6 +24,14 @@ class WindowLayoutsTab {
             table.addRow(TableGroupView.Row(leftTitle: $0.localizedTitle, rightViews: [views[1]]))
         }
         table.addNewTable()
+        let cluesViews = LabelAndControl.makeLabelWithRecorder(NSLocalizedString("Show the active app's shortcuts while holding", comment: ""),
+                                                              ShortcutCluesController.shortcutPreferenceKey,
+                                                              Preferences.shortcut(ShortcutCluesController.shortcutPreferenceKey))
+        table.addRow(TableGroupView.Row(
+            leftTitle: NSLocalizedString("Show the active app's shortcuts while holding", comment: ""),
+            subTitle: NSLocalizedString("Reads the menus of the app in front. It never absorbs keys, so a shortcut you press while looking still runs.", comment: ""),
+            rightViews: [cluesViews[1]]))
+        table.addNewTable()
         table.addRow(TableGroupView.Row(
             leftTitle: NSLocalizedString("Disable input extensions (safe mode)", comment: ""),
             rightViews: [LabelAndControl.makeSwitch("inputModulesSafeMode") { _ in safeModeChanged() }]))

@@ -429,8 +429,17 @@ Nicht im MVP:
 
 ### 2E. Shortcut Clues
 
-Status: Menueleser und Formatierung umgesetzt und am Zielgeraet verifiziert; Trigger, Overlay und Settings offen
+Status: Umgesetzt; manuelle Abnahme offen
 Prioritaet: Mittel, sinnvoll erst nach Phase 3A
+
+Umsetzungsstand 2026-08-05:
+
+- Trigger ueber die bestehende Shortcut-Infrastruktur, ohne Default und konfliktgeprueft wie jeder andere globale Aktions-Shortcut. Der Doppeltipp aus dem Vorbild bleibt bewusst draussen, weil er einen dauerhaften Tap verlangt.
+- Das Loslassen wird ueber den vorhandenen `flagsChanged`-Pfad erkannt. Kein zweiter Tap, nichts wird absorbiert: wer ein angezeigtes Kuerzel drueckt, loest es in der Ziel-App aus.
+- Der Menuedurchlauf laeuft auf der AX-Queue, nie im Callback, mit Ergebnis-Cache je Prozess und kurzer Gueltigkeit.
+- Das Panel nimmt keinen Fokus, ignoriert Mausereignisse, erscheint nicht im Fensterwechsel und wird bei jedem Sitzungsende freigegeben. Not-Aus und Safe Mode raeumen es ebenfalls ab.
+- Fehlende Berechtigung und ein leeres Ergebnis erzeugen eine erklaerende Meldung statt eines leeren Panels; ein abgeschnittener Durchlauf sagt es.
+- Nicht geprueft: die manuelle Abnahme am Zielgeraet, insbesondere Browser mit grossen Lesezeichenmenues und der App-Wechsel bei gehaltenem Trigger.
 
 Blendet die Tastenkuerzel der aktiven App als Overlay ein, solange ein Trigger gehalten wird. Erster
 Modulumfang, der fremde Shortcuts liest statt eigene auszufuehren, und deshalb ohne Anbindung an das

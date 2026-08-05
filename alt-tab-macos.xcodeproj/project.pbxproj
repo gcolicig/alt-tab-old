@@ -37,6 +37,8 @@
 		C0DE1000000000000000002E /* WindowDragEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000024 /* WindowDragEvents.swift */; };
 		C0DE1000000000000000003C /* MenuShortcutTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000002F /* MenuShortcutTestable.swift */; };
 		C0DE1000000000000000003D /* MenuShortcutTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000002F /* MenuShortcutTestable.swift */; };
+		C0DE10000000000000000040 /* ShortcutCluesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000032 /* ShortcutCluesController.swift */; };
+		C0DE10000000000000000041 /* ShortcutCluesPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000033 /* ShortcutCluesPanel.swift */; };
 		C0DE1000000000000000003E /* MenuShortcutReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000030 /* MenuShortcutReader.swift */; };
 		C0DE1000000000000000003F /* MenuShortcutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000031 /* MenuShortcutTests.swift */; };
 		C0DE10000000000000000039 /* LeaderSequenceTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000002D /* LeaderSequenceTestable.swift */; };
@@ -402,6 +404,8 @@
 		C0DE20000000000000000029 /* WindowDragGestureOwnership.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowDragGestureOwnership.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000024 /* WindowDragEvents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowDragEvents.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000002F /* MenuShortcutTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuShortcutTestable.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000032 /* ShortcutCluesController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutCluesController.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000033 /* ShortcutCluesPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutCluesPanel.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000030 /* MenuShortcutReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuShortcutReader.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000031 /* MenuShortcutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuShortcutTests.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000002D /* LeaderSequenceTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderSequenceTestable.swift; sourceTree = "<group>"; };
@@ -1680,6 +1684,7 @@
 				BF0C8468DF35990A7731D86C /* MainMenu.swift */,
 				BF0C80F8FAA00FF3D9682F26 /* DebugMenu.swift */,
 				AA974BA829B7D84C0099A29E /* PreviewPanel.swift */,
+				C0DE20000000000000000033 /* ShortcutCluesPanel.swift */,
 				C0DE20000000000000000026 /* DragSnapOverlay.swift */,
 			);
 			path = ui;
@@ -1802,6 +1807,7 @@
 			children = (
 				C0DE2000000000000000002F /* MenuShortcutTestable.swift */,
 				C0DE20000000000000000030 /* MenuShortcutReader.swift */,
+				C0DE20000000000000000032 /* ShortcutCluesController.swift */,
 			);
 			path = "shortcut-clues";
 			sourceTree = "<group>";
@@ -2820,6 +2826,8 @@
 				C0DE10000000000000000039 /* LeaderSequenceTestable.swift in Sources */,
 				C0DE1000000000000000003C /* MenuShortcutTestable.swift in Sources */,
 				C0DE1000000000000000003E /* MenuShortcutReader.swift in Sources */,
+				C0DE10000000000000000040 /* ShortcutCluesController.swift in Sources */,
+				C0DE10000000000000000041 /* ShortcutCluesPanel.swift in Sources */,
 				C0DE1000000000000000002E /* WindowDragEvents.swift in Sources */,
 				C0DE10000000000000000034 /* WindowDragGestureOwnership.swift in Sources */,
 				C0DE10000000000000000030 /* DragSnapOverlay.swift in Sources */,

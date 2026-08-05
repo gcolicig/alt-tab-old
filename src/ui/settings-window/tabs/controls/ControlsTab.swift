@@ -135,6 +135,7 @@ class ControlsTab {
         "hideShowAppShortcut": { App.hideShowSelectedApp() },
         "searchShortcut": { App.toggleSearchMode() },
         "lockSearchShortcut": { App.lockSearchMode() },
+        "shortcutCluesShortcut": { ShortcutCluesController.triggerPressed() },
         "windowLayoutLeftThirdShortcut": { Actions.perform(.windowLayout(.leftThird)) },
         "windowLayoutRightThirdShortcut": { Actions.perform(.windowLayout(.rightThird)) },
         "windowLayoutLeftTwoThirdsShortcut": { Actions.perform(.windowLayout(.leftTwoThirds)) },
@@ -189,7 +190,8 @@ class ControlsTab {
             + DisplayMoveAction.allCases.map(\.shortcutPreferenceKey)
             + SpaceAction.all.map(\.shortcutPreferenceKey)
             + (0..<Preferences.maxLaunchAppCount).map(LaunchAppAction.shortcutPreferenceKey)
-            + (0..<Preferences.maxOpenUrlCount).map(OpenUrlAction.shortcutPreferenceKey))
+            + (0..<Preferences.maxOpenUrlCount).map(OpenUrlAction.shortcutPreferenceKey)
+            + [ShortcutCluesController.shortcutPreferenceKey])
     private static let removableShortcutPreferences = [
         "holdShortcut", "nextWindowShortcut",
         "appsToShow", "spacesToShow", "screensToShow",

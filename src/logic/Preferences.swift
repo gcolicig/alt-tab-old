@@ -78,6 +78,7 @@ class Preferences {
             "windowDragArmingMarker": "false",
             "windowDragGestureOwnership": "",
             "windowResizeModifier": "0",
+            "shortcutCluesShortcut": defaultShortcut(""),
         ]
         (0..<maxShortcutCount).forEach { index in
             // Shortcut 1 mirrors Command-Tab, Shortcut 2 the native Command plus key above Tab

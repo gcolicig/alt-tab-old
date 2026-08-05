@@ -68,6 +68,7 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 ## Paralleler Umfang: Shortcut Clues
 
+- Umgesetzt 2026-08-05: Trigger, Menueleser, Overlay und Settings. Die Modifier-Kodierung wurde vor der Darstellung am Zielgeraet gemessen; manuelle Abnahme steht aus.
 - Overlay mit den Tastenkuerzeln der aktiven App, solange ein Trigger gehalten wird; liest fremde
   Shortcuts statt eigene auszufuehren und haengt daher nicht am Aktionsregister.
 - Datenquelle ist ausschliesslich die Menueleiste ueber die oeffentliche Accessibility API; keine

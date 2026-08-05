@@ -71,6 +71,10 @@ class KeyboardEvents {
                 return nil
             }
             withHyperKeyState { $0.markCapsLockUsed() }
+            // the clues overlay is shown while a trigger is held; the modifier change is where a release
+            // becomes visible without absorbing anything or opening a second tap
+            let cluesModifiers = NSEvent.ModifierFlags(rawValue: UInt(cgEvent.flags.rawValue))
+            DispatchQueue.main.async { ShortcutCluesController.modifiersChanged(cluesModifiers) }
             // TODO: it would be great to shortcut matching and trigger on the background thread
             // it would enable us to set App.shared.isBeingUsed here, and could stop tasks on main when they check the flag
             DispatchQueue.main.async {
@@ -543,6 +547,7 @@ class KeyboardEvents {
         TrackpadEvents.disableForSafety()
         ScrollwheelEvents.disableForSafety()
         WindowDragEvents.disableForSafety()
+        ShortcutCluesController.triggerReleased()
         App.hideUi()
         if let message { showSafetyAlert(message) }
     }
