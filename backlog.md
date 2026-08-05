@@ -570,6 +570,14 @@ V-13-Stand 2026-08-03, am Zielgeraet geprueft:
 - Gefunden und behoben: Nach einer erfolgreichen Kill-Recovery hat der Startvorgang den Wert sofort wieder uebernommen, weil der Modifier noch gesetzt war. Der Restore wurde dadurch in derselben Sitzung rueckgaengig gemacht. Das Modul startet nach einer Recovery jetzt deaktiviert und meldet die Wiederherstellung, wie es das Besitzmodell verlangt.
 - Offen: Wake und erneute Aktivierung aus `relinquished` heraus.
 
+Vorherige Groesse merken (offen):
+
+- Befund aus der Bedienung 2026-08-05: Wird ein Fenster ueber die Fill-Zone auf Bildschirmgroesse gebracht, behaelt es diese Groesse, wenn es danach wieder weggezogen wird. macOS stellt bei seinem eigenen Tiling die vorherige Groesse wieder her; der AltTab+-Drag kennt bisher kein Gedaechtnis dafuer.
+- Vorgesehen: Der Rahmen vor dem ersten Snap einer Drag-Sitzung wird gesichert. Wird das Fenster in einer spaeteren Sitzung aus einem Snap-Zustand heraus gezogen, ohne dass ein neues Snap-Ziel aktiv wird, erhaelt es diesen Rahmen zurueck, waehrend die Position dem Cursor folgt.
+- Abzugrenzen vom Ein-Schritt-Restore der Window Layouts: dort ist Restore eine eigene Aktion mit eigenem Shortcut. Hier geschieht es implizit beim Wegziehen, und die beiden Gedaechtnisse duerfen sich nicht gegenseitig ueberschreiben.
+- Offene Fragen: Wie lange gilt der gesicherte Rahmen — nur bis zum naechsten Snap, ueber die Sitzung hinaus, oder bis das Fenster von aussen veraendert wird? Und was geschieht, wenn eine App die Groesse waehrend des Snaps selbst aendert; dann ist der gesicherte Rahmen nicht mehr das, was der Nutzer erwartet.
+- Nicht im ersten Umfang: ein mehrstufiger Verlauf. Ein Schritt zurueck reicht, wie beim Layout-Restore auch.
+
 Resize, umgesetzt 2026-08-03:
 
 - Eigener Modifier, per Default aus, getrennt von Move konfigurierbar. Beide Module teilen sich Tap, Drag-Sitzung, Cursor-Aufloesung, AX-Queue, Coalescing und alle Sicherungen; nur die Zielgeometrie unterscheidet sich.
