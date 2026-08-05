@@ -34,6 +34,33 @@ class MenubarSpaceRowTests: XCTestCase {
         assertCentered(rect, in: 12)
     }
 
+    /// Measured on 2026-08-05: with separate Spaces off, macOS still reports one group per display, and the
+    /// externals carry exactly one Space each. Those groups cannot be switched to and are dropped.
+    func testSingleSpaceGroupsDisappearWhileTheArrangementSwitchesTogether() {
+        XCTAssertEqual(MenubarSpaceRow.visibleGroupIndexes(spaceCounts: [3, 1, 1], separateSpaces: false), [0])
+        XCTAssertEqual(MenubarSpaceRow.visibleGroupIndexes(spaceCounts: [1, 4, 1, 2], separateSpaces: false), [1, 3])
+    }
+
+    /// With the setting on, a lone Space is a real state indicator: that display switches independently.
+    func testEveryGroupSurvivesWhenDisplaysHaveSeparateSpaces() {
+        XCTAssertEqual(MenubarSpaceRow.visibleGroupIndexes(spaceCounts: [3, 1, 1], separateSpaces: true), [0, 1, 2])
+    }
+
+    /// Hiding everything would leave the row empty and tell the user less than the truth.
+    func testAnArrangementWithOneSpaceEverywhereStillShows() {
+        XCTAssertEqual(MenubarSpaceRow.visibleGroupIndexes(spaceCounts: [1, 1], separateSpaces: false), [0, 1])
+        XCTAssertEqual(MenubarSpaceRow.visibleGroupIndexes(spaceCounts: [1], separateSpaces: false), [0])
+    }
+
+    /// A gesture carries no target display, so a group on another screen is out of reach — unless one
+    /// gesture switches everything, in which case refusing the click would be a silent no-op.
+    func testAClickFromAnotherDisplayOnlyFailsWhenDisplaysSwitchIndependently() {
+        XCTAssertFalse(MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: false, separateSpaces: true))
+        XCTAssertTrue(MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: true, separateSpaces: true))
+        XCTAssertTrue(MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: false, separateSpaces: false))
+        XCTAssertTrue(MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: true, separateSpaces: false))
+    }
+
     func testGroupsUpToNineSpacesGetOneSegmentEach() {
         XCTAssertEqual(MenubarSpaceRow.directSegmentCount(1), 1)
         XCTAssertEqual(MenubarSpaceRow.directSegmentCount(9), 9)

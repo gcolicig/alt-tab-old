@@ -391,7 +391,7 @@ Implementierungsstand:
 
 - Die allgemeine Einstellung `Show Spaces next to the menubar icon` ist vorhanden und per Default aus.
 - Das bestehende `NSStatusItem` zeigt rechts vom AltTab+-Symbol nummerierte Segmente, gruppiert nach Display in Links-nach-rechts-Reihenfolge, mit duennem Trenner zwischen Gruppen; ab dem neunten Space je Display fasst ein `…`-Segment die restlichen in einem Menue zusammen.
-- Ein Klick auf eine Nicht-Cursor-Gruppe wird verworfen, wenn Cursor- und Gruppen-Display auseinanderfallen (nur bei einer einzigen, nicht gespiegelten Menueleiste moeglich); Instant Spaces kann kein Zieldisplay ueber die synthetischen Gesten adressieren.
+- Ein Klick auf eine Nicht-Cursor-Gruppe wird verworfen, wenn Cursor- und Gruppen-Display auseinanderfallen (nur bei einer einzigen, nicht gespiegelten Menueleiste moeglich); Instant Spaces kann kein Zieldisplay ueber die synthetischen Gesten adressieren. Diese Sperre gilt seit 2026-08-05 nur noch bei aktivierten separaten Spaces: ist die Systemeinstellung aus, schaltet eine Geste den ganzen Verbund, und die Sperre haette einen Klick vom Nebenbildschirm still verschluckt.
 - Der aktive Space verwendet eine staerkere monochrome Umrandung und eine dezente Flaeche; Tooltip und Accessibility-Label benennen das direkte Ziel.
 - Klicks laufen ueber die registrierte `Space n`-Aktion. Space-, Display- und Wake-Ereignisse aktualisieren die Reihe ohne Polling.
 - Eigene Spaces-Settings bieten konfliktgepruefte globale Shortcuts fuer links, rechts und Space 1 bis 9; alle bleiben per Default unbelegt.
@@ -404,7 +404,7 @@ Mehrere Displays:
 - Standard ist `macOS folgen`, kein eigener globaler Umschaltmodus.
 - Bei aktivem `Displays haben separate Spaces` werden Spaces nach Display gruppiert. Ein Klick wechselt nur das Display der angeklickten Gruppe.
 - Befund 2026-08-05, am Zielgeraet mit drei Bildschirmen gemessen: Bei deaktiviertem `Displays haben separate Spaces` liefert `CGSCopyManagedDisplaySpaces` entgegen der frueheren Annahme weiterhin eine Gruppe je Display. Das interne Display trug drei Spaces, die beiden externen je genau einen; eine gemeinsame Reihe gibt es auf Tahoe nicht.
-- Festgelegt, noch nicht umgesetzt: Solange `Displays haben separate Spaces` deaktiviert ist, werden Gruppen mit genau einem Space nicht gezeigt. Sie bieten keine Wahl an, weil der Wechsel ohnehin den ganzen Verbund betrifft. Bleibt genau eine Gruppe uebrig, entfaellt auch der Trenner. Bei aktivierter Einstellung bleibt jede Gruppe sichtbar, auch mit nur einem Space: dort ist die Nummer eine echte Zustandsanzeige, weil das Display unabhaengig wechselt.
+- Umgesetzt 2026-08-05: Solange `Displays haben separate Spaces` deaktiviert ist, werden Gruppen mit genau einem Space nicht gezeigt. Sie bieten keine Wahl an, weil der Wechsel ohnehin den ganzen Verbund betrifft. Bleibt genau eine Gruppe uebrig, entfaellt auch der Trenner. Bei aktivierter Einstellung bleibt jede Gruppe sichtbar, auch mit nur einem Space: dort ist die Nummer eine echte Zustandsanzeige, weil das Display unabhaengig wechselt.
 - Da macOS dieselbe Statusleiste auf mehreren Displays spiegeln kann, zeigt der MVP in einem Status-Item kompakte Display-Gruppen statt pro Menueleistenkopie unterschiedlichen Inhalt zu versprechen. Die Darstellung pro physischem Display ist ein separater Machbarkeitscheck.
 
 Optionale Namen:

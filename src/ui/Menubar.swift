@@ -134,7 +134,8 @@ class Menubar {
                 x += groupGap
             }
             x += addGroupSegments(group, startX: x, height: rowHeight, switchingEnabled: switchingEnabled,
-                                   isCursorGroup: cursorUuid == nil || cursorUuid == group.displayUuid,
+                                   isCursorGroup: MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: cursorUuid == nil || cursorUuid == group.displayUuid,
+                                                                                  separateSpaces: NSScreen.screensHaveSeparateSpaces),
                                    displayOrdinal: groups.count > 1 ? groupOffset + 1 : nil, into: container)
         }
         statusItem.length = iconWidth + totalWidth + 2
@@ -204,11 +205,14 @@ class Menubar {
             .compactMap { $0.cachedUuid() as String? }
         let ordered = MenubarSpaceRow.orderedDisplays(screensInOrder: orderedScreenUuids,
                                                       displaysWithSpaces: Spaces.screenSpacesMap.keys.map { $0 as String })
-        return ordered.compactMap { uuid in
+        let groups = ordered.compactMap { uuid -> SpaceGroup? in
             let key = uuid as ScreenUuid
             guard let spaceIds = Spaces.screenSpacesMap[key], !spaceIds.isEmpty else { return nil }
             return SpaceGroup(displayUuid: key, spaceIds: spaceIds, activeSpaceId: spaceIds.first { Spaces.visibleSpaces.contains($0) })
         }
+        let visible = MenubarSpaceRow.visibleGroupIndexes(spaceCounts: groups.map { $0.spaceIds.count },
+                                                          separateSpaces: NSScreen.screensHaveSeparateSpaces)
+        return visible.map { groups[$0] }
     }
 
     private static func spaceButton(_ index: Int, _ active: Bool, _ enabled: Bool, _ crossDisplay: Bool, _ displayOrdinal: Int?, _ displayUuid: ScreenUuid) -> NSButton {
@@ -298,7 +302,8 @@ class Menubar {
     /// than switching the wrong display's Spaces.
     private static func cursorMatchesGroup(_ button: NSButton) -> Bool {
         guard let groupUuid = button.identifier?.rawValue, let cursorUuid = NSScreen.withMouse()?.cachedUuid() else { return true }
-        return groupUuid == cursorUuid as String
+        return MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: groupUuid == cursorUuid as String,
+                                                separateSpaces: NSScreen.screensHaveSeparateSpaces)
     }
 
     private static func crossDisplayTooltip() -> String {
