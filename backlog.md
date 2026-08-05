@@ -439,7 +439,7 @@ Umsetzungsstand 2026-08-05:
 - Der Menuedurchlauf laeuft auf der AX-Queue, nie im Callback, mit Ergebnis-Cache je Prozess und kurzer Gueltigkeit.
 - Das Panel nimmt keinen Fokus, ignoriert Mausereignisse, erscheint nicht im Fensterwechsel und wird bei jedem Sitzungsende freigegeben. Not-Aus und Safe Mode raeumen es ebenfalls ab.
 - Fehlende Berechtigung und ein leeres Ergebnis erzeugen eine erklaerende Meldung statt eines leeren Panels; ein abgeschnittener Durchlauf sagt es.
-- Nicht geprueft: die manuelle Abnahme am Zielgeraet, insbesondere Browser mit grossen Lesezeichenmenues und der App-Wechsel bei gehaltenem Trigger.
+- Nicht geprueft: die manuelle Abnahme am Zielgeraet, insbesondere Browser mit grossen Lesezeichenmenues und der App-Wechsel bei gehaltenem Trigger. Checkliste: `docs/shortcut-clues-checklist.md`.
 
 Blendet die Tastenkuerzel der aktiven App als Overlay ein, solange ein Trigger gehalten wird. Erster
 Modulumfang, der fremde Shortcuts liest statt eigene auszufuehren, und deshalb ohne Anbindung an das
@@ -972,7 +972,7 @@ Default-Settings, Reset-Verhalten und Migration werden nach jedem neuen Modul ge
 | V-02 | Versions-Policy nach Tahoe-only | Klaeren: nur aktuelle Major-Version `N` oder `N und N-1` |
 | V-03 | Private Symbolbindung | `_AXUIElementGetWindow` ist optional zur Laufzeit gebunden; weitere private Symbole vor ihrer ersten neuen Modulnutzung gleichwertig degradierbar machen |
 | V-04 | Provenienz-Register | `THIRD-PARTY.md` ist fuer die bisher ausgewerteten Quellen angelegt; Pflege im PR-Prozess bleibt zu erzwingen |
-| V-05 | Modul- und App-Klassen-Checklisten | `docs/input-safety-checklist.md`, `docs/window-layout-checklist.md` und `docs/window-drag-checklist.md` vor jeder oeffentlichen Version und nach jedem unterstuetzten macOS-Major-Update ausfuehren |
+| V-05 | Modul- und App-Klassen-Checklisten | `docs/input-safety-checklist.md`, `docs/window-layout-checklist.md`, `docs/window-drag-checklist.md`, `docs/shortcut-clues-checklist.md` und `docs/spaces-menubar-checklist.md` vor jeder oeffentlichen Version und nach jedem unterstuetzten macOS-Major-Update ausfuehren |
 | V-06 | Energie-Baseline | Idle- und Aktivmessungen auf dem Tahoe-/Apple-Silicon-Zielgeraet dokumentieren |
 | V-07 | Distribution | Signing, Notarisierung, Vertriebskanal und Update-Strategie vor erster oeffentlicher Version abschliessen; Sparkle bleibt optional |
 | V-08 | Safe Start und Circuit Breaker | Vor dem ersten ausgelieferten Input-Modul mit Login-Start, verbliebenem Arming-Marker und wiederholtem Tap-Timeout pruefen |
@@ -981,7 +981,7 @@ Default-Settings, Reset-Verhalten und Migration werden nach jedem neuen Modul ge
 | V-11 | Display-Topologien | Snapping-Checkliste ueber definierte Topologien, Separate-Spaces-Zustaende und dynamische Reconfiguration ausfuehren |
 | V-12 | Instant Spaces | Tahoe-Build, Separate Spaces ein/aus, Cursor-Display, Fullscreen-Space, Stage Manager, Mission Control/App Expose, Randwechsel und schnelle direkte Mehrfachwechsel pruefen |
 | V-13 | `Command+Control`-Move | `NSWindowShouldDragOnGesture` vor Aktivierung lesen, auf `false` setzen und verifizieren; Disable, externe Aenderung, Crash und Recovery ohne destruktives Restore pruefen |
-| V-14 | Spaces-Menueleiste | Ein bis 16 Spaces, mehrere Displays, Fullscreen-Spaces, Reorder, Create/Delete, Wake, Mission-Control-Ende, Statusleisten-Ueberlauf und VoiceOver pruefen; mit drei Bildschirmen und deaktivierten separaten Spaces pruefen, dass nur Gruppen mit mehr als einem Space erscheinen und kein Trenner uebrig bleibt |
+| V-14 | Spaces-Menueleiste | Checkliste `docs/spaces-menubar-checklist.md`. Ein bis 16 Spaces, mehrere Displays, Fullscreen-Spaces, Reorder, Create/Delete, Wake, Mission-Control-Ende, Statusleisten-Ueberlauf und VoiceOver pruefen; mit drei Bildschirmen und deaktivierten separaten Spaces pruefen, dass nur Gruppen mit mehr als einem Space erscheinen und kein Trenner uebrig bleibt |
 | V-15 | Profile und Session-Restore | Fenster-Matching, App-Start, verlorene Space-Bindings, geaenderte Titel, mehrere Fenster derselben App und geaenderte Display-Topologie ohne falsche Mutation pruefen |
 
 ## Provenienz-Register
