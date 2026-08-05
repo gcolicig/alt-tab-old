@@ -209,6 +209,14 @@ extension DragSessionTests {
         XCTAssertFalse(MenubarDropTarget.isOver(.zero, statusItemFrame: .zero))
     }
 
+    /// The strip is 30pt tall and borders the next display, so slipping out of the item on the way to
+    /// releasing used to lose the target. It holds while the cursor stays in the menubar band.
+    func testTheDropTargetHoldsWhileTheCursorStaysInTheMenubarStrip() {
+        XCTAssertTrue(MenubarDropTarget.staysLatched(CGPoint(x: 500, y: 5), menubarStripBottom: 30))
+        XCTAssertTrue(MenubarDropTarget.staysLatched(CGPoint(x: 500, y: 29), menubarStripBottom: 30))
+        XCTAssertFalse(MenubarDropTarget.staysLatched(CGPoint(x: 500, y: 31), menubarStripBottom: 30))
+    }
+
     /// A window straddling two screens belongs to the one it covers most, not to the one holding its origin.
     func testTheSourceDisplayIsTheOneTheWindowMostlyCovers() {
         let left = CGRect(x: 0, y: 0, width: 1000, height: 800)

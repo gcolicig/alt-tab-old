@@ -41,6 +41,7 @@ enum WindowDragEvents {
     /// When the cursor first reached the current edge, so a shared edge can require dwell.
     private static var edgeEnteredAt: TimeInterval?
     private static var edgeSide: DragSnapTarget = .none
+    private static var dropLatched = false
     private static let stabilityWindowSeconds = 5.0
     /// The preference stores an index into `DragModifierPreference.selectable`, not a raw value: writing
     /// the case name here would leave the emergency path relying on a parse failure resetting to default.
@@ -286,7 +287,7 @@ enum WindowDragEvents {
             return
         }
         // a drop on the menubar wins over any edge: the cursor is on the menubar, not on a screen edge
-        if let dropFrame = menubarDropFrame(location) {
+        if let dropFrame = menubarDropFrame(location, in: screen) {
             snapTarget = .fill
             snapFrame = dropFrame
             presentOverlay()
@@ -315,8 +316,13 @@ enum WindowDragEvents {
 
     /// The AltTab+ status item as a drop target: the window lands on the next display in physical order,
     /// keeping how it sat on its old one.
-    private static func menubarDropFrame(_ location: CGPoint) -> CGRect? {
-        guard let origin = originWindowFrame, MenubarDropTarget.isOver(location, statusItemFrame: quartzStatusItemFrame()) else { return nil }
+    private static func menubarDropFrame(_ location: CGPoint, in screen: CGRect) -> CGRect? {
+        if MenubarDropTarget.isOver(location, statusItemFrame: quartzStatusItemFrame()) {
+            dropLatched = true
+        } else if !MenubarDropTarget.staysLatched(location, menubarStripBottom: screen.minY) {
+            dropLatched = false
+        }
+        guard let origin = originWindowFrame, dropLatched else { return nil }
         let ordered = DisplayMoveGeometry.orderedFrames(quartzVisibleFrames())
         guard let sourceIndex = MenubarDropTarget.sourceIndex(of: origin, in: ordered),
               let targetIndex = DisplayMoveGeometry.targetScreenIndex(.nextDisplay, currentIndex: sourceIndex, screenCount: ordered.count) else { return nil }
@@ -335,6 +341,7 @@ enum WindowDragEvents {
         snapFrame = nil
         edgeSide = .none
         edgeEnteredAt = nil
+        dropLatched = false
         presentOverlay()
     }
 
@@ -412,6 +419,7 @@ enum WindowDragEvents {
         snapFrame = nil
         edgeSide = .none
         edgeEnteredAt = nil
+        dropLatched = false
         DispatchQueue.main.async { DragSnapOverlay.dismiss() }
     }
 }

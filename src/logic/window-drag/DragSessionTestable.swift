@@ -154,6 +154,15 @@ enum MenubarDropTarget {
         return statusItemFrame.contains(cursor)
     }
 
+    /// Once the status item has been hit, the target stays until the cursor leaves the menubar strip.
+    ///
+    /// Measured while operating it: the strip is 30pt tall and borders the next display directly, so the
+    /// cursor slipped out of the item again on the way to releasing and the target was gone by mouse up.
+    /// Requiring the release to land inside those 30 points is aiming, not dropping.
+    static func staysLatched(_ cursor: CGPoint, menubarStripBottom: CGFloat) -> Bool {
+        cursor.y < menubarStripBottom
+    }
+
     /// The display a window sits on is the one it overlaps most, not the one holding its origin: a window
     /// straddling a boundary would otherwise be moved away from the screen it is mostly on.
     static func sourceIndex(of windowFrame: CGRect, in orderedFrames: [CGRect]) -> Int? {
