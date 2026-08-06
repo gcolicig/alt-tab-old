@@ -30,6 +30,15 @@ class DockEvents {
 
     private static let handleEvent: AXObserverCallback = { _, _, notificationName, _ in
         Logger.debug { notificationName }
-        MissionControl.setState(MissionControlState(rawValue: notificationName as String)!)
+        let state = MissionControlState(rawValue: notificationName as String)!
+        MissionControl.setState(state)
+        // Spaces are created, deleted and reordered inside Mission Control, and none of that changes the
+        // active Space, so `activeSpaceDidChange` never fires for it and the menubar row kept showing the
+        // old arrangement. Leaving Mission Control is when the new one is settled.
+        if state == .inactive {
+            DispatchQueue.main.async {
+                Menubar.refreshSpaces()
+            }
+        }
     }
 }

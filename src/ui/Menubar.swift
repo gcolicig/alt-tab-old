@@ -151,18 +151,23 @@ class Menubar {
 
     /// Adds the segments for one display group and returns the width consumed. `displayOrdinal` is only
     /// set when more than one group is shown, so VoiceOver can name which display a segment belongs to.
+    ///
+    /// `isCursorGroup` only dims the segments, it no longer disables them. It is captured when the row is
+    /// built, but the cursor moves between displays without rebuilding it, so a stale `false` left the
+    /// segments of the display the user was actually on dead to the click. `spaceSegmentOnClick` already
+    /// gates on the live cursor position, which is the authoritative check.
     private static func addGroupSegments(_ group: SpaceGroup, startX: CGFloat, height: CGFloat, switchingEnabled: Bool,
                                           isCursorGroup: Bool, displayOrdinal: Int?, into container: NSView) -> CGFloat {
         let directCount = MenubarSpaceRow.directSegmentCount(group.spaceIds.count)
         let hasOverflow = MenubarSpaceRow.hasOverflow(group.spaceIds.count)
         (0..<directCount).forEach { offset in
-            let button = spaceButton(offset + 1, group.spaceIds[offset] == group.activeSpaceId, switchingEnabled && isCursorGroup, !isCursorGroup, displayOrdinal, group.displayUuid)
+            let button = spaceButton(offset + 1, group.spaceIds[offset] == group.activeSpaceId, switchingEnabled, !isCursorGroup, displayOrdinal, group.displayUuid)
             button.frame = MenubarSpaceRow.centeredRect(x: startX + CGFloat(offset) * segmentWidth + 2, width: segmentWidth - 4, availableHeight: height, preferredHeight: MenubarSpaceRow.segmentHeight)
             container.addSubview(button)
         }
         guard hasOverflow else { return CGFloat(directCount) * segmentWidth }
         let overflowIndexes = MenubarSpaceRow.overflowIndexes(group.spaceIds.count)
-        let overflowButton = overflowButton(overflowIndexes, group.spaceIds, group.activeSpaceId, switchingEnabled && isCursorGroup, !isCursorGroup, displayOrdinal, group.displayUuid)
+        let overflowButton = overflowButton(overflowIndexes, group.spaceIds, group.activeSpaceId, switchingEnabled, !isCursorGroup, displayOrdinal, group.displayUuid)
         overflowButton.frame = MenubarSpaceRow.centeredRect(x: startX + CGFloat(directCount) * segmentWidth + 2, width: segmentWidth - 4, availableHeight: height, preferredHeight: MenubarSpaceRow.segmentHeight)
         container.addSubview(overflowButton)
         return CGFloat(directCount + 1) * segmentWidth
