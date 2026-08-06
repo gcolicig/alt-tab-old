@@ -118,6 +118,13 @@ class Menubar {
         guard !groups.isEmpty else { return }
         let switchingEnabled = InstantSpaces.runtimeAvailability().isAvailable
         let cursorUuid = NSScreen.withMouse()?.cachedUuid()
+        // temporary, to settle why the row dims itself after a switch on a stacked display: two causes were
+        // guessed and dropped for that symptom, so this records the inputs instead of a third guess
+        Logger.debug {
+            let groupList = groups.map { "\($0.displayUuid)=\($0.spaceIds.count)" }.joined(separator: ",")
+            let cursor = (cursorUuid as String?) ?? "nil"
+            return "row rebuild: cursor=\(cursor) switching=\(InstantSpaces.isSwitching) visible=\(Spaces.visibleSpaces) groups=[\(groupList)]"
+        }
         // the row must never collapse: the status button can still be unsized the first time this runs,
         // and since the icon moves into a subview here, a zero height renders as an empty menubar slot.
         // Beyond that the button's own height wins: `thickness` reports 22 on a menubar that is 32pt tall,
@@ -205,8 +212,16 @@ class Menubar {
     /// then reports one shared display identifier for all screens.
     private static func spaceGroups() -> [SpaceGroup] {
         guard !Spaces.screenSpacesMap.isEmpty else { return [] }
+        // The screen carrying the menubar leads, the rest follow by physical position. Sorting purely by
+        // `origin.x` put a display stacked *above* the main one first, because a wider screen centred over
+        // a narrower one starts further left: measured -900 against 0. Anchoring on the main screen is
+        // stable under every arrangement, where a purely physical order flips as soon as a display moves.
         let orderedScreenUuids = NSScreen.screens
-            .sorted { $0.frame.origin.x != $1.frame.origin.x ? $0.frame.origin.x < $1.frame.origin.x : $0.frame.origin.y < $1.frame.origin.y }
+            .sorted { lhs, rhs in
+                if isMainScreen(lhs) != isMainScreen(rhs) { return isMainScreen(lhs) }
+                if lhs.frame.origin.x != rhs.frame.origin.x { return lhs.frame.origin.x < rhs.frame.origin.x }
+                return lhs.frame.origin.y < rhs.frame.origin.y
+            }
             .compactMap { $0.cachedUuid() as String? }
         let ordered = MenubarSpaceRow.orderedDisplays(screensInOrder: orderedScreenUuids,
                                                       displaysWithSpaces: Spaces.screenSpacesMap.keys.map { $0 as String })
@@ -277,6 +292,12 @@ class Menubar {
     private static var overflowIndexesByButton = [ObjectIdentifier: [Int]]()
 
     @objc private static func spaceSegmentOnClick(_ sender: NSButton) {
+        // temporary, paired with the rebuild log: says whether a click was refused and against which cursor
+        Logger.debug {
+            let group = sender.identifier?.rawValue ?? "nil"
+            let cursor = (NSScreen.withMouse()?.cachedUuid() as String?) ?? "nil"
+            return "segment click: index=\(sender.tag) group=\(group) cursor=\(cursor) accepted=\(cursorMatchesGroup(sender))"
+        }
         guard cursorMatchesGroup(sender) else { return }
         if sender.tag <= 9 {
             Actions.perform(.space(.index(sender.tag)))
@@ -305,6 +326,11 @@ class Menubar {
     /// Spaces can only switch the display the cursor is physically on (it posts synthetic trackpad
     /// gestures, which carry no target-display field), so a mismatched click is silently ignored rather
     /// than switching the wrong display's Spaces.
+    private static func isMainScreen(_ screen: NSScreen) -> Bool {
+        guard let id = screen.number() else { return false }
+        return CGDisplayIsMain(id) != 0
+    }
+
     private static func cursorMatchesGroup(_ button: NSButton) -> Bool {
         guard let groupUuid = button.identifier?.rawValue, let cursorUuid = NSScreen.withMouse()?.cachedUuid() else { return true }
         return MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: groupUuid == cursorUuid as String,
