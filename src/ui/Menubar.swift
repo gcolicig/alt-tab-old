@@ -189,17 +189,19 @@ class Menubar {
     /// when the row was last built, and the cursor crosses displays without any Space change to rebuild
     /// on. Fourteen consecutive clicks were logged against an unreachable group with no feedback at all.
     /// Restyling in place rather than rebuilding avoids tearing the buttons out from under the mouse.
-    static func refreshReachabilityDimming() {
+    static func refreshReachabilityHint() {
         guard let container = spaceSegmentsView else { return }
         let cursorUuid = NSScreen.withMouse()?.cachedUuid() as String?
         let separateSpaces = NSScreen.screensHaveSeparateSpaces
+        let color = segmentColor()
         container.subviews.compactMap { $0 as? NSButton }.forEach { button in
             guard let groupUuid = button.identifier?.rawValue else { return }
             let underCursor = cursorUuid == nil || cursorUuid == groupUuid
             let reachable = MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: underCursor, separateSpaces: separateSpaces)
-            button.alphaValue = reachable ? 1 : 0.4
+            button.layer?.borderColor = color.withAlphaComponent(borderAlpha(reachable: reachable)).cgColor
         }
     }
+
 
     private static func restyleExistingSegments(_ group: SpaceGroup) -> Bool {
         guard let container = spaceSegmentsView, !group.spaceIds.isEmpty, !MenubarSpaceRow.hasOverflow(group.spaceIds.count) else { return false }
@@ -247,6 +249,28 @@ class Menubar {
         return visible.map { groups[$0] }
     }
 
+    private static func segmentColor() -> NSColor {
+        if #available(macOS 10.14, *) {
+            return NSApp.effectiveAppearance.getThemeName() == .dark ? .white : .black
+        }
+        return .black
+    }
+
+    /// The row states three things, and each gets its own channel so none can be mistaken for another:
+    /// how many Spaces a display has, which one is active, and whether a click here can reach it.
+    ///
+    /// Count is the number of segments. Active is the filled background plus the bolder digit. The frame
+    /// carries reachability **alone** — letting it also encode active made "active but unreachable" look
+    /// stronger than "inactive but reachable", which says the opposite of what it should. Dimming the
+    /// whole segment, as before, made the other display's count and active Space hard to read at all.
+    private static func borderAlpha(reachable: Bool) -> CGFloat {
+        reachable ? 0.55 : 0.16
+    }
+
+    /// Carries the active Space on its own now that the frame no longer does, so it has to be legible
+    /// rather than a hint.
+    private static let activeSegmentFill = CGFloat(0.22)
+
     private static func spaceButton(_ index: Int, _ active: Bool, _ enabled: Bool, _ crossDisplay: Bool, _ displayOrdinal: Int?, _ displayUuid: ScreenUuid) -> NSButton {
         let button = NSButton(title: "\(index)", target: self, action: #selector(spaceSegmentOnClick(_:)))
         button.isBordered = false
@@ -264,16 +288,15 @@ class Menubar {
         button.layer?.cornerRadius = 5
         button.identifier = NSUserInterfaceItemIdentifier(displayUuid as String)
         button.isEnabled = enabled
-        button.alphaValue = crossDisplay ? 0.4 : 1
         let baseTooltip = crossDisplay ? crossDisplayTooltip() : NSLocalizedString("More Spaces", comment: "")
         button.toolTip = displayOrdinal.map { String(format: NSLocalizedString("%@ (Display %d)", comment: ""), baseTooltip, $0) } ?? baseTooltip
         button.setAccessibilityLabel(button.toolTip)
         let activeInOverflow = indexes.contains { spaceIds[$0 - 1] == activeSpaceId }
         let font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: activeInOverflow ? .semibold : .medium)
-        let color: NSColor = if #available(macOS 10.14, *) { NSApp.effectiveAppearance.getThemeName() == .dark ? .white : .black } else { .black }
+        let color = segmentColor()
         button.attributedTitle = NSAttributedString(string: "…", attributes: [.font: font, .foregroundColor: color])
-        button.layer?.backgroundColor = activeInOverflow ? color.withAlphaComponent(0.12).cgColor : NSColor.clear.cgColor
-        button.layer?.borderColor = color.withAlphaComponent(activeInOverflow ? 0.9 : 0.28).cgColor
+        button.layer?.backgroundColor = activeInOverflow ? color.withAlphaComponent(activeSegmentFill).cgColor : NSColor.clear.cgColor
+        button.layer?.borderColor = color.withAlphaComponent(borderAlpha(reachable: !crossDisplay)).cgColor
         button.layer?.borderWidth = 1
         overflowIndexesByButton[ObjectIdentifier(button)] = indexes
         return button
@@ -282,20 +305,14 @@ class Menubar {
     private static func styleSpaceButton(_ button: NSButton, _ index: Int, _ active: Bool, _ enabled: Bool, _ crossDisplay: Bool, _ displayOrdinal: Int? = nil) {
         button.tag = index
         button.isEnabled = enabled
-        button.alphaValue = crossDisplay ? 0.4 : 1
         let baseTooltip = crossDisplay ? crossDisplayTooltip() : String(format: NSLocalizedString("Switch to Space %d", comment: ""), index)
         button.toolTip = displayOrdinal.map { String(format: NSLocalizedString("%@ (Display %d)", comment: ""), baseTooltip, $0) } ?? baseTooltip
         button.setAccessibilityLabel(button.toolTip)
         let font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: active ? .semibold : .medium)
-        let color: NSColor
-        if #available(macOS 10.14, *) {
-            color = NSApp.effectiveAppearance.getThemeName() == .dark ? .white : .black
-        } else {
-            color = .black
-        }
+        let color = segmentColor()
         button.attributedTitle = NSAttributedString(string: "\(index)", attributes: [.font: font, .foregroundColor: color])
-        button.layer?.backgroundColor = active ? color.withAlphaComponent(0.12).cgColor : NSColor.clear.cgColor
-        button.layer?.borderColor = color.withAlphaComponent(active ? 0.9 : 0.28).cgColor
+        button.layer?.backgroundColor = active ? color.withAlphaComponent(activeSegmentFill).cgColor : NSColor.clear.cgColor
+        button.layer?.borderColor = color.withAlphaComponent(borderAlpha(reachable: !crossDisplay)).cgColor
         button.layer?.borderWidth = 1
     }
 
@@ -303,8 +320,19 @@ class Menubar {
     /// that reach the same underlying switch directly, since only a shortcut needs a registered action.
     private static var overflowIndexesByButton = [ObjectIdentifier: [Int]]()
 
+    /// A refused click must say so. Measured on 2026-08-06: fourteen clicks in a row went to a group of
+    /// another display and did nothing at all, because the refusal was silent and the hint that should
+    /// have warned was stale. Remote switching is not an option — the Dock applies a swipe to the active
+    /// menubar display, which nothing about the event or the cursor can redirect (S-10).
+    private static func refuseCrossDisplayClick(_ sender: NSButton) -> Bool {
+        guard !cursorMatchesGroup(sender) else { return false }
+        refreshReachabilityHint()
+        TransientNotice.show(crossDisplayTooltip())
+        return true
+    }
+
     @objc private static func spaceSegmentOnClick(_ sender: NSButton) {
-        guard cursorMatchesGroup(sender) else { return }
+        guard !refuseCrossDisplayClick(sender) else { return }
         if sender.tag <= 9 {
             Actions.perform(.space(.index(sender.tag)))
         } else {
@@ -313,7 +341,7 @@ class Menubar {
     }
 
     @objc private static func spaceOverflowOnClick(_ sender: NSButton) {
-        guard cursorMatchesGroup(sender), let indexes = overflowIndexesByButton[ObjectIdentifier(sender)] else { return }
+        guard !refuseCrossDisplayClick(sender), let indexes = overflowIndexesByButton[ObjectIdentifier(sender)] else { return }
         let menu = NSMenu()
         indexes.forEach { index in
             let item = menu.addItem(withTitle: String(format: NSLocalizedString("Space %d", comment: ""), index), action: #selector(spaceOverflowItemOnClick(_:)), keyEquivalent: "")
@@ -373,7 +401,7 @@ private final class SpaceSegmentsView: NSView {
     }
 
     override func mouseEntered(with event: NSEvent) {
-        Menubar.refreshReachabilityDimming()
+        Menubar.refreshReachabilityHint()
     }
 }
 
