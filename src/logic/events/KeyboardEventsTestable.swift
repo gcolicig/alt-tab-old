@@ -2,26 +2,31 @@ import Carbon.HIToolbox.Events
 import ShortcutRecorder
 
 class KeyboardEventsTestable {
+    /// The block boundaries are hoisted into typed constants rather than repeated inline. Spelling the same
+    /// multi-term sum out at every use made the type checker exceed the 250ms limit the build enforces as
+    /// an error. The assigned ids are unchanged; the uniqueness tests cover that.
     static var globalShortcutsIds: [String: Int] {
+        let shortcutCount: Int = Preferences.maxShortcutCount
+        let afterHoldShortcuts: Int = shortcutCount * 2
+        let afterLayouts: Int = afterHoldShortcuts + WindowLayoutAction.allCases.count
+        let afterDisplayMoves: Int = afterLayouts + DisplayMoveAction.allCases.count
+        let afterSpaceActions: Int = afterDisplayMoves + SpaceAction.all.count
+        let afterLaunchApps: Int = afterSpaceActions + Preferences.maxLaunchAppCount
         var ids = [String: Int]()
-        (0..<Preferences.maxShortcutCount).forEach { ids[Preferences.indexToName("nextWindowShortcut", $0)] = $0 }
-        (0..<Preferences.maxShortcutCount).forEach { ids[Preferences.indexToName("holdShortcut", $0)] = Preferences.maxShortcutCount + $0 }
+        (0..<shortcutCount).forEach { ids[Preferences.indexToName("nextWindowShortcut", $0)] = $0 }
+        (0..<shortcutCount).forEach { ids[Preferences.indexToName("holdShortcut", $0)] = shortcutCount + $0 }
         WindowLayoutAction.allCases.enumerated().forEach {
-            ids[$0.element.shortcutPreferenceKey] = Preferences.maxShortcutCount * 2 + $0.offset
+            ids[$0.element.shortcutPreferenceKey] = afterHoldShortcuts + $0.offset
         }
         DisplayMoveAction.allCases.enumerated().forEach {
-            ids[$0.element.shortcutPreferenceKey] = Preferences.maxShortcutCount * 2 + WindowLayoutAction.allCases.count + $0.offset
+            ids[$0.element.shortcutPreferenceKey] = afterLayouts + $0.offset
         }
         SpaceAction.all.enumerated().forEach {
-            ids[$0.element.shortcutPreferenceKey] = Preferences.maxShortcutCount * 2 + WindowLayoutAction.allCases.count
-                + DisplayMoveAction.allCases.count + $0.offset
+            ids[$0.element.shortcutPreferenceKey] = afterDisplayMoves + $0.offset
         }
-        let afterSpaceActions = Preferences.maxShortcutCount * 2 + WindowLayoutAction.allCases.count
-            + DisplayMoveAction.allCases.count + SpaceAction.all.count
         (0..<Preferences.maxLaunchAppCount).forEach {
             ids[LaunchAppAction.shortcutPreferenceKey($0)] = afterSpaceActions + $0
         }
-        let afterLaunchApps = afterSpaceActions + Preferences.maxLaunchAppCount
         (0..<Preferences.maxOpenUrlCount).forEach {
             ids[OpenUrlAction.shortcutPreferenceKey($0)] = afterLaunchApps + $0
         }
