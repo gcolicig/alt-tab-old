@@ -55,10 +55,10 @@ class MenubarSpaceRowTests: XCTestCase {
     /// A gesture carries no target display, so a group on another screen is out of reach — unless one
     /// gesture switches everything, in which case refusing the click would be a silent no-op.
     func testAClickFromAnotherDisplayOnlyFailsWhenDisplaysSwitchIndependently() {
-        XCTAssertFalse(MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: false, separateSpaces: true))
-        XCTAssertTrue(MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: true, separateSpaces: true))
-        XCTAssertTrue(MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: false, separateSpaces: false))
-        XCTAssertTrue(MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: true, separateSpaces: false))
+        XCTAssertFalse(MenubarSpaceRow.gestureReachesGroup(groupIsUnderCursor: false, separateSpaces: true))
+        XCTAssertTrue(MenubarSpaceRow.gestureReachesGroup(groupIsUnderCursor: true, separateSpaces: true))
+        XCTAssertTrue(MenubarSpaceRow.gestureReachesGroup(groupIsUnderCursor: false, separateSpaces: false))
+        XCTAssertTrue(MenubarSpaceRow.gestureReachesGroup(groupIsUnderCursor: true, separateSpaces: false))
     }
 
     func testGroupsUpToNineSpacesGetOneSegmentEach() {
