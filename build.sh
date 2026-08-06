@@ -169,7 +169,10 @@ if [[ "$RUN_TESTS" == true ]]; then
 fi
 
 if [[ "$INSTALL_APP" == true ]]; then
-  if [[ -w /Applications ]]; then
+  # Replacing an existing bundle only needs that bundle to be writable; /Applications itself is written
+  # solely when the bundle has to be created. Testing the directory alone sent a permissible install
+  # through sudo, which managed machines deny outright, so --install failed there for no good reason.
+  if [[ -w "/Applications/AltTab+.app" || -w /Applications ]]; then
     ditto "$APP_PATH" "/Applications/AltTab+.app"
   else
     sudo ditto "$APP_PATH" "/Applications/AltTab+.app"
