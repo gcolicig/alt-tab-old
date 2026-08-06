@@ -118,13 +118,6 @@ class Menubar {
         guard !groups.isEmpty else { return }
         let switchingEnabled = InstantSpaces.runtimeAvailability().isAvailable
         let cursorUuid = NSScreen.withMouse()?.cachedUuid()
-        // temporary, to settle why the row dims itself after a switch on a stacked display: two causes were
-        // guessed and dropped for that symptom, so this records the inputs instead of a third guess
-        Logger.debug {
-            let groupList = groups.map { "\($0.displayUuid)=\($0.spaceIds.count)" }.joined(separator: ",")
-            let cursor = (cursorUuid as String?) ?? "nil"
-            return "row rebuild: cursor=\(cursor) switching=\(InstantSpaces.isSwitching) visible=\(Spaces.visibleSpaces) groups=[\(groupList)]"
-        }
         // the row must never collapse: the status button can still be unsized the first time this runs,
         // and since the icon moves into a subview here, a zero height renders as an empty menubar slot.
         // Beyond that the button's own height wins: `thickness` reports 22 on a menubar that is 32pt tall,
@@ -132,7 +125,7 @@ class Menubar {
         let rowHeight = statusButton.bounds.height > 0 ? statusButton.bounds.height : NSStatusBar.system.thickness
         let totalWidth = MenubarSpaceRow.totalWidth(groups.map { $0.spaceIds.count })
         // the container carries its final frame before any segment goes in, like the single-row version did
-        let container = NSView(frame: NSRect(x: iconWidth, y: 0, width: totalWidth, height: rowHeight))
+        let container = SpaceSegmentsView(frame: NSRect(x: iconWidth, y: 0, width: totalWidth, height: rowHeight))
         var x = CGFloat(0)
         groups.enumerated().forEach { groupOffset, group in
             if groupOffset > 0 {
@@ -189,6 +182,25 @@ class Menubar {
     }
 
     /// Updates the existing single-group segments in place. Returns false when the row has to be rebuilt.
+    /// Updates only the dimming, from the live cursor position.
+    ///
+    /// A segment of another display cannot be switched, because the synthetic gesture carries no target
+    /// display. That refusal is correct, but it was silent: the dimming that announces it was computed
+    /// when the row was last built, and the cursor crosses displays without any Space change to rebuild
+    /// on. Fourteen consecutive clicks were logged against an unreachable group with no feedback at all.
+    /// Restyling in place rather than rebuilding avoids tearing the buttons out from under the mouse.
+    static func refreshReachabilityDimming() {
+        guard let container = spaceSegmentsView else { return }
+        let cursorUuid = NSScreen.withMouse()?.cachedUuid() as String?
+        let separateSpaces = NSScreen.screensHaveSeparateSpaces
+        container.subviews.compactMap { $0 as? NSButton }.forEach { button in
+            guard let groupUuid = button.identifier?.rawValue else { return }
+            let underCursor = cursorUuid == nil || cursorUuid == groupUuid
+            let reachable = MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: underCursor, separateSpaces: separateSpaces)
+            button.alphaValue = reachable ? 1 : 0.4
+        }
+    }
+
     private static func restyleExistingSegments(_ group: SpaceGroup) -> Bool {
         guard let container = spaceSegmentsView, !group.spaceIds.isEmpty, !MenubarSpaceRow.hasOverflow(group.spaceIds.count) else { return false }
         let buttons = container.subviews.compactMap { $0 as? NSButton }
@@ -292,12 +304,6 @@ class Menubar {
     private static var overflowIndexesByButton = [ObjectIdentifier: [Int]]()
 
     @objc private static func spaceSegmentOnClick(_ sender: NSButton) {
-        // temporary, paired with the rebuild log: says whether a click was refused and against which cursor
-        Logger.debug {
-            let group = sender.identifier?.rawValue ?? "nil"
-            let cursor = (NSScreen.withMouse()?.cachedUuid() as String?) ?? "nil"
-            return "segment click: index=\(sender.tag) group=\(group) cursor=\(cursor) accepted=\(cursorMatchesGroup(sender))"
-        }
         guard cursorMatchesGroup(sender) else { return }
         if sender.tag <= 9 {
             Actions.perform(.space(.index(sender.tag)))
@@ -345,6 +351,29 @@ class Menubar {
 private final class PassthroughImageView: NSImageView {
     override func hitTest(_ point: NSPoint) -> NSView? {
         nil
+    }
+}
+
+/// Carries the Space segments and refreshes their dimming when the mouse arrives.
+///
+/// Which segments are reachable depends on the display under the cursor, and the cursor moves between
+/// displays without any event the row was listening to. Arriving on the row is the last moment before
+/// the reachability matters, and the only one at which updating it costs nothing.
+private final class SpaceSegmentsView: NSView {
+    private var cursorTrackingArea: NSTrackingArea?
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let cursorTrackingArea {
+            removeTrackingArea(cursorTrackingArea)
+        }
+        let area = NSTrackingArea(rect: bounds, options: [.mouseEnteredAndExited, .activeAlways], owner: self)
+        addTrackingArea(area)
+        cursorTrackingArea = area
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        Menubar.refreshReachabilityDimming()
     }
 }
 

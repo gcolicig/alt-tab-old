@@ -509,7 +509,13 @@ Messpunkt vor jeder Umsetzung:
 
 Technische Huerden im Emulationsfall:
 
-- Synchrones Wechseln: die synthetischen Dock-Swipes koennen kein Zieldisplay adressieren (dokumentiert in 2C). Einziger bekannter Weg ohne das verworfene `CGSManagedDisplaySetCurrentSpace`: Cursor per `CGWarpMouseCursorPosition` nacheinander auf jedes Display setzen, dort swipen, Cursor zurueckgeben. Sichtbare Mehrfachanimation; am Zielgeraet zu verifizieren (S-10).
+- Synchrones Wechseln: die synthetischen Dock-Swipes koennen kein Zieldisplay adressieren (dokumentiert in 2C). Als einziger Weg ohne das verworfene `CGSManagedDisplaySetCurrentSpace` galt: Cursor per `CGWarpMouseCursorPosition` auf das Zieldisplay setzen, dort swipen, Cursor zurueckgeben.
+- **S-10 am Zielgeraet gemessen und gescheitert, 2026-08-06.** Der Weg funktioniert nicht, und der Grund ist ein anderer als vermutet. Drei Varianten wurden geprueft, jeweils mit zwei gestapelten Displays und eingeschalteten getrennten Spaces:
+  - `event.location` auf die Mitte des Zieldisplays setzen: **wirkungslos**. Es wechselte weiterhin der Schirm unter dem Cursor. Ein Kontrolllauf ohne gesetzte Position verhielt sich identisch. Die bisher unbewiesene Annahme, dass die Geste kein Zieldisplay tragen kann, ist damit belegt.
+  - Cursor-Warp mit Verzoegerungen von 0, 20, 50, 100 und 200 ms: **kein Display wechselte**, weder das Ziel noch das ursprueng­liche. Es ist also kein Timing-Problem.
+  - Abschalten der Ereignisunterdrueckung ueber `localEventsSuppressionInterval = 0` und `CGAssociateMouseAndMouseCursorPosition(1)`: **unveraendert wirkungslos**. Unterdrueckung scheidet als Ursache aus.
+- Die Ursache zeigte erst eine gezielte Messung: nach dem Warp meldete `CGSCopyActiveMenuBarDisplayIdentifier` weiterhin den **Ursprungsschirm**, waehrend `NSScreen.withMouse()` bereits das Ziel meldete. Der Dock richtet den Swipe also nach dem **aktiven Menueleisten-Display**, nicht nach der Cursorposition. Ein Cursor-Warp bewegt den Cursor, aber nicht diese Groesse — und die Geste verpufft dann folgenlos.
+- Konsequenz: Fernumschaltung eines Displays waere nur erreichbar, indem man es zum *aktiven* Display macht, also dort ein Fenster aktiviert. Das ist genau die Stoerung, die der Wunsch vermeiden wollte, und damit kein gangbarer Weg. S-10 ist abgeschlossen, nicht offen.
 - Anzahl-Synchronisation: Spaces programmatisch anlegen und loeschen erfordert `CGSSpaceCreate`/`CGSSpaceDestroy`, die erste schreibende private Space-API des Forks. Nur als eigener Spike (S-11), optional gebunden und fail-closed; der `CGSManagedDisplaySetCurrentSpace`-Befund mit dem entkoppelten Dock ist die Referenz dafuer, wie so ein Symbol scheitern kann.
 - Resynchronisation nach Sleep/Wake, Display-Hotplug und manuellen Aenderungen in Mission Control; bei Abweichung sichtbar degradieren statt still anzugleichen.
 

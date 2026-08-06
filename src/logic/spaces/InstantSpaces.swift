@@ -280,6 +280,8 @@ enum InstantSpaces {
         event.setDoubleValueField(swipeProgressField, value: sign * Double(Float.leastNonzeroMagnitude))
         event.setDoubleValueField(swipeVelocityXField, value: sign * gestureVelocity)
         event.setDoubleValueField(swipeVelocityYField, value: sign * gestureVelocity)
+        // Setting `event.location` here is pointless and was measured as such on 2026-08-06: the Dock
+        // applies a swipe to the active menubar display, which no property of the event can name.
         event.post(tap: .cgSessionEventTap)
         return true
     }
