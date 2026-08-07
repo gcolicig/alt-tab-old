@@ -61,7 +61,20 @@ class Menubar {
         }
     }
 
+    /// Leaves the row's own clicks to the row.
+    ///
+    /// The status button fires on mouse *down* and the segments are its subviews, so the icon's handler
+    /// ran first on every segment click: it opened the context menu, and its `refreshSpaces` tore the
+    /// segment out from under the mouse before the button could complete, swallowing the click. That is
+    /// the same teardown the restyling path below already guards against.
+    private static func clickIsOnSpaceSegments() -> Bool {
+        guard let segments = spaceSegmentsView, let button = statusItem?.button,
+              let event = NSApp.currentEvent, event.type == .leftMouseDown else { return false }
+        return segments.frame.contains(button.convert(event.locationInWindow, from: nil))
+    }
+
     @objc static func statusItemOnClick() {
+        if clickIsOnSpaceSegments() { return }
         refreshSpaces()
         // NSApp.currentEvent == nil if the icon is "clicked" through VoiceOver
         if let type = NSApp.currentEvent?.type, type != .leftMouseDown {
