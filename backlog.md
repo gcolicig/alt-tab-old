@@ -523,7 +523,18 @@ Technische Huerden im Emulationsfall:
   - Beide gaben `CGError` 0 zurueck, also Erfolg.
   - Das aktive Menueleisten-Display folgte **nicht**, weder sofort noch nach 150 ms; der Getter meldete unveraendert den Ursprungsschirm.
 - Der Aufruf wird also angenommen und bleibt folgenlos. Plausibelste Erklaerung: die Groesse gehoert dem WindowServer und leitet sich aus dem Fokus ab; der Setter duerfte der Instanz vorbehalten sein, die die Menueleiste besitzt, oder eine privilegierte Verbindung verlangen. Getestet wurde mit `CGSMainConnectionID()`, der normalen App-Verbindung.
-- Damit ist die Frage praktisch erledigt: **weder ueber das Ereignis, noch ueber den Cursor, noch ueber den dafuer vorgesehenen Setter laesst sich ein fremdes Display ansteuern.** Offen bliebe allein, das Zieldisplay durch Aktivieren eines Fensters dorthin zu bringen — mit Fokuswechsel, sichtbarem Fenster im Vordergrund und fehlgeleiteten Tastatureingaben fuer die Dauer des Wechsels. Das ist teurer als der Gewinn und wurde nicht gebaut.
+- **S-10c, 2026-08-06/07: der Ebenen-Dreiklang wurde probiert und ist gescheitert.** Vermutet wurde, der urspruengliche Ausschluss von `CGSManagedDisplaySetCurrentSpace` beruhe auf einer unvollstaendigen Aufrufkette, weil der Aufruf allein nur den Zeiger auf den aktuellen Space verschiebt, waehrend die Ebenen liegen bleiben. Die bekannte vollstaendige Redewendung ist:
+
+      CGSShowSpaces(cid, [zielSpace])
+      CGSHideSpaces(cid, [aktuellerSpace])
+      CGSManagedDisplaySetCurrentSpace(cid, displayUuid, zielSpace)
+
+  - Am Geraet ueber die Menueleiste gemessen: sieben Wechsel, jedes Mal `CGError` 0, und der unmittelbare Rueckgabewert von `CGSManagedDisplayGetCurrentSpace` folgte sauber zwischen den beiden Space-IDs hin und her.
+  - **Der Bildschirm folgte trotzdem nicht.** Der gemeldete Zustand wechselt, das Bild bleibt stehen — exakt das Symptom, das den Ausschluss urspruenglich ausgeloest hat. Der Dreiklang behebt es nicht.
+  - Der Code ist zurueckgerollt (Revert von `dcc4f702`), die Bindungen sind wieder entfernt.
+- **Zur Pruefmethode, teurer gelernt als noetig**: Der Spike schien zu bestehen, weil er an einem Screenshot des Zielschirms beurteilt wurde, der einen *leeren* Schreibtisch zeigte — und ein leerer Schreibtisch sieht identisch aus, ob gewechselt wurde oder nicht. Die Bestaetigung am Geraet stuetzte sich auf dieselbe nicht unterscheidbare Ansicht. Ein Zustandswert und ein inhaltsloses Bild beweisen zusammen nichts. Wer das erneut prueft, braucht auf dem Zielschirm **unterscheidbare Fenster in beiden Spaces**.
+- Nicht gemessen und damit offen, falls es jemand erneut versucht: `CGSWillSwitchSpaces` vor dem Wechsel, die Transaktions-Varianten `SLSTransactionShowSpace`/`SLSTransactionHideSpace` mit anschliessendem Commit, sowie `SLSReassociateWindowsSpacesByGeometry`. Alle drei sind exportiert, keiner ist ausprobiert.
+- Damit ist die Frage praktisch erledigt: **weder ueber das Ereignis, noch ueber den Cursor, noch ueber den dafuer vorgesehenen Setter, noch ueber die Space-Ebenen laesst sich ein fremdes Display ansteuern.** Offen bliebe allein, das Zieldisplay durch Aktivieren eines Fensters dorthin zu bringen — mit Fokuswechsel, sichtbarem Fenster im Vordergrund und fehlgeleiteten Tastatureingaben fuer die Dauer des Wechsels. Das hat der Nutzer ausgeschlossen.
 - Anzahl-Synchronisation: Spaces programmatisch anlegen und loeschen erfordert `CGSSpaceCreate`/`CGSSpaceDestroy`, die erste schreibende private Space-API des Forks. Nur als eigener Spike (S-11), optional gebunden und fail-closed; der `CGSManagedDisplaySetCurrentSpace`-Befund mit dem entkoppelten Dock ist die Referenz dafuer, wie so ein Symbol scheitern kann.
 - Resynchronisation nach Sleep/Wake, Display-Hotplug und manuellen Aenderungen in Mission Control; bei Abweichung sichtbar degradieren statt still anzugleichen.
 
