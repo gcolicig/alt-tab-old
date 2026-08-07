@@ -566,7 +566,7 @@ Folgeumfang natives Ziehen, Kandidatenpfade:
 
 ### 2H. Fenster per Drag auf eine Switcher-Kachel auf deren Space verschieben
 
-Status: Spezifiziert, nicht gebaut
+Status: Spezifiziert; Systempfad am 2026-08-07 widerlegt, Story ruht
 Prioritaet: Mittel
 
 Beschreibung:
@@ -595,6 +595,13 @@ Risiko, das die Umsetzung bestimmt:
 - `CGSAddWindowsToSpaces` ist in `SkyLight.framework.swift` deklariert, hat aber **keinen Aufrufer**. Der Pfad ist damit unbelegt — dasselbe Muster wie beim Pointer-Schreibpfad (V-10) und bei den drei Faellen im Handover, in denen Code eine Faehigkeit behauptete, die er nie lieferte. Vor jeder UI-Arbeit ist zu belegen, dass der Aufruf ein Fenster tatsaechlich auf einen anderen Space verschiebt, und zwar auf dem Tahoe-Zielgeraet.
 - Zu klaeren ist dabei mindestens: Verhalten bei Fullscreen-Spaces, bei Fenstern auf allen Spaces, bei einem Fenster auf einem anderen Display, und ob der Aufruf ohne zusaetzliche Berechtigung durchgeht.
 - Faellt dieser Beleg negativ aus, ist die Story hinfaellig oder braucht einen anderen Systempfad; das ist vor der Trefferpruefung und dem Overlay zu entscheiden, nicht danach.
+- **Der Beleg wurde am 2026-08-07 gefuehrt und faellt negativ aus. Die Story ist in dieser Form hinfaellig.** Gemessen am Zielgeraet, macOS 26.6, ein Fenster auf Space 3 mit Ziel Space 22 — beide auf demselben Display, die Zielwahl wurde gegen die Space-Konfiguration geprueft:
+  - `CGSMoveWindowsToManagedSpace` (der moderne Name, per `dlsym` aufgeloest): keine Wirkung.
+  - `CGSRemoveWindowsFromSpaces` gefolgt von `CGSAddWindowsToSpaces` (das im Repo deklarierte Paar): keine Wirkung.
+  - `CGSCopySpacesForWindows` meldete davor wie danach `[3]`. Das Fenster blieb, wo es war.
+- Damit reiht sich der Befund in ein Muster ein, das an diesem Tag dreimal unabhaengig auftrat: **lesende Space-APIs funktionieren, schreibende nicht.** `CGSSetActiveMenuBarDisplayIdentifier` wurde angenommen und blieb folgenlos (S-10b); `CGSManagedDisplaySetCurrentSpace` samt Show/Hide veraenderte den gemeldeten Zustand, aber nicht das Bild (S-10c); und hier bewirken beide Fenster-Verschiebe-Aufrufe gar nichts.
+- Naheliegende, aber **nicht belegte** Erklaerung: Diese Schreiboperationen am Space-Modell des WindowServers sind aus einer gewoehnlichen App-Verbindung nicht zugelassen. SIP ist auf dem Geraet aktiv (`csrutil status: enabled`), und Fenstermanager, die solche Eingriffe leisten, verlangen bekanntlich das Abschalten von SIP-Schutz. Das waere fuer AltTab+ kein gangbarer Preis. Wer das pruefen will, braucht eine Gegenprobe auf einem Geraet mit entsprechend gelockertem SIP — sonst bleibt es Spekulation.
+- Was damit fuer 2H bliebe: kein bekannter Weg. Die Story ruht, bis entweder ein anderer Systempfad auftaucht oder Apple eine oeffentliche Schnittstelle dafuer anbietet. Die Entwurfsfragen oben (wie der Switcher waehrend eines Drags erscheint, ob das Fenster dem Space folgt) sind damit gegenstandslos, solange der Systempfad fehlt — sie bleiben stehen, weil sie bei einem neuen Pfad sofort wieder gelten.
 
 Nicht in dieser Story:
 
