@@ -67,14 +67,13 @@ struct MenubarSpaceRow {
         return worthShowing.isEmpty ? Array(spaceCounts.indices) : worthShowing
     }
 
-    /// Whether the gesture path would land on this group's display.
+    /// Whether clicking a group can actually reach it.
     ///
-    /// A synthetic gesture carries no target display and reaches only the active menubar display, so a
-    /// group belonging to another display needs the direct layer switch instead. Without separate Spaces
-    /// the question does not arise: one gesture moves the whole arrangement, so the group belongs to
-    /// every display at once. This no longer decides whether a click is *allowed* — every group can be
-    /// switched — only which of the two mechanisms serves it.
-    static func gestureReachesGroup(groupIsUnderCursor: Bool, separateSpaces: Bool) -> Bool {
+    /// Instant Spaces posts synthetic gestures that carry no target display, so it can only switch the
+    /// display under the cursor — which is why a click on another display's group is refused. That refusal
+    /// is wrong when displays do not have separate Spaces: there one gesture moves the whole arrangement,
+    /// so the group belongs to every display at once.
+    static func clickIsReachable(groupIsUnderCursor: Bool, separateSpaces: Bool) -> Bool {
         !separateSpaces || groupIsUnderCursor
     }
 

@@ -117,6 +117,7 @@ class Menubar {
         let groups = spaceGroups()
         guard !groups.isEmpty else { return }
         let switchingEnabled = InstantSpaces.runtimeAvailability().isAvailable
+        let cursorUuid = NSScreen.withMouse()?.cachedUuid()
         // the row must never collapse: the status button can still be unsized the first time this runs,
         // and since the icon moves into a subview here, a zero height renders as an empty menubar slot.
         // Beyond that the button's own height wins: `thickness` reports 22 on a menubar that is 32pt tall,
@@ -124,7 +125,7 @@ class Menubar {
         let rowHeight = statusButton.bounds.height > 0 ? statusButton.bounds.height : NSStatusBar.system.thickness
         let totalWidth = MenubarSpaceRow.totalWidth(groups.map { $0.spaceIds.count })
         // the container carries its final frame before any segment goes in, like the single-row version did
-        let container = NSView(frame: NSRect(x: iconWidth, y: 0, width: totalWidth, height: rowHeight))
+        let container = SpaceSegmentsView(frame: NSRect(x: iconWidth, y: 0, width: totalWidth, height: rowHeight))
         var x = CGFloat(0)
         groups.enumerated().forEach { groupOffset, group in
             if groupOffset > 0 {
@@ -133,7 +134,8 @@ class Menubar {
                 x += groupGap
             }
             x += addGroupSegments(group, startX: x, height: rowHeight, switchingEnabled: switchingEnabled,
-                                   isLeadingGroup: groupOffset == 0,
+                                   isCursorGroup: MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: cursorUuid == nil || cursorUuid == group.displayUuid,
+                                                                                  separateSpaces: NSScreen.screensHaveSeparateSpaces),
                                    displayOrdinal: groups.count > 1 ? groupOffset + 1 : nil, into: container)
         }
         statusItem.length = iconWidth + totalWidth + 2
@@ -150,22 +152,22 @@ class Menubar {
     /// Adds the segments for one display group and returns the width consumed. `displayOrdinal` is only
     /// set when more than one group is shown, so VoiceOver can name which display a segment belongs to.
     ///
-    /// `isLeadingGroup` marks the group of the display the row leads with, which is the one carrying the
-    /// menubar. It only shades the frame a little, so the eye can tell the groups apart beyond the
-    /// divider. It is deliberately static: it used to track the cursor, which meant the row was only
-    /// truthful while the mouse was over it — and reading the row without touching it is its whole point.
+    /// `isCursorGroup` only dims the segments, it no longer disables them. It is captured when the row is
+    /// built, but the cursor moves between displays without rebuilding it, so a stale `false` left the
+    /// segments of the display the user was actually on dead to the click. `spaceSegmentOnClick` already
+    /// gates on the live cursor position, which is the authoritative check.
     private static func addGroupSegments(_ group: SpaceGroup, startX: CGFloat, height: CGFloat, switchingEnabled: Bool,
-                                          isLeadingGroup: Bool, displayOrdinal: Int?, into container: NSView) -> CGFloat {
+                                          isCursorGroup: Bool, displayOrdinal: Int?, into container: NSView) -> CGFloat {
         let directCount = MenubarSpaceRow.directSegmentCount(group.spaceIds.count)
         let hasOverflow = MenubarSpaceRow.hasOverflow(group.spaceIds.count)
         (0..<directCount).forEach { offset in
-            let button = spaceButton(offset + 1, group.spaceIds[offset] == group.activeSpaceId, switchingEnabled, !isLeadingGroup, displayOrdinal, group.displayUuid)
+            let button = spaceButton(offset + 1, group.spaceIds[offset] == group.activeSpaceId, switchingEnabled, !isCursorGroup, displayOrdinal, group.displayUuid)
             button.frame = MenubarSpaceRow.centeredRect(x: startX + CGFloat(offset) * segmentWidth + 2, width: segmentWidth - 4, availableHeight: height, preferredHeight: MenubarSpaceRow.segmentHeight)
             container.addSubview(button)
         }
         guard hasOverflow else { return CGFloat(directCount) * segmentWidth }
         let overflowIndexes = MenubarSpaceRow.overflowIndexes(group.spaceIds.count)
-        let overflowButton = overflowButton(overflowIndexes, group.spaceIds, group.activeSpaceId, switchingEnabled, !isLeadingGroup, displayOrdinal, group.displayUuid)
+        let overflowButton = overflowButton(overflowIndexes, group.spaceIds, group.activeSpaceId, switchingEnabled, !isCursorGroup, displayOrdinal, group.displayUuid)
         overflowButton.frame = MenubarSpaceRow.centeredRect(x: startX + CGFloat(directCount) * segmentWidth + 2, width: segmentWidth - 4, availableHeight: height, preferredHeight: MenubarSpaceRow.segmentHeight)
         container.addSubview(overflowButton)
         return CGFloat(directCount + 1) * segmentWidth
@@ -180,6 +182,27 @@ class Menubar {
     }
 
     /// Updates the existing single-group segments in place. Returns false when the row has to be rebuilt.
+    /// Updates only the dimming, from the live cursor position.
+    ///
+    /// A segment of another display cannot be switched, because the synthetic gesture carries no target
+    /// display. That refusal is correct, but it was silent: the dimming that announces it was computed
+    /// when the row was last built, and the cursor crosses displays without any Space change to rebuild
+    /// on. Fourteen consecutive clicks were logged against an unreachable group with no feedback at all.
+    /// Restyling in place rather than rebuilding avoids tearing the buttons out from under the mouse.
+    static func refreshReachabilityHint() {
+        guard let container = spaceSegmentsView else { return }
+        let cursorUuid = NSScreen.withMouse()?.cachedUuid() as String?
+        let separateSpaces = NSScreen.screensHaveSeparateSpaces
+        let color = segmentColor()
+        container.subviews.compactMap { $0 as? NSButton }.forEach { button in
+            guard let groupUuid = button.identifier?.rawValue else { return }
+            let underCursor = cursorUuid == nil || cursorUuid == groupUuid
+            let reachable = MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: underCursor, separateSpaces: separateSpaces)
+            button.layer?.borderColor = color.withAlphaComponent(borderAlpha(reachable: reachable)).cgColor
+        }
+    }
+
+
     private static func restyleExistingSegments(_ group: SpaceGroup) -> Bool {
         guard let container = spaceSegmentsView, !group.spaceIds.isEmpty, !MenubarSpaceRow.hasOverflow(group.spaceIds.count) else { return false }
         let buttons = container.subviews.compactMap { $0 as? NSButton }
@@ -240,32 +263,32 @@ class Menubar {
     /// carries reachability **alone** — letting it also encode active made "active but unreachable" look
     /// stronger than "inactive but reachable", which says the opposite of what it should. Dimming the
     /// whole segment, as before, made the other display's count and active Space hard to read at all.
-    private static func borderAlpha(isLeadingGroup: Bool) -> CGFloat {
-        isLeadingGroup ? 0.55 : 0.34
+    private static func borderAlpha(reachable: Bool) -> CGFloat {
+        reachable ? 0.55 : 0.16
     }
 
     /// Carries the active Space on its own now that the frame no longer does, so it has to be legible
     /// rather than a hint.
     private static let activeSegmentFill = CGFloat(0.22)
 
-    private static func spaceButton(_ index: Int, _ active: Bool, _ enabled: Bool, _ secondaryGroup: Bool, _ displayOrdinal: Int?, _ displayUuid: ScreenUuid) -> NSButton {
+    private static func spaceButton(_ index: Int, _ active: Bool, _ enabled: Bool, _ crossDisplay: Bool, _ displayOrdinal: Int?, _ displayUuid: ScreenUuid) -> NSButton {
         let button = NSButton(title: "\(index)", target: self, action: #selector(spaceSegmentOnClick(_:)))
         button.isBordered = false
         button.wantsLayer = true
         button.layer?.cornerRadius = 5
         button.identifier = NSUserInterfaceItemIdentifier(displayUuid as String)
-        styleSpaceButton(button, index, active, enabled, secondaryGroup, displayOrdinal)
+        styleSpaceButton(button, index, active, enabled, crossDisplay, displayOrdinal)
         return button
     }
 
-    private static func overflowButton(_ indexes: [Int], _ spaceIds: [CGSSpaceID], _ activeSpaceId: CGSSpaceID?, _ enabled: Bool, _ secondaryGroup: Bool, _ displayOrdinal: Int?, _ displayUuid: ScreenUuid) -> NSButton {
+    private static func overflowButton(_ indexes: [Int], _ spaceIds: [CGSSpaceID], _ activeSpaceId: CGSSpaceID?, _ enabled: Bool, _ crossDisplay: Bool, _ displayOrdinal: Int?, _ displayUuid: ScreenUuid) -> NSButton {
         let button = NSButton(title: "…", target: self, action: #selector(spaceOverflowOnClick(_:)))
         button.isBordered = false
         button.wantsLayer = true
         button.layer?.cornerRadius = 5
         button.identifier = NSUserInterfaceItemIdentifier(displayUuid as String)
         button.isEnabled = enabled
-        let baseTooltip = NSLocalizedString("More Spaces", comment: "")
+        let baseTooltip = crossDisplay ? crossDisplayTooltip() : NSLocalizedString("More Spaces", comment: "")
         button.toolTip = displayOrdinal.map { String(format: NSLocalizedString("%@ (Display %d)", comment: ""), baseTooltip, $0) } ?? baseTooltip
         button.setAccessibilityLabel(button.toolTip)
         let activeInOverflow = indexes.contains { spaceIds[$0 - 1] == activeSpaceId }
@@ -273,23 +296,23 @@ class Menubar {
         let color = segmentColor()
         button.attributedTitle = NSAttributedString(string: "…", attributes: [.font: font, .foregroundColor: color])
         button.layer?.backgroundColor = activeInOverflow ? color.withAlphaComponent(activeSegmentFill).cgColor : NSColor.clear.cgColor
-        button.layer?.borderColor = color.withAlphaComponent(borderAlpha(isLeadingGroup: !secondaryGroup)).cgColor
+        button.layer?.borderColor = color.withAlphaComponent(borderAlpha(reachable: !crossDisplay)).cgColor
         button.layer?.borderWidth = 1
         overflowIndexesByButton[ObjectIdentifier(button)] = indexes
         return button
     }
 
-    private static func styleSpaceButton(_ button: NSButton, _ index: Int, _ active: Bool, _ enabled: Bool, _ secondaryGroup: Bool, _ displayOrdinal: Int? = nil) {
+    private static func styleSpaceButton(_ button: NSButton, _ index: Int, _ active: Bool, _ enabled: Bool, _ crossDisplay: Bool, _ displayOrdinal: Int? = nil) {
         button.tag = index
         button.isEnabled = enabled
-        let baseTooltip = String(format: NSLocalizedString("Switch to Space %d", comment: ""), index)
+        let baseTooltip = crossDisplay ? crossDisplayTooltip() : String(format: NSLocalizedString("Switch to Space %d", comment: ""), index)
         button.toolTip = displayOrdinal.map { String(format: NSLocalizedString("%@ (Display %d)", comment: ""), baseTooltip, $0) } ?? baseTooltip
         button.setAccessibilityLabel(button.toolTip)
         let font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: active ? .semibold : .medium)
         let color = segmentColor()
         button.attributedTitle = NSAttributedString(string: "\(index)", attributes: [.font: font, .foregroundColor: color])
         button.layer?.backgroundColor = active ? color.withAlphaComponent(activeSegmentFill).cgColor : NSColor.clear.cgColor
-        button.layer?.borderColor = color.withAlphaComponent(borderAlpha(isLeadingGroup: !secondaryGroup)).cgColor
+        button.layer?.borderColor = color.withAlphaComponent(borderAlpha(reachable: !crossDisplay)).cgColor
         button.layer?.borderWidth = 1
     }
 
@@ -297,72 +320,88 @@ class Menubar {
     /// that reach the same underlying switch directly, since only a shortcut needs a registered action.
     private static var overflowIndexesByButton = [ObjectIdentifier: [Int]]()
 
-    /// Switches the display the clicked segment belongs to, which is not necessarily the one the cursor
-    /// is on.
-    ///
-    /// A gesture only ever reaches the active menubar display, so a click on another display's group used
-    /// to be refused — silently at first, which cost fourteen clicks in a row before it was measured.
-    /// Moving the Space layers reaches any display, so the refusal is gone. The gesture path stays for
-    /// the display the cursor is on: it is the one that has been operated for months.
-    private static func switchTo(_ index: Int, from sender: NSButton) {
-        if !gestureWouldReach(sender), let groupUuid = sender.identifier?.rawValue,
-           InstantSpaces.switchDirectly(to: index, on: groupUuid as ScreenUuid) {
-            return
-        }
-        if index <= 9 {
-            Actions.perform(.space(.index(index)))
-        } else {
-            InstantSpaces.perform(.index(index))
-        }
+    /// A refused click must say so. Measured on 2026-08-06: fourteen clicks in a row went to a group of
+    /// another display and did nothing at all, because the refusal was silent and the hint that should
+    /// have warned was stale. Remote switching is not an option — the Dock applies a swipe to the active
+    /// menubar display, which nothing about the event or the cursor can redirect (S-10).
+    private static func refuseCrossDisplayClick(_ sender: NSButton) -> Bool {
+        guard !cursorMatchesGroup(sender) else { return false }
+        refreshReachabilityHint()
+        TransientNotice.show(crossDisplayTooltip())
+        return true
     }
 
     @objc private static func spaceSegmentOnClick(_ sender: NSButton) {
-        switchTo(sender.tag, from: sender)
+        guard !refuseCrossDisplayClick(sender) else { return }
+        if sender.tag <= 9 {
+            Actions.perform(.space(.index(sender.tag)))
+        } else {
+            InstantSpaces.perform(.index(sender.tag))
+        }
     }
 
     @objc private static func spaceOverflowOnClick(_ sender: NSButton) {
-        guard let indexes = overflowIndexesByButton[ObjectIdentifier(sender)] else { return }
+        guard !refuseCrossDisplayClick(sender), let indexes = overflowIndexesByButton[ObjectIdentifier(sender)] else { return }
         let menu = NSMenu()
         indexes.forEach { index in
             let item = menu.addItem(withTitle: String(format: NSLocalizedString("Space %d", comment: ""), index), action: #selector(spaceOverflowItemOnClick(_:)), keyEquivalent: "")
             item.target = self
             item.tag = index
-            // a menu item has no identifier to carry the group, and the overflow of one display must not
-            // switch another's
-            item.representedObject = sender.identifier?.rawValue
         }
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
     }
 
     @objc private static func spaceOverflowItemOnClick(_ sender: NSMenuItem) {
-        if let groupUuid = sender.representedObject as? String,
-           cursorIsNotOn(groupUuid), InstantSpaces.switchDirectly(to: sender.tag, on: groupUuid as ScreenUuid) {
-            return
-        }
         InstantSpaces.perform(.index(sender.tag))
     }
 
-    private static func cursorIsNotOn(_ groupUuid: String) -> Bool {
-        guard let cursorUuid = NSScreen.withMouse()?.cachedUuid() as String? else { return false }
-        return cursorUuid != groupUuid
-    }
-
+    /// A single, unmirrored menu bar renders every display's group on whichever screen shows it; a click
+    /// there always has the cursor on that screen, not necessarily the group's own display. Instant
+    /// Spaces can only switch the display the cursor is physically on (it posts synthetic trackpad
+    /// gestures, which carry no target-display field), so a mismatched click is silently ignored rather
+    /// than switching the wrong display's Spaces.
     private static func isMainScreen(_ screen: NSScreen) -> Bool {
         guard let id = screen.number() else { return false }
         return CGDisplayIsMain(id) != 0
     }
 
-    private static func gestureWouldReach(_ button: NSButton) -> Bool {
+    private static func cursorMatchesGroup(_ button: NSButton) -> Bool {
         guard let groupUuid = button.identifier?.rawValue, let cursorUuid = NSScreen.withMouse()?.cachedUuid() else { return true }
-        return MenubarSpaceRow.gestureReachesGroup(groupIsUnderCursor: groupUuid == cursorUuid as String,
+        return MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: groupUuid == cursorUuid as String,
                                                 separateSpaces: NSScreen.screensHaveSeparateSpaces)
     }
 
+    private static func crossDisplayTooltip() -> String {
+        NSLocalizedString("Move the cursor to this screen to switch its Spaces.", comment: "")
+    }
 }
 
 private final class PassthroughImageView: NSImageView {
     override func hitTest(_ point: NSPoint) -> NSView? {
         nil
+    }
+}
+
+/// Carries the Space segments and refreshes their dimming when the mouse arrives.
+///
+/// Which segments are reachable depends on the display under the cursor, and the cursor moves between
+/// displays without any event the row was listening to. Arriving on the row is the last moment before
+/// the reachability matters, and the only one at which updating it costs nothing.
+private final class SpaceSegmentsView: NSView {
+    private var cursorTrackingArea: NSTrackingArea?
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let cursorTrackingArea {
+            removeTrackingArea(cursorTrackingArea)
+        }
+        let area = NSTrackingArea(rect: bounds, options: [.mouseEnteredAndExited, .activeAlways], owner: self)
+        addTrackingArea(area)
+        cursorTrackingArea = area
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        Menubar.refreshReachabilityHint()
     }
 }
 

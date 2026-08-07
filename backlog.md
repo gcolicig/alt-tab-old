@@ -523,17 +523,7 @@ Technische Huerden im Emulationsfall:
   - Beide gaben `CGError` 0 zurueck, also Erfolg.
   - Das aktive Menueleisten-Display folgte **nicht**, weder sofort noch nach 150 ms; der Getter meldete unveraendert den Ursprungsschirm.
 - Der Aufruf wird also angenommen und bleibt folgenlos. Plausibelste Erklaerung: die Groesse gehoert dem WindowServer und leitet sich aus dem Fokus ab; der Setter duerfte der Instanz vorbehalten sein, die die Menueleiste besitzt, oder eine privilegierte Verbindung verlangen. Getestet wurde mit `CGSMainConnectionID()`, der normalen App-Verbindung.
-- Ueber den Gestenpfad ist damit nichts zu erreichen: **weder ueber das Ereignis, noch ueber den Cursor, noch ueber den dafuer vorgesehenen Setter laesst sich ein fremdes Display ansteuern.**
-- **S-10c, 2026-08-06: der Weg existiert doch — ueber die Space-Ebenen statt ueber eine Geste.** Der frueher notierte Ausschluss von `CGSManagedDisplaySetCurrentSpace` beruhte auf einer *unvollstaendigen Aufrufkette*, nicht auf einer Systemgrenze. Der Aufruf allein verschiebt nur den Zeiger auf den aktuellen Space, waehrend die Ebenen bleiben, wo sie sind — was exakt die damals beschriebene Beobachtung erzeugt, dass die Fenster des Ziel-Space ueber den sichtbaren komponiert wurden. Die vollstaendige Redewendung ist ein Dreiklang:
-
-      CGSShowSpaces(cid, [zielSpace])
-      CGSHideSpaces(cid, [aktuellerSpace])
-      CGSManagedDisplaySetCurrentSpace(cid, displayUuid, zielSpace)
-
-- Am Zielgeraet gemessen, sechs Laeufe hintereinander, zwei gestapelte Displays, getrennte Spaces ein: jedes Mal wechselte **nur** das Zieldisplay, der Schirm unter dem Cursor blieb unberuehrt, und `CGSCopyActiveMenuBarDisplayIdentifier` meldete unveraendert den Ursprungsschirm. `CGError` war jedes Mal 0.
-- Die Regressionspruefung, an der der frueherer Versuch scheiterte, ist bestanden und wurde am Geraet bestaetigt: der Zielschirm zeigt den anderen Space samt der Fenster, die dorthin gehoeren; nativer `Control+Pfeil` funktioniert auf beiden Schirmen unveraendert; Mission Control oeffnet, schliesst und schaltet per Klick korrekt; Fenster stehen nach dem Zurueckwechseln an ihrem Platz. Kein Dock-Neustart noetig.
-- Der Weg braucht weder Cursor noch aktives Display, damit entfaellt die gesamte Beschraenkung aus S-10. Er ist ausserdem sofort wirksam statt animiert, weil er die Geste umgeht.
-- Offen und ausdruecklich nicht mitentschieden: ob auch der **lokale** Wechsel auf diesen Pfad umgestellt werden sollte. Das wuerde Vorhersage, Ankunftspruefung und Ueberblendung ueberfluessig machen, ist aber ein Eingriff in den erprobten Hauptpfad und braucht eine eigene Messung.
+- Damit ist die Frage praktisch erledigt: **weder ueber das Ereignis, noch ueber den Cursor, noch ueber den dafuer vorgesehenen Setter laesst sich ein fremdes Display ansteuern.** Offen bliebe allein, das Zieldisplay durch Aktivieren eines Fensters dorthin zu bringen — mit Fokuswechsel, sichtbarem Fenster im Vordergrund und fehlgeleiteten Tastatureingaben fuer die Dauer des Wechsels. Das ist teurer als der Gewinn und wurde nicht gebaut.
 - Anzahl-Synchronisation: Spaces programmatisch anlegen und loeschen erfordert `CGSSpaceCreate`/`CGSSpaceDestroy`, die erste schreibende private Space-API des Forks. Nur als eigener Spike (S-11), optional gebunden und fail-closed; der `CGSManagedDisplaySetCurrentSpace`-Befund mit dem entkoppelten Dock ist die Referenz dafuer, wie so ein Symbol scheitern kann.
 - Resynchronisation nach Sleep/Wake, Display-Hotplug und manuellen Aenderungen in Mission Control; bei Abweichung sichtbar degradieren statt still anzugleichen.
 

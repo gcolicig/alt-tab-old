@@ -59,29 +59,6 @@ enum InstantSpaces {
         return .available
     }
 
-    /// Switches a named display, whether or not the cursor or the menubar is on it.
-    ///
-    /// The gesture path cannot do this: a swipe carries no display and the Dock applies it to the active
-    /// menubar display, which neither the event, a cursor warp nor the setter meant for it can redirect
-    /// (S-10). Moving the Space layers directly sidesteps the gesture entirely, and it lands at once
-    /// rather than asynchronously, so none of the prediction and settling machinery applies.
-    ///
-    /// Returns false when the display cannot be resolved or the switch is refused, so a caller can fall
-    /// back to the gesture path for the display it is already on.
-    @discardableResult
-    static func switchDirectly(to index: Int, on displayId: ScreenUuid) -> Bool {
-        guard InstantSpacesPrivateApi.canSwitchAnyDisplay,
-              let spaceIds = Spaces.screenSpacesMap[displayId],
-              spaceIds.indices.contains(index - 1),
-              let currentSpaceId = InstantSpacesPrivateApi.currentSpaceId(displayId) else { return false }
-        let targetSpaceId = spaceIds[index - 1]
-        guard currentSpaceId != targetSpaceId else { return true }
-        guard InstantSpacesPrivateApi.switchSpace(on: displayId, from: currentSpaceId, to: targetSpaceId) else { return false }
-        Spaces.refresh()
-        Menubar.refreshSpaces(spacesAreFresh: true)
-        return true
-    }
-
     static func perform(_ action: SpaceAction) {
         DispatchQueue.main.async {
             guard availability(action).isAvailable,
