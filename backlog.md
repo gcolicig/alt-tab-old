@@ -294,6 +294,17 @@ Repo-Learnings:
 - Erhebung der Symbolic Hotkeys auf Tahoe (2026-07-28): `Control+1` bis `Control+0` (ids 118-127) sind standardmaessig deaktiviert und damit ohne Systemaenderung fuer `Space 1` bis `Space 9` verwendbar. `Control+Pfeil` traegt je drei ids (79/199/240 und 81/200/241); da `Fn-Control-Pfeil` zu Apples Tiling gehoert, sind sie einzeln abzuschalten und das native Tiling ist nach jedem Schritt zu pruefen.
 - Fehler in der Hotkey-Zuordnung gefunden und behoben: `CGSSymbolicHotKey.commandKeyAboveTab` zeigte auf id 6, die auf Tahoe `Shift+Option+Command+Escape` (Sofort beenden erzwingen) ist. Wer `Command` plus Taste ueber Tab zuwies, deaktivierte damit den Notausstieg des Systems, waehrend die eigentliche Kombination bei macOS blieb. Richtig sind 27 und, als Shift-Variante, 220.
 
+### 2A-1. Offene Beobachtung: Dock-Klick auf eine App eines anderen Space braucht zwei Versuche
+
+Status: Beobachtet 2026-08-07, **Zuordnung ungeklaert** — es ist nicht belegt, dass AltTab+ die Ursache ist
+Prioritaet: Erst klaeren, dann einordnen
+
+- Beobachtung am Zielgeraet: Ein Klick im Dock auf eine App, deren Fenster auf einem anderen Space liegt, bewirkt zunaechst nichts. Erst ein zweiter Klick wechselt hin. Gemeldet als Fehler.
+- **Bevor das als Fehler dieses Projekts gefuehrt wird, ist die Zuordnung zu klaeren.** Der entscheidende Test ist billig: AltTab+ beenden (`pkill -9 -f 'MacOS/AltTab'`), denselben Dock-Klick wiederholen. Tritt es weiterhin auf, ist es Systemverhalten und gehoert nicht hierher; verschwindet es, ist die Ursache bei uns und die Suche beginnt bei den Event-Taps.
+- Verdaechtige, falls es uns zuzurechnen ist: die Maus-Taps in `WindowDragEvents`, `CursorEvents`, `TrackpadEvents` und `ScrollwheelEvents`. Das Muster — der erste Klick verpufft, der zweite kommt an — entspricht exakt dem Fehler, der am selben Tag in der Menueleistenreihe behoben wurde, wo ein Handler auf Maus-Runter feuerte und die Ansicht unter dem Zeiger neu baute, bevor der Klick fertig war.
+- Zu pruefen ist dabei auch, ob die Drag-Modifier ueberhaupt zugewiesen sind: sind sie unbelegt, sollte `WindowDragEvents` keinen Tap fuehren, und das Modul scheidet als Ursache aus.
+- Gegen eine Nachwirkung der Spike-Laeufe vom selben Tag spricht eine Messung direkt nach der Beobachtung: `CGSManagedDisplayGetCurrentSpace` und die gespeicherte Konfiguration stimmten auf beiden Displays ueberein, der Space-Zustand war also konsistent.
+
 ### 2B. Instant Spaces
 
 Status: Kern implementiert, manuelle Tahoe-Verifikation S-06 offen
