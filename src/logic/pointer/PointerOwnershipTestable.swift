@@ -7,11 +7,13 @@ enum PointerCategory: String, CaseIterable {
     case mouse
     case trackpad
 
-    /// The scaling key in NSGlobalDomain. Verified present on macOS 26.5.1 (build 25F80).
-    var scalingKey: String {
+    /// The HID system's acceleration key, which is where the value the pointer actually follows lives.
+    /// The `NSGlobalDomain` keys `com.apple.mouse.scaling` and `com.apple.trackpad.scaling` mirror it but
+    /// writing them was measured on 2026-08-07 to change nothing in the running session.
+    var accelerationKey: String {
         switch self {
-            case .mouse: return "com.apple.mouse.scaling"
-            case .trackpad: return "com.apple.trackpad.scaling"
+            case .mouse: return "HIDMouseAcceleration"
+            case .trackpad: return "HIDTrackpadAcceleration"
         }
     }
 }

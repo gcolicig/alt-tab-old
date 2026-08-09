@@ -124,8 +124,10 @@ final class PointerOwnershipTests: XCTestCase {
         XCTAssertEqual(PointerSpeedSteps.value(PointerSpeedSteps.nearestIndex(2.4)), 2.5)
     }
 
-    func testScalingKeysMatchTheVerifiedGlobalDomainKeys() {
-        XCTAssertEqual(PointerCategory.mouse.scalingKey, "com.apple.mouse.scaling")
-        XCTAssertEqual(PointerCategory.trackpad.scalingKey, "com.apple.trackpad.scaling")
+    /// The keys the HID system answers to. The NSGlobalDomain names this once asserted were readable but
+    /// writing them changed nothing, which is what moved this module to the HID path.
+    func testAccelerationKeysMatchTheHidSystemKeys() {
+        XCTAssertEqual(PointerCategory.mouse.accelerationKey, "HIDMouseAcceleration")
+        XCTAssertEqual(PointerCategory.trackpad.accelerationKey, "HIDTrackpadAcceleration")
     }
 }

@@ -734,7 +734,7 @@ Akzeptanzideen:
 
 ### 4. Pointer Acceleration und Speed
 
-Status: Umgesetzt, aber **wirkungslos** — der Schreibpfad wurde am 2026-08-07 widerlegt
+Status: Schreibpfad am 2026-08-07 auf IOKit umgestellt; V-10 am Geraet offen
 Prioritaet: Mittel bis hoch
 
 Beschreibung:
@@ -781,7 +781,9 @@ Umsetzungsstand 2026-07-31:
 
 - Der Gegentest ueber IOKit wirkt dagegen sofort: `IOHIDSetAccelerationWithKey(conn, "HIDMouseAcceleration", 2.0)` gab `rc=0` zurueck und der effektive Wert sprang von 0.6875 auf 2.0; das Zuruecksetzen auf 0.6875 wirkte ebenso. Der urspruenglich vermutete Pfad — IOKit-hidsystem — war also richtig, und die Korrektur auf `NSGlobalDomain` war der Fehler.
 - **Die Folge ist schwerer als ein falscher Wert: das Modul haelt sich fuer erfolgreich.** `PointerOwnership.acquire` prueft den Erfolg, indem es die Praeferenz zurueckliest, die es selbst geschrieben hat. Das gelingt immer. Es wechselt damit nach `managed`, die Oberflaeche meldet `Managed by AltTab+`, und am Zeiger hat sich nichts geaendert. Das ist die Fehlerklasse, die das Handover als eigene fuehrt: Code, der eine Faehigkeit behauptet, die er nicht liefert.
-- Zu bauen waere daher vermutlich **beides**, so wie es die Systemeinstellungen selbst tun: `IOHIDSetAccelerationWithKey` fuer die laufende Sitzung und die Praeferenz fuer die Dauerhaftigkeit ueber die Anmeldung hinaus. Ungeprueft ist dabei, ob die Praeferenz allein beim naechsten Login greift — gemessen ist bisher nur, dass sie in der laufenden Sitzung wirkungslos ist.
+- **Umgestellt am 2026-08-07**: `PointerSystemSettings` liest und schreibt jetzt ueber `IOHIDGetAccelerationWithKey` und `IOHIDSetAccelerationWithKey` am Event-Status-Treiber, statt eine Praeferenz zu setzen. Die Besitzlogik darueber ist unveraendert geblieben — sie war richtig, sie sass auf dem falschen Fundament. Die Symbole werden per `dlsym` gebunden: sie sind seit 10.12 als veraltet markiert, der Build behandelt Warnungen als Fehler, und nach V-03 soll ein wegfallendes Symbol das Modul deaktivieren statt den Build oder den Start zu brechen.
+- Der Ruecklesewert nach dem Schreiben ist jetzt eine **zweite, unabhaengige Abfrage** des effektiven Werts. Vorher war er das Echo der eigenen Praeferenzschreibung und konnte gar nicht scheitern; genau daran hat das Modul seinen Misserfolg fuer Erfolg gehalten.
+- **Ungeprueft und damit offen**: ob eine so gesetzte Beschleunigung eine Abmeldung ueberlebt. Der HID-Wert duerfte beim Login aus der Praeferenz kommen, die AltTab+ nicht mehr schreibt. Faellt die Pruefung negativ aus, ist das erneute Anwenden beim Start der Weg — nicht das zusaetzliche Schreiben der Praeferenz, denn deren Wirkungslosigkeit in der laufenden Sitzung ist gemessen. Beim Start laeuft heute nur `recoverAfterUncleanExit`, kein `reapply`.
 - Der zuvor notierte Befund zum fehlenden Schluessel bleibt gueltig, ruecht aber an die zweite Stelle: Solange gar nicht wirksam geschrieben wird, ist die Frage nach der Basislinie nachrangig. Mit dem IOKit-Pfad stellt sie sich ohnehin neu, weil dort immer ein effektiver Wert lesbar ist — auf diesem Geraet 0.6875 — und die Basislinie damit nie fehlt.
 - Befund zum Systempfad (**widerlegt, siehe oben**): nicht IOKit-hidsystem, sondern `NSGlobalDomain`. Die Werte stehen als `com.apple.mouse.scaling` und `com.apple.trackpad.scaling` und wurden auf macOS 26.5.1 (Build 25F80) lesend verifiziert (3 bzw. 0.6875). Geschrieben wird ueber `CFPreferences` gegen `kCFPreferencesAnyApplication`, also die strukturierte API ohne Shell-Prozess, ohne Event-Tap, ohne private API und ohne zusaetzliche TCC-Berechtigung.
 - macOS kodiert beide Einstellungen in einem Wert: negativ schaltet die Beschleunigung ab, positiv ist die Geschwindigkeit. `System default` bedeutet deshalb, dass AltTab+ den Wert gar nicht besitzt, statt einen neutralen Wert zu schreiben.
