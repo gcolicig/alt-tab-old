@@ -1,0 +1,450 @@
+import Cocoa
+
+/// The first module in AltTab+ with a permanent mouse tap that consumes events, so the safety rules matter
+/// more than the feature. Three invariants hold at all times:
+///
+/// 1. The tap exists only while the module is enabled, and passes every event through untouched unless a
+///    session is genuinely active. An unarmed tap must be indistinguishable from no tap.
+/// 2. No AX work happens inside the callback (Q-02, Q-16). The callback publishes state; the queue writes.
+/// 3. Every exit path — safe mode, emergency shortcut, circuit breaker, permission loss — ends the session
+///    without writing a frame.
+enum WindowDragEvents {
+    private static var eventTap: CFMachPort?
+    /// Touched from the tap callback on the main runloop and from the AX queue, so every read and write
+    /// goes through `stateLock`. A torn read here would strand a session in `dragging` with no way out.
+    private static let stateLock = NSLock()
+    private static var unsafeState = DragSessionState.idle
+    private static var circuitBreaker = InputTapCircuitBreaker()
+    private static var window: AXUIElement?
+    private static var windowPid: pid_t?
+    /// Resolved once per session. Asking AX for it per frame cost a blocking round trip inside a global
+    /// HIServices lock, which stalled every other AX caller including the main thread.
+    private static var windowId: CGWindowID = 0
+    private static var windowBundleId = ""
+    private static var originWindowFrame: CGRect?
+    private static var originMouse: CGPoint?
+    private static var coalescer = AxWriteCoalescer()
+    private static var diagnostics = AxDiagnosticsRing()
+    private static let diagnosticsLock = NSLock()
+
+    /// Q-07 exists so an app-compatibility report can say what a window actually did with a frame. A ring
+    /// nobody can read does not do that, so the debug profile carries the writes an app did not honor.
+    static func diagnosticDeviations() -> [AxDiagnosticEntry] {
+        diagnosticsLock.lock()
+        defer { diagnosticsLock.unlock() }
+        return diagnostics.deviations
+    }
+    private static var mode = DragMode.move
+    private static var resizeAnchor = ResizeAnchor.bottomRight
+    private static var snapTarget = DragSnapTarget.none
+    private static var snapFrame: CGRect?
+    /// When the cursor first reached the current edge, so a shared edge can require dwell.
+    private static var edgeEnteredAt: TimeInterval?
+    private static var edgeSide: DragSnapTarget = .none
+    private static var dropLatched = false
+    /// Which display's group the latch caught, if the Space row named one.
+    private static var dropTargetDisplay: ScreenUuid?
+    private static let stabilityWindowSeconds = 5.0
+    /// The preference stores an index into `DragModifierPreference.selectable`, not a raw value: writing
+    /// the case name here would leave the emergency path relying on a parse failure resetting to default.
+    private static let disabledModifierIndex = String(DragModifierPreference.selectable.firstIndex(of: .disabled) ?? 0)
+
+    static var isEnabled: Bool {
+        (Preferences.windowDragModifier.isEnabled || Preferences.windowResizeModifier.isEnabled) && !Preferences.inputModulesSafeMode
+    }
+
+    private static func modeFor(_ flags: NSEvent.ModifierFlags) -> DragMode? {
+        DragModeSelection.mode(flags, move: Preferences.windowDragModifier, resize: Preferences.windowResizeModifier)
+    }
+
+    /// `announceSuppression` is set only when the user just picked a modifier. Safe mode silently keeping
+    /// the module off is how a chosen modifier ends up looking broken: the dropdown says the feature is on
+    /// while nothing happens. At launch the notice would be noise, so it stays off there.
+    static func modifierPreferenceChanged(announceSuppression: Bool = false) {
+        guard Preferences.windowDragModifier.isEnabled else {
+            stop()
+            return
+        }
+        guard !Preferences.inputModulesSafeMode else {
+            stop()
+            if announceSuppression {
+                TransientNotice.show(NSLocalizedString("Input extensions are in safe mode, so moving windows stays off. Turn safe mode off to use it.", comment: ""))
+            }
+            return
+        }
+        guard acquireGestureOwnershipIfNeeded(announceSuppression) else {
+            Preferences.set("windowDragModifier", disabledModifierIndex, false)
+            stop()
+            return
+        }
+        start()
+    }
+
+    /// `Command+Control` needs the global drag-on-gesture switch off, otherwise macOS drags background
+    /// windows on the same mouse down. If that cannot be achieved and verified, the modifier is refused
+    /// outright rather than left half-working; every other modifier hands the switch back.
+    private static func acquireGestureOwnershipIfNeeded(_ announce: Bool) -> Bool {
+        let needsSwitch = Preferences.windowDragModifier.requiresWindowDragOnGestureDisabled
+            || Preferences.windowResizeModifier.requiresWindowDragOnGestureDisabled
+        guard needsSwitch else {
+            WindowDragGestureOwnership.release()
+            return true
+        }
+        guard WindowDragGestureOwnership.acquire(deliberate: announce) else {
+            if announce {
+                TransientNotice.show(NSLocalizedString("Command+Control needs the system setting for dragging windows by gesture to be off, and it could not be changed. Pick another modifier.", comment: ""))
+            }
+            return false
+        }
+        return true
+    }
+
+    /// Startup path. A leftover ownership record means the previous session did not shut down cleanly, so
+    /// the switch is handed back and the module stays off until the user picks a modifier again.
+    static func recoverAtLaunch() {
+        guard WindowDragGestureOwnership.recoverAfterUncleanExit() else { return }
+        Preferences.set("windowDragModifier", disabledModifierIndex, false)
+        Preferences.set("windowResizeModifier", disabledModifierIndex, false)
+        Logger.info { "Window drag was left armed by an unclean exit; the system drag-on-gesture setting was handed back and the module starts off" }
+        DispatchQueue.main.async {
+            TransientNotice.show(NSLocalizedString("AltTab+ did not quit cleanly. The system setting for dragging windows by gesture was restored and moving windows is off.", comment: ""))
+        }
+    }
+
+    /// Escape during a drag puts the window back where it started. Preventing the closing write is not
+    /// enough: intermediate frames have already been applied, so the window would simply stay wherever it
+    /// was dragged to. The original frame has to be written back.
+    static func abortIfActive() {
+        guard DragSessionMachine.isActive(state) else { return }
+        let restore = originWindowFrame
+        advance(.aborted)
+        AXCallScheduler.shared.submit {
+            if let restore { applyFrame(restore, readBack: true) }
+            endSession()
+        }
+    }
+
+    static func disableForSafety() {
+        Preferences.set("windowDragModifier", disabledModifierIndex, false)
+        Preferences.set("windowResizeModifier", disabledModifierIndex, false)
+        Preferences.set("windowDragArmingMarker", "false", false)
+        stop()
+        WindowDragGestureOwnership.release()
+    }
+
+    private static func start() {
+        guard eventTap == nil else { return }
+        // written before the tap exists: a crash or hang while arming leaves it behind, and the next launch
+        // disables the module instead of arming it again
+        Preferences.set("windowDragArmingMarker", "true", false)
+        let mask = [CGEventType.leftMouseDown, .leftMouseDragged, .leftMouseUp, .flagsChanged]
+            .reduce(CGEventMask(0)) { $0 | (1 << $1.rawValue) }
+        eventTap = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .headInsertEventTap, options: .defaultTap,
+                                     eventsOfInterest: mask, callback: handleEvent, userInfo: nil)
+        guard let eventTap else {
+            Logger.error { "Window drag tap could not be created; leaving the module off" }
+            Preferences.set("windowDragArmingMarker", "false", false)
+            Preferences.set("windowDragModifier", disabledModifierIndex, false)
+            return
+        }
+        CFRunLoopAddSource(CFRunLoopGetMain(), CFMachPortCreateRunLoopSource(nil, eventTap, 0), .commonModes)
+        DispatchQueue.main.asyncAfter(deadline: .now() + stabilityWindowSeconds) {
+            Preferences.set("windowDragArmingMarker", "false", false)
+        }
+    }
+
+    private static func stop() {
+        endSession()
+        guard let tap = eventTap else { return }
+        CGEvent.tapEnable(tap: tap, enable: false)
+        CFMachPortInvalidate(tap)
+        eventTap = nil
+    }
+
+    private static let handleEvent: CGEventTapCallBack = { _, type, cgEvent, _ in
+        switch type {
+            case .tapDisabledByUserInput, .tapDisabledByTimeout: return handleTapFailure(cgEvent)
+            case .flagsChanged: return handleFlagsChanged(cgEvent)
+            case .leftMouseDown: return handleMouseDown(cgEvent)
+            case .leftMouseDragged: return handleMouseDragged(cgEvent)
+            case .leftMouseUp: return handleMouseUp(cgEvent)
+            default: return Unmanaged.passUnretained(cgEvent)
+        }
+    }
+
+    /// Q-04 and Q-12: the first failure may re-enable, a repeat inside the window disables the module
+    /// visibly rather than looping.
+    private static func handleTapFailure(_ cgEvent: CGEvent) -> Unmanaged<CGEvent> {
+        endSession()
+        if circuitBreaker.recordFailure(at: ProcessInfo.processInfo.systemUptime) == .trip {
+            DispatchQueue.main.async {
+                disableForSafety()
+                Logger.error { "Window drag was disabled after repeated mouse event tap failures" }
+            }
+        } else if let tap = eventTap {
+            CGEvent.tapEnable(tap: tap, enable: true)
+        }
+        return Unmanaged.passUnretained(cgEvent)
+    }
+
+    private static func handleFlagsChanged(_ cgEvent: CGEvent) -> Unmanaged<CGEvent> {
+        let engagedMode = modeFor(NSEvent.ModifierFlags(rawValue: UInt(cgEvent.flags.rawValue)))
+        if let engagedMode, state == .idle { mode = engagedMode }
+        advance(engagedMode != nil ? .modifierEngaged : .modifierReleased)
+        // never consumed: the modifier keeps its normal meaning for every other app
+        return Unmanaged.passUnretained(cgEvent)
+    }
+
+    private static func handleMouseDown(_ cgEvent: CGEvent) -> Unmanaged<CGEvent>? {
+        // The mouse down carries its own modifier flags, so arming does not depend on the flagsChanged
+        // event arriving first. Pressing both at once used to race: the session was still idle, the click
+        // went through untouched, and macOS ran its own title-bar drag and snapping instead.
+        if state != .armed, let engagedMode = modeFor(NSEvent.ModifierFlags(rawValue: UInt(cgEvent.flags.rawValue))) {
+            mode = engagedMode
+            advance(.modifierEngaged)
+        }
+        guard state == .armed else { return Unmanaged.passUnretained(cgEvent) }
+        advance(.mouseDown)
+        let location = cgEvent.location
+        // resolution makes blocking AX calls and must not run in the callback
+        AXCallScheduler.shared.submit { resolveOnQueue(location) }
+        return nil
+    }
+
+    private static func handleMouseDragged(_ cgEvent: CGEvent) -> Unmanaged<CGEvent>? {
+        guard state == .dragging else { return Unmanaged.passUnretained(cgEvent) }
+        publishTarget(cgEvent.location)
+        return nil
+    }
+
+    private static func handleMouseUp(_ cgEvent: CGEvent) -> Unmanaged<CGEvent>? {
+        guard DragSessionMachine.isActive(state) else { return Unmanaged.passUnretained(cgEvent) }
+        let reached = advance(.mouseUp)
+        AXCallScheduler.shared.submit { finishOnQueue(reached) }
+        return nil
+    }
+
+    private static func resolveOnQueue(_ location: CGPoint) {
+        guard state == .resolving, let resolved = CursorWindowResolver.resolveElement(at: location),
+              let attributes = try? resolved.element.attributes([kAXPositionAttribute, kAXSizeAttribute]),
+              let position = attributes.position, let size = attributes.size else {
+            advance(.windowUnresolved)
+            return
+        }
+        window = resolved.element
+        windowPid = resolved.pid
+        // deliberately grabbing a window is not an unintended focus change: leaving it behind its
+        // neighbours while it moves under the cursor reads as a bug. Raising alone is not enough — that
+        // only reorders within the owning app, so a background app's window stays visually behind.
+        try? resolved.element.focusWindow()
+        DispatchQueue.main.async {
+            NSRunningApplication(processIdentifier: resolved.pid)?.activate()
+        }
+        windowId = (try? resolved.element.cgWindowId()) ?? 0
+        windowBundleId = NSRunningApplication(processIdentifier: resolved.pid)?.bundleIdentifier ?? ""
+        let frame = CGRect(origin: position, size: size)
+        originWindowFrame = frame
+        originMouse = location
+        resizeAnchor = WindowResizeGeometry.anchor(for: location, in: frame)
+        coalescer = AxWriteCoalescer()
+        advance(.windowResolved)
+    }
+
+    private static func publishTarget(_ location: CGPoint) {
+        guard let origin = originWindowFrame, let start = originMouse else { return }
+        let delta = CGSize(width: location.x - start.x, height: location.y - start.y)
+        // snapping belongs to move: a resize aims at a size, not at a screen edge
+        if mode == .move { updateSnapTarget(location) } else { clearSnap() }
+        let target = mode == .move
+            ? CGRect(x: origin.minX + delta.width, y: origin.minY + delta.height, width: origin.width, height: origin.height)
+            : WindowResizeGeometry.frame(from: origin, anchor: resizeAnchor, delta: delta)
+        guard let due = coalescer.submit(target, now: ProcessInfo.processInfo.systemUptime) else { return }
+        AXCallScheduler.shared.submit { writeOnQueue(due) }
+    }
+
+    private static func writeOnQueue(_ frame: CGRect) {
+        applyFrame(frame)
+        guard let next = coalescer.completed(now: ProcessInfo.processInfo.systemUptime) else { return }
+        AXCallScheduler.shared.submit { writeOnQueue(next) }
+    }
+
+    private static func finishOnQueue(_ reached: DragSessionState) {
+        defer { endSession() }
+        guard DragSessionMachine.mayApplyFrame(reached) else { return }
+        // an active snap target wins over the freely dragged position: it is what the user aimed at
+        if let snapFrame {
+            applyFrame(snapFrame, readBack: true)
+            return
+        }
+        if let last = coalescer.flush(now: ProcessInfo.processInfo.systemUptime) {
+            applyFrame(last, readBack: true)
+        }
+    }
+
+    /// Recomputed per drag event against the display under the cursor, so dragging onto another screen
+    /// re-evaluates against that screen's geometry rather than the one the drag started on.
+    private static func updateSnapTarget(_ location: CGPoint) {
+        guard let screen = quartzVisibleFrame(containing: location) else {
+            clearSnap()
+            return
+        }
+        // a drop on the menubar wins over any edge: the cursor is on the menubar, not on a screen edge
+        if let dropFrame = menubarDropFrame(location, in: screen) {
+            snapTarget = .fill
+            snapFrame = dropFrame
+            presentOverlay()
+            return
+        }
+        let now = ProcessInfo.processInfo.systemUptime
+        let side = DragSnapPolicy.edge(location, screen)
+        guard side != .none else {
+            clearSnap()
+            return
+        }
+        if edgeSide != side {
+            edgeSide = side
+            edgeEnteredAt = now
+        }
+        let frames = quartzVisibleFrames()
+        let confirmed = DragSnapPolicy.target(DragSnapContext(cursor: location, visibleFrame: screen,
+                                                              hasNeighbourLeft: DragScreenNeighbours.hasNeighbour(left: true, of: screen, among: frames),
+                                                              hasNeighbourRight: DragScreenNeighbours.hasNeighbour(left: false, of: screen, among: frames),
+                                                              hasNeighbourAbove: DragScreenNeighbours.hasNeighbourAbove(screen, among: frames),
+                                                              dwellElapsed: now - (edgeEnteredAt ?? now)))
+        snapTarget = confirmed
+        snapFrame = DragSnapPolicy.frame(confirmed, in: screen)
+        presentOverlay()
+    }
+
+    /// The AltTab+ status item as a drop target, keeping how the window sat on its old display.
+    ///
+    /// Dropping on a display's group in the Space row names that display. Dropping anywhere else on the
+    /// item keeps the original behaviour and takes the next display in physical order — which is all
+    /// there is to go on when the row is switched off or shows only one group.
+    ///
+    /// The chosen display is remembered when the target latches, because the latch deliberately survives
+    /// the cursor leaving the item: without that, a release a few points below the row would forget which
+    /// group it came from.
+    private static func menubarDropFrame(_ location: CGPoint, in screen: CGRect) -> CGRect? {
+        if MenubarDropTarget.isOver(location, statusItemFrame: quartzStatusItemFrame()) {
+            dropLatched = true
+            dropTargetDisplay = Menubar.displayGroup(atQuartzPoint: location)
+        } else if !MenubarDropTarget.staysLatched(location, menubarStripBottom: screen.minY) {
+            dropLatched = false
+            dropTargetDisplay = nil
+        }
+        guard let origin = originWindowFrame, dropLatched else { return nil }
+        let ordered = DisplayMoveGeometry.orderedFrames(quartzVisibleFrames())
+        guard let sourceIndex = MenubarDropTarget.sourceIndex(of: origin, in: ordered) else { return nil }
+        guard let targetIndex = namedTargetIndex(in: ordered) ??
+            DisplayMoveGeometry.targetScreenIndex(.nextDisplay, currentIndex: sourceIndex, screenCount: ordered.count) else { return nil }
+        guard targetIndex != sourceIndex else { return nil }
+        return DisplayMoveGeometry.frame(origin, from: ordered[sourceIndex], to: ordered[targetIndex])
+    }
+
+    /// Where the latched group's display sits in the ordered frames, matched by geometry because the
+    /// ordering works on frames while the row identifies displays by uuid.
+    private static func namedTargetIndex(in ordered: [CGRect]) -> Int? {
+        guard let dropTargetDisplay,
+              let screen = NSScreen.screens.first(where: { $0.cachedUuid() as String? == dropTargetDisplay as String }) else { return nil }
+        let quartz = quartzScreens()
+        guard let position = NSScreen.screens.firstIndex(of: screen), position < quartz.count else { return nil }
+        return ordered.firstIndex(of: quartz[position].visible)
+    }
+
+    private static func quartzStatusItemFrame() -> CGRect? {
+        guard let primaryFrame = NSScreen.screens.first?.frame,
+              let window = Menubar.statusItem?.button?.window else { return nil }
+        let frame = window.frame
+        return CGRect(x: frame.minX, y: primaryFrame.maxY - frame.maxY, width: frame.width, height: frame.height)
+    }
+
+    private static func clearSnap() {
+        snapTarget = .none
+        snapFrame = nil
+        edgeSide = .none
+        edgeEnteredAt = nil
+        dropLatched = false
+        dropTargetDisplay = nil
+        presentOverlay()
+    }
+
+    /// The overlay is AppKit and belongs on the main thread. The drag events already arrive there, but the
+    /// session also ends from the AX queue, so the hop is not optional.
+    private static func presentOverlay() {
+        let frame = snapFrame
+        let show = { frame.map { DragSnapOverlay.show(quartzFrame: $0) } ?? DragSnapOverlay.hide() }
+        Thread.isMainThread ? show() : DispatchQueue.main.async(execute: show)
+    }
+
+    private static func quartzScreens() -> [DragScreenGeometry] {
+        guard let primaryFrame = NSScreen.screens.first?.frame else { return [] }
+        let toQuartz = { (rect: CGRect) in
+            CGRect(x: rect.minX, y: primaryFrame.maxY - rect.maxY, width: rect.width, height: rect.height)
+        }
+        return NSScreen.screens.map { DragScreenGeometry(full: toQuartz($0.frame), visible: toQuartz($0.visibleFrame)) }
+    }
+
+    private static func quartzVisibleFrames() -> [CGRect] {
+        quartzScreens().map { $0.visible }
+    }
+
+    private static func quartzVisibleFrame(containing point: CGPoint) -> CGRect? {
+        DragScreenLookup.visibleFrame(containing: point, screens: quartzScreens())
+    }
+
+    /// `readBack` is only set for the frame that actually commits. Reading position and size back costs an
+    /// AX round trip, and doing that per frame put two blocking calls on a 60 Hz path: they queued up
+    /// behind a global HIServices lock and hung the app. Intermediate frames are recorded without it.
+    private static func applyFrame(_ frame: CGRect, readBack: Bool = false) {
+        guard let window, let pid = windowPid else { return }
+        // Chromium reflows and fights the write while its enhanced-interface flag is on
+        AxAppCompatibility.withEnhancedUserInterfaceSuspended(pid) { try? window.setFrame(frame) }
+        var result: CGRect?
+        if readBack {
+            let actual = try? window.attributes([kAXPositionAttribute, kAXSizeAttribute])
+            result = (actual?.position).flatMap { position in (actual?.size).map { CGRect(origin: position, size: $0) } }
+        }
+        diagnosticsLock.lock()
+        diagnostics.record(AxDiagnosticEntry(windowId: windowId, bundleId: windowBundleId,
+                                             displayIndex: 0, proposed: frame, result: result))
+        diagnosticsLock.unlock()
+    }
+
+    private static var state: DragSessionState {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return unsafeState
+    }
+
+    /// Returns the state the session actually moved to, so a caller can act on the transition it caused
+    /// rather than on a value another thread may already have replaced.
+    @discardableResult
+    private static func advance(_ event: DragSessionEvent) -> DragSessionState {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        guard let next = DragSessionMachine.next(unsafeState, event) else { return unsafeState }
+        unsafeState = next
+        return next
+    }
+
+    private static func endSession() {
+        stateLock.lock()
+        unsafeState = .idle
+        stateLock.unlock()
+        window = nil
+        windowPid = nil
+        windowId = 0
+        windowBundleId = ""
+        originWindowFrame = nil
+        originMouse = nil
+        coalescer = AxWriteCoalescer()
+        snapTarget = .none
+        snapFrame = nil
+        edgeSide = .none
+        edgeEnteredAt = nil
+        dropLatched = false
+        dropTargetDisplay = nil
+        DispatchQueue.main.async { DragSnapOverlay.dismiss() }
+    }
+}

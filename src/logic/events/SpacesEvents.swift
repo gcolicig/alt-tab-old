@@ -8,6 +8,14 @@ class SpacesEvents {
     }
 
     @objc private static func handleEvent(_ notification: Notification) {
+        // the visible Space marker must follow the Space itself, so it is refreshed on every event
+        // instead of behind the throttler, which delayed it by up to its full delay while zapping
+        Spaces.refresh()
+        // no InstantSpaces.synchronize() here: this notification also fires for our own in-flight
+        // steps, and dropping the prediction mid-sequence made the next step plan from a stale index.
+        // SpacePredictionPolicy already discards a prediction that no longer matches the real Space.
+        InstantSpaces.noteSystemSpaceChange()
+        Menubar.refreshSpaces(spacesAreFresh: true)
         throttler.throttleOrProceed {
             Logger.debug { notification.name.rawValue }
             // Workaround for Safari full-screen videos

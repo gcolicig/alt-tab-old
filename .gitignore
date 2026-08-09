@@ -16,3 +16,4 @@ codesign.crt
 codesign.key
 codesign.p12
 /.claude/worktrees/
+/.serena/

@@ -39,6 +39,25 @@ final class KeyboardEventsUtilsTests: XCTestCase {
         XCTAssertEqual(state.keyUp(UInt32(kVK_ANSI_T)), .pass)
     }
 
+    func testHyperKeyDropsStaleRouteWhenKeyUpWasMissed() {
+        var state = HyperKeyStateMachine()
+        XCTAssertEqual(state.capsLockChanged(true, at: 1, tapThreshold: 0.2, enabled: true), .absorb)
+        XCTAssertEqual(state.keyDown(UInt32(kVK_ANSI_T), internalActionIsConfigured: false, enabled: true), .systemWide)
+        XCTAssertEqual(state.capsLockChanged(false, at: 1.1, tapThreshold: 0.2, enabled: true), .absorb)
+        // the key-up never arrives, for example because secure input swallowed it
+        XCTAssertEqual(state.keyDown(UInt32(kVK_ANSI_T), internalActionIsConfigured: false, enabled: true), .pass)
+        XCTAssertEqual(state.keyDown(UInt32(kVK_ANSI_T), internalActionIsConfigured: false, enabled: true), .pass)
+    }
+
+    func testHyperKeyKeepsRouteForAutorepeatAfterCapsLockRelease() {
+        var state = HyperKeyStateMachine()
+        XCTAssertEqual(state.capsLockChanged(true, at: 1, tapThreshold: 0.2, enabled: true), .absorb)
+        XCTAssertEqual(state.keyDown(UInt32(kVK_ANSI_T), internalActionIsConfigured: false, enabled: true), .systemWide)
+        XCTAssertEqual(state.capsLockChanged(false, at: 1.1, tapThreshold: 0.2, enabled: true), .absorb)
+        XCTAssertEqual(state.keyDown(UInt32(kVK_ANSI_T), internalActionIsConfigured: false, enabled: true, isAutorepeat: true), .systemWide)
+        XCTAssertEqual(state.keyUp(UInt32(kVK_ANSI_T)), .systemWide)
+    }
+
     func testHyperKeyRoutesConfiguredInternalActionAndAbsorbsKeyPair() {
         var state = HyperKeyStateMachine()
         XCTAssertEqual(state.capsLockChanged(true, at: 1, tapThreshold: 0.2, enabled: true), .absorb)
@@ -61,6 +80,25 @@ final class KeyboardEventsUtilsTests: XCTestCase {
         XCTAssertEqual(state.keyDown(UInt32(kVK_UpArrow), internalActionIsConfigured: true, enabled: false), .pass)
         XCTAssertFalse(state.capsLockIsDown)
         XCTAssertEqual(state.keyUp(UInt32(kVK_UpArrow)), .pass)
+    }
+
+    func testInputTapCircuitBreakerTripsOnSecondRecentFailure() {
+        var circuitBreaker = InputTapCircuitBreaker()
+        XCTAssertEqual(circuitBreaker.recordFailure(at: 1), .recover)
+        XCTAssertEqual(circuitBreaker.recordFailure(at: 5), .trip)
+    }
+
+    func testInputTapCircuitBreakerForgetsOldFailures() {
+        var circuitBreaker = InputTapCircuitBreaker()
+        XCTAssertEqual(circuitBreaker.recordFailure(at: 1), .recover)
+        XCTAssertEqual(circuitBreaker.recordFailure(at: 12), .recover)
+    }
+
+    func testInputTapCircuitBreakerResetClearsFailures() {
+        var circuitBreaker = InputTapCircuitBreaker()
+        XCTAssertEqual(circuitBreaker.recordFailure(at: 1), .recover)
+        circuitBreaker.reset()
+        XCTAssertEqual(circuitBreaker.recordFailure(at: 2), .recover)
     }
 
     // alt-down > tab-down > tab-up > alt-up

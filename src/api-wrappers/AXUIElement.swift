@@ -51,7 +51,8 @@ extension AXUIElement {
 
     func cgWindowId() throws -> CGWindowID {
         var id = CGWindowID(0)
-        try throwIfNotSuccess(_AXUIElementGetWindow(self, &id))
+        guard let result = axUIElementGetWindow(self, &id) else { throw AxError.runtimeError }
+        try throwIfNotSuccess(result)
         return id
     }
 

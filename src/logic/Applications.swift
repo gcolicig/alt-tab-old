@@ -158,6 +158,9 @@ class Applications {
             let pid = tApp.processIdentifier
             AXCallScheduler.shared.removeEntry(key: "pid-\(pid)")
             AXCallScheduler.shared.removeUnresponsivePid(pid)
+            // pids are reused, so a stale entry would make a fresh Electron app look as if it had already
+            // been told to expose its accessibility tree
+            AxAppCompatibility.forgetApplication(pid)
             appListUpdateThrottler.removeEntry(withKey: "\(pid)")
         }
         App.refreshOpenUiAfterExternalEvent([])

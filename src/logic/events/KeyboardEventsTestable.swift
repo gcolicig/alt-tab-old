@@ -2,12 +2,33 @@ import Carbon.HIToolbox.Events
 import ShortcutRecorder
 
 class KeyboardEventsTestable {
+    /// The block boundaries are hoisted into typed constants rather than repeated inline. Spelling the same
+    /// multi-term sum out at every use made the type checker exceed the 250ms limit the build enforces as
+    /// an error. The assigned ids are unchanged; the uniqueness tests cover that.
     static var globalShortcutsIds: [String: Int] {
+        let shortcutCount: Int = Preferences.maxShortcutCount
+        let afterHoldShortcuts: Int = shortcutCount * 2
+        let afterLayouts: Int = afterHoldShortcuts + WindowLayoutAction.allCases.count
+        let afterDisplayMoves: Int = afterLayouts + DisplayMoveAction.allCases.count
+        let afterSpaceActions: Int = afterDisplayMoves + SpaceAction.all.count
+        let afterLaunchApps: Int = afterSpaceActions + Preferences.maxLaunchAppCount
         var ids = [String: Int]()
-        (0..<Preferences.maxShortcutCount).forEach { ids[Preferences.indexToName("nextWindowShortcut", $0)] = $0 }
-        (0..<Preferences.maxShortcutCount).forEach { ids[Preferences.indexToName("holdShortcut", $0)] = Preferences.maxShortcutCount + $0 }
+        (0..<shortcutCount).forEach { ids[Preferences.indexToName("nextWindowShortcut", $0)] = $0 }
+        (0..<shortcutCount).forEach { ids[Preferences.indexToName("holdShortcut", $0)] = shortcutCount + $0 }
         WindowLayoutAction.allCases.enumerated().forEach {
-            ids[$0.element.shortcutPreferenceKey] = Preferences.maxShortcutCount * 2 + $0.offset
+            ids[$0.element.shortcutPreferenceKey] = afterHoldShortcuts + $0.offset
+        }
+        DisplayMoveAction.allCases.enumerated().forEach {
+            ids[$0.element.shortcutPreferenceKey] = afterLayouts + $0.offset
+        }
+        SpaceAction.all.enumerated().forEach {
+            ids[$0.element.shortcutPreferenceKey] = afterDisplayMoves + $0.offset
+        }
+        (0..<Preferences.maxLaunchAppCount).forEach {
+            ids[LaunchAppAction.shortcutPreferenceKey($0)] = afterSpaceActions + $0
+        }
+        (0..<Preferences.maxOpenUrlCount).forEach {
+            ids[OpenUrlAction.shortcutPreferenceKey($0)] = afterLaunchApps + $0
         }
         return ids
     }
@@ -57,12 +78,18 @@ struct HyperKeyStateMachine {
         return shouldToggle ? .toggle : .absorb
     }
 
-    mutating func keyDown(_ keyCode: UInt32, internalActionIsConfigured: Bool, enabled: Bool) -> HyperKeyDecision {
+    mutating func keyDown(_ keyCode: UInt32, internalActionIsConfigured: Bool, enabled: Bool, isAutorepeat: Bool = false) -> HyperKeyDecision {
         guard enabled else {
             reset()
             return .pass
         }
         if let route = routedKeyCodes[keyCode] {
+            // a route outlives its key-up when the event tap misses it, for example while secure input is active.
+            // a fresh press with Caps Lock up therefore means the route is stale and must not modify the key.
+            guard capsLockIsDown || isAutorepeat else {
+                routedKeyCodes.removeValue(forKey: keyCode)
+                return .pass
+            }
             return route == .systemWide ? .systemWide : .absorb
         }
         guard capsLockIsDown else { return .pass }
@@ -88,6 +115,29 @@ struct HyperKeyStateMachine {
         capsLockWasUsed = false
         capsLockPressedAt = nil
         routedKeyCodes.removeAll()
+    }
+}
+
+enum InputTapRecoveryDecision: Equatable {
+    case recover
+    case trip
+}
+
+struct InputTapCircuitBreaker {
+    private var failures = [TimeInterval]()
+
+    mutating func recordFailure(at timestamp: TimeInterval, window: TimeInterval = 10, threshold: Int = 2) -> InputTapRecoveryDecision {
+        failures.removeAll { timestamp - $0 > window }
+        failures.append(timestamp)
+        if failures.count >= threshold {
+            failures.removeAll()
+            return .trip
+        }
+        return .recover
+    }
+
+    mutating func reset() {
+        failures.removeAll()
     }
 }
 

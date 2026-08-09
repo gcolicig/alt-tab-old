@@ -108,8 +108,7 @@ class Windows {
     static func refreshThumbnailsAsync(_ windows: [Window], _ source: RefreshCausedBy, windowRemoved: Bool = false) {
         guard (!windows.isEmpty || windowRemoved) && ScreenRecordingPermission.status == .granted
                && !Preferences.onlyShowApplications()
-               && (!Appearance.hideThumbnails || Preferences.previewSelectedWindow)
-               && (Preferences.captureWindowsInBackground || App.appIsBeingUsed) else { return }
+               && captureRequestIsAllowed(source) else { return }
         var eligibleWindows = [Window]()
         for window in windows {
             if !window.isWindowlessApp, let cgWindowId = window.cgWindowId, cgWindowId != CGWindowID(bitPattern: -1) {
@@ -124,6 +123,14 @@ class Windows {
         } else {
             WindowCaptureScreenshotsPrivateApi.oneTimeScreenshots(eligibleWindows, source)
         }
+    }
+
+    static func captureRequestIsAllowed(_ source: RefreshCausedBy) -> Bool {
+        let allowed = WindowPreviewCapturePolicy.allowsCapture(
+            Preferences.usesImageBasedWindowPreviews,
+            Preferences.captureWindowsInBackground,
+            App.appIsBeingUsed)
+        return allowed && (source != .refreshOnlyThumbnailsAfterShowUi || App.appIsBeingUsed)
     }
 
     static func refreshWhichWindowsToShowTheUser() {

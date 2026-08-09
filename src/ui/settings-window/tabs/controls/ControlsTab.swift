@@ -115,7 +115,8 @@ private class ShortcutSidebarRow: ClickHoverStackView {
 class ControlsTab {
     static var shortcuts = [String: ATShortcut]()
     static var shortcutControls = [String: (CustomRecorderControl, String)]()
-    static var shortcutsActions = [
+    static var shortcutsActions: [String: () -> Void] = {
+        var actions: [String: () -> Void] = [
         "focusWindowShortcut": { App.focusTarget() },
         "previousWindowShortcut": { App.previousWindowShortcutWithRepeatingKey() },
         "→": { App.cycleSelection(.right) },
@@ -134,12 +135,32 @@ class ControlsTab {
         "hideShowAppShortcut": { App.hideShowSelectedApp() },
         "searchShortcut": { App.toggleSearchMode() },
         "lockSearchShortcut": { App.lockSearchMode() },
-        "windowLayoutLeftThirdShortcut": { WindowLayouts.perform(.leftThird) },
-        "windowLayoutRightThirdShortcut": { WindowLayouts.perform(.rightThird) },
-        "windowLayoutLeftTwoThirdsShortcut": { WindowLayouts.perform(.leftTwoThirds) },
-        "windowLayoutRightTwoThirdsShortcut": { WindowLayouts.perform(.rightTwoThirds) },
-        "windowLayoutRestoreShortcut": { WindowLayouts.perform(.restore) },
-    ]
+        "shortcutCluesShortcut": { ShortcutCluesController.triggerPressed() },
+        "windowLayoutLeftThirdShortcut": { Actions.perform(.windowLayout(.leftThird)) },
+        "windowLayoutRightThirdShortcut": { Actions.perform(.windowLayout(.rightThird)) },
+        "windowLayoutLeftTwoThirdsShortcut": { Actions.perform(.windowLayout(.leftTwoThirds)) },
+        "windowLayoutRightTwoThirdsShortcut": { Actions.perform(.windowLayout(.rightTwoThirds)) },
+        "windowLayoutLeftThreeQuartersShortcut": { Actions.perform(.windowLayout(.leftThreeQuarters)) },
+        "windowLayoutRightThreeQuartersShortcut": { Actions.perform(.windowLayout(.rightThreeQuarters)) },
+        "windowLayoutLeftFocusShortcut": { Actions.perform(.windowLayout(.leftFocus)) },
+        "windowLayoutCenterFocusShortcut": { Actions.perform(.windowLayout(.centerFocus)) },
+        "windowLayoutRightFocusShortcut": { Actions.perform(.windowLayout(.rightFocus)) },
+        "windowLayoutRestoreShortcut": { Actions.perform(.windowLayout(.restore)) },
+        ]
+        DisplayMoveAction.allCases.forEach { action in
+            actions[action.shortcutPreferenceKey] = { Actions.perform(.displayMove(action)) }
+        }
+        SpaceAction.all.forEach { action in
+            actions[action.shortcutPreferenceKey] = { Actions.perform(.space(action)) }
+        }
+        (0..<Preferences.maxLaunchAppCount).forEach { index in
+            actions[LaunchAppAction.shortcutPreferenceKey(index)] = { Actions.perform(.launchApp(index)) }
+        }
+        (0..<Preferences.maxOpenUrlCount).forEach { index in
+            actions[OpenUrlAction.shortcutPreferenceKey(index)] = { Actions.perform(.openUrl(index)) }
+        }
+        return actions
+    }()
     static var arrowKeysCheckbox: Switch!
     static var vimKeysCheckbox: Switch!
 
@@ -154,13 +175,30 @@ class ControlsTab {
     private static var shortcutEditorWidth: CGFloat { SettingsWindow.contentWidth - shortcutSidebarWidth - 1 }
     private static var shortcutEditorContentWidth: CGFloat { shortcutEditorWidth - shortcutEditorRightPadding }
     private static let gestureSelectionIndex = -1
-    private static let staticManagedShortcutPreferences = [
-        "focusWindowShortcut", "previousWindowShortcut", "cancelShortcut", "searchShortcut", "lockSearchShortcut",
-        "closeWindowShortcut", "minDeminWindowShortcut", "toggleFullscreenWindowShortcut", "quitAppShortcut", "hideShowAppShortcut",
-        "windowLayoutLeftThirdShortcut", "windowLayoutRightThirdShortcut", "windowLayoutLeftTwoThirdsShortcut",
-        "windowLayoutRightTwoThirdsShortcut", "windowLayoutRestoreShortcut",
-    ]
-    private static let globalActionShortcutPreferences = Set(WindowLayoutAction.allCases.map(\.shortcutPreferenceKey))
+    /// Built statement by statement rather than as one concatenated expression: chaining the literal and the
+    /// four mapped lists with `+` made the type checker exceed the 250ms limit the build enforces as an error.
+    private static let staticManagedShortcutPreferences: [String] = {
+        var keys: [String] = [
+            "focusWindowShortcut", "previousWindowShortcut", "cancelShortcut", "searchShortcut", "lockSearchShortcut",
+            "closeWindowShortcut", "minDeminWindowShortcut", "toggleFullscreenWindowShortcut", "quitAppShortcut", "hideShowAppShortcut",
+            "windowLayoutLeftThirdShortcut", "windowLayoutRightThirdShortcut", "windowLayoutLeftTwoThirdsShortcut",
+            "windowLayoutRightTwoThirdsShortcut", "windowLayoutLeftThreeQuartersShortcut", "windowLayoutRightThreeQuartersShortcut",
+            "windowLayoutLeftFocusShortcut", "windowLayoutCenterFocusShortcut",
+            "windowLayoutRightFocusShortcut", "windowLayoutRestoreShortcut",
+        ]
+        keys += DisplayMoveAction.allCases.map(\.shortcutPreferenceKey)
+        keys += SpaceAction.all.map(\.shortcutPreferenceKey)
+        keys += (0..<Preferences.maxLaunchAppCount).map(LaunchAppAction.shortcutPreferenceKey)
+        keys += (0..<Preferences.maxOpenUrlCount).map(OpenUrlAction.shortcutPreferenceKey)
+        return keys
+    }()
+    private static let globalActionShortcutPreferences = Set(
+        WindowLayoutAction.allCases.map(\.shortcutPreferenceKey)
+            + DisplayMoveAction.allCases.map(\.shortcutPreferenceKey)
+            + SpaceAction.all.map(\.shortcutPreferenceKey)
+            + (0..<Preferences.maxLaunchAppCount).map(LaunchAppAction.shortcutPreferenceKey)
+            + (0..<Preferences.maxOpenUrlCount).map(OpenUrlAction.shortcutPreferenceKey)
+            + [ShortcutCluesController.shortcutPreferenceKey])
     private static let removableShortcutPreferences = [
         "holdShortcut", "nextWindowShortcut",
         "appsToShow", "spacesToShow", "screensToShow",
@@ -214,6 +252,8 @@ class ControlsTab {
             }
             refreshShortcutRows()
         case let k where staticManagedShortcutPreferences.contains(k):
+            // the recorder has to show what a preset assigned, not only what the user typed into it
+            syncShortcutRecorderControlValue(k)
             applyShortcutPreference(k)
         case "arrowKeysEnabled":
             applyArrowKeysPreference()
@@ -705,6 +745,7 @@ class ControlsTab {
         if scope == .global {
             KeyboardEvents.addGlobalShortcut(controlId, atShortcut.shortcut)
             ControlsTab.toggleNativeCommandTabIfNeeded()
+            NativeSystemShortcuts.apply()
         }
     }
 
@@ -713,10 +754,15 @@ class ControlsTab {
             .commandTab: { shortcut in shortcut.carbonModifierFlags == cmdKey && shortcut.carbonKeyCode == kVK_Tab },
             .commandShiftTab: { shortcut in CustomRecorderControlTestable.combinedModifiersMatch(shortcut.carbonModifierFlags, UInt32(cmdKey | shiftKey)) && shortcut.carbonKeyCode == kVK_Tab },
             .commandKeyAboveTab: { shortcut in shortcut.carbonModifierFlags == cmdKey && shortcut.carbonKeyCode == kVK_ANSI_Grave },
+            .commandShiftKeyAboveTab: { shortcut in CustomRecorderControlTestable.combinedModifiersMatch(shortcut.carbonModifierFlags, UInt32(cmdKey | shiftKey)) && shortcut.carbonKeyCode == kVK_ANSI_Grave },
         ]
         var overlappingHotkeys = shortcuts.values.compactMap { atShortcut in nativeHotkeys.first { $1(atShortcut.shortcut) }?.key }
         if overlappingHotkeys.contains(.commandTab) && !overlappingHotkeys.contains(.commandShiftTab) {
             overlappingHotkeys.append(.commandShiftTab)
+        }
+        // the same pairing as Command-Tab: taking the forward shortcut also takes its Shift variant
+        if overlappingHotkeys.contains(.commandKeyAboveTab) && !overlappingHotkeys.contains(.commandShiftKeyAboveTab) {
+            overlappingHotkeys.append(.commandShiftKeyAboveTab)
         }
         let nonOverlappingHotkeys: [CGSSymbolicHotKey] = Array(Set(nativeHotkeys.keys).symmetricDifference(Set(overlappingHotkeys)))
         setNativeCommandTabEnabled(false, overlappingHotkeys)
@@ -850,6 +896,7 @@ class ControlsTab {
             shortcuts.removeValue(forKey: controlId)
             if atShortcut.scope == .global {
                 ControlsTab.toggleNativeCommandTabIfNeeded()
+                NativeSystemShortcuts.apply()
             }
         }
     }

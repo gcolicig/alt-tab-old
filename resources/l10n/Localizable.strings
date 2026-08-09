@@ -1,4 +1,10 @@
 /* No comment provided by engineer. */
+"%@ (Display %d)" = "%1$@ (Display %2$d)";
+
+/* No comment provided by engineer. */
+"%@ lists no keyboard shortcuts in its menus." = "%@ lists no keyboard shortcuts in its menus.";
+
+/* No comment provided by engineer. */
 "3-finger Horizontal Swipe" = "3-finger Horizontal Swipe";
 
 /* No comment provided by engineer. */
@@ -10,11 +16,17 @@
 /* No comment provided by engineer. */
 "4-finger Vertical Swipe" = "4-finger Vertical Swipe";
 
+/* No comment provided by engineer. */
+"A keyboard shortcut was changed in the system preferences. Restart the Dock or log in again for it to take effect." = "A keyboard shortcut was changed in the system preferences. Restart the Dock or log in again for it to take effect.";
+
 /* Menubar option. %@ is AltTab */
 "About %@" = "About %@";
 
 /* No comment provided by engineer. */
 "Accessibility" = "Accessibility";
+
+/* No comment provided by engineer. */
+"Accessibility permission is required." = "Accessibility permission is required.";
 
 /* No comment provided by engineer. */
 "Active app" = "Active app";
@@ -33,6 +45,9 @@
 
 /* No comment provided by engineer. */
 "Additional controls…" = "Additional controls…";
+
+/* No comment provided by engineer. */
+"Adjust pointer acceleration and speed for mouse and trackpad." = "Adjust pointer acceleration and speed for mouse and trackpad.";
 
 /* No comment provided by engineer. */
 "Advanced" = "Advanced";
@@ -77,6 +92,15 @@
 "AltTab will show if the window is currently minimized or fullscreen with a status icon." = "AltTab will show if the window is currently minimized or fullscreen with a status icon.";
 
 /* No comment provided by engineer. */
+"AltTab+ did not quit cleanly. The system setting for dragging windows by gesture was restored and moving windows is off." = "AltTab+ did not quit cleanly. The system setting for dragging windows by gesture was restored and moving windows is off.";
+
+/* No comment provided by engineer. */
+"AltTab+ input safety" = "AltTab+ input safety";
+
+/* No comment provided by engineer. */
+"AltTab+ needs accessibility permission to read the menus of other apps." = "AltTab+ needs accessibility permission to read the menus of other apps.";
+
+/* No comment provided by engineer. */
 "Always" = "Always";
 
 /* No comment provided by engineer. */
@@ -90,6 +114,9 @@
 
 /* No comment provided by engineer. */
 "Animations…" = "Animations…";
+
+/* No comment provided by engineer. */
+"App %d" = "App %d";
 
 /* No comment provided by engineer. */
 "App (BundleID starting with)" = "App (BundleID starting with)";
@@ -119,10 +146,31 @@
 "Applications" = "Applications";
 
 /* No comment provided by engineer. */
+"Apply" = "Apply";
+
+/* No comment provided by engineer. */
+"Apply the creator's settings?" = "Apply the creator's settings?";
+
+/* No comment provided by engineer. */
+"Apps & URLs" = "Apps & URLs";
+
+/* No comment provided by engineer. */
 "Arrow keys" = "Arrow keys";
 
 /* No comment provided by engineer. */
 "Ask whether to send crash reports" = "Ask whether to send crash reports";
+
+/* No comment provided by engineer. */
+"Assign" = "Assign";
+
+/* No comment provided by engineer. */
+"Assign shortcuts for arranging the focused window." = "Assign shortcuts for arranging the focused window.";
+
+/* No comment provided by engineer. */
+"Assign shortcuts to launch apps or open URLs." = "Assign shortcuts to launch apps or open URLs.";
+
+/* No comment provided by engineer. */
+"Assigns the Hyper presets for Spaces and Window Layouts." = "Assigns the Hyper presets for Spaces and Window Layouts.";
 
 /* No comment provided by engineer. */
 "Auto" = "Auto";
@@ -131,40 +179,64 @@
 "Auto-install updates periodically" = "Auto-install updates periodically";
 
 /* No comment provided by engineer. */
-"Cancel" = "Cancel";
+"Bundle ID or name" = "Bundle ID or name";
 
 /* No comment provided by engineer. */
-"Capture windows in the background" = "Capture windows in the background";
+"Cancel" = "Cancel";
 
 /* No comment provided by engineer. */
 "Center" = "Center";
 
 /* No comment provided by engineer. */
-"Check for updates now…" = "Check for updates now…";
+"Center focus" = "Center focus";
+
+/* No comment provided by engineer. */
+"Changed outside AltTab+; pick a mode again to take it over" = "Changed outside AltTab+; pick a mode again to take it over";
 
 /* No comment provided by engineer. */
 "Check for updates periodically" = "Check for updates periodically";
 
 /* Menubar option */
-"Check for updates…" = "Check for updates…";
-
-/* Menubar option */
 "Check permissions…" = "Check permissions…";
+
+/* No comment provided by engineer. */
+"Choose apps whose windows should not appear in the switcher." = "Choose apps whose windows should not appear in the switcher.";
+
+/* No comment provided by engineer. */
+"Choose how the window switcher looks and where it appears." = "Choose how the window switcher looks and where it appears.";
+
+/* No comment provided by engineer. */
+"Close Mission Control or App Expose before switching Spaces." = "Close Mission Control or App Expose before switching Spaces.";
+
+/* No comment provided by engineer. */
+"Close the window switcher before arranging a window." = "Close the window switcher before arranging a window.";
 
 /* No comment provided by engineer. */
 "Close window" = "Close window";
 
 /* No comment provided by engineer. */
+"Command+Control needs the system setting for dragging windows by gesture to be off, and it could not be changed. Pick another modifier." = "Command+Control needs the system setting for dragging windows by gesture to be off, and it could not be changed. Pick another modifier.";
+
+/* No comment provided by engineer. */
 "Conflicting shortcut" = "Conflicting shortcut";
+
+/* No comment provided by engineer. */
+"Control and Option with D, G, E, T for thirds and two-thirds, and with Delete for restore, matching Rectangle and Magnet. Conflicts if one of those apps is running." = "Control and Option with D, G, E, T for thirds and two-thirds, and with Delete for restore, matching Rectangle and Magnet. Conflicts if one of those apps is running.";
+
+/* No comment provided by engineer. */
+"Control plus 1 to 9 switches to that Space, Control plus 0 toggles back to the last one, Control plus an arrow moves one Space. The matching system shortcuts, including native window tiling on the same combination, are disabled while this is assigned and restored when it is removed." = "Control plus 1 to 9 switches to that Space, Control plus 0 toggles back to the last one, Control plus an arrow moves one Space. The matching system shortcuts, including native window tiling on the same combination, are disabled while this is assigned and restored when it is removed.";
 
 /* No comment provided by engineer. */
 "Controls" = "Controls";
 
 /* No comment provided by engineer. */
-"Crash reports policy" = "Crash reports policy";
+"Creator's settings…" = "Creator's settings…";
 
 /* No comment provided by engineer. */
 "Cursor follows focus" = "Cursor follows focus";
+
+/* No comment provided by engineer. */
+"Custom" = "Custom";
 
 /* No comment provided by engineer. */
 "Customize App Icons style…" = "Customize App Icons style…";
@@ -182,7 +254,13 @@
 "Debug tools" = "Debug tools";
 
 /* No comment provided by engineer. */
+"Disable input extensions (safe mode)" = "Disable input extensions (safe mode)";
+
+/* No comment provided by engineer. */
 "Disabled" = "Disabled";
+
+/* No comment provided by engineer. */
+"Discard your changes to this set?" = "Discard your changes to this set?";
 
 /* No comment provided by engineer. */
 "Done" = "Done";
@@ -248,7 +326,25 @@
 "Hide/Show app" = "Hide/Show app";
 
 /* No comment provided by engineer. */
+"Hides app badges and status icons." = "Hides app badges and status icons.";
+
+/* No comment provided by engineer. */
 "Hold" = "Hold";
+
+/* No comment provided by engineer. */
+"Hyper could not access the physical Caps Lock key." = "Hyper could not access the physical Caps Lock key.";
+
+/* No comment provided by engineer. */
+"Hyper key layout shortcuts" = "Hyper key layout shortcuts";
+
+/* No comment provided by engineer. */
+"Hyper key Spaces shortcuts" = "Hyper key Spaces shortcuts";
+
+/* No comment provided by engineer. */
+"Hyper was disabled after repeated keyboard event failures." = "Hyper was disabled after repeated keyboard event failures.";
+
+/* No comment provided by engineer. */
+"Hyperkey" = "Hyperkey";
 
 /* No comment provided by engineer. */
 "I think the app could be improved with…" = "I think the app could be improved with…";
@@ -260,10 +356,31 @@
 "Import settings…" = "Import settings…";
 
 /* No comment provided by engineer. */
+"Input extensions are in safe mode, so moving windows stays off. Turn safe mode off to use it." = "Input extensions are in safe mode, so moving windows stays off. Turn safe mode off to use it.";
+
+/* No comment provided by engineer. */
+"Input extensions are in safe mode." = "Input extensions are in safe mode.";
+
+/* No comment provided by engineer. */
+"Input extensions were disabled because AltTab+ did not finish its previous Hyper startup." = "Input extensions were disabled because AltTab+ did not finish its previous Hyper startup.";
+
+/* No comment provided by engineer. */
+"Instant Spaces is unavailable because a required system symbol is missing." = "Instant Spaces is unavailable because a required system symbol is missing.";
+
+/* No comment provided by engineer. */
+"Instant Spaces is unavailable on this macOS version." = "Instant Spaces is unavailable on this macOS version.";
+
+/* No comment provided by engineer. */
 "Keep open" = "Keep open";
 
 /* No comment provided by engineer. */
 "Keep open and search" = "Keep open and search";
+
+/* No comment provided by engineer. */
+"Keep window previews up to date in the background" = "Keep window previews up to date in the background";
+
+/* No comment provided by engineer. */
+"Keeps thumbnail and full-size previews current while the switcher is hidden. Turning this off avoids the screen-recording indicator and possible DRM interruptions; required previews refresh when the switcher opens." = "Keeps thumbnail and full-size previews current while the switcher is hidden. Turning this off avoids the screen-recording indicator and possible DRM interruptions; required previews refresh when the switcher opens.";
 
 /* No comment provided by engineer. */
 "Language" = "Language";
@@ -275,19 +392,46 @@
 "Large" = "Large";
 
 /* No comment provided by engineer. */
+"Last Space" = "Last Space";
+
+/* No comment provided by engineer. */
 "Later" = "Later";
 
 /* No comment provided by engineer. */
 "Latest releases" = "Latest releases";
 
 /* No comment provided by engineer. */
+"Launch app %d" = "Launch app %d";
+
+/* No comment provided by engineer. */
 "Leading" = "Leading";
+
+/* No comment provided by engineer. */
+"Left focus" = "Left focus";
+
+/* No comment provided by engineer. */
+"Left third" = "Left third";
+
+/* No comment provided by engineer. */
+"Left three-quarters" = "Left three-quarters";
+
+/* No comment provided by engineer. */
+"Left two-thirds" = "Left two-thirds";
 
 /* No comment provided by engineer. */
 "Light" = "Light";
 
 /* No comment provided by engineer. */
 "Lock search" = "Lock search";
+
+/* No comment provided by engineer. */
+"macOS Spaces shortcuts" = "macOS Spaces shortcuts";
+
+/* No comment provided by engineer. */
+"Manage startup, menu bar, language, and settings files." = "Manage startup, menu bar, language, and settings files.";
+
+/* No comment provided by engineer. */
+"Managed by AltTab+" = "Managed by AltTab+";
 
 /* No comment provided by engineer. */
 "Medium" = "Medium";
@@ -305,6 +449,33 @@
 "Miscellaneous" = "Miscellaneous";
 
 /* No comment provided by engineer. */
+"Modified" = "Modified";
+
+/* No comment provided by engineer. */
+"More Spaces" = "More Spaces";
+
+/* No comment provided by engineer. */
+"Mouse pointer acceleration" = "Mouse pointer acceleration";
+
+/* No comment provided by engineer. */
+"Mouse pointer speed" = "Mouse pointer speed";
+
+/* No comment provided by engineer. */
+"Move the cursor to this screen to switch its Spaces." = "Move the cursor to this screen to switch its Spaces.";
+
+/* No comment provided by engineer. */
+"Move the window under the cursor while holding" = "Move the window under the cursor while holding";
+
+/* No comment provided by engineer. */
+"Move to next display" = "Move to next display";
+
+/* No comment provided by engineer. */
+"Move to previous display" = "Move to previous display";
+
+/* No comment provided by engineer. */
+"Moving and resizing cannot use the same modifier." = "Moving and resizing cannot use the same modifier.";
+
+/* No comment provided by engineer. */
 "Multiple screens" = "Multiple screens";
 
 /* No comment provided by engineer. */
@@ -312,6 +483,18 @@
 
 /* No comment provided by engineer. */
 "Never send crash reports" = "Never send crash reports";
+
+/* No comment provided by engineer. */
+"No application is configured." = "No application is configured.";
+
+/* No comment provided by engineer. */
+"No eligible foreground application." = "No eligible foreground application.";
+
+/* No comment provided by engineer. */
+"No installed application matches this bundle identifier or name." = "No installed application matches this bundle identifier or name.";
+
+/* No comment provided by engineer. */
+"No URL is configured." = "No URL is configured.";
 
 /* No comment provided by engineer. */
 "No Window" = "No Window";
@@ -326,7 +509,22 @@
 "Not allowed" = "Not allowed";
 
 /* No comment provided by engineer. */
+"Not managed by AltTab+" = "Not managed by AltTab+";
+
+/* No comment provided by engineer. */
+"Off by default. Every candidate collides with something, so pick one knowingly." = "Off by default. Every candidate collides with something, so pick one knowingly.";
+
+/* No comment provided by engineer. */
+"OK" = "OK";
+
+/* No comment provided by engineer. */
 "Only on different screen" = "Only on different screen";
+
+/* No comment provided by engineer. */
+"Only one display is connected." = "Only one display is connected.";
+
+/* No comment provided by engineer. */
+"Only the first %d menu entries were read." = "Only the first %d menu entries were read.";
 
 /* No comment provided by engineer. */
 "Open Accessibility Settings…" = "Open Accessibility Settings…";
@@ -341,10 +539,22 @@
 "Open Trackpad Settings…" = "Open Trackpad Settings…";
 
 /* No comment provided by engineer. */
+"Open URL %d" = "Open URL %d";
+
+/* No comment provided by engineer. */
+"Opens the switcher without delay and without the preview fade." = "Opens the switcher without delay and without the preview fade.";
+
+/* No comment provided by engineer. */
 "Order windows by" = "Order windows by";
 
 /* No comment provided by engineer. */
+"Ownership" = "Ownership";
+
+/* No comment provided by engineer. */
 "Please fill in the form" = "Please fill in the form";
+
+/* No comment provided by engineer. */
+"Pointer & Scroll" = "Pointer & Scroll";
 
 /* No comment provided by engineer. */
 "Preview selected window" = "Preview selected window";
@@ -357,13 +567,25 @@
 "Quit app" = "Quit app";
 
 /* No comment provided by engineer. */
+"Reads the menus of the app in front. It never absorbs keys, so a shortcut you press while looking still runs." = "Reads the menus of the app in front. It never absorbs keys, so a shortcut you press while looking still runs.";
+
+/* No comment provided by engineer. */
 "Recently Created First" = "Recently Created First";
 
 /* No comment provided by engineer. */
 "Recently Focused First" = "Recently Focused First";
 
 /* No comment provided by engineer. */
+"Rectangle-style layout shortcuts" = "Rectangle-style layout shortcuts";
+
+/* No comment provided by engineer. */
 "Remember my choice" = "Remember my choice";
+
+/* No comment provided by engineer. */
+"Remove" = "Remove";
+
+/* No comment provided by engineer. */
+"Remove and restore" = "Remove and restore";
 
 /* No comment provided by engineer. */
 "Reset settings and restart" = "Reset settings and restart";
@@ -372,7 +594,25 @@
 "Reset settings and restart…" = "Reset settings and restart…";
 
 /* No comment provided by engineer. */
+"Resize the window under the cursor while holding" = "Resize the window under the cursor while holding";
+
+/* No comment provided by engineer. */
 "Restart Now" = "Restart Now";
+
+/* No comment provided by engineer. */
+"Restore" = "Restore";
+
+/* No comment provided by engineer. */
+"Right focus" = "Right focus";
+
+/* No comment provided by engineer. */
+"Right third" = "Right third";
+
+/* No comment provided by engineer. */
+"Right three-quarters" = "Right three-quarters";
+
+/* No comment provided by engineer. */
+"Right two-thirds" = "Right two-thirds";
 
 /* No comment provided by engineer. */
 "Screen including menu bar" = "Screen including menu bar";
@@ -416,8 +656,8 @@
 /* No comment provided by engineer. */
 "Send feedback" = "Send feedback";
 
-/* Menubar option */
-"Send feedback…" = "Send feedback…";
+/* No comment provided by engineer. */
+"Set how you open and navigate the window switcher." = "Set how you open and navigate the window switcher.";
 
 /* No comment provided by engineer. */
 "Settings imported" = "Settings imported";
@@ -433,6 +673,9 @@
 
 /* No comment provided by engineer. */
 "Shortcut already assigned to another action: %@" = "Shortcut already assigned to another action: %@";
+
+/* No comment provided by engineer. */
+"Shortcuts in %@" = "Shortcuts in %@";
 
 /* No comment provided by engineer. */
 "Shortcuts When Active" = "Shortcuts When Active";
@@ -471,7 +714,13 @@
 "Show on" = "Show on";
 
 /* No comment provided by engineer. */
+"Show Spaces next to the menubar icon" = "Show Spaces next to the menubar icon";
+
+/* No comment provided by engineer. */
 "Show standard tabs as windows" = "Show standard tabs as windows";
+
+/* No comment provided by engineer. */
+"Show the active app's shortcuts while holding" = "Show the active app's shortcuts while holding";
 
 /* No comment provided by engineer. */
 "Show titles" = "Show titles";
@@ -484,6 +733,15 @@
 
 /* No comment provided by engineer. */
 "Show windows from Spaces" = "Show windows from Spaces";
+
+/* No comment provided by engineer. */
+"Show, activate, and move between macOS Spaces." = "Show, activate, and move between macOS Spaces.";
+
+/* No comment provided by engineer. */
+"Shows Spaces next to the menu bar icon." = "Shows Spaces next to the menu bar icon.";
+
+/* No comment provided by engineer. */
+"Shows window titles instead of thumbnails, and tabs as separate windows." = "Shows window titles instead of thumbnails, and tabs as separate windows.";
 
 /* No comment provided by engineer. */
 "Size" = "Size";
@@ -501,7 +759,19 @@
 "Source code repository" = "Source code repository";
 
 /* No comment provided by engineer. */
+"Space %d" = "Space %d";
+
+/* No comment provided by engineer. */
+"Space left" = "Space left";
+
+/* No comment provided by engineer. */
 "Space Order" = "Space Order";
+
+/* No comment provided by engineer. */
+"Space right" = "Space right";
+
+/* No comment provided by engineer. */
+"Spaces" = "Spaces";
 
 /* No comment provided by engineer. */
 "Start" = "Start";
@@ -509,23 +779,41 @@
 /* No comment provided by engineer. */
 "Start at login" = "Start at login";
 
-/* Menubar option */
-"Support this project" = "Support this project";
-
 /* No comment provided by engineer. */
-"Switch between 3 different styles. You can customize them." = "Switch between 3 different styles. You can customize them.";
+"Switch to Space %d" = "Switch to Space %d";
 
 /* No comment provided by engineer. */
 "System" = "System";
 
 /* No comment provided by engineer. */
+"System default" = "System default";
+
+/* No comment provided by engineer. */
 "System Default" = "System Default";
+
+/* No comment provided by engineer. */
+"Tap/hold threshold" = "Tap/hold threshold";
 
 /* No comment provided by engineer. */
 "The application needs to restart to apply the imported settings." = "The application needs to restart to apply the imported settings.";
 
 /* No comment provided by engineer. */
 "The application needs to restart to apply the language change." = "The application needs to restart to apply the language change.";
+
+/* No comment provided by engineer. */
+"The corner you start near is the one that follows; the opposite corner stays put." = "The corner you start near is the one that follows; the opposite corner stays put.";
+
+/* No comment provided by engineer. */
+"The emergency shortcut disabled all AltTab+ input extensions." = "The emergency shortcut disabled all AltTab+ input extensions.";
+
+/* No comment provided by engineer. */
+"The same letters on the Hyper key, which stays clear of Rectangle and Magnet. Requires the Hyper key to be enabled." = "The same letters on the Hyper key, which stays clear of Rectangle and Magnet. Requires the Hyper key to be enabled.";
+
+/* No comment provided by engineer. */
+"The same set on the Hyper key instead of Control, so no macOS shortcut has to be disabled. Requires the Hyper key to be enabled." = "The same set on the Hyper key instead of Control, so no macOS shortcut has to be disabled. Requires the Hyper key to be enabled.";
+
+/* No comment provided by engineer. */
+"The URL is invalid." = "The URL is invalid.";
 
 /* No comment provided by engineer. */
 "The ⌘⎋ (command+escape) shortcut may be used by macOS for GameOverlay.\n\nYour change would assign it to: %@.\n\nIf you want to continue, make sure that the GameOverlay shortcut is disabled.\nAlso note that macOS has reported bugs where the shortcut may still interfere while disabled." = "The ⌘⎋ (command+escape) shortcut may be used by macOS for GameOverlay.\n\nYour change would assign it to: %@.\n\nIf you want to continue, make sure that the GameOverlay shortcut is disabled.\nAlso note that macOS has reported bugs where the shortcut may still interfere while disabled.";
@@ -543,6 +831,12 @@
 "This permission is needed to show thumbnails and preview of open windows" = "This permission is needed to show thumbnails and preview of open windows";
 
 /* No comment provided by engineer. */
+"This replaces your current appearance and shortcut assignments. Input extensions such as moving windows by modifier stay off; switch them on yourself if you want them." = "This replaces your current appearance and shortcut assignments. Input extensions such as moving windows by modifier stay off; switch them on yourself if you want them.";
+
+/* No comment provided by engineer. */
+"This Space is not available." = "This Space is not available.";
+
+/* No comment provided by engineer. */
 "Thumbnails" = "Thumbnails";
 
 /* No comment provided by engineer. */
@@ -558,16 +852,31 @@
 "Trackpad haptic feedback" = "Trackpad haptic feedback";
 
 /* No comment provided by engineer. */
+"Trackpad pointer acceleration" = "Trackpad pointer acceleration";
+
+/* No comment provided by engineer. */
+"Trackpad pointer speed" = "Trackpad pointer speed";
+
+/* No comment provided by engineer. */
 "Trigger" = "Trigger";
 
 /* No comment provided by engineer. */
 "Unassign existing shortcut and continue" = "Unassign existing shortcut and continue";
 
 /* No comment provided by engineer. */
-"Updates policy" = "Updates policy";
+"URL" = "URL";
+
+/* No comment provided by engineer. */
+"URL %d" = "URL %d";
 
 /* No comment provided by engineer. */
 "Usage" = "Usage";
+
+/* No comment provided by engineer. */
+"Use Caps Lock as a system-wide combination of modifier keys." = "Use Caps Lock as a system-wide combination of modifier keys.";
+
+/* No comment provided by engineer. */
+"Use Caps Lock as system-wide Hyper key" = "Use Caps Lock as system-wide Hyper key";
 
 /* No comment provided by engineer. */
 "Use the app without this permission. Thumbnails won’t show." = "Use the app without this permission. Thumbnails won’t show.";
@@ -588,9 +897,6 @@
 "Visible Spaces" = "Visible Spaces";
 
 /* No comment provided by engineer. */
-"When disabled, avoids the macOS purple screen-recording indicator, and avoids flickers when playing DRM video. Thumbnails will be less up-to-date." = "When disabled, avoids the macOS purple screen-recording indicator, and avoids flickers when playing DRM video. Thumbnails will be less up-to-date.";
-
-/* No comment provided by engineer. */
 "When fullscreen" = "When fullscreen";
 
 /* No comment provided by engineer. */
@@ -609,6 +915,9 @@
 "Window is on Space %d" = "Window is on Space %d";
 
 /* No comment provided by engineer. */
+"Window Layouts" = "Window Layouts";
+
+/* No comment provided by engineer. */
 "Window Title" = "Window Title";
 
 /* No comment provided by engineer. */
@@ -619,6 +928,9 @@
 
 /* No comment provided by engineer. */
 "You can’t undo this action." = "You can’t undo this action.";
+
+/* No comment provided by engineer. */
+"You changed shortcuts while this set was assigned. Removing it restores the shortcuts you had before it was assigned, so those changes are lost." = "You changed shortcuts while this set was assigned. Removing it restores the shortcuts you had before it was assigned, so those changes are lost.";
 
 /* No comment provided by engineer. */
 "You may need to disable some conflicting system gestures" = "You may need to disable some conflicting system gestures";

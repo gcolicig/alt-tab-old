@@ -2,6 +2,7 @@ import Cocoa
 
 class GeneralTab {
     static var menubarIconDropdown: NSPopUpButton?
+    static var captureWindowsInBackgroundRowInfo: TableGroupView.RowInfo?
     static var policyLock = false
     private static var menubarIsVisibleObserver: NSKeyValueObservation?
 
@@ -27,27 +28,59 @@ class GeneralTab {
         cell.arrowPosition = .arrowAtBottom
         cell.imagePosition = .imageOverlaps
         enableDraggingOffMenubarIcon(menuIconShownToggle)
-        let captureWindowsInBackground = TableGroupView.Row(leftTitle: NSLocalizedString("Capture windows in the background", comment: ""),
-            subTitle: NSLocalizedString("When disabled, avoids the macOS purple screen-recording indicator, and avoids flickers when playing DRM video. Thumbnails will be less up-to-date.", comment: ""),
+        let captureWindowsInBackground = TableGroupView.Row(leftTitle: NSLocalizedString("Keep window previews up to date in the background", comment: ""),
+            subTitle: NSLocalizedString("Keeps thumbnail and full-size previews current while the switcher is hidden. Turning this off avoids the screen-recording indicator and possible DRM interruptions; required previews refresh when the switcher opens.", comment: ""),
             rightViews: [LabelAndControl.makeSwitch("captureWindowsInBackground")])
         let table = TableGroupView(width: SettingsWindow.contentWidth)
         table.addRow(startAtLogin)
         table.addRow(menubarIcon)
-        table.addRow(captureWindowsInBackground)
+        captureWindowsInBackgroundRowInfo = table.addRow(captureWindowsInBackground)
+        updateCaptureWindowsInBackgroundState()
         table.addNewTable()
         table.addRow(language)
         let exportButton = NSButton(title: NSLocalizedString("Export settings…", comment: ""), target: nil, action: nil)
         exportButton.onAction = { _ in exportSettings() }
         let importButton = NSButton(title: NSLocalizedString("Import settings…", comment: ""), target: nil, action: nil)
         importButton.onAction = { _ in importSettings() }
-        let tools = StackView([exportButton, importButton], .horizontal)
+        let creatorButton = NSButton(title: NSLocalizedString("Creator's settings…", comment: ""), target: nil, action: nil)
+        creatorButton.onAction = { _ in applyCreatorSettings() }
+        let tools = StackView([creatorButton, exportButton, importButton], .horizontal)
         let view = TableGroupSetView(originalViews: [table, tools], bottomPadding: 0)
         return view
+    }
+
+    /// Overwrites shortcut assignments and appearance, so it asks first. Input modules are named as
+    /// excluded rather than silently missing: somebody who reads that the author uses the modifier move
+    /// should be able to find out why it did not appear.
+    private static func applyCreatorSettings() {
+        let alert = NSAlert()
+        alert.messageText = NSLocalizedString("Apply the creator's settings?", comment: "")
+        alert.informativeText = CreatorSettings.summary + "\n\n"
+            + NSLocalizedString("This replaces your current appearance and shortcut assignments. Input extensions such as moving windows by modifier stay off; switch them on yourself if you want them.", comment: "")
+        alert.addButton(withTitle: NSLocalizedString("Apply", comment: ""))
+        alert.addButton(withTitle: NSLocalizedString("Cancel", comment: ""))
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        CreatorSettings.apply()
+        refreshControlsFromPreferences()
+        App.restart()
     }
 
     static func refreshControlsFromPreferences() {
         menubarIconDropdown?.selectItem(at: CachedUserDefaults.intFromMacroPref("menubarIcon", MenubarIconPreference.allCases))
         menubarIconDropdown?.isEnabled = Preferences.menubarIconShown
+        updateCaptureWindowsInBackgroundState()
+    }
+
+    static func updateCaptureWindowsInBackgroundState() {
+        guard let rowInfo = captureWindowsInBackgroundRowInfo else { return }
+        let isEnabled = Preferences.usesImageBasedWindowPreviews
+        rowInfo.leftViews?.compactMap { $0 as? NSTextField }.forEach {
+            $0.textColor = isEnabled ? .textColor : .gray
+        }
+        rowInfo.rightViews?.compactMap { $0 as? Switch }.forEach {
+            $0.setStateWithoutAction(isEnabled && Preferences.captureWindowsInBackground ? .on : .off)
+            $0.isEnabled = isEnabled
+        }
     }
 
     private static func enableDraggingOffMenubarIcon(_ menuIconShownToggle: Switch) {

@@ -1,4 +1,5 @@
 import Cocoa
+import Carbon.HIToolbox
 import IOKit.hid
 import ShortcutRecorder
 
@@ -9,13 +10,24 @@ class KeyboardEvents {
     private static var eventHotKeyRefs = [String: EventHotKeyRef?]()
     private static var hotKeyPressedEventHandler: EventHandlerRef?
     private static var hotKeyReleasedEventHandler: EventHandlerRef?
+    private static var panicHotKeyRef: EventHotKeyRef?
     private static var globalShortcutsAreDisabled = false
     private static var eventTap: CFMachPort?
     private static var hyperKeyHidManager: IOHIDManager?
+    private static var hidSystemConnection = io_connect_t()
     private static var hyperKeyState = HyperKeyStateMachine()
+    private static var hyperKeyRuntimeEnabled = false
+    private static var inputTapCircuitBreaker = InputTapCircuitBreaker()
     private static let hyperKeyStateLock = NSLock()
+    private static let inputTapCircuitBreakerLock = NSLock()
     private static let hyperKeyModifiers: CGEventFlags = [.maskCommand, .maskControl, .maskAlternate, .maskShift]
     private static let syntheticCapsLockMarker: Int64 = 0x414C545448595052
+    private static let panicHotKeyId = UInt32.max
+    private static var safetyAlertIsShowing = false
+    private static var hyperKeyHoldGeneration = UInt64(0)
+    private static var capsLockWasForcedOffForCurrentHold = false
+    private static var capsLockStateBeforeCurrentHold: Bool?
+    private static var secureInputWasEnabled = false
     private static let hyperKeyHidCallback: IOHIDValueCallback = { _, _, _, value in
         let element = IOHIDValueGetElement(value)
         guard IOHIDElementGetUsagePage(element) == kHIDPage_KeyboardOrKeypad,
@@ -30,6 +42,11 @@ class KeyboardEvents {
         if type == .keyDown {
             let keyCode = UInt32(cgEvent.getIntegerValueField(.keyboardEventKeycode))
             let modifiers = NSEvent.ModifierFlags(rawValue: UInt(cgEvent.flags.rawValue))
+            // Escape cancels a running modifier drag. The key is not absorbed: it keeps meaning whatever
+            // it means to the app in front, and a drag is only ever cancelled if one is actually running.
+            if keyCode == UInt32(kVK_Escape) {
+                DispatchQueue.main.async { WindowDragEvents.abortIfActive() }
+            }
             if handleHyperKeyDown(keyCode, cgEvent) {
                 return nil
             }
@@ -55,10 +72,14 @@ class KeyboardEvents {
             }
         } else if type == .flagsChanged {
             let keyCode = CGKeyCode(cgEvent.getIntegerValueField(.keyboardEventKeycode))
-            if keyCode == CGKeyCode(kVK_CapsLock), Preferences.hyperKeyEnabled {
+            if keyCode == CGKeyCode(kVK_CapsLock), hyperKeyIsActive() {
                 return nil
             }
             withHyperKeyState { $0.markCapsLockUsed() }
+            // the clues overlay is shown while a trigger is held; the modifier change is where a release
+            // becomes visible without absorbing anything or opening a second tap
+            let cluesModifiers = NSEvent.ModifierFlags(rawValue: UInt(cgEvent.flags.rawValue))
+            DispatchQueue.main.async { ShortcutCluesController.modifiersChanged(cluesModifiers) }
             // TODO: it would be great to shortcut matching and trigger on the background thread
             // it would enable us to set App.shared.isBeingUsed here, and could stop tasks on main when they check the flag
             DispatchQueue.main.async {
@@ -69,26 +90,29 @@ class KeyboardEvents {
             }
         } else if (type == .tapDisabledByUserInput || type == .tapDisabledByTimeout) {
             resetHyperKeyState()
-            CGEvent.tapEnable(tap: eventTap!, enable: true)
+            let shouldTrip = Preferences.hyperKeyEnabled && recordInputTapFailure() == .trip
+            if shouldTrip {
+                setHyperKeyRuntimeEnabled(false)
+                DispatchQueue.main.async {
+                    disableInputModulesForSafety(NSLocalizedString("Hyper was disabled after repeated keyboard event failures.", comment: ""))
+                }
+            }
+            if let eventTap {
+                CGEvent.tapEnable(tap: eventTap, enable: true)
+            }
         }
         // we always return this because we want to let these event pass through to the currently focused app
         return Unmanaged.passUnretained(cgEvent)
     }
 
     private static func handleHyperKeyDown(_ keyCode: UInt32, _ event: CGEvent) -> Bool {
-        let action = hyperKeyAction(keyCode)
-        let internalActionIsConfigured = action != .none && !App.appIsBeingUsed
+        let isAutorepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
         let decision = withHyperKeyState {
-            $0.keyDown(keyCode, internalActionIsConfigured: internalActionIsConfigured, enabled: Preferences.hyperKeyEnabled)
+            $0.keyDown(keyCode, internalActionIsConfigured: false, enabled: hyperKeyRuntimeEnabled, isAutorepeat: isAutorepeat)
         }
         if decision == .systemWide {
             event.flags.formUnion(hyperKeyModifiers)
             return false
-        }
-        if decision == .triggerInternal, let windowLayoutAction = action.windowLayoutAction {
-            DispatchQueue.main.async {
-                WindowLayouts.perform(windowLayoutAction)
-            }
         }
         return decision == .absorb || decision == .triggerInternal
     }
@@ -102,35 +126,99 @@ class KeyboardEvents {
     }
 
     private static func handlePhysicalCapsLockChange(_ isDown: Bool) {
-        let decision = withHyperKeyState {
-            $0.capsLockChanged(
+        let stateBeforeHold = isDown ? currentCapsLockState() : nil
+        // temporary diagnostic: is the system Caps Lock state already toggled when this callback runs?
+        // the answer decides whether the state read at key-down describes before or after the press
+        if isDown, let stateBeforeHold {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.02) {
+                Logger.warning { "caps lock down: read \(stateBeforeHold), 20ms later \(currentCapsLockState())" }
+            }
+        }
+        let result = withHyperKeyState { state -> (UInt64, HyperKeyCapsDecision, Bool?) in
+            hyperKeyHoldGeneration &+= 1
+            if isDown {
+                capsLockWasForcedOffForCurrentHold = false
+                capsLockStateBeforeCurrentHold = stateBeforeHold
+            }
+            let wasUsed = state.capsLockWasUsed
+            let decision = state.capsLockChanged(
                 isDown,
                 at: ProcessInfo.processInfo.systemUptime,
                 tapThreshold: Preferences.hyperKeyHoldDuration,
-                enabled: Preferences.hyperKeyEnabled)
+                enabled: hyperKeyRuntimeEnabled)
+            let shouldRestore = !isDown && decision == .absorb && (wasUsed || capsLockWasForcedOffForCurrentHold)
+            let stateToRestore = shouldRestore ? capsLockStateBeforeCurrentHold : nil
+            if !isDown { capsLockStateBeforeCurrentHold = nil }
+            return (hyperKeyHoldGeneration, decision, stateToRestore)
         }
-        if decision == .toggle {
-            postCapsLockTap()
+        if result.1 == .toggle {
+            Logger.warning { "caps lock tap: posting synthetic tap, currently \(currentCapsLockState())" }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) { postCapsLockTap() }
+        } else if let stateToRestore = result.2 {
+            Logger.warning { "caps lock restore: setting \(stateToRestore), currently \(currentCapsLockState())" }
+            setCapsLockState(stateToRestore)
+        } else if isDown {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Preferences.hyperKeyHoldDuration) {
+                let shouldForceOff = withHyperKeyState { state -> Bool in
+                    guard result.0 == hyperKeyHoldGeneration,
+                          state.capsLockIsDown,
+                          !capsLockWasForcedOffForCurrentHold else { return false }
+                    capsLockWasForcedOffForCurrentHold = true
+                    return true
+                }
+                if shouldForceOff { setCapsLockState(false) }
+            }
         }
     }
 
     private static func postCapsLockTap() {
-        guard let source = CGEventSource(stateID: .hidSystemState) else { return }
-        [true, false].forEach {
-            guard let event = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_CapsLock), keyDown: $0) else { return }
-            event.setIntegerValueField(.eventSourceUserData, value: syntheticCapsLockMarker)
-            event.post(tap: .cgSessionEventTap)
+        guard let source = CGEventSource(stateID: .hidSystemState),
+              let keyDown = capsLockEvent(source, true) else { return }
+        keyDown.post(tap: .cgSessionEventTap)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.04) {
+            capsLockEvent(source, false)?.post(tap: .cgSessionEventTap)
         }
     }
 
-    private static func hyperKeyAction(_ keyCode: UInt32) -> HyperKeyActionPreference {
-        switch Int(keyCode) {
-        case kVK_LeftArrow: return Preferences.hyperKeyLeftAction
-        case kVK_RightArrow: return Preferences.hyperKeyRightAction
-        case kVK_UpArrow: return Preferences.hyperKeyUpAction
-        case kVK_DownArrow: return Preferences.hyperKeyDownAction
-        default: return .none
+    private static func capsLockEvent(_ source: CGEventSource, _ keyDown: Bool) -> CGEvent? {
+        guard let event = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_CapsLock), keyDown: keyDown) else { return nil }
+        event.setIntegerValueField(.eventSourceUserData, value: syntheticCapsLockMarker)
+        return event
+    }
+
+    private static func currentCapsLockState() -> Bool {
+        guard openHidSystemConnectionIfNeeded() else {
+            return CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
         }
+        var state = false
+        let result = IOHIDGetModifierLockState(hidSystemConnection, Int32(kIOHIDCapsLockState), &state)
+        guard result == kIOReturnSuccess else {
+            Logger.error { "Unable to read Caps Lock state, status:\(result)" }
+            return CGEventSource.flagsState(.hidSystemState).contains(.maskAlphaShift)
+        }
+        return state
+    }
+
+    private static func setCapsLockState(_ state: Bool) {
+        guard openHidSystemConnectionIfNeeded() else { return }
+        let result = IOHIDSetModifierLockState(hidSystemConnection, Int32(kIOHIDCapsLockState), state)
+        if result != kIOReturnSuccess {
+            Logger.error { "Unable to restore Caps Lock state, status:\(result)" }
+        }
+    }
+
+    private static func openHidSystemConnectionIfNeeded() -> Bool {
+        if hidSystemConnection != 0 { return true }
+        let service = IOServiceGetMatchingService(0, IOServiceMatching(kIOHIDSystemClass))
+        guard service != 0 else { return false }
+        defer { IOObjectRelease(service) }
+        let result = IOServiceOpen(service, mach_task_self_, UInt32(kIOHIDParamConnectType), &hidSystemConnection)
+        guard result == kIOReturnSuccess else {
+            Logger.error { "Unable to connect to IOHIDSystem, status:\(result)" }
+            hidSystemConnection = 0
+            return false
+        }
+        return true
     }
 
     @discardableResult
@@ -141,17 +229,50 @@ class KeyboardEvents {
     }
 
     static func resetHyperKeyState() {
-        withHyperKeyState { $0.reset() }
+        let stateToRestore = withHyperKeyState { state -> Bool? in
+            hyperKeyHoldGeneration &+= 1
+            let stateToRestore = capsLockWasForcedOffForCurrentHold ? capsLockStateBeforeCurrentHold : nil
+            capsLockWasForcedOffForCurrentHold = false
+            capsLockStateBeforeCurrentHold = nil
+            state.reset()
+            return stateToRestore
+        }
+        if let stateToRestore { setCapsLockState(stateToRestore) }
     }
 
     static func hyperKeyEnabledChanged() {
         resetHyperKeyState()
-        Preferences.hyperKeyEnabled ? addHyperKeyHidMonitor() : removeHyperKeyHidMonitor()
+        resetInputTapCircuitBreaker()
+        guard Preferences.hyperKeyEnabled else {
+            Preferences.set("hyperKeyArmingMarker", "false", false)
+            setHyperKeyRuntimeEnabled(false)
+            removeHyperKeyHidMonitor()
+            return
+        }
+        Preferences.set("inputModulesSafeMode", "false", false)
+        Preferences.set("hyperKeyArmingMarker", "true", false)
+        guard addHyperKeyHidMonitor() else {
+            disableInputModulesForSafety(NSLocalizedString("Hyper could not access the physical Caps Lock key.", comment: ""))
+            return
+        }
+        setHyperKeyRuntimeEnabled(true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            guard Preferences.hyperKeyEnabled, hyperKeyIsActive() else { return }
+            Preferences.set("hyperKeyArmingMarker", "false", false)
+        }
+    }
+
+    static func inputSafeModeChanged() {
+        guard Preferences.inputModulesSafeMode else { return }
+        disableInputModulesForSafety(nil)
     }
 
     static func stopHyperKeyMonitoring() {
+        Preferences.set("hyperKeyArmingMarker", "false", false)
+        setHyperKeyRuntimeEnabled(false)
         resetHyperKeyState()
         removeHyperKeyHidMonitor()
+        closeHidSystemConnection()
     }
 
     private static func handleActiveArrowKeyIfNeeded(_ keyCode: UInt32) -> Bool {
@@ -202,7 +323,14 @@ class KeyboardEvents {
     static func addEventHandlers() {
         addLocalMonitorForKeyDownAndKeyUp()
         addCgEventTapForModifierFlags()
+        addPanicHotKey()
+        observeSecureInputChanges()
         hyperKeyEnabledChanged()
+        if Preferences.recoveredInputModuleAtLaunch {
+            DispatchQueue.main.async {
+                showSafetyAlert(NSLocalizedString("Input extensions were disabled because AltTab+ did not finish its previous Hyper startup.", comment: ""))
+            }
+        }
     }
 
     private static func unregisterHotKeyIfNeeded(_ controlId: String, _ shortcut: Shortcut) {
@@ -264,9 +392,9 @@ class KeyboardEvents {
         }
     }
 
-    private static func addHyperKeyHidMonitor() {
-        guard hyperKeyHidManager == nil,
-              let runLoop = BackgroundWork.keyboardAndMouseAndTrackpadEventsThread.runLoop else { return }
+    private static func addHyperKeyHidMonitor() -> Bool {
+        if hyperKeyHidManager != nil { return true }
+        guard let runLoop = BackgroundWork.keyboardAndMouseAndTrackpadEventsThread.runLoop else { return false }
         let manager = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(kIOHIDOptionsTypeNone))
         IOHIDManagerSetDeviceMatching(manager, [
             kIOHIDDeviceUsagePageKey: kHIDPage_GenericDesktop,
@@ -284,9 +412,10 @@ class KeyboardEvents {
                 manager,
                 runLoop,
                 CFRunLoopMode.commonModes.rawValue)
-            return
+            return false
         }
         hyperKeyHidManager = manager
+        return true
     }
 
     private static func removeHyperKeyHidMonitor() {
@@ -301,35 +430,141 @@ class KeyboardEvents {
         hyperKeyHidManager = nil
     }
 
+    private static func closeHidSystemConnection() {
+        guard hidSystemConnection != 0 else { return }
+        IOServiceClose(hidSystemConnection)
+        hidSystemConnection = 0
+    }
+
     private static func addGlobalHandlerIfNeeded(_ shortcut: Shortcut) {
-        if shortcut.keyCode != .none && hotKeyPressedEventHandler == nil {
+        guard shortcut.keyCode != .none else { return }
+        addGlobalHandlersIfNeeded()
+    }
+
+    private static func addGlobalHandlersIfNeeded() {
+        if hotKeyPressedEventHandler == nil {
             var eventTypes = [EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: OSType(kEventHotKeyPressed))]
             InstallEventHandler(shortcutEventTarget, { (_: EventHandlerCallRef?, event: EventRef?, _: UnsafeMutableRawPointer?) -> OSStatus in
                 var id = EventHotKeyID()
                 GetEventParameter(event, EventParamName(kEventParamDirectObject), EventParamType(typeEventHotKeyID), nil, MemoryLayout<EventHotKeyID>.size, nil, &id)
+                if id.id == KeyboardEvents.panicHotKeyId {
+                    DispatchQueue.main.async {
+                        KeyboardEvents.disableInputModulesForSafety(NSLocalizedString("The emergency shortcut disabled all AltTab+ input extensions.", comment: ""))
+                    }
+                    return noErr
+                }
                 handleKeyboardEvent(Int(id.id), .down, nil, nil, false)
                 return noErr
             }, eventTypes.count, &eventTypes, nil, &hotKeyPressedEventHandler)
         }
-        if shortcut.keyCode != .none && hotKeyReleasedEventHandler == nil {
+        if hotKeyReleasedEventHandler == nil {
             var eventTypes = [EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: OSType(kEventHotKeyReleased))]
             InstallEventHandler(shortcutEventTarget, { (_: EventHandlerCallRef?, event: EventRef?, _: UnsafeMutableRawPointer?) -> OSStatus in
                 var id = EventHotKeyID()
                 GetEventParameter(event, EventParamName(kEventParamDirectObject), EventParamType(typeEventHotKeyID), nil, MemoryLayout<EventHotKeyID>.size, nil, &id)
+                if id.id == KeyboardEvents.panicHotKeyId { return noErr }
                 handleKeyboardEvent(Int(id.id), .up, nil, nil, false)
                 return noErr
             }, eventTypes.count, &eventTypes, nil, &hotKeyReleasedEventHandler)
         }
     }
 
+    private static func addPanicHotKey() {
+        addGlobalHandlersIfNeeded()
+        let hotkeyId = EventHotKeyID(signature: signature, id: panicHotKeyId)
+        let modifiers = UInt32(cmdKey | optionKey | controlKey | shiftKey)
+        let result = RegisterEventHotKey(UInt32(kVK_Escape), modifiers, hotkeyId, shortcutEventTarget, 0, &panicHotKeyRef)
+        guard result == noErr else {
+            Logger.error { "Unable to register emergency input shortcut, status:\(result)" }
+            return
+        }
+    }
+
     private static func removeHandlerIfNeeded() {
         let globalShortcuts = ControlsTab.shortcuts.values.filter { $0.scope == .global }
         if let hotKeyPressedEventHandler_ = hotKeyPressedEventHandler, let hotKeyReleasedEventHandler_ = hotKeyReleasedEventHandler,
+           panicHotKeyRef == nil,
            (globalShortcuts.allSatisfy { $0.shortcut.keyCode == .none }) {
             RemoveEventHandler(hotKeyPressedEventHandler_)
             hotKeyPressedEventHandler = nil
             RemoveEventHandler(hotKeyReleasedEventHandler_)
             hotKeyReleasedEventHandler = nil
         }
+    }
+
+    private static func hyperKeyIsActive() -> Bool {
+        withHyperKeyState { _ in hyperKeyRuntimeEnabled }
+    }
+
+    /// macOS blocks keyboard monitoring while secure input is active, for example while a terminal with
+    /// Secure Keyboard Entry or a password dialog is focused. The HID monitor for Caps Lock can stay
+    /// silent after that, which used to require toggling Hyper by hand. The frontmost application
+    /// changing is the moment secure input starts or ends, so the state is compared there.
+    private static func observeSecureInputChanges() {
+        secureInputWasEnabled = IsSecureEventInputEnabled()
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main) { _ in
+            reArmHyperKeyAfterSecureInputIfNeeded()
+        }
+    }
+
+    private static func reArmHyperKeyAfterSecureInputIfNeeded() {
+        let secureInputIsEnabled = IsSecureEventInputEnabled()
+        let secureInputJustEnded = secureInputWasEnabled && !secureInputIsEnabled
+        secureInputWasEnabled = secureInputIsEnabled
+        guard secureInputJustEnded, Preferences.hyperKeyEnabled, hyperKeyIsActive() else { return }
+        // never re-arm during a hold: that would drop the routing of the keys currently held
+        guard !withHyperKeyState({ $0.capsLockIsDown }) else { return }
+        Logger.warning { "secure input ended; re-arming the physical Caps Lock monitor" }
+        resetHyperKeyState()
+        removeHyperKeyHidMonitor()
+        if !addHyperKeyHidMonitor() {
+            Logger.error { "could not re-arm the physical Caps Lock monitor after secure input" }
+        }
+    }
+
+    private static func setHyperKeyRuntimeEnabled(_ enabled: Bool) {
+        withHyperKeyState {
+            hyperKeyRuntimeEnabled = enabled
+            if !enabled { $0.reset() }
+        }
+    }
+
+    private static func recordInputTapFailure() -> InputTapRecoveryDecision {
+        inputTapCircuitBreakerLock.lock()
+        defer { inputTapCircuitBreakerLock.unlock() }
+        return inputTapCircuitBreaker.recordFailure(at: ProcessInfo.processInfo.systemUptime)
+    }
+
+    private static func resetInputTapCircuitBreaker() {
+        inputTapCircuitBreakerLock.lock()
+        inputTapCircuitBreaker.reset()
+        inputTapCircuitBreakerLock.unlock()
+    }
+
+    private static func disableInputModulesForSafety(_ message: String?) {
+        Preferences.set("inputModulesSafeMode", "true", false)
+        Preferences.set("hyperKeyEnabled", "false", false)
+        Preferences.set("hyperKeyArmingMarker", "false", false)
+        Preferences.set("nextWindowGesture", GesturePreference.disabled.indexAsString, false)
+        setHyperKeyRuntimeEnabled(false)
+        removeHyperKeyHidMonitor()
+        TrackpadEvents.disableForSafety()
+        ScrollwheelEvents.disableForSafety()
+        WindowDragEvents.disableForSafety()
+        ShortcutCluesController.triggerReleased()
+        App.hideUi()
+        if let message { showSafetyAlert(message) }
+    }
+
+    private static func showSafetyAlert(_ message: String) {
+        guard !safetyAlertIsShowing else { return }
+        safetyAlertIsShowing = true
+        let alert = NSAlert()
+        alert.messageText = NSLocalizedString("AltTab+ input safety", comment: "")
+        alert.informativeText = message
+        alert.addButton(withTitle: NSLocalizedString("OK", comment: ""))
+        alert.runModal()
+        safetyAlertIsShowing = false
     }
 }

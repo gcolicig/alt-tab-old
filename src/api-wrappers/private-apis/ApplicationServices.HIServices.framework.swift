@@ -1,8 +1,19 @@
+import Darwin
+
 /// for some reason, this attribute is missing from ApplicationServices.HIServices.AXUIElement
 /// returns the CGWindowID of the provided AXUIElement
 /// * macOS 10.10+
-@_silgen_name("_AXUIElementGetWindow") @discardableResult
-func _AXUIElementGetWindow(_ axUiElement: AXUIElement, _ wid: UnsafeMutablePointer<CGWindowID>) -> AXError
+private typealias AXUIElementGetWindowFunction = @convention(c) (AXUIElement, UnsafeMutablePointer<CGWindowID>) -> AXError
+private let applicationServicesHandle = dlopen("/System/Library/Frameworks/ApplicationServices.framework/ApplicationServices", RTLD_LAZY)
+private let axUIElementGetWindowFunction: AXUIElementGetWindowFunction? = {
+    guard let applicationServicesHandle, let symbol = dlsym(applicationServicesHandle, "_AXUIElementGetWindow") else { return nil }
+    return unsafeBitCast(symbol, to: AXUIElementGetWindowFunction.self)
+}()
+
+func axUIElementGetWindow(_ axUiElement: AXUIElement, _ wid: UnsafeMutablePointer<CGWindowID>) -> AXError? {
+    guard let axUIElementGetWindowFunction else { return nil }
+    return axUIElementGetWindowFunction(axUiElement, wid)
+}
 
 /// returns an AXUIElement given a Data object. Data object should hold:
 /// - pid (4 bytes)
@@ -38,5 +49,4 @@ func GetProcessInformation(_ psn: UnsafeMutablePointer<ProcessSerialNumber>, _ i
 /// * macOS 10.9-10.15 (officially removed in 10.9, but available as a private API still)
 @_silgen_name("GetProcessForPID") @discardableResult
 func GetProcessForPID(_ pid: pid_t, _ psn: UnsafeMutablePointer<ProcessSerialNumber>) -> OSStatus
-
 

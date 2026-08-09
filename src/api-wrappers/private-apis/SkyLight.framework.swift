@@ -161,10 +161,14 @@ func CGSGetWindowLevel(_ cid: CGSConnectionID, _ wid: CGWindowID, _ level: Unsaf
 @_silgen_name("SLSRequestScreenCaptureAccess") @discardableResult
 func SLSRequestScreenCaptureAccess() -> UInt8
 
+/// Verified on macOS Tahoe with `CGSGetSymbolicHotKeyValue`: 27 is Command plus the key above Tab
+/// (`Move focus to next window in application`) and 220 its Shift variant. Id 6 is
+/// `Shift+Option+Command+Escape` (force quit immediately) and must not be disabled for a shortcut.
 enum CGSSymbolicHotKey: Int, CaseIterable {
     case commandTab = 1
     case commandShiftTab = 2
-    case commandKeyAboveTab = 6 // see keyAboveTabDependingOnInputSource
+    case commandKeyAboveTab = 27 // see keyAboveTabDependingOnInputSource
+    case commandShiftKeyAboveTab = 220
 }
 
 /// enables/disables a symbolic hotkeys. These are system shortcuts such as command+tab or Spotlight
@@ -172,6 +176,15 @@ enum CGSSymbolicHotKey: Int, CaseIterable {
 /// note: the effect of enabling/disabling persists after the app is quit
 @_silgen_name("CGSSetSymbolicHotKeyEnabled") @discardableResult
 func CGSSetSymbolicHotKeyEnabled(_ hotKey: CGSSymbolicHotKey.RawValue, _ isEnabled: Bool) -> CGError
+
+/// reads the current state, so AltTab+ can restore what a hotkey was set to before it took it over
+@_silgen_name("CGSIsSymbolicHotKeyEnabled")
+func CGSIsSymbolicHotKeyEnabled(_ hotKey: CGSSymbolicHotKey.RawValue) -> Bool
+
+/// reads the combination a hotkey listens to, so a takeover can be matched to what the system reports
+/// instead of relying on ids whose meaning differs between macOS versions
+@_silgen_name("CGSGetSymbolicHotKeyValue") @discardableResult
+func CGSGetSymbolicHotKeyValue(_ hotKey: CGSSymbolicHotKey.RawValue, _ options: UnsafeMutablePointer<UInt32>, _ keyCode: UnsafeMutablePointer<UInt32>, _ modifiers: UnsafeMutablePointer<UInt32>) -> CGError
 
 func setNativeCommandTabEnabled(_ isEnabled: Bool, _ hotkeys: [CGSSymbolicHotKey] = CGSSymbolicHotKey.allCases) {
     for hotkey in hotkeys {

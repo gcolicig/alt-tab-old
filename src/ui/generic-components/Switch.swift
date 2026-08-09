@@ -2,6 +2,7 @@ import Cocoa
 
 class Switch: NSButton {
     var switchButton: NSControl?
+    private var suppressAction = false
 
     override var state: NSControl.StateValue {
         didSet {
@@ -10,7 +11,7 @@ class Switch: NSButton {
                     switchButton.state = state
                 }
             }
-            sendAction(action, to: target)
+            if !suppressAction { sendAction(action, to: target) }
         }
     }
 
@@ -65,6 +66,12 @@ class Switch: NSButton {
         if let switchButton {
             switchButton.draw(dirtyRect)
         }
+    }
+
+    func setStateWithoutAction(_ newState: NSControl.StateValue) {
+        suppressAction = true
+        state = newState
+        suppressAction = false
     }
 
     @objc private func switchToggled(_ sender: NSButton) {

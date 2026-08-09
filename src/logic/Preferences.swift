@@ -21,13 +21,18 @@ class Preferences {
             "windowLayoutRightThirdShortcut": defaultShortcut(""),
             "windowLayoutLeftTwoThirdsShortcut": defaultShortcut(""),
             "windowLayoutRightTwoThirdsShortcut": defaultShortcut(""),
+            "windowLayoutLeftThreeQuartersShortcut": defaultShortcut(""),
+            "windowLayoutRightThreeQuartersShortcut": defaultShortcut(""),
+            "windowLayoutLeftFocusShortcut": defaultShortcut(""),
+            "windowLayoutCenterFocusShortcut": defaultShortcut(""),
+            "windowLayoutRightFocusShortcut": defaultShortcut(""),
             "windowLayoutRestoreShortcut": defaultShortcut(""),
+            "windowMoveNextDisplayShortcut": defaultShortcut(""),
+            "windowMovePreviousDisplayShortcut": defaultShortcut(""),
             "hyperKeyEnabled": "false",
+            "inputModulesSafeMode": "false",
+            "hyperKeyArmingMarker": "false",
             "hyperKeyHoldDuration": HyperKeyHoldDurationPreference.milliseconds200.indexAsString,
-            "hyperKeyLeftAction": HyperKeyActionPreference.leftTwoThirds.indexAsString,
-            "hyperKeyRightAction": HyperKeyActionPreference.rightTwoThirds.indexAsString,
-            "hyperKeyUpAction": HyperKeyActionPreference.restore.indexAsString,
-            "hyperKeyDownAction": HyperKeyActionPreference.none.indexAsString,
             "arrowKeysEnabled": "true",
             "vimKeysEnabled": "false",
             "mouseHoverEnabled": "true",
@@ -49,6 +54,7 @@ class Preferences {
             "startAtLogin": "true",
             "menubarIcon": MenubarIconPreference.outlined.indexAsString,
             "menubarIconShown": "true",
+            "spacesInMenubarShown": "false",
             "language": LanguagePreference.systemDefault.indexAsString,
             "exceptions": defaultExceptions(),
             "updatePolicy": UpdatePolicyPreference.manual.indexAsString,
@@ -62,10 +68,31 @@ class Preferences {
             "screenRecordingPermissionSkipped": "false",
             "trackpadHapticFeedbackEnabled": "true",
             "settingsWindowShownOnFirstLaunch": "false",
+            "pointerMouseAcceleration": PointerAccelerationPreference.systemDefault.indexAsString,
+            "pointerTrackpadAcceleration": PointerAccelerationPreference.systemDefault.indexAsString,
+            "pointerMouseSpeed": String(PointerSpeedSteps.maximumIndex),
+            "pointerTrackpadSpeed": "4",
+            "pointerOwnershipMouse": "",
+            "pointerOwnershipTrackpad": "",
+            "windowDragModifier": "0",
+            "windowDragArmingMarker": "false",
+            "windowDragGestureOwnership": "",
+            "windowResizeModifier": "0",
+            "shortcutCluesShortcut": defaultShortcut(""),
         ]
         (0..<maxShortcutCount).forEach { index in
-            values[indexToName("holdShortcut", index)] = defaultShortcut("⌥")
+            // Shortcut 1 mirrors Command-Tab, Shortcut 2 the native Command plus key above Tab
+            values[indexToName("holdShortcut", index)] = defaultShortcut(index <= 1 ? "⌘" : "⌥")
             values[indexToName("nextWindowShortcut", index)] = defaultShortcut(index == 0 ? "⇥" : (index == 1 ? keyAboveTabDependingOnInputSource() : ""))
+        }
+        SpaceAction.all.forEach { values[$0.shortcutPreferenceKey] = defaultShortcut("") }
+        (0..<maxLaunchAppCount).forEach { index in
+            values[indexToName("launchAppBundleIdentifier", index)] = ""
+            values[LaunchAppAction.shortcutPreferenceKey(index)] = defaultShortcut("")
+        }
+        (0..<maxOpenUrlCount).forEach { index in
+            values[indexToName("openUrlValue", index)] = ""
+            values[OpenUrlAction.shortcutPreferenceKey(index)] = defaultShortcut("")
         }
         (0...maxShortcutCount).forEach { index in
             values[indexToName("appsToShow", index)] = index == 1 ? AppsToShowPreference.active.indexAsString : (index == 2 ? AppsToShowPreference.nonActive.indexAsString : AppsToShowPreference.all.indexAsString)
@@ -87,8 +114,10 @@ class Preferences {
         "focusWindowShortcut", "previousWindowShortcut", "cancelShortcut", "lockSearchShortcut", "closeWindowShortcut",
         "minDeminWindowShortcut", "toggleFullscreenWindowShortcut", "quitAppShortcut", "hideShowAppShortcut", "searchShortcut",
         "windowLayoutLeftThirdShortcut", "windowLayoutRightThirdShortcut", "windowLayoutLeftTwoThirdsShortcut",
-        "windowLayoutRightTwoThirdsShortcut", "windowLayoutRestoreShortcut",
-    ]
+        "windowLayoutRightTwoThirdsShortcut", "windowLayoutLeftThreeQuartersShortcut", "windowLayoutRightThreeQuartersShortcut",
+        "windowLayoutLeftFocusShortcut", "windowLayoutCenterFocusShortcut",
+        "windowLayoutRightFocusShortcut", "windowLayoutRestoreShortcut",
+    ] + DisplayMoveAction.allCases.map(\.shortcutPreferenceKey) + SpaceAction.all.map(\.shortcutPreferenceKey)
     static var allShortcutPreferenceKeys: [String] {
         staticShortcutKeys + (0..<maxShortcutCount).flatMap { [indexToName("holdShortcut", $0), indexToName("nextWindowShortcut", $0)] }
     }
@@ -111,11 +140,31 @@ class Preferences {
     static var hideShowAppShortcut: Shortcut? { CachedUserDefaults.shortcut("hideShowAppShortcut") }
     static var searchShortcut: Shortcut? { CachedUserDefaults.shortcut("searchShortcut") }
     static var hyperKeyEnabled: Bool { CachedUserDefaults.bool("hyperKeyEnabled") }
+    static var inputModulesSafeMode: Bool { CachedUserDefaults.bool("inputModulesSafeMode") }
+    static var windowDragModifier: DragModifierPreference { CachedUserDefaults.macroPref("windowDragModifier", DragModifierPreference.selectable) }
+    static var windowResizeModifier: DragModifierPreference { CachedUserDefaults.macroPref("windowResizeModifier", DragModifierPreference.selectable) }
+    static var windowDragArmingMarker: Bool { CachedUserDefaults.bool("windowDragArmingMarker") }
+    static var pointerMouseAcceleration: PointerAccelerationPreference { CachedUserDefaults.macroPref("pointerMouseAcceleration", PointerAccelerationPreference.allCases) }
+    static var pointerTrackpadAcceleration: PointerAccelerationPreference { CachedUserDefaults.macroPref("pointerTrackpadAcceleration", PointerAccelerationPreference.allCases) }
+    static var pointerMouseSpeed: Double { PointerSpeedSteps.value(CachedUserDefaults.int("pointerMouseSpeed")) }
+    static var pointerTrackpadSpeed: Double { PointerSpeedSteps.value(CachedUserDefaults.int("pointerTrackpadSpeed")) }
+
+    static func pointerAcceleration(_ category: PointerCategory) -> PointerAccelerationPreference {
+        category == .mouse ? pointerMouseAcceleration : pointerTrackpadAcceleration
+    }
+
+    static func pointerSpeed(_ category: PointerCategory) -> Double {
+        category == .mouse ? pointerMouseSpeed : pointerTrackpadSpeed
+    }
+
+    /// `nil` means the user asked for the system default, so AltTab+ owns nothing for that category.
+    static func pointerDesiredValue(_ category: PointerCategory) -> Double? {
+        pointerAcceleration(category).mode.desiredValue(speed: pointerSpeed(category))
+    }
+    static func launchAppBundleIdentifier(_ index: Int) -> String { CachedUserDefaults.string(indexToName("launchAppBundleIdentifier", index)) }
+    static func openUrlValue(_ index: Int) -> String { CachedUserDefaults.string(indexToName("openUrlValue", index)) }
+    static var hyperKeyArmingMarker: Bool { CachedUserDefaults.bool("hyperKeyArmingMarker") }
     static var hyperKeyHoldDuration: TimeInterval { CachedUserDefaults.macroPref("hyperKeyHoldDuration", HyperKeyHoldDurationPreference.allCases).seconds }
-    static var hyperKeyLeftAction: HyperKeyActionPreference { CachedUserDefaults.macroPref("hyperKeyLeftAction", HyperKeyActionPreference.allCases) }
-    static var hyperKeyRightAction: HyperKeyActionPreference { CachedUserDefaults.macroPref("hyperKeyRightAction", HyperKeyActionPreference.allCases) }
-    static var hyperKeyUpAction: HyperKeyActionPreference { CachedUserDefaults.macroPref("hyperKeyUpAction", HyperKeyActionPreference.allCases) }
-    static var hyperKeyDownAction: HyperKeyActionPreference { CachedUserDefaults.macroPref("hyperKeyDownAction", HyperKeyActionPreference.allCases) }
     // periphery:ignore
     static var arrowKeysEnabled: Bool { CachedUserDefaults.bool("arrowKeysEnabled") }
     // periphery:ignore
@@ -136,6 +185,12 @@ class Preferences {
     static var exceptions: [ExceptionEntry] { CachedUserDefaults.json("exceptions", [ExceptionEntry].self) }
     static var previewSelectedWindow: Bool { CachedUserDefaults.bool("previewFocusedWindow") }
     static var captureWindowsInBackground: Bool { CachedUserDefaults.bool("captureWindowsInBackground") }
+    static var usesImageBasedWindowPreviews: Bool {
+        WindowPreviewCapturePolicy.usesImageBasedPreviews(
+            appearanceStyle == .thumbnails,
+            showAppsOrWindows == .windows,
+            previewSelectedWindow)
+    }
     static var screenRecordingPermissionSkipped: Bool { CachedUserDefaults.bool("screenRecordingPermissionSkipped") }
     static var settingsWindowShownOnFirstLaunch: Bool { CachedUserDefaults.bool("settingsWindowShownOnFirstLaunch") }
 
@@ -163,20 +218,25 @@ class Preferences {
     static var shortcutStyle: ShortcutStylePreference { CachedUserDefaults.macroPref("shortcutStyle", ShortcutStylePreference.allCases) }
     static var menubarIcon: MenubarIconPreference { CachedUserDefaults.macroPref("menubarIcon", MenubarIconPreference.allCases) }
     static var menubarIconShown: Bool { CachedUserDefaults.bool("menubarIconShown") }
+    static var spacesInMenubarShown: Bool { CachedUserDefaults.bool("spacesInMenubarShown") }
     static var language: LanguagePreference { CachedUserDefaults.macroPref("language", LanguagePreference.allCases) }
 
     static let minShortcutCount = 1
     static let maxShortcutCount = 9
+    static let maxLaunchAppCount = 9
+    static let maxOpenUrlCount = 9
     static var shortcutCount: Int {
         max(minShortcutCount, min(maxShortcutCount, CachedUserDefaults.int("shortcutCount")))
     }
 
     static let gestureIndex = maxShortcutCount
+    static private(set) var recoveredInputModuleAtLaunch = false
 
     static func initialize() {
         PreferencesMigrations.removeCorruptedPreferences()
         PreferencesMigrations.migratePreferences()
         registerDefaults()
+        applyInputSafetyOverrides()
         enforceForkPolicies()
     }
 
@@ -191,6 +251,18 @@ class Preferences {
     private static func enforceForkPolicies() {
         set("updatePolicy", UpdatePolicyPreference.manual.indexAsString, false)
         set("crashPolicy", CrashPolicyPreference.never.indexAsString, false)
+    }
+
+    private static func applyInputSafetyOverrides() {
+        recoveredInputModuleAtLaunch = hyperKeyArmingMarker || windowDragArmingMarker
+        guard inputModulesSafeMode || recoveredInputModuleAtLaunch else { return }
+        set("inputModulesSafeMode", "true", false)
+        set("hyperKeyEnabled", "false", false)
+        set("nextWindowGesture", GesturePreference.disabled.indexAsString, false)
+        set("hyperKeyArmingMarker", "false", false)
+        set("windowDragModifier", "0", false)
+        set("windowResizeModifier", "0", false)
+        set("windowDragArmingMarker", "false", false)
     }
 
     static func markSettingsWindowShownOnFirstLaunch() {

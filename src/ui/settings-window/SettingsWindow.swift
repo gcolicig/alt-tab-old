@@ -309,6 +309,7 @@ private enum SettingsSearch {
 private struct SettingsSectionDefinition {
     let id: String
     let title: String
+    let description: String
     let imageName: String
     let systemSymbolName: String
     let view: NSView
@@ -623,9 +624,7 @@ class SettingsWindow: NSWindow {
         searchField.sendsSearchStringImmediately = true
         searchField.sendsWholeSearchString = true
         searchField.bezelStyle = .roundedBezel
-        if #available(macOS 26.0, *) {
-            searchField.controlSize = .extraLarge
-        } else if #available(macOS 13.0, *) {
+        if #available(macOS 13.0, *) {
             searchField.controlSize = .large
         }
         searchField.translatesAutoresizingMaskIntoConstraints = false
@@ -701,11 +700,15 @@ class SettingsWindow: NSWindow {
 
     private func sectionDefinitions() -> [SettingsSectionDefinition] {
         [
-            SettingsSectionDefinition(id: "appearance", title: NSLocalizedString("Appearance", comment: ""), imageName: "appearance", systemSymbolName: "paintpalette", view: AppearanceTab.initTab()),
-            SettingsSectionDefinition(id: "controls", title: NSLocalizedString("Controls", comment: ""), imageName: "controls", systemSymbolName: "command", view: ControlsTab.initTab()),
-            SettingsSectionDefinition(id: "window-layouts", title: NSLocalizedString("Window Layouts", comment: ""), imageName: "controls", systemSymbolName: "rectangle.split.3x1", view: WindowLayoutsTab.initTab()),
-            SettingsSectionDefinition(id: "general", title: NSLocalizedString("General", comment: ""), imageName: "general", systemSymbolName: "gearshape", view: GeneralTab.initTab()),
-            SettingsSectionDefinition(id: "exceptions", title: NSLocalizedString("Exceptions", comment: ""), imageName: "exceptions", systemSymbolName: "hand.raised", view: ExceptionsTab.initTab()),
+            SettingsSectionDefinition(id: "appearance", title: NSLocalizedString("Appearance", comment: ""), description: NSLocalizedString("Choose how the window switcher looks and where it appears.", comment: ""), imageName: "appearance", systemSymbolName: "paintpalette", view: AppearanceTab.initTab()),
+            SettingsSectionDefinition(id: "controls", title: NSLocalizedString("Controls", comment: ""), description: NSLocalizedString("Set how you open and navigate the window switcher.", comment: ""), imageName: "controls", systemSymbolName: "command", view: ControlsTab.initTab()),
+            SettingsSectionDefinition(id: "window-layouts", title: NSLocalizedString("Window Layouts", comment: ""), description: NSLocalizedString("Assign shortcuts for arranging the focused window.", comment: ""), imageName: "controls", systemSymbolName: "rectangle.split.3x1", view: WindowLayoutsTab.initTab()),
+            SettingsSectionDefinition(id: "spaces", title: NSLocalizedString("Spaces", comment: ""), description: NSLocalizedString("Show, activate, and move between macOS Spaces.", comment: ""), imageName: "controls", systemSymbolName: "square.grid.2x2", view: SpacesTab.initTab()),
+            SettingsSectionDefinition(id: "hyperkey", title: NSLocalizedString("Hyperkey", comment: ""), description: NSLocalizedString("Use Caps Lock as a system-wide combination of modifier keys.", comment: ""), imageName: "controls", systemSymbolName: "capslock", view: HyperkeyTab.initTab()),
+            SettingsSectionDefinition(id: "exceptions", title: NSLocalizedString("Exceptions", comment: ""), description: NSLocalizedString("Choose apps whose windows should not appear in the switcher.", comment: ""), imageName: "exceptions", systemSymbolName: "hand.raised", view: ExceptionsTab.initTab()),
+            SettingsSectionDefinition(id: "apps-urls", title: NSLocalizedString("Apps & URLs", comment: ""), description: NSLocalizedString("Assign shortcuts to launch apps or open URLs.", comment: ""), imageName: "controls", systemSymbolName: "app.badge", view: AppsUrlsTab.initTab()),
+            SettingsSectionDefinition(id: "pointer-scroll", title: NSLocalizedString("Pointer & Scroll", comment: ""), description: NSLocalizedString("Adjust pointer acceleration and speed for mouse and trackpad.", comment: ""), imageName: "controls", systemSymbolName: "cursorarrow", view: PointerScrollTab.initTab()),
+            SettingsSectionDefinition(id: "general", title: NSLocalizedString("General", comment: ""), description: NSLocalizedString("Manage startup, menu bar, language, and settings files.", comment: ""), imageName: "general", systemSymbolName: "gearshape", view: GeneralTab.initTab()),
         ]
     }
 
@@ -726,12 +729,18 @@ class SettingsWindow: NSWindow {
         sectionTitle.font = NSFont.systemFont(ofSize: 15, weight: .medium)
         sectionTitle.lineBreakMode = .byWordWrapping
         sectionTitle.maximumNumberOfLines = 0
+        let sectionDescription = TableGroupView.makeText(definition.description)
+        sectionDescription.textColor = .secondaryLabelColor
+        sectionDescription.lineBreakMode = .byWordWrapping
+        sectionDescription.maximumNumberOfLines = 0
         let container = NSView()
         let spacer = NSView()
         container.addSubview(sectionTitle)
+        container.addSubview(sectionDescription)
         container.addSubview(definition.view)
         container.addSubview(spacer)
         sectionTitle.translatesAutoresizingMaskIntoConstraints = false
+        sectionDescription.translatesAutoresizingMaskIntoConstraints = false
         definition.view.translatesAutoresizingMaskIntoConstraints = false
         spacer.translatesAutoresizingMaskIntoConstraints = false
         container.translatesAutoresizingMaskIntoConstraints = false
@@ -742,7 +751,10 @@ class SettingsWindow: NSWindow {
             titleTopConstraint,
             sectionTitle.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             sectionTitle.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            definition.view.topAnchor.constraint(equalTo: sectionTitle.bottomAnchor, constant: Self.sectionTitleSpacing),
+            sectionDescription.topAnchor.constraint(equalTo: sectionTitle.bottomAnchor, constant: 4),
+            sectionDescription.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            sectionDescription.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            definition.view.topAnchor.constraint(equalTo: sectionDescription.bottomAnchor, constant: 12),
             definition.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             definition.view.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor),
             interSectionSpacingConstraint,
@@ -753,7 +765,7 @@ class SettingsWindow: NSWindow {
         ])
         sectionsStack.addArrangedSubview(container)
         container.widthAnchor.constraint(equalTo: sectionsStack.widthAnchor).isActive = true
-        let (searchableStrings, highlightTargets) = collectSearchContent(sectionTitle, definition.view)
+        let (searchableStrings, highlightTargets) = collectSearchContent(sectionTitle, sectionDescription, definition.view)
         let section = SettingsSection(definition.id,
                                       definition.title,
                                       sidebarImage(definition),
@@ -777,11 +789,15 @@ class SettingsWindow: NSWindow {
         }
     }
 
-    private func collectSearchContent(_ sectionTitle: NSTextField, _ root: NSView) -> ([String], [SettingsSearchHighlightTarget]) {
+    private func collectSearchContent(_ sectionTitle: NSTextField, _ sectionDescription: NSTextField, _ root: NSView) -> ([String], [SettingsSearchHighlightTarget]) {
         var textValues = [String]()
         var highlightTargets = [SettingsSearchHighlightTarget]()
         textValues.append(sectionTitle.stringValue)
+        textValues.append(sectionDescription.stringValue)
         if let target = highlightTarget(sectionTitle) {
+            highlightTargets.append(target)
+        }
+        if let target = highlightTarget(sectionDescription) {
             highlightTargets.append(target)
         }
         collectSearchContent(root, &textValues, &highlightTargets)
@@ -1172,6 +1188,7 @@ class SettingsWindow: NSWindow {
 
     private func refreshControlsFromSettings() {
         GeneralTab.refreshControlsFromPreferences()
+        PointerScrollTab.refreshControlsFromPreferences()
     }
 
     func beginSheetWithSearchHighlight(_ sheet: SheetWindow) {

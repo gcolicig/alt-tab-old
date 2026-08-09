@@ -6,7 +6,7 @@ class WindowLayouts {
     private static let operationQueue = LabeledOperationQueue("windowLayouts", .userInteractive, 1)
 
     static func perform(_ action: WindowLayoutAction) {
-        guard !App.appIsBeingUsed else { return }
+        guard !App.appIsBeingUsed, !Preferences.inputModulesSafeMode else { return }
         DispatchQueue.main.async {
             guard let runningApplication = NSWorkspace.shared.frontmostApplication,
                   runningApplication.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return }
@@ -14,6 +14,36 @@ class WindowLayouts {
             operationQueue.addOperation {
                 apply(action, to: runningApplication.processIdentifier, screenFrames: screenFrames)
             }
+        }
+    }
+
+    static func perform(_ action: DisplayMoveAction) {
+        guard !App.appIsBeingUsed, !Preferences.inputModulesSafeMode else { return }
+        DispatchQueue.main.async {
+            guard let runningApplication = NSWorkspace.shared.frontmostApplication,
+                  runningApplication.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return }
+            let screenFrames = quartzVisibleFrames()
+            operationQueue.addOperation {
+                apply(action, to: runningApplication.processIdentifier, screenFrames: screenFrames)
+            }
+        }
+    }
+
+    private static func apply(_ action: DisplayMoveAction, to pid: pid_t, screenFrames: [CGRect]) {
+        do {
+            let window = try focusedWindow(pid)
+            let attributes = try eligibleAttributes(window)
+            let currentFrame = CGRect(origin: attributes.position!, size: attributes.size!)
+            let ordered = DisplayMoveGeometry.orderedFrames(screenFrames)
+            guard let sourceFrame = bestScreenFrame(for: currentFrame, ordered),
+                  let currentIndex = ordered.firstIndex(of: sourceFrame),
+                  let targetIndex = DisplayMoveGeometry.targetScreenIndex(action, currentIndex: currentIndex, screenCount: ordered.count),
+                  let targetFrame = DisplayMoveGeometry.frame(currentFrame, from: sourceFrame, to: ordered[targetIndex]) else { return }
+            // a display move is not a layout, so it does not become the frame that Restore returns to
+            try window.setFrame(targetFrame)
+            Logger.debug { "Display move \(action.rawValue) pid:\(pid) proposed:\(targetFrame)" }
+        } catch {
+            Logger.error { "Display move \(action.rawValue) failed for pid \(pid): \(error)" }
         }
     }
 
