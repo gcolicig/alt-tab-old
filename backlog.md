@@ -734,7 +734,7 @@ Akzeptanzideen:
 
 ### 4. Pointer Acceleration und Speed
 
-Status: Umgesetzt, manuelle Verifikation V-10 offen
+Status: Umgesetzt, aber **wirkungslos** — der Schreibpfad wurde am 2026-08-07 widerlegt
 Prioritaet: Mittel bis hoch
 
 Beschreibung:
@@ -773,7 +773,17 @@ Anforderungen:
 
 Umsetzungsstand 2026-07-31:
 
-- Befund zum Systempfad: nicht IOKit-hidsystem, sondern `NSGlobalDomain`. Die Werte stehen als `com.apple.mouse.scaling` und `com.apple.trackpad.scaling` und wurden auf macOS 26.5.1 (Build 25F80) lesend verifiziert (3 bzw. 0.6875). Geschrieben wird ueber `CFPreferences` gegen `kCFPreferencesAnyApplication`, also die strukturierte API ohne Shell-Prozess, ohne Event-Tap, ohne private API und ohne zusaetzliche TCC-Berechtigung.
+- **WIDERLEGT am 2026-08-07: der gewaehlte Systempfad schreibt nicht. Der folgende Absatz bleibt stehen, weil sein Fehler lehrreich ist.** Er stuetzt sich ausdruecklich darauf, dass die Werte *lesend* verifiziert wurden, und schliesst daraus auf den Schreibpfad. Gemessen mit dem effektiven Wert aus dem HID-System (`IOHIDGetAccelerationWithKey` ueber `NXOpenEventStatus`), nicht mit der Praeferenz, die die App selbst zurueckliest:
+
+      Ausgang              effektiv=0.6875  gespeichert=nil
+      nach Schreiben 2.0   effektiv=0.6875  gespeichert=2.0     <- Praeferenz gesetzt, Wirkung null
+      nach Loeschen        effektiv=0.6875  gespeichert=nil
+
+- Der Gegentest ueber IOKit wirkt dagegen sofort: `IOHIDSetAccelerationWithKey(conn, "HIDMouseAcceleration", 2.0)` gab `rc=0` zurueck und der effektive Wert sprang von 0.6875 auf 2.0; das Zuruecksetzen auf 0.6875 wirkte ebenso. Der urspruenglich vermutete Pfad — IOKit-hidsystem — war also richtig, und die Korrektur auf `NSGlobalDomain` war der Fehler.
+- **Die Folge ist schwerer als ein falscher Wert: das Modul haelt sich fuer erfolgreich.** `PointerOwnership.acquire` prueft den Erfolg, indem es die Praeferenz zurueckliest, die es selbst geschrieben hat. Das gelingt immer. Es wechselt damit nach `managed`, die Oberflaeche meldet `Managed by AltTab+`, und am Zeiger hat sich nichts geaendert. Das ist die Fehlerklasse, die das Handover als eigene fuehrt: Code, der eine Faehigkeit behauptet, die er nicht liefert.
+- Zu bauen waere daher vermutlich **beides**, so wie es die Systemeinstellungen selbst tun: `IOHIDSetAccelerationWithKey` fuer die laufende Sitzung und die Praeferenz fuer die Dauerhaftigkeit ueber die Anmeldung hinaus. Ungeprueft ist dabei, ob die Praeferenz allein beim naechsten Login greift — gemessen ist bisher nur, dass sie in der laufenden Sitzung wirkungslos ist.
+- Der zuvor notierte Befund zum fehlenden Schluessel bleibt gueltig, ruecht aber an die zweite Stelle: Solange gar nicht wirksam geschrieben wird, ist die Frage nach der Basislinie nachrangig. Mit dem IOKit-Pfad stellt sie sich ohnehin neu, weil dort immer ein effektiver Wert lesbar ist — auf diesem Geraet 0.6875 — und die Basislinie damit nie fehlt.
+- Befund zum Systempfad (**widerlegt, siehe oben**): nicht IOKit-hidsystem, sondern `NSGlobalDomain`. Die Werte stehen als `com.apple.mouse.scaling` und `com.apple.trackpad.scaling` und wurden auf macOS 26.5.1 (Build 25F80) lesend verifiziert (3 bzw. 0.6875). Geschrieben wird ueber `CFPreferences` gegen `kCFPreferencesAnyApplication`, also die strukturierte API ohne Shell-Prozess, ohne Event-Tap, ohne private API und ohne zusaetzliche TCC-Berechtigung.
 - macOS kodiert beide Einstellungen in einem Wert: negativ schaltet die Beschleunigung ab, positiv ist die Geschwindigkeit. `System default` bedeutet deshalb, dass AltTab+ den Wert gar nicht besitzt, statt einen neutralen Wert zu schreiben.
 - Geschwindigkeit wird als Rasterindex gespeichert, weil macOS selbst nur diskrete Stufen anbietet; der geschriebene Wert bleibt exakt.
 - Der Besitz-Zustandsautomat ist vollstaendig als reine Entscheidungslogik umgesetzt und mit 19 Tests abgedeckt: Erwerb, Read-back, Abbruch zwischen Write und Read-back, Fremdaenderung, `relinquished` ueber Neustart, Wiedererwerb mit neuer Baseline, Disable, Crash-Recovery in beide Richtungen.
