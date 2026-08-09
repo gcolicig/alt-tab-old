@@ -14,6 +14,11 @@ enum ShortcutCluesController {
     fileprivate static var visible = false
     fileprivate static var pendingWorkItem: DispatchWorkItem?
     private static var cache: (pid: pid_t, result: MenuShortcutReader.Result, readAt: TimeInterval)?
+    /// Identifies the hold a menu read belongs to. The read is slow enough to outlive its own session —
+    /// that is why it runs on a queue at all — and without this a result arriving late was shown against
+    /// whatever session happened to be current, so releasing in one app and holding in another displayed
+    /// the first app's shortcuts under the first app's name.
+    private static var generation: UInt64 = 0
 
     static var isEnabled: Bool {
         Preferences.shortcut(shortcutPreferenceKey) != nil && !Preferences.inputModulesSafeMode
@@ -31,7 +36,11 @@ enum ShortcutCluesController {
               application.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return }
         let pid = application.processIdentifier
         let name = application.localizedName ?? ""
-        let work = DispatchWorkItem { readAndShow(pid: pid, appName: name) }
+        generation &+= 1
+        let session = generation
+        // a second press before the first has shown replaces the pending read rather than adding one
+        pendingWorkItem?.cancel()
+        let work = DispatchWorkItem { readAndShow(pid: pid, appName: name, session: session) }
         pendingWorkItem = work
         DispatchQueue.main.asyncAfter(deadline: .now() + showDelay, execute: work)
     }
@@ -41,6 +50,8 @@ enum ShortcutCluesController {
     static func triggerReleased() {
         pendingWorkItem?.cancel()
         pendingWorkItem = nil
+        // a read already in flight belongs to a session that is over; bumping retires it on arrival
+        generation &+= 1
         guard visible else { return }
         visible = false
         ShortcutCluesPanel.hide()
@@ -50,7 +61,8 @@ enum ShortcutCluesController {
         cache = nil
     }
 
-    private static func readAndShow(pid: pid_t, appName: String) {
+    private static func readAndShow(pid: pid_t, appName: String, session: UInt64) {
+        guard session == generation else { return }
         if let cache, cache.pid == pid, ProcessInfo.processInfo.systemUptime - cache.readAt < cacheValidity {
             show(.shortcuts(cache.result, appName))
             return
@@ -58,12 +70,16 @@ enum ShortcutCluesController {
         AXCallScheduler.shared.submit {
             let result = MenuShortcutReader.read(pid: pid)
             DispatchQueue.main.async {
-                guard pendingWorkItem != nil || visible else { return }
+                // the scan is still worth keeping even when its session is gone: it is expensive, it is
+                // keyed by pid, and the next hold in the same app is exactly what the cache is for
+                if let result, !result.shortcuts.isEmpty {
+                    cache = (pid, result, ProcessInfo.processInfo.systemUptime)
+                }
+                guard session == generation else { return }
                 guard let result, !result.shortcuts.isEmpty else {
                     show(.empty(appName))
                     return
                 }
-                cache = (pid, result, ProcessInfo.processInfo.systemUptime)
                 show(.shortcuts(result, appName))
             }
         }
