@@ -142,6 +142,11 @@ class Menubar {
         spaceSegmentsView?.removeFromSuperview()
         customIconView = nil
         spaceSegmentsView = nil
+        // keyed by object address, so an entry outliving its button is not merely wasted memory: a later
+        // allocation landing on the same address would inherit the old Space indexes and open the wrong
+        // overflow menu. The row is torn down here, so this is where the table stops being true.
+        overflowIndexesByButton.removeAll()
+        groupBoundsInButton.removeAll()
         statusButton.image = preferredIcon()
         statusItem.length = NSStatusItem.squareLength
         statusButton.alignment = .center
