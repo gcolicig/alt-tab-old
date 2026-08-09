@@ -562,7 +562,8 @@ Beschreibung:
 - Umgesetzt 2026-08-05, Stufe 1: Drop auf das AltTab+-Statusitem verschiebt auf den naechsten Bildschirm in physischer Reihenfolge; `DisplayMoveGeometry` mit relativer Lage und Clamping wird wiederverwendet. Der Drop erzeugt keinen eigenen Anwendungspfad, sondern nur einen weiteren Weg, `snapFrame` zu berechnen, und laeuft danach durch dieselbe Ausfuehrung wie das Snapping. Das Overlay zeigt den Zielbildschirm, solange der Cursor ueber dem Statusitem steht.
 - Das Quelldisplay ist dasjenige, das das Fenster flaechenmaessig am meisten ueberdeckt, nicht das mit dem Fensterursprung: ein Fenster ueber der Displaygrenze wuerde sonst von dem Bildschirm weggeschoben, auf dem es ueberwiegend liegt.
 - Nicht geprueft: manuelle Abnahme am Zielgeraet mit mehreren Bildschirmen.
-- Stufe 2: Drop auf ein bestimmtes Display-Segment waehlt den Zielbildschirm.
+- Umgesetzt 2026-08-07, Stufe 2: Ein Drop auf die Gruppe eines Displays in der Spaces-Reihe verschiebt das Fenster auf **dieses** Display. Ein Drop anderswo auf dem Statusitem bleibt beim naechsten Bildschirm in physischer Reihenfolge — mehr ist nicht ableitbar, wenn die Reihe ausgeschaltet ist oder nur eine Gruppe zeigt. Die Reihe merkt sich beim Bauen die Grenzen jeder Gruppe in den Koordinaten des Statusbuttons; der Drag fragt daraus das Display unter dem Cursor ab. Das gewaehlte Ziel wird beim Einrasten festgehalten, weil die Halteschaltung das Verlassen des Items bewusst ueberlebt.
+- Nicht geprueft: die manuelle Abnahme von Stufe 2 am Zielgeraet. Sie setzt voraus, dass ein Drag-Modifier zugewiesen ist; per Default ist das Modul aus.
 - Mechanik wie beim Snapping: die Drag-Sitzung prueft beim Mouseup, ob der Cursor ueber dem Statusitem liegt; ein Drop-Ziel gewinnt gegen Snap-Ziel und freie Position.
 
 Nicht in Stufe 1 und 2:
