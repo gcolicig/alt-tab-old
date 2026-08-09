@@ -16,6 +16,7 @@ class DebugWindow: NSPanel {
     private var windowDiscriminatorCheckbox: NSButton!
     private var filterWindowDiscriminator = false
     private var inspectButton: NSButton!
+    private var dumpMenuShortcutsButton: NSButton!
     private var inspectColumns: NSStackView!
     private var inspectAppField: NSTextField!
     private var inspectCgField: NSTextField!
@@ -55,6 +56,29 @@ class DebugWindow: NSPanel {
         }
     }
 
+    /// Dumps the frontmost app's menu shortcut encodings into this window's log.
+    ///
+    /// The reader's own diagnostic had no caller, so the re-check its comment promises for each macOS
+    /// major could not actually be run. It goes through the AX queue like every other menu walk: the scan
+    /// is a long series of synchronous AX calls and must never sit on the main thread.
+    private static func dumpFrontmostMenuShortcuts() {
+        guard AXIsProcessTrusted() else {
+            Logger.error { "shortcut clues dump: accessibility permission is missing" }
+            return
+        }
+        guard let application = NSWorkspace.shared.frontmostApplication,
+              application.processIdentifier != ProcessInfo.processInfo.processIdentifier else {
+            Logger.error { "shortcut clues dump: no eligible frontmost app" }
+            return
+        }
+        let pid = application.processIdentifier
+        let name = application.localizedName ?? "?"
+        AXCallScheduler.shared.submit {
+            Logger.info { "shortcut clues dump: \(name) (pid \(pid))" }
+            MenuShortcutReader.dumpRawAttributes(pid: pid)
+        }
+    }
+
     private static func colorDot(_ color: NSColor) -> NSImage {
         let size = NSSize(width: 8, height: 8)
         let image = NSImage(size: size)
@@ -71,6 +95,13 @@ class DebugWindow: NSPanel {
         inspectButton.translatesAutoresizingMaskIntoConstraints = false
         inspectButton.bezelStyle = .rounded
         inspectButton.onAction = { [weak self] _ in self?.toggleInspect() }
+        // The dump exists so the menu shortcut encodings can be re-checked on each macOS major, which its
+        // own comment gives as the reason to keep it — but nothing could call it, so the check was not
+        // actually available. The app is the only process here with accessibility permission.
+        dumpMenuShortcutsButton = NSButton(title: "Dump frontmost app's menu shortcuts", target: nil, action: nil)
+        dumpMenuShortcutsButton.translatesAutoresizingMaskIntoConstraints = false
+        dumpMenuShortcutsButton.bezelStyle = .rounded
+        dumpMenuShortcutsButton.onAction = { _ in Self.dumpFrontmostMenuShortcuts() }
         inspectAppField = Self.makeInspectColumn("App", ["Name", "BundleID", "PID"])
         inspectCgField = Self.makeInspectColumn("Window (CG API)", ["Title", "WID", "Level (kCGWindowLayer)", "Level (CGSGetWindowLevel)", "Size", "Position", "Alpha", "IsOnScreen"])
         inspectAxField = Self.makeInspectColumn("Window (AX API)", ["Title", "Role", "Subrole", "Minimized", "Fullscreen", "Size", "Position"])
@@ -130,10 +161,13 @@ class DebugWindow: NSPanel {
         inspectBox.title = "Inspect"
         inspectBox.contentView = NSView()
         inspectBox.contentView!.addSubview(inspectButton)
+        inspectBox.contentView!.addSubview(dumpMenuShortcutsButton)
         inspectBox.contentView!.addSubview(inspectColumns)
         NSLayoutConstraint.activate([
             inspectButton.topAnchor.constraint(equalTo: inspectBox.contentView!.topAnchor, constant: 4),
             inspectButton.leadingAnchor.constraint(equalTo: inspectBox.contentView!.leadingAnchor, constant: 4),
+            dumpMenuShortcutsButton.centerYAnchor.constraint(equalTo: inspectButton.centerYAnchor),
+            dumpMenuShortcutsButton.leadingAnchor.constraint(equalTo: inspectButton.trailingAnchor, constant: 8),
             inspectColumns.topAnchor.constraint(equalTo: inspectButton.bottomAnchor, constant: 8),
             inspectColumns.leadingAnchor.constraint(equalTo: inspectBox.contentView!.leadingAnchor, constant: 4),
             inspectColumns.trailingAnchor.constraint(equalTo: inspectBox.contentView!.trailingAnchor, constant: -4),
