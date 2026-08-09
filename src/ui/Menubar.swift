@@ -9,6 +9,9 @@ class Menubar {
     private static let groupGap = MenubarSpaceRow.groupGap
     private static var customIconView: NSImageView?
     private static var spaceSegmentsView: NSView?
+    /// One entry per display group, in the status button's coordinates. Kept so a window drag can name the
+    /// display a drop landed on instead of always taking the next one in physical order.
+    private static var groupBoundsInButton = [(ScreenUuid, CGRect)]()
 
     private struct SpaceGroup {
         let displayUuid: ScreenUuid
@@ -67,6 +70,22 @@ class Menubar {
     /// ran first on every segment click: it opened the context menu, and its `refreshSpaces` tore the
     /// segment out from under the mouse before the button could complete, swallowing the click. That is
     /// the same teardown the restyling path below already guards against.
+    /// The display whose group sits under this Quartz point, if the row is showing one there.
+    ///
+    /// The row is rendered inside the status button, whose window frame is in AppKit coordinates while a
+    /// drag reports the cursor in Quartz. The flip happens here so callers can stay in one space.
+    static func displayGroup(atQuartzPoint point: CGPoint) -> ScreenUuid? {
+        guard !groupBoundsInButton.isEmpty,
+              let primaryFrame = NSScreen.screens.first?.frame,
+              let window = statusItem?.button?.window else { return nil }
+        let windowFrame = window.frame
+        return groupBoundsInButton.first { _, bounds in
+            let quartzY = primaryFrame.maxY - (windowFrame.minY + bounds.maxY)
+            let quartzRect = CGRect(x: windowFrame.minX + bounds.minX, y: quartzY, width: bounds.width, height: bounds.height)
+            return quartzRect.contains(point)
+        }?.0
+    }
+
     private static func clickIsOnSpaceSegments() -> Bool {
         guard let segments = spaceSegmentsView, let button = statusItem?.button,
               let event = NSApp.currentEvent, event.type == .leftMouseDown else { return false }
@@ -140,17 +159,22 @@ class Menubar {
         // the container carries its final frame before any segment goes in, like the single-row version did
         let container = SpaceSegmentsView(frame: NSRect(x: iconWidth, y: 0, width: totalWidth, height: rowHeight))
         var x = CGFloat(0)
+        var groupBounds = [(ScreenUuid, CGRect)]()
         groups.enumerated().forEach { groupOffset, group in
             if groupOffset > 0 {
                 x += groupGap
                 container.addSubview(groupDivider(x: x, height: rowHeight))
                 x += groupGap
             }
+            let groupStart = x
             x += addGroupSegments(group, startX: x, height: rowHeight, switchingEnabled: switchingEnabled,
                                    isCursorGroup: MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: cursorUuid == nil || cursorUuid == group.displayUuid,
                                                                                   separateSpaces: NSScreen.screensHaveSeparateSpaces),
                                    displayOrdinal: groups.count > 1 ? groupOffset + 1 : nil, into: container)
+            // recorded in the button's own coordinates, so a drag can ask which display a drop landed on
+            groupBounds.append((group.displayUuid, CGRect(x: iconWidth + groupStart, y: 0, width: x - groupStart, height: rowHeight)))
         }
+        groupBoundsInButton = groupBounds
         statusItem.length = iconWidth + totalWidth + 2
         statusButton.image = nil
         let iconView = PassthroughImageView(frame: MenubarSpaceRow.centeredRect(x: 4, width: 20, availableHeight: rowHeight, preferredHeight: MenubarSpaceRow.iconHeight))

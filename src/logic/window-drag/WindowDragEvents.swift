@@ -42,6 +42,8 @@ enum WindowDragEvents {
     private static var edgeEnteredAt: TimeInterval?
     private static var edgeSide: DragSnapTarget = .none
     private static var dropLatched = false
+    /// Which display's group the latch caught, if the Space row named one.
+    private static var dropTargetDisplay: ScreenUuid?
     private static let stabilityWindowSeconds = 5.0
     /// The preference stores an index into `DragModifierPreference.selectable`, not a raw value: writing
     /// the case name here would leave the emergency path relying on a parse failure resetting to default.
@@ -314,19 +316,40 @@ enum WindowDragEvents {
         presentOverlay()
     }
 
-    /// The AltTab+ status item as a drop target: the window lands on the next display in physical order,
-    /// keeping how it sat on its old one.
+    /// The AltTab+ status item as a drop target, keeping how the window sat on its old display.
+    ///
+    /// Dropping on a display's group in the Space row names that display. Dropping anywhere else on the
+    /// item keeps the original behaviour and takes the next display in physical order — which is all
+    /// there is to go on when the row is switched off or shows only one group.
+    ///
+    /// The chosen display is remembered when the target latches, because the latch deliberately survives
+    /// the cursor leaving the item: without that, a release a few points below the row would forget which
+    /// group it came from.
     private static func menubarDropFrame(_ location: CGPoint, in screen: CGRect) -> CGRect? {
         if MenubarDropTarget.isOver(location, statusItemFrame: quartzStatusItemFrame()) {
             dropLatched = true
+            dropTargetDisplay = Menubar.displayGroup(atQuartzPoint: location)
         } else if !MenubarDropTarget.staysLatched(location, menubarStripBottom: screen.minY) {
             dropLatched = false
+            dropTargetDisplay = nil
         }
         guard let origin = originWindowFrame, dropLatched else { return nil }
         let ordered = DisplayMoveGeometry.orderedFrames(quartzVisibleFrames())
-        guard let sourceIndex = MenubarDropTarget.sourceIndex(of: origin, in: ordered),
-              let targetIndex = DisplayMoveGeometry.targetScreenIndex(.nextDisplay, currentIndex: sourceIndex, screenCount: ordered.count) else { return nil }
+        guard let sourceIndex = MenubarDropTarget.sourceIndex(of: origin, in: ordered) else { return nil }
+        guard let targetIndex = namedTargetIndex(in: ordered) ??
+            DisplayMoveGeometry.targetScreenIndex(.nextDisplay, currentIndex: sourceIndex, screenCount: ordered.count) else { return nil }
+        guard targetIndex != sourceIndex else { return nil }
         return DisplayMoveGeometry.frame(origin, from: ordered[sourceIndex], to: ordered[targetIndex])
+    }
+
+    /// Where the latched group's display sits in the ordered frames, matched by geometry because the
+    /// ordering works on frames while the row identifies displays by uuid.
+    private static func namedTargetIndex(in ordered: [CGRect]) -> Int? {
+        guard let dropTargetDisplay,
+              let screen = NSScreen.screens.first(where: { $0.cachedUuid() as String? == dropTargetDisplay as String }) else { return nil }
+        let quartz = quartzScreens()
+        guard let position = NSScreen.screens.firstIndex(of: screen), position < quartz.count else { return nil }
+        return ordered.firstIndex(of: quartz[position].visible)
     }
 
     private static func quartzStatusItemFrame() -> CGRect? {
@@ -342,6 +365,7 @@ enum WindowDragEvents {
         edgeSide = .none
         edgeEnteredAt = nil
         dropLatched = false
+        dropTargetDisplay = nil
         presentOverlay()
     }
 
@@ -420,6 +444,7 @@ enum WindowDragEvents {
         edgeSide = .none
         edgeEnteredAt = nil
         dropLatched = false
+        dropTargetDisplay = nil
         DispatchQueue.main.async { DragSnapOverlay.dismiss() }
     }
 }
