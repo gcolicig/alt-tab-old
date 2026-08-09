@@ -7,6 +7,11 @@ class ShortcutCluesPanel: NSPanel {
     private static let columnWidth = CGFloat(260)
     private static let maximumColumns = 4
     private static let padding = CGFloat(16)
+    private static let keyColumnWidth = CGFloat(74)
+    private static let keyToTitleSpacing = CGFloat(8)
+    /// What is left of a column once the shortcut itself has its fixed share. The item title is the only
+    /// part of a row whose length another app decides, so it is the only part that is capped.
+    private static var titleMaximumWidth: CGFloat { columnWidth - keyColumnWidth - keyToTitleSpacing }
 
     enum Content {
         case shortcuts(MenuShortcutReader.Result, String)
@@ -111,8 +116,15 @@ class ShortcutCluesPanel: NSPanel {
         var views: [NSView] = [label(menuTitle, font: .boldSystemFont(ofSize: 12), color: .secondaryLabelColor)]
         views += shortcuts.map { shortcut in
             let key = label(shortcut.displayString, font: .monospacedDigitSystemFont(ofSize: 12, weight: .semibold), color: .labelColor)
-            key.setFrameSize(NSSize(width: 74, height: key.fittingSize.height))
+            key.setFrameSize(NSSize(width: keyColumnWidth, height: key.fittingSize.height))
             let name = label(shortcut.itemTitle, font: .systemFont(ofSize: 12), color: .labelColor)
+            // another app decides how long this is, and nothing else here limits the panel: a single long
+            // item title would otherwise widen it past the screen it is centred on
+            if name.frame.width > titleMaximumWidth {
+                name.lineBreakMode = .byTruncatingTail
+                name.cell?.truncatesLastVisibleLine = true
+                name.setFrameSize(NSSize(width: titleMaximumWidth, height: name.frame.height))
+            }
             let row = NSStackView(views: [key, name])
             row.orientation = .horizontal
             row.alignment = .firstBaseline
@@ -141,10 +153,13 @@ class ShortcutCluesPanel: NSPanel {
         return field
     }
 
-    /// Shown where the user is looking, like the other modules.
+    /// Centred on the screen the cursor is on, like the other modules, but never past its edges: the panel
+    /// is sized by another app's menu, so it can still come out larger than expected in one direction.
     private func positionOnScreenUnderCursor() {
         guard let screen = NSScreen.withMouse() ?? NSScreen.main else { return }
         let visible = screen.visibleFrame
-        setFrameOrigin(NSPoint(x: visible.midX - frame.width / 2, y: visible.midY - frame.height / 2))
+        let x = min(max(visible.midX - frame.width / 2, visible.minX), max(visible.maxX - frame.width, visible.minX))
+        let y = min(max(visible.midY - frame.height / 2, visible.minY), max(visible.maxY - frame.height, visible.minY))
+        setFrameOrigin(NSPoint(x: x, y: y))
     }
 }
