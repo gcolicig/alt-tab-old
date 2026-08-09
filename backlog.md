@@ -1031,7 +1031,7 @@ Energiepruefung:
 |---|---|---|
 | S-01 | AX-Fensteroperations-Kern | Identifikationskette liefert in 20 von 20 manuellen Faellen ueber alle Klassen der Kompatibilitaetsmatrix das korrekte Fenster oder verweigert bewusst |
 | S-02 | AX-Latenz bei Drag | Move und Resize bei 30 bis 60 Hz Coalescing ohne sichtbaren Lag in AppKit-Apps; dokumentiertes Verhalten fuer Chromium, Electron, AWT, Terminal |
-| S-03 | Pointer Accel/Speed via IOKit | Getrennte Werte fuer Mouse und Trackpad setzbar und restaurierbar, ohne Event-Tap, private API oder zusaetzliche TCC-Berechtigung; Aenderung ausserhalb von AltTab+ persistiert `relinquished`; Crash-/Kill-Recovery restauriert nur unter Gleichheitspruefung |
+| S-03 | Pointer Accel/Speed via IOKit | Getrennte Werte fuer Mouse und Trackpad setzbar und restaurierbar, ohne Event-Tap, private API oder zusaetzliche TCC-Berechtigung; Aenderung ausserhalb von AltTab+ persistiert `relinquished`; Crash-/Kill-Recovery restauriert nur unter Gleichheitspruefung — **2026-08-07 wieder geoeffnet**: die Umstellung auf `NSGlobalDomain` war ein Fehlschluss aus einer rein lesenden Verifikation. Gemessen wirkt `CFPreferences` nicht auf den effektiven Wert, `IOHIDSetAccelerationWithKey` dagegen sofort. Die urspruengliche Praemisse dieses Spikes war richtig |
 | S-04 | Tahoe-Tiling-Feature-Matrix | Auf macOS Tahoe / Apple Silicon dokumentierte Liste nativ vorhandener Drag- und Shortcut-Aktionen |
 | S-05 | Scroll-Tap Kosten | Tap-Recovery nachgewiesen; feste Scrollmessung bleibt innerhalb des unter Energiepruefung dokumentierten Budgets |
 | S-06 | Instant Spaces | Links/rechts und direkter Index wechseln auf verifiziertem Tahoe ohne sichtbare Animation; Display-Ziel, Randblockierung und Ist-Zustand konvergieren bei schnellen Folgen; fehlende Symbole oder unbekannte Version deaktivieren nur das Modul |
@@ -1040,6 +1040,7 @@ Energiepruefung:
 | S-08 | Stabile Space-Identitaet | **Bestanden 2026-08-03** auf macOS 26.5.1 (Build 25F80). Drei Spaces ueberlebten einen Neustart mit unveraenderter UUID, waehrend zwei ihre `id64` wechselten (31→7, 33→6). Reorder, Create, Delete, Fullscreen und natives Wechseln liessen die UUIDs ebenfalls unveraendert. Aliase und Profil-Bindings duerfen auf die UUID zeigen, niemals auf `id64` oder den Index. Nicht geprueft: Umschalten von `Displays haben separate Spaces` und Display-Wechsel, beides mangels zweitem Display |
 | S-10 | Synchroner Mehrdisplay-Space-Wechsel | Cursor-Warp plus Swipe schaltet alle Displays in einer Aktion auf denselben Index, ohne haengenden Cursor und ohne Mission-Control-Stoerung; andernfalls bleibt das a-Modell aus 2F deaktiviert |
 | S-11 | Programmatisches Anlegen/Loeschen von Spaces | `CGSSpaceCreate`/`CGSSpaceDestroy` optional gebunden; Anlegen und Loeschen wirkt korrekt, Dock und Mission Control bleiben konsistent, Symbolwegfall degradiert nur dieses Feature |
+| S-12 | Zeigerwerte ueber die Anmeldung hinaus | Ein per `IOHIDSetAccelerationWithKey` gesetzter Wert ueberlebt Ab- und Anmeldung; andernfalls ist zusaetzlich die Praeferenz in `NSGlobalDomain` zu schreiben, wie es die Systemeinstellungen vermutlich tun. Gemessen wird am effektiven Wert aus `IOHIDGetAccelerationWithKey`, nicht an der zurueckgelesenen Praeferenz — genau diese Verwechslung ist die Ursache des Defekts in Story 4. Scharf gestellt 2026-08-07: Maus auf 0.875 statt 0.6875 |
 
 ## Umsetzungsreihenfolge
 
@@ -1093,6 +1094,11 @@ Default-Settings, Reset-Verhalten und Migration werden nach jedem neuen Modul ge
 | Mehrere Displays und Spaces | Standardmaessig macOS-Semantik folgen: gruppiert bei separaten Spaces, gemeinsame Reihe bei deaktivierter Systemeinstellung |
 | Projektprofile | Eigene stabile Objekte; Space-Alias bleibt reine Anzeige. Apps/Layout zuerst, manueller Session-Restore spaeter |
 
+## Technische Schulden aus der Sitzung vom 2026-08-07
+
+- **Audit auf statischen Zustand ohne Aufraeumpfad.** An einem Tag traten vier Instanzen desselben Musters auf, alle in `src/ui/Menubar.swift` und `src/logic/window-drag/WindowDragEvents.swift`: `isCursorGroup` ueberlebte den Cursorwechsel und legte Knoepfe still tot; die Abblendung wurde nur beim Space-Wechsel neu bewertet; `dropTargetDisplay` wurde an zwei von drei Ausstiegen nicht zurueckgesetzt, gefunden bevor es ausgeliefert war; `overflowIndexesByButton` wurde nie geleert und ist ueber die Objektadresse verschluesselt, womit ein spaeterer Knopf an derselben Adresse fremde Space-Indexe geerbt haette. Vier in einer Sitzung in zwei Dateien ist ein Muster, kein Zufall. Ein Durchgang, der zu jedem statischen `var` in diesen beiden Dateien die Aufraeumpfade zaehlt, duerfte weitere finden.
+- **Type-Check-Grenzfaelle einmal geschlossen abraeumen.** CI ist am 2026-08-06 und 2026-08-07 an Commits gescheitert, die den betroffenen Code nicht angefasst hatten; einmal traf es reine Dokumentation. Der Build erzwingt `-warn-long-expression-type-checking=250` als Fehler, und die Grenze ist von der Auslastung des Runners abhaengig. Zwei Ausdruecke wurden reaktiv entschaerft (`ControlsTab.staticManagedShortcutPreferences`, `KeyboardEventsTestable.globalShortcutsIds`). Ein Durchlauf mit abgesenkter Schwelle listet auf, was sonst noch knapp darunter liegt; danach ist CI kein Wuerfelspiel mehr.
+
 ## Verifikationspunkte
 
 | ID | Punkt | Umgang |
@@ -1106,12 +1112,13 @@ Default-Settings, Reset-Verhalten und Migration werden nach jedem neuen Modul ge
 | V-07 | Distribution | Signing, Notarisierung, Vertriebskanal und Update-Strategie vor erster oeffentlicher Version abschliessen; Sparkle bleibt optional |
 | V-08 | Safe Start und Circuit Breaker | Vor dem ersten ausgelieferten Input-Modul mit Login-Start, verbliebenem Arming-Marker und wiederholtem Tap-Timeout pruefen |
 | V-09 | Berechtigungsentzug | Accessibility und Input Monitoring getrennt bei Start, Aktivierung, Wake und Laufzeit pruefen |
-| V-10 | Pointer State Ownership | Aenderung durch Systemeinstellungen oder paralleles Maus-Tool, persistiertes `relinquished`, erneute Besitzuebernahme, Disable, saubere Terminierung, Crash, `SIGKILL`, Wake und Device-Reconnect ohne Rueckschreibschleife oder destruktives Restore pruefen |
+| V-10 | Pointer State Ownership | Aenderung durch Systemeinstellungen oder paralleles Maus-Tool, persistiertes `relinquished`, erneute Besitzuebernahme, Disable, saubere Terminierung, Crash, `SIGKILL`, Wake und Device-Reconnect ohne Rueckschreibschleife oder destruktives Restore pruefen — **Checkliste vor der Ausfuehrung neu schreiben**: `docs/pointer-ownership-checklist.md` prueft heute mit `defaults read -g`, also die Praeferenz. Nach dem Umbau auf IOKit ist das die falsche Groesse; Erfolg wird am effektiven Wert gemessen. Die Checkliste in ihrer jetzigen Form wuerde einen wirkungslosen Schreibvorgang als bestanden ausweisen |
 | V-11 | Display-Topologien | Snapping-Checkliste ueber definierte Topologien, Separate-Spaces-Zustaende und dynamische Reconfiguration ausfuehren |
 | V-12 | Instant Spaces | Tahoe-Build, Separate Spaces ein/aus, Cursor-Display, Fullscreen-Space, Stage Manager, Mission Control/App Expose, Randwechsel und schnelle direkte Mehrfachwechsel pruefen |
 | V-13 | `Command+Control`-Move | `NSWindowShouldDragOnGesture` vor Aktivierung lesen, auf `false` setzen und verifizieren; Disable, externe Aenderung, Crash und Recovery ohne destruktives Restore pruefen |
 | V-14 | Spaces-Menueleiste | Checkliste `docs/spaces-menubar-checklist.md`. Ein bis 16 Spaces, mehrere Displays, Fullscreen-Spaces, Reorder, Create/Delete, Wake, Mission-Control-Ende, Statusleisten-Ueberlauf und VoiceOver pruefen; mit drei Bildschirmen und deaktivierten separaten Spaces pruefen, dass nur Gruppen mit mehr als einem Space erscheinen und kein Trenner uebrig bleibt |
 | V-15 | Profile und Session-Restore | Fenster-Matching, App-Start, verlorene Space-Bindings, geaenderte Titel, mehrere Fenster derselben App und geaenderte Display-Topologie ohne falsche Mutation pruefen |
+| V-16 | Dock-Aktivierung ueber Space-Grenzen | Beobachtung 2A-1 zuordnen: Klick im Dock auf eine App, deren Fenster auf einem anderen Space liegt, wirkt erst beim zweiten Mal. Mit beendetem AltTab+ wiederholen; tritt es weiter auf, ist es Systemverhalten und die Beobachtung wird geschlossen, sonst beginnt die Suche bei den Maus-Taps |
 
 ## Provenienz-Register
 
