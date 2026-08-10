@@ -30,8 +30,20 @@ class PointerScrollTab {
                 refreshControlsFromPreferences()
             }]))
         table.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Ownership", comment: ""), rightViews: [ownership]))
-        let slider = LabelAndControl.makeLabelWithSlider(speedTitle, speedKey, 0, Double(PointerSpeedSteps.maximumIndex), PointerSpeedSteps.values.count, true, "") { _ in apply(category) }
+        let slider = LabelAndControl.makeLabelWithSlider(speedTitle, speedKey, 0, Double(PointerSpeedSteps.maximumIndex), PointerSpeedSteps.values.count, true, "") { _ in applySpeed(category) }
         table.addRow(TableGroupView.Row(leftTitle: speedTitle, rightViews: [slider[1]]))
+    }
+
+    /// A speed change follows ownership; it never takes it. The slider used to run through `apply`, which
+    /// re-decides between `update` and `acquire` from the freshly persisted state — so one drag could
+    /// relinquish on its first tick, having found a foreign value, and *re-acquire* on the next, adopting
+    /// the other owner's value as its own baseline and writing over it. Measured 2026-08-10 (V-10 step 5):
+    /// a foreign `0.125` became the recorded baseline mid-gesture, and the row never showed the refusal.
+    private static func applySpeed(_ category: PointerCategory) {
+        guard PointerOwnership.state(category) == .managed,
+              let desired = Preferences.pointerDesiredValue(category) else { return }
+        PointerOwnership.update(category, desired: desired)
+        refreshControlsFromPreferences()
     }
 
     /// The dropdown is the only deliberate activation there is: moving off `System default` acquires the
