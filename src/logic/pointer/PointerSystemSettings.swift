@@ -13,8 +13,10 @@ import IOKit
 /// `IOHIDGetAccelerationWithKey` reports it, which also means a value is always readable: the earlier
 /// case of a machine where the preference had never been written no longer exists.
 ///
-/// Whether the setting survives a logout is **not** measured. If it does not, re-applying at launch is
-/// the follow-up, not writing the preference again.
+/// The setting does **not** survive, measured 2026-08-10 (S-12): a value armed at 0.875 read back as
+/// 0.6875 after a restart, and had already fallen back once during the preceding session. Re-applying
+/// after launch and after wake is the follow-up, not writing the preference again — the preference was
+/// absent the whole time and that did not stop the effective value from being set.
 ///
 /// The symbols are resolved at runtime rather than called directly. They are deprecated since 10.12 and
 /// the build treats warnings as errors, and per V-03 a symbol that may disappear degrades to "feature
