@@ -2,7 +2,9 @@ import XCTest
 
 final class PointerOwnershipTests: XCTestCase {
     private let baseline = 3.0
-    private let desired = -1.0
+    /// A value the HID system can actually hold. It used to be `-1.0`, which the system clamps to `0`, so
+    /// every case here was phrased around a value no read-back could ever return.
+    private let desired = 0.5
 
     private func acquired() -> PointerOwnershipRecord {
         let begun = PointerOwnershipPolicy.beginAcquisition(.unmanaged, current: baseline, desired: desired)!
@@ -106,8 +108,16 @@ final class PointerOwnershipTests: XCTestCase {
 
     func testSystemDefaultOwnsNothingWhileTheOtherModesProduceAValue() {
         XCTAssertNil(PointerAccelerationMode.systemDefault.desiredValue(speed: 3))
-        XCTAssertEqual(PointerAccelerationMode.disabled.desiredValue(speed: 3), -1)
+        XCTAssertEqual(PointerAccelerationMode.disabled.desiredValue(speed: 3), 0)
         XCTAssertEqual(PointerAccelerationMode.custom.desiredValue(speed: 0.6875), 0.6875)
+    }
+
+    /// Measured on 2026-08-10: `IOHIDSetAccelerationWithKey` clamps every negative input to `0` while still
+    /// returning `KERN_SUCCESS`. A negative sentinel therefore always fails its own read-back, which moved
+    /// the pointer and refused ownership in one step. Nothing the module can ask for may be unreachable.
+    func testEveryModeAsksForAValueTheSystemCanActuallyHold() {
+        let askable = [PointerAccelerationMode.disabled.desiredValue(speed: 0)] + PointerSpeedSteps.values
+        askable.forEach { XCTAssertGreaterThanOrEqual($0 ?? -1, 0) }
     }
 
     func testSpeedStepsClampAndRoundTrip() {
