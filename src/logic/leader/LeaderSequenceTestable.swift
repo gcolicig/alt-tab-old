@@ -48,6 +48,10 @@ struct LeaderTrie: Equatable {
                     level = children
             }
         }
+        // nothing can follow, so there is nothing to await: reporting `awaitMore` with an empty list would
+        // have a caller arm a session that can only ever swallow the next key and then abort. That is the
+        // outcome this type exists to avoid, and it is reachable with no bindings configured at all.
+        guard !level.isEmpty else { return .noMatch }
         return .awaitMore(Array(level.keys))
     }
 }

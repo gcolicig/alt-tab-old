@@ -46,6 +46,22 @@ final class LeaderSequenceTests: XCTestCase {
         XCTAssertEqual(Set(next), [w, s])
     }
 
+    /// With nothing bound there is nothing to await. Reporting `awaitMore` with an empty list would have a
+    /// caller arm a session that can only swallow the next key and then abort — the outcome the type exists
+    /// to avoid, and reachable simply by not configuring any bindings.
+    func testAnEmptyTrieOffersNothingRatherThanAnEmptyWait() {
+        XCTAssertEqual(LeaderTrie().lookup([]), .noMatch)
+    }
+
+    func testAPrefixLeadingToAnEmptyGroupOffersNothing() {
+        let trie = LeaderTrie([w: .group([:])])
+        XCTAssertEqual(trie.lookup([w]), .noMatch)
+    }
+
+    func testASessionOnAnEmptyTrieAbortsOnTheFirstKey() {
+        XCTAssertEqual(LeaderSession.accept(LeaderSession.begin(), key: s, in: LeaderTrie()), .abort)
+    }
+
     func testASessionWalksAPrefixAndThenRuns() {
         let started = LeaderSession.begin()
         guard case .keepCollecting(let afterW) = LeaderSession.accept(started, key: w, in: trie()) else {
