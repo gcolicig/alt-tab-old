@@ -231,6 +231,10 @@ class Menubar {
     /// when the row was last built, and the cursor crosses displays without any Space change to rebuild
     /// on. Fourteen consecutive clicks were logged against an unreachable group with no feedback at all.
     /// Restyling in place rather than rebuilding avoids tearing the buttons out from under the mouse.
+    ///
+    /// The frame and the description both carry reachability, so both are refreshed here. Updating only the
+    /// frame left the tooltip and the accessibility label stating the opposite of what the row showed, which
+    /// reintroduced the silent refusal for anyone reading the row by hover or with VoiceOver instead of by eye.
     static func refreshReachabilityHint() {
         guard let container = spaceSegmentsView else { return }
         let cursorUuid = NSScreen.withMouse()?.cachedUuid() as String?
@@ -241,6 +245,12 @@ class Menubar {
             let underCursor = cursorUuid == nil || cursorUuid == groupUuid
             let reachable = MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: underCursor, separateSpaces: separateSpaces)
             button.layer?.borderColor = color.withAlphaComponent(borderAlpha(reachable: reachable)).cgColor
+            // the overflow segment stands for several Spaces, so it has no single index to name
+            let isOverflow = overflowIndexesByButton[ObjectIdentifier(button)] != nil
+            let tooltip = segmentTooltip(crossDisplay: !reachable, index: isOverflow ? nil : button.tag,
+                                         displayOrdinal: displayOrdinal(of: groupUuid))
+            button.toolTip = tooltip
+            button.setAccessibilityLabel(tooltip)
         }
     }
 
@@ -330,8 +340,7 @@ class Menubar {
         button.layer?.cornerRadius = 5
         button.identifier = NSUserInterfaceItemIdentifier(displayUuid as String)
         button.isEnabled = enabled
-        let baseTooltip = crossDisplay ? crossDisplayTooltip() : NSLocalizedString("More Spaces", comment: "")
-        button.toolTip = displayOrdinal.map { String(format: NSLocalizedString("%@ (Display %d)", comment: ""), baseTooltip, $0) } ?? baseTooltip
+        button.toolTip = segmentTooltip(crossDisplay: crossDisplay, index: nil, displayOrdinal: displayOrdinal)
         button.setAccessibilityLabel(button.toolTip)
         let activeInOverflow = indexes.contains { spaceIds[$0 - 1] == activeSpaceId }
         let font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: activeInOverflow ? .semibold : .medium)
@@ -347,8 +356,7 @@ class Menubar {
     private static func styleSpaceButton(_ button: NSButton, _ index: Int, _ active: Bool, _ enabled: Bool, _ crossDisplay: Bool, _ displayOrdinal: Int? = nil) {
         button.tag = index
         button.isEnabled = enabled
-        let baseTooltip = crossDisplay ? crossDisplayTooltip() : String(format: NSLocalizedString("Switch to Space %d", comment: ""), index)
-        button.toolTip = displayOrdinal.map { String(format: NSLocalizedString("%@ (Display %d)", comment: ""), baseTooltip, $0) } ?? baseTooltip
+        button.toolTip = segmentTooltip(crossDisplay: crossDisplay, index: index, displayOrdinal: displayOrdinal)
         button.setAccessibilityLabel(button.toolTip)
         let font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: active ? .semibold : .medium)
         let color = segmentColor()
@@ -415,6 +423,29 @@ class Menubar {
 
     private static func crossDisplayTooltip() -> String {
         NSLocalizedString("Move the cursor to this screen to switch its Spaces.", comment: "")
+    }
+
+    /// The one place a segment's spoken and hovered description is composed, so the build and the refresh
+    /// below cannot drift apart. `index` is nil for the overflow segment, which stands for several Spaces.
+    private static func segmentTooltip(crossDisplay: Bool, index: Int?, displayOrdinal: Int?) -> String {
+        let base: String
+        if crossDisplay {
+            base = crossDisplayTooltip()
+        } else if let index {
+            base = String(format: NSLocalizedString("Switch to Space %d", comment: ""), index)
+        } else {
+            base = NSLocalizedString("More Spaces", comment: "")
+        }
+        guard let displayOrdinal else { return base }
+        return String(format: NSLocalizedString("%@ (Display %d)", comment: ""), base, displayOrdinal)
+    }
+
+    /// Recomputed from the recorded group order rather than stored per button, so it cannot outlive the row
+    /// it describes. Matches the rule used when building: an ordinal only means something with several groups.
+    private static func displayOrdinal(of groupUuid: String) -> Int? {
+        guard groupBoundsInButton.count > 1,
+              let index = groupBoundsInButton.firstIndex(where: { $0.0 as String == groupUuid }) else { return nil }
+        return index + 1
     }
 }
 
