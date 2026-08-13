@@ -53,7 +53,12 @@ enum PointerAccelerationMode: String, Codable {
     case disabled
     case custom
 
-    static let accelerationDisabledValue = -1.0
+    /// Acceleration off, as the HID system expresses it. This was `-1.0` while the module wrote
+    /// `com.apple.mouse.scaling`, where a negative value carried that meaning. `IOHIDSetAccelerationWithKey`
+    /// does not use that convention: measured on 2026-08-10, it clamps every negative input to `0` and still
+    /// reports `KERN_SUCCESS`. The read-back then disagreed with the write, so picking `Disabled` moved the
+    /// pointer and refused ownership in the same step — see V-10.
+    static let accelerationDisabledValue = 0.0
 
     func desiredValue(speed: Double) -> Double? {
         switch self {
