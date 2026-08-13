@@ -24,7 +24,7 @@
     "@commitlint/config-conventional": "^8.1.0",
     "@semantic-release/changelog": "^3.0.4",
     "@semantic-release/git": "^7.0.16",
-    "fontkit": "^1.8.0",
+    "fontkit": "^2.0.4",
     "glob": "^10.0.0",
     "husky": "^3.0.4",
     "lint-staged": "^13.0.0",
