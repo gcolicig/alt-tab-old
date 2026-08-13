@@ -734,7 +734,7 @@ Akzeptanzideen:
 
 ### 4. Pointer Acceleration und Speed
 
-Status: Schreibpfad am 2026-08-07 auf IOKit umgestellt; V-10 am Geraet offen
+Status: Schreibpfad am 2026-08-07 auf IOKit umgestellt; V-10 am 2026-08-10/13 am Geraet gefahren, Schritte 1-10 und 12 bestanden (zwei Defekte dabei gefunden und behoben), Schritt 8 faellt, Schritt 11 halb und 13 teilweise offen
 Prioritaet: Mittel bis hoch
 
 Beschreibung:
@@ -790,18 +790,46 @@ Umsetzungsstand 2026-07-31:
 - Geschwindigkeit wird als Rasterindex gespeichert, weil macOS selbst nur diskrete Stufen anbietet; der geschriebene Wert bleibt exakt.
 - Der Besitz-Zustandsautomat ist vollstaendig als reine Entscheidungslogik umgesetzt und mit 19 Tests abgedeckt: Erwerb, Read-back, Abbruch zwischen Write und Read-back, Fremdaenderung, `relinquished` ueber Neustart, Wiedererwerb mit neuer Baseline, Disable, Crash-Recovery in beide Richtungen.
 - Der Pfad, der das System tatsaechlich beschreibt, ist von keinem Test ausgefuehrt worden. V-10 ist damit die erste Ausfuehrung dieses Pfades; Checkliste in `docs/pointer-ownership-checklist.md`.
+- **Erledigt durch den IOKit-Umbau, hier nur noch zur Nachvollziehbarkeit.** Der folgende Befund betraf den `NSGlobalDomain`-Pfad; `IOHIDGetAccelerationWithKey` liefert immer einen Wert, ein fehlender Schluessel existiert dort nicht. Am 2026-08-10 bestaetigt: `defaults read -g com.apple.mouse.scaling` schlaegt fehl, waehrend das HID-System 0.6875 meldet und Schritt 1 der Checkliste sauber durchlaeuft. Die unten vorhergesagte Sofortprüfung ist damit gegenstandslos, und die Frage nach dem erfundenen Basiswert stellt sich nicht mehr.
 - **Befund vom 2026-08-07 aus statischer Analyse, vor V-10 und noch unbestaetigt am Geraet**: Auf einem Rechner, auf dem die Skalierungswerte noch nie gesetzt wurden, tut das Modul **gar nichts**, und es sagt es nicht. `PointerSystemSettings.read` liefert `nil`, wenn der Schluessel in `NSGlobalDomain` fehlt, und sowohl `PointerOwnership.acquire` als auch `update` brechen bei `nil` ueber ein `guard` sofort und stumm ab. Ein fehlender Schluessel ist kein Sonderfall, sondern der Normalzustand jedes Benutzers, der die Zeigergeschwindigkeit nie in den Systemeinstellungen veraendert hat — auf dem Arbeitsrechner vom 2026-08-07 fehlten beide.
 - Vorhersage, in Sekunden pruefbar: `Disabled` oder `Custom` waehlen aendert nichts, und die Anzeige bleibt auf `Not managed by AltTab+`. Trifft das zu, ist es der erste Schritt der Checkliste, der bereits scheitert.
 - Zu entscheiden ist dann, was richtig ist: einen fehlenden Wert als "Systemdefault" behandeln und beim Uebernehmen eine Basislinie erfinden, oder das Modul sichtbar als nicht anwendbar melden. Erfinden hat einen Haken, den `PointerSystemSettings` heute gar nicht ausdruecken kann: es kennt nur `read` und `write`, **kein Loeschen**. Ein Rechner ohne Schluessel liesse sich damit nie in seinen Ausgangszustand zuruecksetzen, weil die Rueckgabe zwangslaeufig einen Wert schreibt, den es vorher nicht gab. Das waere genau das destruktive Restore, das V-10 ausschliessen soll.
 - Nachgezogen 2026-08-03: Das Re-Apply nach Wake ist an `SleepWakeEvents` angebunden. Es war zuvor geschrieben, aber nirgends aufgerufen, und sah damit nach einer erfuellten Anforderung aus, ohne eine zu sein.
 - Nachgezogen 2026-08-03: Der Besitz-Text im Settings-Tab wird beim Oeffnen des Fensters aktualisiert. Zuvor wurde er einmal beim Aufbau ausgewertet und haette dauerhaft `Managed by AltTab+` behauptet, auch nachdem ein anderes Werkzeug den Wert uebernommen hat.
+- **Offen nach V-10, 2026-08-10**: Diese Nachbesserung reicht nicht. `PointerOwnership.state` liest nur den persistierten Record, nie das System — die Anzeige bleibt also auch nach dem Auffrischen veraltet, solange niemand den Record berichtigt. Am Geraet stand `Managed by AltTab+`, nachdem die Systemeinstellungen den Wert uebernommen hatten; erst die naechste Bedienung stellte es richtig. Wer die Reihe nur anschaut, bekommt eine falsche Aussage. Zu entscheiden: beim Oeffnen des Fensters zusaetzlich das System lesen und `detectForeignChange` anwenden, oder die Aussage abschwaechen.
+- **Offen nach V-10, 2026-08-10**: Beim Beenden wird die Basislinie nicht wiederhergestellt, auch nicht ueber den eigenen Quit-Knopf (Schritt 8). Der naechste Start holt es ueber `recoverAfterUncleanExit` nach, die Luecke ist also zeitlich und nicht dauerhaft — wer AltTab+ deinstalliert oder den Autostart abschaltet, behaelt den fremden Wert. `applicationWillTerminate` gibt den Besitz nicht frei.
+- **Offen nach V-10, 2026-08-10**: `reapplyAfterSystemEvent` haengt allein an der Wake-Benachrichtigung. Fuer An- und Abstecken von Geraeten gibt es keinen Beobachter. Schritt 12 besteht trotzdem, weil der Wert kategorieweit und nicht geraeteweit ist, sich beim Abstecken also nicht zuruecksetzt. Ein Handler ist damit nicht noetig; die Checkliste sollte das sagen, statt einen zu unterstellen.
 
 Exit-Kriterium:
 
 - Getrennte Werte fuer Mouse und Trackpad sind setzbar und restaurierbar, ohne Event-Tap, ohne private API und ohne zusaetzliche TCC-Berechtigung.
 - Aenderung ausserhalb von AltTab+ waehrend `managed` wird erkannt, als `relinquished` persistiert, nicht ueberschrieben und verhindert ein destruktives Restore.
 - Crash und `SIGKILL` waehrend `managed` restaurieren beim naechsten Start nur unter Gleichheit mit dem letzten AltTab+-Schreibwert.
+- **Kein Modus fordert einen Wert an, den das System nicht annehmen kann.** Was das Modul schreiben kann, muss es unveraendert zurueckleben koennen. Nachgetragen 2026-08-13: `Disabled` forderte `-1`, das HID-System klemmt jedes negative Eingabe auf `0` und meldet trotzdem Erfolg — der Rueckleseabgleich schlug fehl, nachdem der Schreibvorgang schon gewirkt hatte, und verwarf dabei die Basislinie. Die Bedingung stand als Kommentar im Code und wurde von ihm verletzt.
+- **Eine Geschwindigkeitsaenderung erwirbt niemals Besitz.** Nur die Modusauswahl ist eine bewusste Aktivierung. Nachgetragen 2026-08-13: der Regler lief ueber `apply`, das je Tick neu zwischen `update` und `acquire` entscheidet — ein einzelner Zug gab bei erkannter Fremdaenderung ab und uebernahm im naechsten Tick den fremden Wert als eigene Basislinie. Auch diese Regel stand nur im Kommentar.
 - Falls das nicht erreichbar ist: Teilmodul entfaellt; kein Event-Rewriting als Ersatz.
+
+### 4c. Spike: Zeigereinstellungen je Geraet
+
+Status: Neu aufgenommen 2026-08-13, ungemessen
+Prioritaet: Mittel
+
+Beschreibung:
+
+- Gewuenscht ist, an unterschiedlichen Arbeitsstationen unterschiedliche Maeuse mit je eigenen Werten zu benutzen, gespeichert und beim Anstecken automatisch angewandt.
+- **Der heutige Pfad kann das grundsaetzlich nicht.** Gemessen am 2026-08-13 (V-10, Schritt 12): `HIDMouseAcceleration` ist kategorieweit, nicht geraeteweit. Ab- und Anstecken des Empfaengers setzte den Wert nicht zurueck, weil er gar nicht am Geraet haengt. Schritt 12 besteht deshalb ohne Zutun von AltTab+ — und aus demselben Grund gibt es dort nichts, das man je Geraet unterscheiden koennte.
+- LinearMouse loest es offensichtlich anders: seine Konfiguration fuehrt `vendorID`, `productID` und `productName` je Schema. Der Weg dorthin ist von aussen belegt (`IOServiceOpen` plus `dlsym`, Logtexte `Update/Restore pointer acceleration for device`), **aber nicht selbst gemessen**.
+
+Exit-Kriterium:
+
+- Es ist belegt, ob geraeteweise adressierbare HID-Eigenschaften existieren, die Beschleunigung und Geschwindigkeit pro Maus setzen, zurueckleben und wiederherstellen koennen.
+- Gemessen wird mit zwei gleichzeitig angeschlossenen Zeigergeraeten und unterschiedlichen Werten; der Nachweis ist erst erbracht, wenn eine Aenderung am einen Geraet den Wert des anderen nachweislich nicht veraendert.
+- Falls es nur ueber Event-Rewriting geht: **Entscheidung des Nutzers einholen**, nicht selbst faellen. Story 4 schliesst Event-Rewriting aus; ob diese Bedingung fuer dieses Teilmodul gelockert wird, ist eine Produktentscheidung.
+- Faellt der Spike negativ aus und bleibt die Bedingung bestehen, entfaellt die Funktion, und der Grund wird sichtbar dokumentiert statt stillschweigend ausgelassen.
+
+Abhaengigkeit:
+
+- Erst nach diesem Spike ist zu entscheiden, ob das Ownership-Modell aus Story 4 je Geraet gefuehrt werden muss. Ein geraeteweiser Besitz mit Basislinie je Maus ist deutlich mehr Zustand als heute, und `SystemValueOwnership` ist auf genau einen Wert je Kategorie ausgelegt.
 
 ### 5. Window Snapping mit Drag-Overlay
 
@@ -870,7 +898,7 @@ Repo-Learnings:
 ### 6. Reverse Scrolling und Scroll Speed
 
 Status: Tap-basierter Folge-Spike
-Prioritaet: Niedriger als Pointer Accel/Speed
+Prioritaet: **2026-08-13 hochgestuft.** Der Nutzer nennt die getrennte Scrollrichtung als einzige Funktion aus LinearMouse, die im taeglichen Gebrauch wirklich fehlt. Damit steht sie ueber Pointer Accel/Speed, nicht darunter
 
 Beschreibung:
 
@@ -882,6 +910,8 @@ Zentrale Korrektur:
 - macOS kennt nur eine globale Natural-Scrolling-Praeferenz.
 - Getrennte Scrollrichtung fuer Maus und Trackpad ist nicht ueber Defaults oder IOKit erreichbar.
 - Kategorienunterscheidung ohne Device-Enumeration ueber `kCGScrollWheelEventIsContinuous` und Momentum-/Phase-Felder: kontinuierlich fuer Trackpad oder Magic Mouse, diskret fuer klassisches Rasterrad.
+- Nachgetragen 2026-08-13: **Diese Unterscheidung laeuft bereits im Produktivcode.** `ScrollwheelEvents` trennt ueber `scrollWheelEventIsContinuous` genau so, um im Switcher kontinuierliches Scrollen zu blockieren und diskretes durchzulassen. Der Tap auf `scrollWheel` existiert also schon, samt `disableForSafety` und `reEnableTapIfNeeded`; was fehlt, ist das Veraendern statt nur Durchlassen.
+- Nachgetragen 2026-08-13: Der Settings-Tab heisst bereits `Pointer & Scroll`, enthaelt aber ausschliesslich Beschleunigung und Geschwindigkeit. Der Name verspricht diese Story heute schon.
 
 MVP-Scope:
 
@@ -904,6 +934,42 @@ Korrigierte Akzeptanzidee:
 
 - Kein Event-Tap, solange keine tap-abhaengige Einstellung aktiv ist.
 - Sobald Reverse Scrolling oder Scroll Speed aktiv ist, darf ein permanenter, enger `scrollWheel`-Tap laufen.
+
+### 6b. Kleinkram mit klarem Nutzen
+
+Status: Aufgenommen 2026-08-13
+Prioritaet: Niedrig, aber billig
+
+**Settings-Bereiche umbenennen.** `Appearance` wird zu `Cmd-Tab`, `Controls` zu `Cmd-Tab Controls`. Grund: Beide Bereiche betreffen ausschliesslich den Fensterumschalter, waehrend der Rest der Seitenleiste (Spaces, Window Layouts, Hyperkey, Pointer & Scroll) laengst anderes abdeckt. Die heutigen Namen lesen sich, als gaelten sie fuer die ganze App.
+
+- Betrifft nur die `title`-Zeichenketten in `SettingsWindow.sectionDefinitions()`, nicht die `id`-Werte. Die IDs (`appearance`, `controls`) sind reine In-Memory-Auswahl und werden nirgends persistiert — sie bleiben unveraendert, damit die Umbenennung keinen Zustand bricht.
+- Beide Titel sind `NSLocalizedString`. Nach der Aenderung sind die l10n-Dateien neu zu erzeugen, sonst faellt der Generat-Check in CI.
+- Zu pruefen: die Suchfunktion der Settings indexiert Titel; nach der Umbenennung soll `Appearance` weiterhin auffindbar sein oder die Umbenennung bewusst auch die Suche aendern.
+
+**Modifier-Auswahl fuer Move und Resize erweitern und neu ordnen.** Beide Dropdowns (`Move the window under the cursor while holding`, `Resize the window under the cursor while holding`) speisen sich aus `DragModifierPreference.selectable` und bieten heute `disabled`, `Command+Shift`, `fn`, `Command+Control`. Gewuenscht sind zusaetzliche Kombinationen und diese Reihenfolge: `Command+Control`, `Command+Option`, `fn`, `Command+Shift`, `Option+Shift`.
+
+- **Die gespeicherte Praeferenz ist ein Index in genau dieses Array.** `Preferences.macroPref` liest den Wert ueber `macroPreferences[safe: Int(s)]`. Der Kommentar an `selectable` sagt es ausdruecklich: `commandControl` wurde ans Ende angehaengt, damit die gespeicherten Indexe der bestehenden Eintraege stabil bleiben. Eine Umsortierung aendert deshalb **stillschweigend die Bedeutung bestehender Einstellungen** — wer heute `Command+Shift` fahrt (Index 1), bekaeme nach der Umsortierung `Command+Option`.
+- Daraus folgt: Umsortieren nur zusammen mit einer Migration. `PreferencesMigrations` hat dafuer das Muster, unter anderem `migrateShortcutIndexes` und `migrateGestures`. Ohne Migration ist die Umsortierung ein Datenfehler, kein Darstellungsdetail.
+- Zu bedenken bei `Command+Control` an erster Stelle: Diese Kombination ist die einzige mit `requiresWindowDragOnGestureDisabled`. Sie verschluckt den primaeren Mausklick, den macOS sonst als Sekundaerklick ausliefert, und funktioniert erst, wenn die systemweite Drag-on-Gesture-Einstellung aus ist — die AltTab+ ueber `WindowDragGestureOwnership` besitzen und zurueckgeben muss. Als erster Eintrag der Liste wirkt sie wie die naheliegende Wahl, hat aber die groessten Nebenbedingungen.
+- `matches` prueft exakt gegen `[.command, .shift, .control, .option, .function]`, damit ein versehentlich gehaltener Modifier keine Aktion ausloest. Neue Kombinationen brauchen nur einen Fall in `requiredFlags`; die Pruefung selbst bleibt unveraendert.
+- **Offen und vor der Umsetzung zu klaeren**: Die Anforderung nennt `Control+Option` als hinzuzufuegende Kombination, die gewuenschte Reihenfolge listet sie aber nicht auf, dafuer `Command+Option` und `Option+Shift`. Entweder fehlt `Control+Option` in der Reihenfolge, oder es war `Command+Option` gemeint. Die Endmenge ist damit fuenf oder sechs Eintraege — zu entscheiden, bevor die Migration geschrieben wird, weil sie die Zielindexe festlegt.
+
+**Ausnahmeliste fuer Move und Resize.** Beide Module sollen je App abschaltbar sein, ausgewaehlt aus den installierten oder laufenden Apps, fuer den Fall dass die Funktion mit der App kollidiert — etwa weil diese die Modifier-Kombination selbst belegt oder eigenes Fenster-Handling mitbringt.
+
+- **Vorhandenes nutzen, nichts Neues bauen.** Der Bereich `Exceptions` hat die Oberflaeche bereits vollstaendig: Tabelle je App, `Add a running app`, `Add an app from disk`, Entfernen-Knopf, Spalten als Dropdowns. Ein zweites Auswahlfenster nur fuer den Drag waere doppelte Bedienlogik fuer dieselbe Sache.
+- Das Datenmodell traegt es ebenfalls schon: `ExceptionEntry` hat `bundleIdentifier`, `hide`, `ignore` und `windowTitleContains`. Es kaeme eine Spalte hinzu, etwa `windowDrag` mit `none` und `excluded`.
+- **Fallstrick beim Persistieren.** `exceptions` wird als JSON ueber `CachedUserDefaults.json` gelesen. Ein neues, nicht-optionales Feld ohne Vorgabewert laesst das Dekodieren **bestehender** Eintraege fehlschlagen — und damit die gesamte Ausnahmeliste des Nutzers verschwinden. Das Feld muss optional sein oder einen Vorgabewert mitbringen, und der Fall gehoert getestet, bevor die Spalte kommt.
+- **Der Pruefpunkt existiert bereits.** `WindowDragEvents.resolveOnQueue` ermittelt ohnehin `windowBundleId` ueber `NSRunningApplication(processIdentifier:)`, bevor die Sitzung laeuft. Die Ausnahme wird dort geprueft, nicht im Event-Tap-Callback — Q-02 und Q-16 verlangen genau das, und es ist keine zusaetzliche Ermittlung noetig.
+- Zu entscheiden: eine gemeinsame Ausnahme fuer Move und Resize oder zwei getrennte. Getrennt ist ehrlicher, weil die Kollisionen verschieden sein koennen; eine Spalte ist weniger Bedienlast. Vorschlag: eine Spalte, solange kein Fall auftaucht, der die Trennung braucht.
+- Sichtbarkeit: Wird ein Drag wegen der Ausnahme nicht bewaffnet, darf das nicht stumm geschehen. Dieselbe Klasse von Fehler wie die vierzehn abgelehnten Klicks in der Spaces-Reihe (2C) — eine Verweigerung ohne Rueckmeldung liest sich als Defekt.
+
+**Creator's Settings: Spaces in der Menueleiste** — bereits erledigt, hier nur zur Aktenlage. `CreatorSettings.values` setzt `spacesInMenubarShown` auf `true`, und die Zusammenfassung nennt es. Kein Handlungsbedarf.
+
+**Creator's Settings: HyperKey einschalten — Entscheidung noetig, keine Aufgabe.** Der Wunsch steht gegen **Q-08**: importierte oder uebernommene Settings aktivieren nie automatisch Input- oder AX-Module. `hyperKeyEnabled` steht deshalb in `CreatorSettings.excludedInputModuleKeys`, und der Ausschluss wird beim Anwenden technisch erzwungen, damit ein spaeterer Eintrag in `values` nicht stillschweigend einen Tap scharf schaltet.
+
+- Argument dafuer: Das Anwenden der Creator's Settings ist selbst eine bewusste Handlung, und der Dialog zeigt vorher eine Zusammenfassung. Wer sie liest und bestaetigt, hat entschieden.
+- Argument dagegen: Q-08 ist absolut formuliert und deckt genau diesen Fall ab. Hyperkey belegt Caps Lock systemweit ueber einen Event-Tap; das ist der eingriffsstaerkste Schalter der App. Eine Ausnahme fuer den einen Schalter hoehlt die Regel fuer alle aus.
+- Falls dafuer entschieden wird: Q-08 ist zu aendern, nicht zu umgehen, und die Zusammenfassung im Dialog muss den Eingriff ausdruecklich benennen statt ihn unter `Assigns the Hyper presets` mitlaufen zu lassen — das klingt heute nach Tastenkuerzeln, nicht nach einer Caps-Lock-Umbelegung.
 
 ### 7. Trackpad-Gesten fuer Middle Click
 
@@ -934,6 +1000,44 @@ Nicht im MVP:
 - Drei-Finger-Drag.
 - App-spezifische Ausnahmen.
 - Default-Aktivierung ohne Helper-Prozess.
+
+### 8. FlickRing: Aktionsring an der Maus
+
+Status: Aufgenommen 2026-08-13. Der Trigger war bisher nur als Stichwort im Aktionskern und in Q-16 vermerkt; hier steht erstmals der Umfang
+Prioritaet: Nach Aktionskern und Move/Resize
+
+Vorlage: `mikker/FlickRing`, MIT-Lizenz. Gelesen wurde die Quelle, nicht nur die Beschreibung; die Angaben unten stammen aus `MouseListener.swift`, `Controller.swift` und `Defaults.swift`.
+
+Beschreibung:
+
+- Eine zusaetzliche Maustaste oeffnet unter dem Cursor einen Ring mit vier Richtungen. Die Richtung wird durch Ziehen gewaehlt, die Aktion beim **Loslassen** ausgefuehrt.
+- Vorlage im Original: Trigger ueber `otherMouseDown` und `otherMouseUp` auf einer konfigurierbaren Taste, Vorgabe Button 2 (Mitte). Richtungsbestimmung ueber `atan2` in Quadranten, Totbereich bei einer Cursordistanz von 5 pt — darunter wird keine Richtung gewaehlt und nichts ausgefuehrt.
+
+Zentrale Abweichung von der Vorlage:
+
+- **Der Ring loest Aktionen aus dem gemeinsamen Register aus, nicht eigene.** Das Original kennt `Send Key`, `Mouse Button`, `Open URL`, `Scroll Up` und `Scroll Down` — es muss Tastendruecke synthetisieren, weil es keine eigenen Faehigkeiten hat. AltTab+ hat sie: Space n, Space links und rechts, Fensterlayouts, Switcher. Der Ring wird damit ein weiterer Trigger neben Shortcut, Hyper und Leader und keine zweite Aktionswelt. Das ist bereits so festgelegt (`Aktionsoberflaechen`), hier nur zur Klarheit.
+- `Send Key` und `Open URL` fallen damit im MVP weg. Sie sind Ersatz fuer fehlende Faehigkeiten, nicht fuer sich wertvoll, und ein Tastendruck-Synthesizer ist ein eigener Eingriff in den Eingabepfad.
+
+Zu klaeren vor der Umsetzung:
+
+- **Welche Taste.** Die Vorgabe der Vorlage ist die mittlere. Story 7 synthetisiert Mittelklicks aus Drei-Finger-Gesten — beide auf derselben Taste ergaeben einen Ring, der bei jeder Drei-Finger-Geste aufgeht. Entweder eine Seitentaste als Vorgabe, oder die beiden Module schliessen einander aus, und die Settings sagen es.
+- **Durchreichen eines echten Mittelklicks.** Reserviert der Ring die Taste vollstaendig, verliert der Nutzer den Mittelklick in allen Apps — in Browsern schmerzhaft. Ein Durchreichen bei zu kurzem Druck oder innerhalb des Totbereichs braucht markierte, rekursionssichere Wiedergabe des Ereignisses. Bereits als Folgeumfang vermerkt; die Frage ist, ob das MVP ohne diese Faehigkeit ueberhaupt brauchbar ist.
+- **Scroll-Aktionen.** Die Vorlage haelt beim Loslassen einen Timer, der proportional zur Cursordistanz weiterscrollt. Das ueberschneidet sich mit Story 6, die einen eigenen `scrollWheel`-Tap bekommt. Falls beide gewollt sind, gehoert die Scroll-Erzeugung dorthin und nicht in den Ring.
+
+Abgrenzungen und geltende Regeln:
+
+- Q-16 gilt unveraendert: Der Tap ermittelt Taste und Richtung, die Aktion laeuft ausserhalb des Callbacks.
+- Q-01: Der Panic-Kill-Switch schliesst den Ring und gibt die Taste frei.
+- Berechtigung: Input Monitoring fuer den Tap; das Zeichnen des Rings braucht keine.
+- Die Oberflaeche der Vorlage ist SwiftUI. Wie bei Leader wird sie nicht uebernommen — kompakte AppKit-Darstellung, passend zum Rest der App.
+
+Exit-Kriterium:
+
+- Ring erscheint unter dem Cursor, vier Richtungen sind erkennbar, die gewaehlte ist hervorgehoben.
+- Innerhalb des Totbereichs geschieht nichts, und das ist sichtbar, statt wie ein verschluckter Klick zu wirken.
+- Jede Richtung ist frei mit einer Aktion aus dem Register belegbar, einschliesslich leer.
+- Bei ausgeschaltetem Modul existiert kein Tap.
+- Ein Druck loest hoechstens eine Aktion aus; Loslassen ausserhalb des Rings bricht folgenlos ab.
 
 ## Settings-Modell
 
@@ -1031,7 +1135,7 @@ Energiepruefung:
 |---|---|---|
 | S-01 | AX-Fensteroperations-Kern | Identifikationskette liefert in 20 von 20 manuellen Faellen ueber alle Klassen der Kompatibilitaetsmatrix das korrekte Fenster oder verweigert bewusst |
 | S-02 | AX-Latenz bei Drag | Move und Resize bei 30 bis 60 Hz Coalescing ohne sichtbaren Lag in AppKit-Apps; dokumentiertes Verhalten fuer Chromium, Electron, AWT, Terminal |
-| S-03 | Pointer Accel/Speed via IOKit | Getrennte Werte fuer Mouse und Trackpad setzbar und restaurierbar, ohne Event-Tap, private API oder zusaetzliche TCC-Berechtigung; Aenderung ausserhalb von AltTab+ persistiert `relinquished`; Crash-/Kill-Recovery restauriert nur unter Gleichheitspruefung — **2026-08-07 wieder geoeffnet**: die Umstellung auf `NSGlobalDomain` war ein Fehlschluss aus einer rein lesenden Verifikation. Gemessen wirkt `CFPreferences` nicht auf den effektiven Wert, `IOHIDSetAccelerationWithKey` dagegen sofort. Die urspruengliche Praemisse dieses Spikes war richtig |
+| S-03 | Pointer Accel/Speed via IOKit | Getrennte Werte fuer Mouse und Trackpad setzbar und restaurierbar, ohne Event-Tap, private API oder zusaetzliche TCC-Berechtigung; Aenderung ausserhalb von AltTab+ persistiert `relinquished`; Crash-/Kill-Recovery restauriert nur unter Gleichheitspruefung — **2026-08-07 wieder geoeffnet**: die Umstellung auf `NSGlobalDomain` war ein Fehlschluss aus einer rein lesenden Verifikation. Gemessen wirkt `CFPreferences` nicht auf den effektiven Wert, `IOHIDSetAccelerationWithKey` dagegen sofort. Die urspruengliche Praemisse dieses Spikes war richtig. **2026-08-13 im Kern bestanden**: getrennte Werte fuer beide Kategorien sind setzbar und restaurierbar, eine Aenderung von aussen persistiert `relinquished`, und die Kill-Recovery restauriert nur unter Gleichheitspruefung — steht dort ein fremder Wert, wird nichts angetastet. Kein destruktives Restore beobachtet, nachdem die beiden in V-10 gefundenen Defekte behoben waren. Restpunkte sind unter V-10 verzeichnet und betreffen die Wiederherstellung beim Beenden sowie zwei nicht ausfuehrbare Teilpruefungen, nicht die Kernzusicherung |
 | S-04 | Tahoe-Tiling-Feature-Matrix | Auf macOS Tahoe / Apple Silicon dokumentierte Liste nativ vorhandener Drag- und Shortcut-Aktionen |
 | S-05 | Scroll-Tap Kosten | Tap-Recovery nachgewiesen; feste Scrollmessung bleibt innerhalb des unter Energiepruefung dokumentierten Budgets |
 | S-06 | Instant Spaces | Links/rechts und direkter Index wechseln auf verifiziertem Tahoe ohne sichtbare Animation; Display-Ziel, Randblockierung und Ist-Zustand konvergieren bei schnellen Folgen; fehlende Symbole oder unbekannte Version deaktivieren nur das Modul |
@@ -1040,7 +1144,7 @@ Energiepruefung:
 | S-08 | Stabile Space-Identitaet | **Bestanden 2026-08-03** auf macOS 26.5.1 (Build 25F80). Drei Spaces ueberlebten einen Neustart mit unveraenderter UUID, waehrend zwei ihre `id64` wechselten (31→7, 33→6). Reorder, Create, Delete, Fullscreen und natives Wechseln liessen die UUIDs ebenfalls unveraendert. Aliase und Profil-Bindings duerfen auf die UUID zeigen, niemals auf `id64` oder den Index. Nicht geprueft: Umschalten von `Displays haben separate Spaces` und Display-Wechsel, beides mangels zweitem Display |
 | S-10 | Synchroner Mehrdisplay-Space-Wechsel | Cursor-Warp plus Swipe schaltet alle Displays in einer Aktion auf denselben Index, ohne haengenden Cursor und ohne Mission-Control-Stoerung; andernfalls bleibt das a-Modell aus 2F deaktiviert |
 | S-11 | Programmatisches Anlegen/Loeschen von Spaces | `CGSSpaceCreate`/`CGSSpaceDestroy` optional gebunden; Anlegen und Loeschen wirkt korrekt, Dock und Mission Control bleiben konsistent, Symbolwegfall degradiert nur dieses Feature |
-| S-12 | Zeigerwerte ueber die Anmeldung hinaus | Ein per `IOHIDSetAccelerationWithKey` gesetzter Wert ueberlebt Ab- und Anmeldung; andernfalls ist zusaetzlich die Praeferenz in `NSGlobalDomain` zu schreiben, wie es die Systemeinstellungen vermutlich tun. Gemessen wird am effektiven Wert aus `IOHIDGetAccelerationWithKey`, nicht an der zurueckgelesenen Praeferenz — genau diese Verwechslung ist die Ursache des Defekts in Story 4. Scharf gestellt 2026-08-07: Maus auf 0.875 statt 0.6875. **Fehlgeschlagen 2026-08-10**: der Wert ueberlebt weder Neustart noch Sitzung. Nach dem Neustart standen Maus und Trackpad wieder auf 0.687500, gelesen ueber ein rein lesendes Werkzeug (`IOHIDGetAccelerationWithKey`); die Praeferenz `com.apple.mouse.scaling` existiert in `NSGlobalDomain` weiterhin gar nicht. Zusaetzlich fiel der Wert schon **vor** dem Neustart auf 0.6875 zurueck, nach rund 19 Stunden mit mehreren Sleep/Wake-Zyklen — ein Neustart ist also nicht einmal noetig, um die Wirkung zu verlieren. Folge: `PointerSystemSettings` muss den Wert nach dem Start und nach dem Aufwachen erneut anlegen, oder die Uebernahme gilt nur fuer die laufende Sitzung und muss das auch so anzeigen. Die Praeferenz zusaetzlich zu schreiben ist **nicht** der Schluss daraus: dass sie fehlt, hat den effektiven Wert nicht daran gehindert, gesetzt zu sein |
+| S-12 | Zeigerwerte ueber die Anmeldung hinaus | **Fehlgeschlagen, 2026-08-10 und 2026-08-13.** Der Wert ueberlebt weder Neustart noch Sitzung. Nach dem Neustart standen Maus und Trackpad wieder auf 0.6875, gelesen ueber ein rein lesendes Werkzeug (`IOHIDGetAccelerationWithKey`). Entscheidend ist der zweite Teil: der Wert fiel schon **vor** dem Neustart zurueck, nach rund 19 Stunden mit mehreren Sleep/Wake-Zyklen — ein Ab- und Anmelden ist also nicht einmal noetig, um die Wirkung zu verlieren, und die Anmeldung allein erklaert den Verlust nicht. Der Unterschied zu den Systemeinstellungen ist gemessen und nicht erschlossen: die schreiben beim Reglerzug **beides**, `com.apple.mouse.scaling` *und* den HID-Wert, waehrend AltTab+ nur den HID-Wert schreibt — waehrend AltTab+ 3.0 hielt, existierte die Praeferenz gar nicht. Vorbehalt zum Neustart-Teil: dabei hing eine andere Maus am Rechner. Folge: `PointerSystemSettings` muss den Wert nach dem Start und nach dem Aufwachen erneut anlegen, oder die Uebernahme gilt nur fuer die laufende Sitzung und muss das auch so anzeigen. Die Praeferenz zusaetzlich zu schreiben ist **nicht** der Schluss daraus: dass sie fehlt, hat den effektiven Wert nicht daran gehindert, gesetzt zu sein |
 
 ## Umsetzungsreihenfolge
 
@@ -1112,7 +1216,7 @@ Default-Settings, Reset-Verhalten und Migration werden nach jedem neuen Modul ge
 | V-07 | Distribution | Signing, Notarisierung, Vertriebskanal und Update-Strategie vor erster oeffentlicher Version abschliessen; Sparkle bleibt optional |
 | V-08 | Safe Start und Circuit Breaker | Vor dem ersten ausgelieferten Input-Modul mit Login-Start, verbliebenem Arming-Marker und wiederholtem Tap-Timeout pruefen |
 | V-09 | Berechtigungsentzug | Accessibility und Input Monitoring getrennt bei Start, Aktivierung, Wake und Laufzeit pruefen |
-| V-10 | Pointer State Ownership | Aenderung durch Systemeinstellungen oder paralleles Maus-Tool, persistiertes `relinquished`, erneute Besitzuebernahme, Disable, saubere Terminierung, Crash, `SIGKILL`, Wake und Device-Reconnect ohne Rueckschreibschleife oder destruktives Restore pruefen — **Checkliste vor der Ausfuehrung neu schreiben**: `docs/pointer-ownership-checklist.md` prueft heute mit `defaults read -g`, also die Praeferenz. Nach dem Umbau auf IOKit ist das die falsche Groesse; Erfolg wird am effektiven Wert gemessen. Die Checkliste in ihrer jetzigen Form wuerde einen wirkungslosen Schreibvorgang als bestanden ausweisen |
+| V-10 | Pointer State Ownership | **Gefahren am 2026-08-10 und 2026-08-13**, Ergebnistabelle in `docs/pointer-ownership-checklist.md`. Schritte 1-7, 9, 10 und 12 bestanden; 9 und 10 sind das Paar, das ueber destruktives Restore entscheidet. Zwei Defekte dabei gefunden und behoben: der `Disabled`-Sentinel `-1` wird vom HID-System auf `0` geklemmt und liess Schritt 2 die Basislinie verwerfen, und der Geschwindigkeitsregler erwarb den Besitz waehrend eines Zuges neu und uebernahm dabei den Wert eines fremden Besitzers. **Schritt 8 faellt**: beim Beenden wird nichts wiederhergestellt, erst der naechste Start holt es nach. **Offen**: die negative Haelfte von Schritt 11 (der Testlauf schlief nicht ein, `pmset sleepnow` meldete Erfolg ohne Uebergang im Power-Log — Ruhezustand aus dem Apple-Menue ausloesen), und der aktive Teil von Schritt 13 (LinearMouse wendet ein untergeschobenes Konfigurationsschema nicht an, seine Menueleisten-Oberflaeche ist nicht fernsteuerbar) |
 | V-11 | Display-Topologien | Snapping-Checkliste ueber definierte Topologien, Separate-Spaces-Zustaende und dynamische Reconfiguration ausfuehren |
 | V-12 | Instant Spaces | Tahoe-Build, Separate Spaces ein/aus, Cursor-Display, Fullscreen-Space, Stage Manager, Mission Control/App Expose, Randwechsel und schnelle direkte Mehrfachwechsel pruefen |
 | V-13 | `Command+Control`-Move | `NSWindowShouldDragOnGesture` vor Aktivierung lesen, auf `false` setzen und verifizieren; Disable, externe Aenderung, Crash und Recovery ohne destruktives Restore pruefen |
