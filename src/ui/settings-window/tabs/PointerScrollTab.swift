@@ -6,8 +6,13 @@ class PointerScrollTab {
     /// "Managed by AltTab+" indefinitely, the same silent lie safe mode used to tell about the drag module.
     private static var ownershipLabels = [PointerCategory: NSTextField]()
 
+    /// The record is checked against the system first: the label is only as truthful as what it reads, and
+    /// `PointerOwnership.state` reads the record alone.
     static func refreshControlsFromPreferences() {
-        PointerCategory.allCases.forEach { ownershipLabels[$0]?.stringValue = ownershipDescription($0) }
+        PointerCategory.allCases.forEach {
+            PointerOwnership.reconcileWithSystem($0)
+            ownershipLabels[$0]?.stringValue = ownershipDescription($0)
+        }
     }
 
     static func initTab() -> NSView {
