@@ -5,13 +5,21 @@ values at all. Pointer speed and acceleration are system-wide state shared with 
 tools like LinearMouse, Logi Options or Mac Mouse Fix, so the failure that matters is not a wrong value but
 a value AltTab+ writes back over somebody else's, or destroys on restore.
 
-The values live in `NSGlobalDomain` as `com.apple.mouse.scaling` and `com.apple.trackpad.scaling`, verified
-present on macOS 26.5.1 (build 25F80). A negative value means acceleration off; a positive one is the speed.
+The effective values live in the HID system as `HIDMouseAcceleration` and `HIDTrackpadAcceleration`, and
+that is where AltTab+ reads and writes them since the 2026-08-09 rework. A negative value means
+acceleration off; a positive one is the speed.
+
+**Do not read them with `defaults read -g com.apple.mouse.scaling`.** The preference and the effective
+value can diverge — writing the preference while the pointer stays untouched is exactly the failure that
+forced the rework — and on a machine where System Settings never wrote the pair, the preference does not
+exist at all (measured 2026-08-10: `defaults read` errors while the HID system reports a value).
 
 Read the current values at any point with:
 
-    defaults read -g com.apple.mouse.scaling
-    defaults read -g com.apple.trackpad.scaling
+    swift scripts/utils/read_pointer_acceleration.swift
+
+The script queries the HID system in its own process, so it stays independent of the app under test: the
+app once judged its own success by reading back what it had just written, which always succeeds.
 
 Note the values before you start. Every step below is per category, so run it once for Mouse and once for
 Trackpad.
@@ -51,9 +59,9 @@ To simulate the unclean exit:
 - **All steps pass**: S-03 passes. Pointer ownership may ship.
 - **Any restore overwrites a foreign value**: S-03 fails. The sub-module does not ship; per the backlog no
   event-rewriting substitute is allowed.
-- **The written value has no effect until logout**: the value is settable and restorable, which is what the
-  exit criterion asks, but record it — a setting that only takes effect after a logout needs to say so in
-  the UI rather than look broken.
+- **The written value moves the pointer immediately** — that is what the HID path was chosen for, and the
+  read-back in step 2 confirms it. What this checklist does **not** decide is whether the value survives a
+  logout; that is tracked separately as S-12 and needs its own before/after measurement around a logout.
 
 ## Decision
 
