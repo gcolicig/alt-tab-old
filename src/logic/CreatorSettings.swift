@@ -18,22 +18,25 @@ enum CreatorSettings {
         ("hideStatusIcons", "true"),
         ("windowDisplayDelay", "0"),
         ("previewFadeInAnimation", "false"),
-        // the one input module this set is allowed to arm; see the Q-08 carve-out below
+        // input modules this set is allowed to arm; see the Q-08 carve-out below.
+        // The modifier indexes point into `DragModifierPreference.selectable`: 1 = Command+Control, 2 = Command+Option.
         ("hyperKeyEnabled", "true"),
+        ("windowDragModifier", "1"),
+        ("windowResizeModifier", "2"),
     ]
 
     private static let presets = [ShortcutPresets.hyperSpaces, ShortcutPresets.hyperLayouts]
 
-    /// Q-08: an applied set never arms an input module. The author runs the modifier move on `Command+Shift`,
-    /// but a preset that switches on a tap consuming mouse clicks — without the user having decided to — is
-    /// exactly what that rule exists to prevent. It stays out, and the dialog says so.
+    /// Q-08: an applied set never arms an input module. The named exceptions, decided on 2026-08-14, are
+    /// `hyperKeyEnabled` (what makes the two shortcut presets usable at all) and the two drag modifiers
+    /// (`Command+Control` move, `Command+Option` resize): applying the set is itself a deliberate act behind
+    /// a summary the user confirms. The rule was amended rather than sidestepped — Q-08 carries the
+    /// carve-out — and the summary names each armed module in its own sentence, because "assigns the Hyper
+    /// presets" reads as key bindings, not as taking over a key or consuming mouse clicks.
     ///
-    /// `hyperKeyEnabled` is the one named exception, decided on 2026-08-14: Hyperkey is what makes the two
-    /// shortcut presets in this set usable at all, and applying the set is itself a deliberate act behind a
-    /// summary the user confirms. The rule was amended rather than sidestepped — Q-08 now carries the
-    /// carve-out — and the summary names the Caps Lock remapping in its own sentence, because "assigns the
-    /// Hyper presets" reads as key bindings, not as taking over a key.
-    private static let excludedInputModuleKeys: Set<String> = ["windowDragModifier", "nextWindowGesture"]
+    /// `Command+Control` additionally needs the global drag-on-gesture switch off; the launch path acquires
+    /// and verifies that ownership like any deliberate activation, and refuses the modifier if it cannot.
+    private static let excludedInputModuleKeys: Set<String> = ["nextWindowGesture"]
 
     /// Enforced rather than merely intended: a later edit that adds an input-module key to `values` is
     /// dropped here instead of quietly arming a tap on somebody else's machine.
@@ -49,8 +52,9 @@ enum CreatorSettings {
          NSLocalizedString("Opens the switcher without delay and without the preview fade.", comment: ""),
          NSLocalizedString("Shows Spaces next to the menu bar icon.", comment: ""),
          NSLocalizedString("Assigns the Hyper presets for Spaces and Window Layouts.", comment: ""),
-         // named on its own line: this is the one input module the set arms, and it takes over a physical key
-         NSLocalizedString("Turns on Hyperkey, which remaps Caps Lock system-wide. You can turn it off again under Hyperkey.", comment: "")]
+         // each armed input module is named in its own sentence, as the Q-08 carve-out requires
+         NSLocalizedString("Turns on Hyperkey, which remaps Caps Lock system-wide. You can turn it off again under Hyperkey.", comment: ""),
+         NSLocalizedString("Turns on moving windows with Command-Control and resizing with Command-Option held. Command-Control also turns off the macOS drag-on-gesture setting while assigned. Both can be turned off again under Window Layouts.", comment: "")]
             .joined(separator: "\n")
     }
 }
