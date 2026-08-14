@@ -17,6 +17,7 @@ class DebugWindow: NSPanel {
     private var filterWindowDiscriminator = false
     private var inspectButton: NSButton!
     private var dumpMenuShortcutsButton: NSButton!
+    private var spikeRow: NSStackView!
     private var inspectColumns: NSStackView!
     private var inspectAppField: NSTextField!
     private var inspectCgField: NSTextField!
@@ -102,6 +103,26 @@ class DebugWindow: NSPanel {
         dumpMenuShortcutsButton.translatesAutoresizingMaskIntoConstraints = false
         dumpMenuShortcutsButton.bezelStyle = .rounded
         dumpMenuShortcutsButton.onAction = { _ in Self.dumpFrontmostMenuShortcuts() }
+        // TEMPORARY SPIKE controls — Spaces plan, Stufe 1. Delete with the spike code in InstantSpaces.
+        let spikeVariants = NSPopUpButton(frame: .zero, pullsDown: false)
+        spikeVariants.translatesAutoresizingMaskIntoConstraints = false
+        InstantSpaces.RemoteSpikeVariant.allCases.forEach { spikeVariants.addItem(withTitle: $0.rawValue) }
+        let spikeRun = { (direction: SpaceSwitchDirection) in
+            let variant = InstantSpaces.RemoteSpikeVariant.allCases[spikeVariants.indexOfSelectedItem]
+            InstantSpaces.remoteSpike(direction, variant)
+        }
+        let spikeLeft = NSButton(title: "Spike ← other display", target: nil, action: nil)
+        spikeLeft.translatesAutoresizingMaskIntoConstraints = false
+        spikeLeft.bezelStyle = .rounded
+        spikeLeft.onAction = { _ in spikeRun(.left) }
+        let spikeRight = NSButton(title: "Spike → other display", target: nil, action: nil)
+        spikeRight.translatesAutoresizingMaskIntoConstraints = false
+        spikeRight.bezelStyle = .rounded
+        spikeRight.onAction = { _ in spikeRun(.right) }
+        spikeRow = NSStackView(views: [spikeVariants, spikeLeft, spikeRight])
+        spikeRow.translatesAutoresizingMaskIntoConstraints = false
+        spikeRow.orientation = .horizontal
+        spikeRow.spacing = 8
         inspectAppField = Self.makeInspectColumn("App", ["Name", "BundleID", "PID"])
         inspectCgField = Self.makeInspectColumn("Window (CG API)", ["Title", "WID", "Level (kCGWindowLayer)", "Level (CGSGetWindowLevel)", "Size", "Position", "Alpha", "IsOnScreen"])
         inspectAxField = Self.makeInspectColumn("Window (AX API)", ["Title", "Role", "Subrole", "Minimized", "Fullscreen", "Size", "Position"])
@@ -162,12 +183,15 @@ class DebugWindow: NSPanel {
         inspectBox.contentView = NSView()
         inspectBox.contentView!.addSubview(inspectButton)
         inspectBox.contentView!.addSubview(dumpMenuShortcutsButton)
+        inspectBox.contentView!.addSubview(spikeRow)
         inspectBox.contentView!.addSubview(inspectColumns)
         NSLayoutConstraint.activate([
             inspectButton.topAnchor.constraint(equalTo: inspectBox.contentView!.topAnchor, constant: 4),
             inspectButton.leadingAnchor.constraint(equalTo: inspectBox.contentView!.leadingAnchor, constant: 4),
             dumpMenuShortcutsButton.centerYAnchor.constraint(equalTo: inspectButton.centerYAnchor),
             dumpMenuShortcutsButton.leadingAnchor.constraint(equalTo: inspectButton.trailingAnchor, constant: 8),
+            spikeRow.centerYAnchor.constraint(equalTo: inspectButton.centerYAnchor),
+            spikeRow.leadingAnchor.constraint(equalTo: dumpMenuShortcutsButton.trailingAnchor, constant: 16),
             inspectColumns.topAnchor.constraint(equalTo: inspectButton.bottomAnchor, constant: 8),
             inspectColumns.leadingAnchor.constraint(equalTo: inspectBox.contentView!.leadingAnchor, constant: 4),
             inspectColumns.trailingAnchor.constraint(equalTo: inspectBox.contentView!.trailingAnchor, constant: -4),

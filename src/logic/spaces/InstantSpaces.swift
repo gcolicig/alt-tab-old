@@ -263,6 +263,116 @@ enum InstantSpaces {
         post(.began, direction) && post(.changed, direction) && post(.ended, direction)
     }
 
+    // ─── TEMPORARY SPIKE — Spaces plan, Stufe 1. Delete after the measurement; do not build on this. ───
+    // Question under measurement: can the synthetic swipe address a display the cursor is not on?
+    // V3 re-checks the 2026-08-06 claim that `event.location` is ignored; V0/V1/V2 measure the warp route.
+
+    enum RemoteSpikeVariant: String, CaseIterable {
+        case v3Location = "V3 event.location"
+        case v0Warp = "V0 warp, no delay"
+        case v1Warp20 = "V1 warp, 20 ms"
+        case v1Warp50 = "V1 warp, 50 ms"
+        case v1Warp100 = "V1 warp, 100 ms"
+        case v2WarpNoSuppression = "V2 warp, suppression 0"
+    }
+
+    static func remoteSpike(_ direction: SpaceSwitchDirection, _ variant: RemoteSpikeVariant) {
+        DispatchQueue.main.async {
+            Spaces.refresh()
+            guard let cursorScreen = NSScreen.withMouse(), let cursorUuid = cursorScreen.cachedUuid() else {
+                Logger.error { "spike: no cursor display" }
+                return
+            }
+            guard let target = NSScreen.screens.first(where: { $0.cachedUuid() != nil && $0.cachedUuid() != cursorUuid }),
+                  let targetNumber = target.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID else {
+                Logger.error { "spike: needs a second display" }
+                return
+            }
+            let targetCenter = CGPoint(x: CGDisplayBounds(targetNumber).midX, y: CGDisplayBounds(targetNumber).midY)
+            Logger.info { "spike \(variant.rawValue) \(direction): cursor=\(cursorUuid) target center=\(targetCenter)" }
+            spikeLogAllDisplays("before")
+            switch variant {
+                case .v3Location:
+                    _ = spikePostStep(direction, location: targetCenter, source: nil)
+                    spikeVerify()
+                case .v0Warp:
+                    spikeWarpAndPost(direction, targetCenter, delay: 0, source: nil)
+                case .v1Warp20:
+                    spikeWarpAndPost(direction, targetCenter, delay: 0.020, source: nil)
+                case .v1Warp50:
+                    spikeWarpAndPost(direction, targetCenter, delay: 0.050, source: nil)
+                case .v1Warp100:
+                    spikeWarpAndPost(direction, targetCenter, delay: 0.100, source: nil)
+                case .v2WarpNoSuppression:
+                    let source = CGEventSource(stateID: .hidSystemState)
+                    source?.localEventsSuppressionInterval = 0
+                    spikeWarpAndPost(direction, targetCenter, delay: 0, source: source)
+            }
+        }
+    }
+
+    private static func spikeWarpAndPost(_ direction: SpaceSwitchDirection, _ targetCenter: CGPoint, delay: TimeInterval, source: CGEventSource?) {
+        guard let origin = CGEvent(source: nil)?.location else {
+            Logger.error { "spike: could not read the cursor position" }
+            return
+        }
+        CGWarpMouseCursorPosition(targetCenter)
+        let postAndReturn = {
+            _ = spikePostStep(direction, location: nil, source: source)
+            CGWarpMouseCursorPosition(origin)
+            let restored = CGEvent(source: nil)?.location
+            Logger.info { "spike: cursor restored to \(String(describing: restored)) (origin was \(origin))" }
+            spikeVerify()
+        }
+        if delay == 0 {
+            postAndReturn()
+        } else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: postAndReturn)
+        }
+    }
+
+    private static func spikePostStep(_ direction: SpaceSwitchDirection, location: CGPoint?, source: CGEventSource?) -> Bool {
+        spikePost(.began, direction, location, source)
+            && spikePost(.changed, direction, location, source)
+            && spikePost(.ended, direction, location, source)
+    }
+
+    private static func spikePost(_ phase: GesturePhase, _ direction: SpaceSwitchDirection, _ location: CGPoint?, _ source: CGEventSource?) -> Bool {
+        guard let eventTypeField, let gestureHidTypeField, let swipeMotionField, let swipeProgressField,
+              let swipeVelocityXField, let swipeVelocityYField, let gesturePhaseField,
+              let event = CGEvent(source: source) else { return false }
+        let sign = direction == .right ? Double(1) : Double(-1)
+        event.setIntegerValueField(eventTypeField, value: 30)
+        event.setIntegerValueField(gestureHidTypeField, value: 23)
+        event.setIntegerValueField(gesturePhaseField, value: phase.rawValue)
+        event.setIntegerValueField(swipeMotionField, value: 1)
+        event.setDoubleValueField(swipeProgressField, value: sign * Double(Float.leastNonzeroMagnitude))
+        event.setDoubleValueField(swipeVelocityXField, value: sign * gestureVelocity)
+        event.setDoubleValueField(swipeVelocityYField, value: sign * gestureVelocity)
+        if let location {
+            event.location = location
+        }
+        event.post(tap: .cgSessionEventTap)
+        return true
+    }
+
+    private static func spikeVerify() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            Spaces.refresh()
+            spikeLogAllDisplays("after")
+        }
+    }
+
+    private static func spikeLogAllDisplays(_ label: String) {
+        for (displayId, spaceIds) in Spaces.screenSpacesMap {
+            let currentId = InstantSpacesPrivateApi.currentSpaceId(displayId)
+            let index = currentId.flatMap { spaceIds.firstIndex(of: $0) }
+            Logger.info { "spike \(label): display \(displayId) space index \(String(describing: index)) of \(spaceIds.count) (id \(String(describing: currentId)))" }
+        }
+    }
+
+    // ─── END TEMPORARY SPIKE ───
+
     private static func post(_ phase: GesturePhase, _ direction: SpaceSwitchDirection) -> Bool {
         guard let eventTypeField,
               let gestureHidTypeField,
