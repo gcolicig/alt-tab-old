@@ -155,6 +155,9 @@ class App: AppCenterApplication {
             return
         }
         initializeSettingsWindowIfNeeded()
+        // the window is built once and reused, so anything that changed while it was closed has to be
+        // re-read here rather than in its setup
+        SettingsWindow.shared!.refreshControlsFromSettings()
         showSecondaryWindow(SettingsWindow.shared!)
         if SettingsWindow.shared!.isVisible != true {
             let window = SettingsWindow()
@@ -420,6 +423,12 @@ extension App: NSApplicationDelegate {
         KeyboardEvents.stopHyperKeyMonitoring()
         // symbolic hotkeys state persist after the app is quit; we restore this shortcut before quitting
         setNativeCommandTabEnabled(true)
+        // the pointer values persist too, and quitting was the one exit that left them behind: V-10 step 8
+        // measured the acceleration still on AltTab+'s value after a clean quit through the app's own button.
+        // `recoverAfterUncleanExit` put it back at the next launch, so the setting was not lost — but anyone
+        // who uninstalls AltTab+ or turns off its autostart keeps a value they never chose. `release` runs
+        // the same ownership check as every other write, so a value somebody else took over is left alone.
+        PointerCategory.allCases.forEach { PointerOwnership.release($0) }
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {

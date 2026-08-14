@@ -1186,7 +1186,14 @@ class SettingsWindow: NSWindow {
         }
     }
 
-    private func refreshControlsFromSettings() {
+    /// Called every time the window is shown, not only when it is built.
+    ///
+    /// `setupView` runs once and the window is then reused, so a state that changed while it was closed —
+    /// another tool taking the pointer value, a crash recovery relinquishing it — was never re-read.
+    /// Measured on 2026-08-14: after System Settings took the value, closing and reopening the window still
+    /// showed `Managed by AltTab+`. The backlog recorded this as fixed in 2026-08-03; it was not, because
+    /// building and showing are not the same moment.
+    func refreshControlsFromSettings() {
         GeneralTab.refreshControlsFromPreferences()
         PointerScrollTab.refreshControlsFromPreferences()
     }

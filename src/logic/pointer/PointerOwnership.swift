@@ -69,6 +69,20 @@ enum PointerOwnership {
         }
     }
 
+    /// Brings the persisted record back in line with the system before anything reads it.
+    ///
+    /// `state` consults the record and nothing else, so a value another tool took over while the settings
+    /// window was closed kept reading `Managed by AltTab+` until the user next touched a control. Measured
+    /// on 2026-08-10 (V-10 step 5): System Settings held the value while the row still claimed ownership.
+    /// Refreshing the label could not help, because what was stale was the record, not the control.
+    static func reconcileWithSystem(_ category: PointerCategory) {
+        let stored = record(category)
+        guard stored.isManaged, let current = PointerSystemSettings.read(category) else { return }
+        let checked = PointerOwnershipPolicy.detectForeignChange(stored, current: current)
+        guard checked != stored else { return }
+        persist(category, checked)
+    }
+
     /// Runs once at startup, before anything re-applies a value. A record still marked `managed` means the
     /// previous session did not shut down cleanly.
     static func recoverAfterUncleanExit() {
