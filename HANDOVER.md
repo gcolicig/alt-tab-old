@@ -1,6 +1,6 @@
 # Handover
 
-Written 2026-08-05, revised 2026-08-10, for whoever picks this up next. It records what is built, what is
+Written 2026-08-05, revised 2026-08-10 and 2026-08-14, for whoever picks this up next. It records what is built, what is
 genuinely verified, and the traps this codebase has already sprung — so they need not be sprung twice.
 
 The feature branch was merged to `main` on 2026-08-09 with its history intact rather than squashed, because
@@ -15,7 +15,7 @@ part that is easy to lose: which claims rest on measurement and which do not.
 |---|---|---|
 | Action registry, window layouts, Spaces | yes | yes |
 | Spaces menubar row | yes | yes — checklist run 2026-08-06, three defects found and fixed |
-| Pointer acceleration/speed ownership (S-03) | yes, **rebuilt 2026-08-07** | **no — V-10 still has never run** |
+| Pointer acceleration/speed ownership (S-03) | yes, **rebuilt 2026-08-07** | **yes — V-10 run 2026-08-13/14**, three defects found and fixed on the way |
 | Cursor AX window core (3A) | yes | indirectly, through the drag |
 | Modifier move, snapping, overlay (3B) | yes | yes, repeatedly |
 | Resize (3C) | yes | yes |
@@ -24,7 +24,34 @@ part that is easy to lose: which claims rest on measurement and which do not.
 | Shortcut Clues (2E) | yes | reader measured; overlay **still not operated**, two defects found by reading |
 | Leader (Phase 4) | core only, **no caller** | no |
 
-188 unit tests pass. Build with `./build.sh --test`; `SCHEME=Release ./build.sh` also works again.
+The unit-test suite passes. Build with `./build.sh --test`; `SCHEME=Release ./build.sh` also works again.
+
+## What happened between 2026-08-10 and 2026-08-14
+
+- **V-10 ran, at last.** Steps 1–10 and 12 pass. Three defects were found by operating, none by tests:
+  a disabled sentinel the HID system silently clamped to 0 while reporting success (#16), a speed slider
+  that could re-acquire mid-drag and adopt a foreign value as its own baseline (#18), and a quit path
+  that kept the value instead of handing it back (#21). Step 11's negative half (sleep) is still open —
+  the machine refuses `pmset sleepnow` under a WindowServer assertion; it needs the Apple menu or the lid.
+- **S-12 is answered.** A value written through the HID system alone does not survive a reboot; System
+  Settings survives because it writes the preference as well. Consequence recorded in `backlog.md`:
+  re-apply at launch, do not write the preference.
+- **4c measured.** Per-device pointer values (`HIDPointerAcceleration` in a device's
+  `HIDEventServiceProperties`) are addressable and independent of the category values. Open before any
+  write path: a trustworthy read path — `hidutil --get` returns null while `ioreg` shows the value.
+- **Upstream: no merge, port instead.** A probe merge against `lwouis/alt-tab-macos` measured 85
+  conflicting files with 22 modify/delete conflicts in this fork's most-invested files; the cause is
+  upstream's 1868-file "alt-tab pro" restructuring. Decision and numbers in `backlog.md` under
+  `Upstream-Abgleich`. Three upstream fixes were ported individually and verified (#25): hover no longer
+  scrolls the list, the synthetic makeKey click can no longer resize a window (down-only, far-away
+  point), and the gesture tap was split so an active tap only exists while it may absorb — the cursor no
+  longer waits on our callback. Note from that work: **CGEvent tap creation order decides run order**
+  (created second runs first), not the order sources are added to the run loop.
+- **Settings reshaped.** Sections renamed (`Appearance` → `Cmd-Tab`, `Controls` → `Cmd-Tab Controls`, ids
+  untouched) and the sidebar reordered from system-wide to per-app (#22, #24). Creator's Settings now arm
+  Hyperkey — a deliberate, user-decided exception to Q-08, carried by amending the rule, not bypassing it.
+- **Drag modifiers extended** (#26): picker order is now disabled, ⌘⌃, ⌘⌥, fn, ⌘⇧, ⌥⇧, with a one-shot
+  index migration because the preference stores an index into that list.
 
 ## The most important thing to understand
 
@@ -107,20 +134,17 @@ demand.
 
 In rough priority. Everything here needs a human at the keyboard; none of it can be reached from a script.
 
-1. **V-10** for the pointer module (`docs/pointer-ownership-checklist.md`). It is worth running now for the
-   first time: until 2026-08-07 the module wrote a preference that changed nothing, so the checklist would
-   have failed at its second step without saying why. Note the effective value is no longer
-   `defaults read -g com.apple.mouse.scaling` — that key is not written any more.
-2. **Shortcut Clues** (`docs/shortcut-clues-checklist.md`). The overlay has still never been shown. The
+1. **V-10 step 11, negative half**: sleep must be triggered from the Apple menu or the lid —
+   `pmset sleepnow` is refused on this machine. Everything else in the checklist has run.
+2. **V-16**, attributing the two-click Dock activation recorded in `backlog.md` under 2A-1. The deciding
+   test is one line: quit the app (`pkill -9 -f 'MacOS/AltTab'`) and repeat the click.
+3. **Shortcut Clues** (`docs/shortcut-clues-checklist.md`). The overlay has still never been shown. The
    trigger has no default and must be recorded first, or nothing happens at all.
-3. **The drag checklist** (`docs/window-drag-checklist.md`), app-class matrix. Needs two displays.
-4. **Stage 2 of the menubar drop**: dropping on a display's group should move the window to that display.
+4. **The drag checklist** (`docs/window-drag-checklist.md`), app-class matrix. Needs two displays.
+5. **Stage 2 of the menubar drop**: dropping on a display's group should move the window to that display.
    Built 2026-08-07, never operated. Needs two displays and an assigned drag modifier — the module is off by
    default.
-5. **V-16**, attributing the two-click Dock activation recorded in `backlog.md` under 2A-1. The deciding
-   test is one line: quit the app and repeat the click.
-6. **S-12**, whether an acceleration set through the HID system survives a logout. Staged on the machine on
-   2026-08-09: mouse at 0.875 against a 0.6875 baseline, no preference behind it and no ownership record.
+6. **S-08 remainder**: toggling `Displays have separate Spaces` was never operated with two displays.
 7. **S-01/S-02** and the app-class matrix for the AX core.
 
 ## Known open behaviour, not defects
@@ -141,7 +165,9 @@ In rough priority. Everything here needs a human at the keyboard; none of it can
   2026-08-07 and all failed: the gesture carries no target display, a cursor warp does not move the active
   menubar display, the setter meant for it is accepted and ignored, and moving the Space layers changes the
   reported value without changing the picture. The menubar row therefore refuses such a click and says so
-  rather than doing nothing. See S-10, S-10b and S-10c in `backlog.md`.
+  rather than doing nothing. See S-10, S-10b and S-10c in `backlog.md`. One route was never measured,
+  though: the synthetic gesture is posted without ever setting `event.location`. Whether a location on
+  the target display addresses it is the first spike of the current Spaces plan.
 - Dropping a window on a switcher tile to send it to that tile's Space (story 2H) has no system path. Every
   known call for moving a window between Spaces is either a stub or silently refused. The story is
   specified and resting.
