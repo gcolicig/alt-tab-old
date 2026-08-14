@@ -811,21 +811,28 @@ Exit-Kriterium:
 
 ### 4c. Spike: Zeigereinstellungen je Geraet
 
-Status: Neu aufgenommen 2026-08-13, ungemessen
+Status: **Gemessen und bestanden am 2026-08-14.** Geraeteweise Adressierung existiert; Event-Rewriting ist nicht noetig
 Prioritaet: Mittel
 
 Beschreibung:
 
 - Gewuenscht ist, an unterschiedlichen Arbeitsstationen unterschiedliche Maeuse mit je eigenen Werten zu benutzen, gespeichert und beim Anstecken automatisch angewandt.
-- **Der heutige Pfad kann das grundsaetzlich nicht.** Gemessen am 2026-08-13 (V-10, Schritt 12): `HIDMouseAcceleration` ist kategorieweit, nicht geraeteweit. Ab- und Anstecken des Empfaengers setzte den Wert nicht zurueck, weil er gar nicht am Geraet haengt. Schritt 12 besteht deshalb ohne Zutun von AltTab+ — und aus demselben Grund gibt es dort nichts, das man je Geraet unterscheiden koennte.
-- LinearMouse loest es offensichtlich anders: seine Konfiguration fuehrt `vendorID`, `productID` und `productName` je Schema. Der Weg dorthin ist von aussen belegt (`IOServiceOpen` plus `dlsym`, Logtexte `Update/Restore pointer acceleration for device`), **aber nicht selbst gemessen**.
+- **Der heutige Pfad kann das nicht** — aber ein anderer kann es. Gemessen am 2026-08-13 (V-10, Schritt 12): `HIDMouseAcceleration` ist kategorieweit. Ab- und Anstecken des Empfaengers setzte den Wert nicht zurueck, weil er gar nicht am Geraet haengt.
+- **Gemessen am 2026-08-14, mit Funkmaus und internem Trackpad gleichzeitig angeschlossen**: Jedes HID-Geraet fuehrt eine eigene `HIDEventServiceProperties`-Sammlung, darin `HIDPointerAcceleration` als **effektiven Wert des Geraets** und `HIDPointerAccelerationType` als Namen der Kategorie, aus der es erbt — bei der Maus `"HIDMouseAcceleration"`. Die Kategorie ist also die Quelle, nicht der Ort des Werts.
+- **Unabhaengigkeit belegt.** Setzen von `HIDPointerAcceleration` auf 65536 nur an der Maus (`hidutil property --matching '{"VendorID":9639,"ProductID":64097}' --set ...`): Maus 45056 → 65536, **Trackpad unveraendert 45056**, beide kategorieweiten Werte unveraendert bei 0.6875. Der Rueckweg auf 45056 wirkte ebenso.
+- Das ist damit der Weg, den LinearMouse geht; seine Konfiguration fuehrt `vendorID`, `productID` und `productName` je Schema, und seine Logtexte lauten `Update/Restore pointer acceleration for device`.
+- **Noch nicht gemessen**: ob der geraeteweise Wert einen Neustart oder ein Ab- und Anstecken ueberlebt, und ob `hidutil`s eigenes `--get` ihn zuverlaessig zurueckliest — es lieferte `(null)`, waehrend `ioreg` den gesetzten Wert zeigte. Fuer ein Ownership-Modell ist genau dieses Rueckleben die Voraussetzung, siehe die Rueckleseprüfung in Story 4.
 
 Exit-Kriterium:
 
-- Es ist belegt, ob geraeteweise adressierbare HID-Eigenschaften existieren, die Beschleunigung und Geschwindigkeit pro Maus setzen, zurueckleben und wiederherstellen koennen.
-- Gemessen wird mit zwei gleichzeitig angeschlossenen Zeigergeraeten und unterschiedlichen Werten; der Nachweis ist erst erbracht, wenn eine Aenderung am einen Geraet den Wert des anderen nachweislich nicht veraendert.
-- Falls es nur ueber Event-Rewriting geht: **Entscheidung des Nutzers einholen**, nicht selbst faellen. Story 4 schliesst Event-Rewriting aus; ob diese Bedingung fuer dieses Teilmodul gelockert wird, ist eine Produktentscheidung.
-- Faellt der Spike negativ aus und bleibt die Bedingung bestehen, entfaellt die Funktion, und der Grund wird sichtbar dokumentiert statt stillschweigend ausgelassen.
+- Es ist belegt, ob geraeteweise adressierbare HID-Eigenschaften existieren, die Beschleunigung und Geschwindigkeit pro Maus setzen, zurueckleben und wiederherstellen koennen. — **Erfuellt fuer Setzen und Adressieren, offen fuer das Rueckleben.**
+- Gemessen wird mit zwei gleichzeitig angeschlossenen Zeigergeraeten und unterschiedlichen Werten; der Nachweis ist erst erbracht, wenn eine Aenderung am einen Geraet den Wert des anderen nachweislich nicht veraendert. — **Erfuellt am 2026-08-14**, siehe Messung oben.
+- Falls es nur ueber Event-Rewriting geht: **Entscheidung des Nutzers einholen**, nicht selbst faellen. Story 4 schliesst Event-Rewriting aus; ob diese Bedingung fuer dieses Teilmodul gelockert wird, ist eine Produktentscheidung. — **Entfaellt**: `HIDPointerAcceleration` ist eine HID-Eigenschaft, kein Eingriff in den Ereignisstrom. Die Bedingung aus Story 4 bleibt unangetastet.
+- Faellt der Spike negativ aus und bleibt die Bedingung bestehen, entfaellt die Funktion, und der Grund wird sichtbar dokumentiert statt stillschweigend ausgelassen. — **Nicht eingetreten.**
+
+Naechster Schritt:
+
+- Das Rueckleben messen, bevor irgendetwas gebaut wird: `hidutil --get` lieferte `(null)` fuer einen Wert, den `ioreg` gleichzeitig als gesetzt zeigte. Ein Ownership-Modell, das seinen Erfolg an einem unzuverlaessigen Rueckleseweg misst, ist genau der Defekt, den Story 4 zweimal hatte. Der Leseweg ist zu bestimmen, bevor der Schreibweg benutzt wird.
 
 Abhaengigkeit:
 
