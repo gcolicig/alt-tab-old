@@ -1063,6 +1063,24 @@ Status: Minimal halten
 - Die bestehende Menueleiste wird als weiterer Verbraucher angebunden und bietet die verfuegbaren Fensteraktionen fuer das aktuell fokussierte geeignete Fenster an.
 - Nicht verfuegbare Aktionen werden deaktiviert oder ausgeblendet; die Menueleiste implementiert keine eigene Fensterlogik.
 
+## Upstream-Abgleich
+
+Stand 2026-08-14, Vermessung per Probe-Merge auf einem Wegwerf-Branch (danach abgebrochen, nichts uebernommen).
+
+- **Entschieden: kein Merge mit `lwouis/alt-tab-macos`.** Der Fork basiert auf v10.12.0 (`317a485b`, 2026-04-13); upstream steht bei v11.4.4, dazwischen liegen 107 Commits — darunter `9147a4a8 feat: introducing alt-tab pro!` mit 1868 Dateien und einer vollstaendigen Umstrukturierung (402 Umbenennungen). Der Probe-Merge ergab 85 Konfliktdateien mit 98 Hunks, davon 22 modify/delete in genau den Dateien, in die dieser Fork am meisten investiert hat (`Menubar.swift` 24 eigene Commits, `KeyboardEvents.swift` 13, `App.swift` 9). Ein Merge hiesse, 154 eigene Commits auf einer Beinahe-Neufassung neu zu verorten.
+- Stattdessen werden einzelne Upstream-Fixes gelesen und nachgebaut. Gepruefte Kandidaten:
+
+| Upstream-Commit | Befund | Entscheidung |
+|---|---|---|
+| `a2d05275` Hover scrollt den Switcher | Unser `updateSelectedAndHoveredWindowIndex` ist strukturell identisch mit der fehlerhaften Fassung: `scrollToVisible` laeuft auch bei `fromMouse`, also zieht das Ueberfahren einer angeschnittenen Randkachel die ganze Liste | **Uebernommen 2026-08-14** |
+| `ec30bb13` Fokussieren vergroessert das Fenster | Trifft uns doppelt: unser `makeKeyWindow` hat noch die Ur-Fassung von yabai — NaN-Klickpunkt (`memset 0xff`), den manche Apps auf (0,0) zurueckklemmen und damit echten Inhalt anklicken (upstream #5381), plus Down/Up-Paar. Upstream hat gemessen: das Down allein macht das Fenster key, und ein Punkt weit hinter der unteren rechten Ecke (300000, 300000) ist die einzige Region ohne bekannten Fehlerfall (macOS 27 wertet Punkte nahe der Kante als Resize-Griff, #5900) | **Uebernommen 2026-08-14** |
+| `1a85669b` Dock/Menueleiste haengen bei aktiven Gesten | Unser `TrackpadEvents` hat denselben einen aktiven Tap auf `cghidEventTap`: der WindowServer wartet bei jedem Gestenereignis auf unseren Callback, solange ein Finger aufliegt — Cursorlatenz haengt an diesem Prozess. Absorption ist nur in zwei Situationen noetig (Switcher offen, Trigger-Ereignis), beide identisch mit upstream. Uebernommen wird die Tap-Teilung: Listen-only-Erkennung immer, aktiver Absorber nur bewaffnet, wenn absorbiert werden kann. Erzeugungsreihenfolge zaehlt: der zuletzt erzeugte Tap laeuft zuerst (upstream gemessen) | **Uebernommen 2026-08-14** |
+| `767b96fc` Switcher zeigt kurz den vorherigen Space | **Nicht anwendbar.** Behebt eine Regression des Pro-Umbaus: dort wurde `SpacesEvents.swift` geloescht und durch einen 250-ms-Debounce ersetzt. Unser Fork hat die Datei noch und ruft `Spaces.refresh()` auf der Vorderflanke jedes `activeSpaceDidChange` auf — der stale Zustand, den der Fix repariert, existiert hier nicht | Keine Aktion |
+
+- `c14960bb` (Tabs/Phantom-Fenster, 77 Dateien, +13704) und alles andere aus den 107 Commits: nicht bewertet, zu gross fuer ein Nachbauen. Bei konkreten Symptomen gezielt nachlesen.
+- Beachtenswert: upstream hat eigene Space-Indikatoren (`e20c3277`, per Vorgabe aus). Vor groesseren Arbeiten am Spaces-Bereich lohnt der Vergleich mit deren Umsetzung.
+- `alt-tab pro` ist als `BREAKING CHANGE` mit eigener Ankuendigung markiert. Was das fuer den Fork strategisch bedeutet (Lizenz, Anschlussfaehigkeit), ist offen und eine Produktfrage.
+
 ## Distribution und Migration
 
 - Produktname und Bundle-ID bleiben fork-spezifisch: AltTab+ und `com.gcolicig.alttab-plus`.
