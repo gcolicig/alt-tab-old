@@ -1078,7 +1078,7 @@ Stand 2026-08-14, Vermessung per Probe-Merge auf einem Wegwerf-Branch (danach ab
 | `767b96fc` Switcher zeigt kurz den vorherigen Space | **Nicht anwendbar.** Behebt eine Regression des Pro-Umbaus: dort wurde `SpacesEvents.swift` geloescht und durch einen 250-ms-Debounce ersetzt. Unser Fork hat die Datei noch und ruft `Spaces.refresh()` auf der Vorderflanke jedes `activeSpaceDidChange` auf — der stale Zustand, den der Fix repariert, existiert hier nicht | Keine Aktion |
 
 - `c14960bb` (Tabs/Phantom-Fenster, 77 Dateien, +13704) und alles andere aus den 107 Commits: nicht bewertet, zu gross fuer ein Nachbauen. Bei konkreten Symptomen gezielt nachlesen.
-- Beachtenswert: upstream hat eigene Space-Indikatoren (`e20c3277`, per Vorgabe aus). Vor groesseren Arbeiten am Spaces-Bereich lohnt der Vergleich mit deren Umsetzung.
+- Zu `e20c3277` (space indicators off by default): **keine konkurrierende Spaces-Umsetzung**, wie zunaechst vermutet. Am Quelltext geprueft 2026-08-14: gemeint ist das Nummern-Abzeichen pro Kachel im Switcher (`setSpaceNumber`, Stern bei "auf allen Spaces"), das nur ausweist, auf welchem Space ein Fenster liegt. Unser Fork hat exakt dasselbe Feature aus der Zeit vor der Abspaltung, samt identischer Praeferenz `hideSpaceNumberLabels`; der Upstream-Commit dreht lediglich deren Vorgabe auf "verstecken". Fuer die Spaces-Arbeit dieses Forks (Menueleisten-Reihe, Instant Spaces) folgt daraus nichts.
 - `alt-tab pro` ist als `BREAKING CHANGE` mit eigener Ankuendigung markiert. Was das fuer den Fork strategisch bedeutet (Lizenz, Anschlussfaehigkeit), ist offen und eine Produktfrage.
 
 ## Distribution und Migration
