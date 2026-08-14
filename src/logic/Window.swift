@@ -236,16 +236,31 @@ class Window {
         }
     }
 
-    /// The following function was ported from https://github.com/Hammerspoon/hammerspoon/issues/370#issuecomment-545545468
+    /// Makes the window the key window of its app by posting a synthetic left-mouse-DOWN to the
+    /// WindowServer. No public API moves key focus across apps. Originally ported from
+    /// https://github.com/Hammerspoon/hammerspoon/issues/370#issuecomment-545545468 (yabai's
+    /// `window_manager_make_key_window`); the details below follow upstream alt-tab's measurements
+    /// (ec30bb13, their #5381 and #5900):
+    ///
+    /// - The DOWN alone makes the window key. yabai and Hammerspoon post a down/up pair, and the pair is
+    ///   what makes it a click: measured upstream on macOS 26.5, an up alone does nothing, the down alone
+    ///   makes the right window key. Dropping the up costs no key focus and means no control can ever be
+    ///   activated wherever the point lands — a half-click can't be completed.
+    /// - The click point (0x20, a window-relative CGPoint) aims far past the BOTTOM-RIGHT corner. The NaN
+    ///   point we posted before (`memset 0xff`) is sanitized by some apps back to (0, 0), onto real
+    ///   content — Figma's Home button, Telegram's sidebar (their #5381). A point one or two off the frame
+    ///   sits in the resize grab region, which macOS 27 acts on: rapid switching grew the window (their
+    ///   #5900). Far past bottom-right is the only region no failure has come from, and any (0, 0)-style
+    ///   fallback lands on content bottom-right instead of a top-left control.
     private func makeKeyWindow(_ psn: inout ProcessSerialNumber) -> Void {
         var bytes = [UInt8](repeating: 0, count: 0xf8)
-        bytes[0x04] = 0xf8
-        bytes[0x3a] = 0x10
+        bytes[0x04] = 0xf8 // record length
+        bytes[0x3a] = 0x10 // purpose undocumented; yabai and Hammerspoon set it to 0x10
+        // deliver the event to this specific window by id (not by the click point)
         memcpy(&bytes[0x3c], &cgWindowId, MemoryLayout<UInt32>.size)
-        memset(&bytes[0x20], 0xff, 0x10)
-        bytes[0x08] = 0x01
-        SLPSPostEventRecordTo(&psn, &bytes)
-        bytes[0x08] = 0x02
+        var point = CGPoint(x: 300_000, y: 300_000)
+        memcpy(&bytes[0x20], &point, MemoryLayout<CGPoint>.size)
+        bytes[0x08] = 0x01 // kCGEventLeftMouseDown; deliberately no matching up
         SLPSPostEventRecordTo(&psn, &bytes)
     }
 
