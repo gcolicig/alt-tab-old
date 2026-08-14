@@ -216,10 +216,12 @@ enum DragModifierPreference: String, CaseIterable {
     case commandShift
     case fn
     case commandControl
+    case commandOption
+    case optionShift
 
-    /// What the settings picker offers. `commandControl` is last because appending keeps the stored
-    /// indexes of the existing entries stable across versions.
-    static let selectable: [DragModifierPreference] = [.disabled, .commandShift, .fn, .commandControl]
+    /// What the settings picker offers. The stored preference is an index into this array, so any
+    /// reordering must ship with a matching entry in `PreferencesMigrations`.
+    static let selectable: [DragModifierPreference] = [.disabled, .commandControl, .commandOption, .fn, .commandShift, .optionShift]
 
     /// `Command+Control` consumes the primary mouse down, which macOS otherwise delivers as a secondary
     /// click, and it only works once the global drag-on-gesture setting is off.
@@ -237,6 +239,8 @@ enum DragModifierPreference: String, CaseIterable {
             case .commandShift: return [.command, .shift]
             case .fn: return [.function]
             case .commandControl: return [.command, .control]
+            case .commandOption: return [.command, .option]
+            case .optionShift: return [.option, .shift]
         }
     }
 

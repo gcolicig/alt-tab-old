@@ -11,6 +11,7 @@ class PreferencesMigrations {
     static func migratePreferences() {
         migrateAltTabPlusForkDefaults()
         removeActionSlotNames()
+        migrateDragModifierIndexes()
         let preferencesKey = "preferencesVersion"
         if let versionInPlist = UserDefaults.standard.string(forKey: preferencesKey) {
             if versionInPlist != "#VERSION#" && versionInPlist.compare(App.version, options: .numeric) != .orderedDescending {
@@ -38,6 +39,21 @@ class PreferencesMigrations {
         }
         (0..<Preferences.maxOpenUrlCount).forEach {
             UserDefaults.standard.removeObject(forKey: Preferences.indexToName("openUrlName", $0))
+        }
+        UserDefaults.standard.set("true", forKey: key)
+    }
+
+    /// `DragModifierPreference.selectable` was reordered and extended; the preference stores an index
+    /// into that array, so without this mapping a stored `Command+Shift` (old 1) would silently turn
+    /// into `Command+Control` (new 1). Old order: disabled, ⌘⇧, fn, ⌘⌃. New order: disabled, ⌘⌃, ⌘⌥, fn, ⌘⇧, ⌥⇧.
+    private static func migrateDragModifierIndexes() {
+        let key = "altTabPlusDragModifierIndexesMigrated"
+        guard UserDefaults.standard.string(forKey: key) == nil else { return }
+        let oldToNew = ["0": "0", "1": "4", "2": "3", "3": "1"]
+        for prefKey in ["windowDragModifier", "windowResizeModifier"] {
+            if let old = UserDefaults.standard.string(forKey: prefKey), let new = oldToNew[old] {
+                UserDefaults.standard.set(new, forKey: prefKey)
+            }
         }
         UserDefaults.standard.set("true", forKey: key)
     }

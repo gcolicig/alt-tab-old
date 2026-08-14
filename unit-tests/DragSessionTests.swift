@@ -168,6 +168,10 @@ final class DragSessionTests: XCTestCase {
         // a stray modifier must not arm a drag the user did not ask for
         XCTAssertFalse(DragModifierPreference.commandShift.matches([.command, .shift, .option]))
         XCTAssertTrue(DragModifierPreference.fn.matches([.function]))
+        XCTAssertTrue(DragModifierPreference.commandOption.matches([.command, .option]))
+        XCTAssertFalse(DragModifierPreference.commandOption.matches([.command, .option, .shift]))
+        XCTAssertTrue(DragModifierPreference.optionShift.matches([.option, .shift]))
+        XCTAssertFalse(DragModifierPreference.optionShift.matches([.option]))
     }
 
     func testAnIrrelevantFlagDoesNotBreakTheMatch() {
@@ -181,19 +185,17 @@ final class DragSessionTests: XCTestCase {
         XCTAssertNil(DragModifierPreference.disabled.requiredFlags)
     }
 
-    /// Order matters beyond looks: the preference stores an index into this list, so appending is the only
-    /// safe way to add a modifier without repointing everybody's stored choice.
-    func testThePickerStartsDisabledAndOnlyGrowsAtTheEnd() {
-        XCTAssertEqual(DragModifierPreference.selectable, [.disabled, .commandShift, .fn, .commandControl])
+    /// Order matters beyond looks: the preference stores an index into this list. Any change here must
+    /// ship with a matching index migration in `PreferencesMigrations.migrateDragModifierIndexes`.
+    func testThePickerOrderMatchesTheStoredIndexContract() {
+        XCTAssertEqual(DragModifierPreference.selectable, [.disabled, .commandControl, .commandOption, .fn, .commandShift, .optionShift])
         XCTAssertEqual(DragModifierPreference.selectable.first, .disabled)
-        XCTAssertEqual(DragModifierPreference.selectable.firstIndex(of: .commandShift), 1)
-        XCTAssertEqual(DragModifierPreference.selectable.firstIndex(of: .fn), 2)
     }
 
     func testTheModuleIsOffByDefaultAndOnlyCommandControlNeedsTheGlobalSetting() {
         XCTAssertFalse(DragModifierPreference.disabled.isEnabled)
         XCTAssertTrue(DragModifierPreference.commandControl.requiresWindowDragOnGestureDisabled)
-        [DragModifierPreference.disabled, .commandShift, .fn].forEach {
+        [DragModifierPreference.disabled, .commandShift, .fn, .commandOption, .optionShift].forEach {
             XCTAssertFalse($0.requiresWindowDragOnGestureDisabled, "\($0)")
         }
     }
