@@ -700,8 +700,11 @@ class SettingsWindow: NSWindow {
 
     private func sectionDefinitions() -> [SettingsSectionDefinition] {
         [
-            SettingsSectionDefinition(id: "appearance", title: NSLocalizedString("Appearance", comment: ""), description: NSLocalizedString("Choose how the window switcher looks and where it appears.", comment: ""), imageName: "appearance", systemSymbolName: "paintpalette", view: AppearanceTab.initTab()),
-            SettingsSectionDefinition(id: "controls", title: NSLocalizedString("Controls", comment: ""), description: NSLocalizedString("Set how you open and navigate the window switcher.", comment: ""), imageName: "controls", systemSymbolName: "command", view: ControlsTab.initTab()),
+            // the `id` values stay: they are the in-memory selection and are not persisted, so renaming the
+            // titles cannot break stored state. Both sections cover the window switcher alone, while the rest
+            // of the sidebar long since covers other things — the old names read as app-wide.
+            SettingsSectionDefinition(id: "appearance", title: NSLocalizedString("Cmd-Tab", comment: ""), description: NSLocalizedString("Choose how the window switcher looks and where it appears.", comment: ""), imageName: "appearance", systemSymbolName: "paintpalette", view: AppearanceTab.initTab()),
+            SettingsSectionDefinition(id: "controls", title: NSLocalizedString("Cmd-Tab Controls", comment: ""), description: NSLocalizedString("Set how you open and navigate the window switcher.", comment: ""), imageName: "controls", systemSymbolName: "command", view: ControlsTab.initTab()),
             SettingsSectionDefinition(id: "window-layouts", title: NSLocalizedString("Window Layouts", comment: ""), description: NSLocalizedString("Assign shortcuts for arranging the focused window.", comment: ""), imageName: "controls", systemSymbolName: "rectangle.split.3x1", view: WindowLayoutsTab.initTab()),
             SettingsSectionDefinition(id: "spaces", title: NSLocalizedString("Spaces", comment: ""), description: NSLocalizedString("Show, activate, and move between macOS Spaces.", comment: ""), imageName: "controls", systemSymbolName: "square.grid.2x2", view: SpacesTab.initTab()),
             SettingsSectionDefinition(id: "hyperkey", title: NSLocalizedString("Hyperkey", comment: ""), description: NSLocalizedString("Use Caps Lock as a system-wide combination of modifier keys.", comment: ""), imageName: "controls", systemSymbolName: "capslock", view: HyperkeyTab.initTab()),

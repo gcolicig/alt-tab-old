@@ -18,6 +18,8 @@ enum CreatorSettings {
         ("hideStatusIcons", "true"),
         ("windowDisplayDelay", "0"),
         ("previewFadeInAnimation", "false"),
+        // the one input module this set is allowed to arm; see the Q-08 carve-out below
+        ("hyperKeyEnabled", "true"),
     ]
 
     private static let presets = [ShortcutPresets.hyperSpaces, ShortcutPresets.hyperLayouts]
@@ -25,7 +27,13 @@ enum CreatorSettings {
     /// Q-08: an applied set never arms an input module. The author runs the modifier move on `Command+Shift`,
     /// but a preset that switches on a tap consuming mouse clicks — without the user having decided to — is
     /// exactly what that rule exists to prevent. It stays out, and the dialog says so.
-    private static let excludedInputModuleKeys: Set<String> = ["windowDragModifier", "hyperKeyEnabled", "nextWindowGesture"]
+    ///
+    /// `hyperKeyEnabled` is the one named exception, decided on 2026-08-14: Hyperkey is what makes the two
+    /// shortcut presets in this set usable at all, and applying the set is itself a deliberate act behind a
+    /// summary the user confirms. The rule was amended rather than sidestepped — Q-08 now carries the
+    /// carve-out — and the summary names the Caps Lock remapping in its own sentence, because "assigns the
+    /// Hyper presets" reads as key bindings, not as taking over a key.
+    private static let excludedInputModuleKeys: Set<String> = ["windowDragModifier", "nextWindowGesture"]
 
     /// Enforced rather than merely intended: a later edit that adds an input-module key to `values` is
     /// dropped here instead of quietly arming a tap on somebody else's machine.
@@ -40,7 +48,9 @@ enum CreatorSettings {
          NSLocalizedString("Hides app badges and status icons.", comment: ""),
          NSLocalizedString("Opens the switcher without delay and without the preview fade.", comment: ""),
          NSLocalizedString("Shows Spaces next to the menu bar icon.", comment: ""),
-         NSLocalizedString("Assigns the Hyper presets for Spaces and Window Layouts.", comment: "")]
+         NSLocalizedString("Assigns the Hyper presets for Spaces and Window Layouts.", comment: ""),
+         // named on its own line: this is the one input module the set arms, and it takes over a physical key
+         NSLocalizedString("Turns on Hyperkey, which remaps Caps Lock system-wide. You can turn it off again under Hyperkey.", comment: "")]
             .joined(separator: "\n")
     }
 }
