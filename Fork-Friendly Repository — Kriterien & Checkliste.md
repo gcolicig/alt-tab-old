@@ -138,6 +138,26 @@ Diese Punkte waren in der konkreten AltTab-Fork-Arbeit besonders wichtig:
 - `origin` sollte auf den eigenen Fork zeigen, `upstream` auf das Original.
 - Pushes zu `upstream` sollten technisch verhindert werden, z. B. durch eine deaktivierte Push-URL.
 
+## Wiederverwendbares Rezept: Lokale Signier-Identitaet
+
+Die drei Scripts unter `scripts/codesign/` (setup_local, generate_selfsigned_certificate,
+import_certificate_into_main_keychain) sind projektunabhaengig und wurden bereits nach
+Blitztegschter uebernommen. Fuer ein neues Projekt:
+
+1. `scripts/codesign/` kopieren und den Default-Identitaetsnamen in `setup_local.sh` anpassen
+   (`<Projekt> Local Codesign` — pro Projekt eine eigene Identitaet, damit Widerruf oder
+   Erneuerung andere Projekte nicht beruehrt).
+2. Im Build-Script eine `sign_app`-Funktion: signiert mit der Identitaet, wenn
+   `security find-identity` sie findet, sonst ad-hoc mit Hinweis auf das Setup-Script.
+3. In `docs/setup.md` dokumentieren, inklusive der einmaligen Folgekosten: nach dem ersten
+   signierten Build sieht macOS einmal einen neuen Signer — TCC-Berechtigungen neu erteilen,
+   Keychain-Prompt mit "Immer erlauben" beantworten, danach dauerhaft stabil.
+
+Was das Rezept loest: Ad-hoc-Signaturen haben keinen stabilen Signer, jeder Rebuild ist fuer
+macOS eine andere App — TCC-Grants (Bedienungshilfen, Mikrofon, Automation) und Keychain-ACLs
+brechen bei jedem Build. `security add-trusted-cert -d` ist der einzige Schritt, der einmalig
+Adminrechte braucht.
+
 ## Scorecard-Vorlage
 
 ```markdown
