@@ -508,6 +508,7 @@ class SettingsWindow: NSWindow {
     private let rightScrollView = NSScrollView()
     private let sectionsDocumentView = SettingsFlippedView(frame: .zero)
     private let sectionsStack = NSStackView()
+    private let creatorButton = NSButton(title: NSLocalizedString("Creator's settings…", comment: ""), target: nil, action: nil)
     private let resetButton = NSButton(title: NSLocalizedString("Reset settings and restart…", comment: ""), target: nil, action: nil)
     private let quitButton = NSButton(title: String(format: NSLocalizedString("Quit %@", comment: "%@ is AltTab"), App.name), target: nil, action: #selector(NSApplication.terminate(_:)))
     private var sections = [SettingsSection]()
@@ -576,6 +577,7 @@ class SettingsWindow: NSWindow {
         setupSearchField(sidebarContainer)
         setupQuitButton(sidebarContainer)
         setupResetButton(sidebarContainer)
+        setupCreatorButton(sidebarContainer)
         setupSidebarTable(sidebarContainer)
     }
 
@@ -663,7 +665,7 @@ class SettingsWindow: NSWindow {
             sidebarScrollView.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 12),
             sidebarScrollView.leadingAnchor.constraint(equalTo: parent.leadingAnchor, constant: Self.sidebarHorizontalPadding - 2),
             sidebarScrollView.trailingAnchor.constraint(equalTo: parent.trailingAnchor, constant: -(Self.sidebarHorizontalPadding - 2)),
-            sidebarScrollView.bottomAnchor.constraint(equalTo: resetButton.topAnchor, constant: -10),
+            sidebarScrollView.bottomAnchor.constraint(equalTo: creatorButton.topAnchor, constant: -10),
         ])
     }
 
@@ -683,6 +685,19 @@ class SettingsWindow: NSWindow {
             resetButton.centerXAnchor.constraint(equalTo: parent.centerXAnchor),
             resetButton.bottomAnchor.constraint(equalTo: quitButton.topAnchor, constant: -20),
             resetButton.widthAnchor.constraint(lessThanOrEqualTo: parent.widthAnchor, constant: -Self.sidebarHorizontalPadding * 2),
+        ])
+    }
+
+    private func setupCreatorButton(_ parent: NSView) {
+        creatorButton.toolTip = creatorButton.title
+        creatorButton.bezelStyle = .rounded
+        creatorButton.onAction = { _ in GeneralTab.applyCreatorSettings() }
+        creatorButton.translatesAutoresizingMaskIntoConstraints = false
+        parent.addSubview(creatorButton)
+        NSLayoutConstraint.activate([
+            creatorButton.centerXAnchor.constraint(equalTo: parent.centerXAnchor),
+            creatorButton.bottomAnchor.constraint(equalTo: resetButton.topAnchor, constant: -8),
+            creatorButton.widthAnchor.constraint(lessThanOrEqualTo: parent.widthAnchor, constant: -Self.sidebarHorizontalPadding * 2),
         ])
     }
 

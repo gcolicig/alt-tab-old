@@ -807,10 +807,10 @@
 "The emergency shortcut disabled all AltTab+ input extensions." = "The emergency shortcut disabled all AltTab+ input extensions.";
 
 /* No comment provided by engineer. */
-"The same letters on the Hyper key, which stays clear of Rectangle and Magnet. Requires the Hyper key to be enabled." = "The same letters on the Hyper key, which stays clear of Rectangle and Magnet. Requires the Hyper key to be enabled.";
+"The macOS set on the Hyper key instead of Control, so no macOS shortcut has to be disabled. Requires the Hyper key to be enabled." = "The macOS set on the Hyper key instead of Control, so no macOS shortcut has to be disabled. Requires the Hyper key to be enabled.";
 
 /* No comment provided by engineer. */
-"The same set on the Hyper key instead of Control, so no macOS shortcut has to be disabled. Requires the Hyper key to be enabled." = "The same set on the Hyper key instead of Control, so no macOS shortcut has to be disabled. Requires the Hyper key to be enabled.";
+"The Rectangle letters on the Hyper key, which stays clear of Rectangle and Magnet. Requires the Hyper key to be enabled." = "The Rectangle letters on the Hyper key, which stays clear of Rectangle and Magnet. Requires the Hyper key to be enabled.";
 
 /* No comment provided by engineer. */
 "The URL is invalid." = "The URL is invalid.";
@@ -831,7 +831,7 @@
 "This permission is needed to show thumbnails and preview of open windows" = "This permission is needed to show thumbnails and preview of open windows";
 
 /* No comment provided by engineer. */
-"This replaces your current appearance and shortcut assignments. Input extensions such as moving windows by modifier stay off; switch them on yourself if you want them." = "This replaces your current appearance and shortcut assignments. Input extensions such as moving windows by modifier stay off; switch them on yourself if you want them.";
+"This replaces your current appearance and shortcut assignments." = "This replaces your current appearance and shortcut assignments.";
 
 /* No comment provided by engineer. */
 "This Space is not available." = "This Space is not available.";
@@ -862,6 +862,9 @@
 
 /* No comment provided by engineer. */
 "Turns on Hyperkey, which remaps Caps Lock system-wide. You can turn it off again under Hyperkey." = "Turns on Hyperkey, which remaps Caps Lock system-wide. You can turn it off again under Hyperkey.";
+
+/* No comment provided by engineer. */
+"Turns on moving windows with Command-Control and resizing with Command-Option held. Command-Control also turns off the macOS drag-on-gesture setting while assigned. Both can be turned off again under Window Layouts." = "Turns on moving windows with Command-Control and resizing with Command-Option held. Command-Control also turns off the macOS drag-on-gesture setting while assigned. Both can be turned off again under Window Layouts.";
 
 /* No comment provided by engineer. */
 "Unassign existing shortcut and continue" = "Unassign existing shortcut and continue";

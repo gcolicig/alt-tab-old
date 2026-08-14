@@ -142,7 +142,7 @@ enum ShortcutPresets {
         id: "hyperSpaces",
         domain: spacesDomain,
         title: NSLocalizedString("Hyper key Spaces shortcuts", comment: ""),
-        summary: NSLocalizedString("The same set on the Hyper key instead of Control, so no macOS shortcut has to be disabled. Requires the Hyper key to be enabled.", comment: ""),
+        summary: NSLocalizedString("The macOS set on the Hyper key instead of Control, so no macOS shortcut has to be disabled. Requires the Hyper key to be enabled.", comment: ""),
         assignments: spaceAssignments(hyper))
 
     static let rectangleLayouts = ShortcutPreset(
@@ -156,10 +156,11 @@ enum ShortcutPresets {
         id: "hyperLayouts",
         domain: layoutsDomain,
         title: NSLocalizedString("Hyper key layout shortcuts", comment: ""),
-        summary: NSLocalizedString("The same letters on the Hyper key, which stays clear of Rectangle and Magnet. Requires the Hyper key to be enabled.", comment: ""),
+        summary: NSLocalizedString("The Rectangle letters on the Hyper key, which stays clear of Rectangle and Magnet. Requires the Hyper key to be enabled.", comment: ""),
         assignments: layoutAssignments(hyper))
 
-    static let spaces = [macOsSpaces, hyperSpaces]
-    static let layouts = [rectangleLayouts, hyperLayouts]
+    // display order only; assignment state is stored by preset id, so reordering is safe
+    static let spaces = [hyperSpaces, macOsSpaces]
+    static let layouts = [hyperLayouts, rectangleLayouts]
     static let all = spaces + layouts
 }
