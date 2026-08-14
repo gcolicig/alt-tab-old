@@ -595,6 +595,8 @@ extension DragModifierPreference: MacroPreference {
             case .commandShift: return "⌘⇧"
             case .fn: return "fn"
             case .commandControl: return "⌘⌃"
+            case .commandOption: return "⌘⌥"
+            case .optionShift: return "⌥⇧"
         }
     }
 }
