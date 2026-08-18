@@ -1178,6 +1178,63 @@ Nicht im MVP:
 - Automation-Schnittstelle.
 - Per-App- oder Regel-Engine.
 
+### 10. Erweitertes Window-Switching-Verhalten (minimierte Fenster, Per-App-Policies, Cmd+Tab)
+
+Status: Spezifiziert 2026-08-19; nicht begonnen. Betrifft den Switcher-Kern, kein Add-on-Modul
+Prioritaet: Mittel
+
+Referenzen: natives macOS-`Cmd+Tab` (App-Switch, ueberspringt minimierte/versteckte Fenster) und AltTab (Fenster inkl. minimierter/versteckter, `Cmd+Tab` remapbar). Alt-Tab+ ist ein AltTab-Fork; darum ist nur das **bewusst abweichende** Verhalten zu bauen.
+
+Ausgangslage — was der Fork schon mitbringt (nicht neu bauen):
+
+- Minimierte und versteckte Fenster erscheinen im Switcher, konfigurierbar je Shortcut: `showMinimizedWindows` mit `ShowHowPreference` (`show` / `hide` / `showAtTheEnd`), ebenso `showHiddenWindows`, `showFullscreenWindows`.
+- Auswahl eines minimierten Fensters stellt es wieder her: `Window.focus()` deminiaturisiert.
+- Per-App-Regeln als `ExceptionEntry(bundleIdentifier, hide, ignore)` — `hide` (`always` / `whenNoOpenWindow` / `none`), `ignore` (`whenFullscreen` / `always` / `none`), mit sinnvollen Defaults (z.B. Finder `hide: whenNoOpenWindow`).
+- `Cmd+Tab` ist bereits der Default-Trigger (holdShortcut `⌘`, nextWindow `⇥`) und wird abgefangen — der native App-Switcher ist faktisch ersetzt.
+- `appsToShow` (`all` / `active` / `nonActive`) je Shortcut.
+
+Block 1 — Policy fuer minimierte Fenster (Delta zu "Sichtbarkeit plus immer restoren"):
+
+- [OPTIONAL] `AlwaysRestoreMinimizedWindows`: heutiges Verhalten (Auswahl deminiaturisiert). Schon vorhanden.
+- [OPTIONAL] `ExcludeMinimizedFromSwitcher`: entspricht `showMinimizedWindows = hide`. Schon vorhanden.
+- [NEU] `ShowButDoNotRestore`: minimiertes Fenster erscheint, Auswahl bringt es nach vorn ohne zu deminiaturisieren.
+- [NEU] `RestoreOnlyOnExplicitAction`: minimiertes Fenster erscheint, normale Auswahl restauriert nicht; eine gesonderte Aktion (Block 3) restauriert.
+- Umsetzung: eine Policy-Enum je Shortcut (oder global), die in `Window.focus()` entscheidet, ob deminiaturisiert wird; die visuelle Kennzeichnung minimierter Fenster ist bereits da. Default `AlwaysRestore`, damit kein Bruch fuer Bestandsnutzer.
+
+Block 2 — Per-App-Regeln (Delta: `ExceptionEntry` erweitern):
+
+- [NEU] Pro App eine Minimized-Policy aus Block 1 (Terminal/IDE `AlwaysRestore`, Finder `ExcludeMinimized`).
+- [NEU] Pro App App-Switching vs. Window-Switching unterscheiden.
+- [OPTIONAL] Pro App priorisieren (nach vorne sortieren).
+- [SPAETER] Reichere Match-Kriterien ueber Bundle-ID hinaus: Fenstertitel, Window-Role, Space, Display.
+- Prioritaet: App-Regel sticht globale Policy; leere App-Regel erbt global. Konflikte sichtbar melden. UI: den bestehenden `Exceptions`-Tab um die neuen Spalten erweitern (`ExceptionEntry` ist bereits Codable und per-Bundle).
+
+Block 3 — Separate Aktion `Restore most recent minimized window of selected app` (genuin neu):
+
+- [NEU] Neue Aktion im gemeinsamen Aktionsregister (`ActionIdentifier`), damit Shortcut, Hyper, Leader, FlickRing und Menueleiste sie ausloesen.
+- Verhalten: restauriert das zuletzt minimierte Fenster der gewaehlten bzw. frontmost App; bei mehreren das zuletzt minimierte (ueber `creationOrder`/`lastFocusOrder`); kein minimiertes Fenster: no-op mit dezenter Rueckmeldung. Ersetzt den nativen `Cmd+Tab`+`Option`-Workaround und passt zu `RestoreOnlyOnExplicitAction`.
+
+Block 4 — `Cmd+Tab`-Remap (weitgehend schon Realitaet):
+
+- [BEHALTEN] Ist bereits Default: der Hold-Shortcut steht auf `Cmd+Tab`, AltTab+ faengt ihn ab. Kein neues Hooking noetig.
+- [OPTIONAL] Onboarding-Hinweis fuer Umsteiger vom nativen Verhalten plus klarer Reset-Pfad auf natives `Cmd+Tab`.
+- Fallback: schlaegt die Registrierung fehl (Berechtigung/Konflikt), bleibt natives Verhalten und der Zustand wird gemeldet (bestehende Kollisionslogik). Der Unterschied optionaler Remap vs. paralleler Zweit-Shortcut ist bereits ueber `shortcutCount` (1 oder 2 Shortcuts) abgebildet.
+
+Default-Profile (benannte Voreinstellungen, analog zu den Shortcut-Presets):
+
+- [OPTIONAL] `Konservativ`: heutiges AltTab-Verhalten (AlwaysRestore, keine Sonderregeln).
+- [OPTIONAL] `Power-User`: `RestoreOnlyOnExplicitAction`, Block-3-Aktion mit Shortcut, Per-App-Regeln fuer Terminal/IDE/Finder.
+- [OPTIONAL] `Windows-like`: Fenster statt Apps, minimierte immer sichtbar, AlwaysRestore.
+
+Edge Cases:
+
+- Mehrere minimierte Fenster derselben App; mehrere Monitore und Spaces; Stage Manager; Hidden vs. Minimized getrennt behandeln; Apps ohne klassisches Fenstermodell; Sonderfaelle Electron/JetBrains/Terminal/Finder — teils bereits ueber die App-Kompatibilitaetsregeln des Kerns abgedeckt.
+
+Nicht im MVP:
+
+- Reiche Match-Kriterien jenseits Bundle-ID.
+- Regel-Engine mit Titel/Role/Space/Display-Matching.
+
 ## Settings-Modell
 
 Status: Minimal halten
