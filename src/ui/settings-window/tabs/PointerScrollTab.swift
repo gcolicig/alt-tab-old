@@ -20,7 +20,21 @@ class PointerScrollTab {
         addCategory(table, .mouse, NSLocalizedString("Mouse pointer acceleration", comment: ""), NSLocalizedString("Mouse pointer speed", comment: ""))
         table.addNewTable()
         addCategory(table, .trackpad, NSLocalizedString("Trackpad pointer acceleration", comment: ""), NSLocalizedString("Trackpad pointer speed", comment: ""))
-        return TableGroupSetView(originalViews: [table], bottomPadding: 0)
+        let scroll = TableGroupView(width: SettingsWindow.contentWidth)
+        addScroll(scroll, "Mouse", "reverseScrollMouse", "scrollSpeedMouse")
+        scroll.addNewTable()
+        addScroll(scroll, "Trackpad", "reverseScrollTrackpad", "scrollSpeedTrackpad")
+        return TableGroupSetView(originalViews: [table, scroll], bottomPadding: 0)
+    }
+
+    /// Reverse direction and speed run through a scrollWheel tap, which exists only while one of these is on.
+    private static func addScroll(_ table: TableGroupView, _ device: String, _ reverseKey: String, _ speedKey: String) {
+        table.addRow(TableGroupView.Row(
+            leftTitle: String(format: NSLocalizedString("Reverse %@ vertical scrolling", comment: ""), device),
+            rightViews: [LabelAndControl.makeSwitch(reverseKey) { _ in ScrollwheelEvents.scrollSettingsChanged() }]))
+        table.addRow(TableGroupView.Row(
+            leftTitle: String(format: NSLocalizedString("%@ scroll speed", comment: ""), device),
+            rightViews: [LabelAndControl.makeDropdown(speedKey, ScrollSpeedPreference.allCases) { _ in ScrollwheelEvents.scrollSettingsChanged() }]))
     }
 
     private static func addCategory(_ table: TableGroupView, _ category: PointerCategory, _ accelerationTitle: String, _ speedTitle: String) {

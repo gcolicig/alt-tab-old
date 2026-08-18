@@ -89,6 +89,10 @@ class Preferences {
             "flickRingRight": "",
             "flickRingDown": "",
             "flickRingLeft": "",
+            "reverseScrollMouse": "false",
+            "reverseScrollTrackpad": "false",
+            "scrollSpeedMouse": ScrollSpeedPreference.normal.indexAsString,
+            "scrollSpeedTrackpad": ScrollSpeedPreference.normal.indexAsString,
         ]
         (0..<maxShortcutCount).forEach { index in
             // Shortcut 1 mirrors Command-Tab, Shortcut 2 the native Command plus key above Tab
@@ -168,6 +172,10 @@ class Preferences {
     static var leaderEnabled: Bool { CachedUserDefaults.bool("leaderEnabled") }
     static var flickRingEnabled: Bool { CachedUserDefaults.bool("flickRingEnabled") }
     static var flickRingButton: Int { CachedUserDefaults.int("flickRingButton") }
+    static var reverseScrollMouse: Bool { CachedUserDefaults.bool("reverseScrollMouse") }
+    static var reverseScrollTrackpad: Bool { CachedUserDefaults.bool("reverseScrollTrackpad") }
+    static var scrollSpeedMouse: ScrollSpeedPreference { CachedUserDefaults.macroPref("scrollSpeedMouse", ScrollSpeedPreference.allCases) }
+    static var scrollSpeedTrackpad: ScrollSpeedPreference { CachedUserDefaults.macroPref("scrollSpeedTrackpad", ScrollSpeedPreference.allCases) }
     static var pointerMouseAcceleration: PointerAccelerationPreference { CachedUserDefaults.macroPref("pointerMouseAcceleration", PointerAccelerationPreference.allCases) }
     static var pointerTrackpadAcceleration: PointerAccelerationPreference { CachedUserDefaults.macroPref("pointerTrackpadAcceleration", PointerAccelerationPreference.allCases) }
     static var pointerMouseSpeed: Double { PointerSpeedSteps.value(CachedUserDefaults.int("pointerMouseSpeed")) }

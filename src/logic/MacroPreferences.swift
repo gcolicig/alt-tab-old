@@ -588,6 +588,17 @@ enum PointerAccelerationPreference: CaseIterable, MacroPreference {
     }
 }
 
+extension ScrollSpeedPreference: MacroPreference {
+    var localizedString: LocalizedString {
+        switch self {
+            case .half: return "0.5×"
+            case .normal: return NSLocalizedString("1× (default)", comment: "")
+            case .double: return "2×"
+            case .triple: return "3×"
+        }
+    }
+}
+
 extension DragModifierPreference: MacroPreference {
     var localizedString: LocalizedString {
         switch self {
