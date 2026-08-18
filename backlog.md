@@ -1080,6 +1080,104 @@ Exit-Kriterium:
 - Bei ausgeschaltetem Modul existiert kein Tap.
 - Ein Druck loest hoechstens eine Aktion aus; Loslassen ausserhalb des Rings bricht folgenlos ab.
 
+### 9. Keep Awake / Sleep Override (Caffeine + Amphetamine)
+
+Status: Spezifiziert 2026-08-19; nicht begonnen
+Prioritaet: Mittel. Eigenstaendiges Modul, unabhaengig von Switcher- und Input-Kern
+
+Referenzen:
+
+- Caffeine (`caffeine-app.net`): Minimal-Referenz — ein Menubar-Toggle, das System-, Display- und Bildschirmschoner-Schlaf verhindert, optional mit fester Dauer.
+- Amphetamine (App Store `id937984704`): Funktions-Referenz — Sessions, Trigger, Energie-Policies, Automation. Kein 1:1-Nachbau von UI oder Branding, sondern eine eigenstaendige, modulare macOS-Umsetzung.
+
+Produktziel:
+
+- Ein eigenstaendiges "Keep Awake"-Modul in Alt-Tab+, modular aktivierbar, per Default aus. Es verhindert kontrolliert den Ruhezustand ueber oeffentliche macOS-Power-Assertions, mit manuellen Sessions und optionalen Triggern.
+
+Architektur-Einordnung (wichtig):
+
+- **Kein Event-Tap, keine private API.** Anders als Leader/FlickRing/Gesten braucht dieses Modul die Q-01..Q-16-Input-Sicherung nicht. Es nutzt ausschliesslich oeffentliche `IOPMAssertionCreateWithName`-Assertions plus System-Observer (NSWorkspace, IOKit Power Source, Netzwerk). Das groesste Risiko ist eine geleakte Assertion (Mac schlaeft nie mehr) — also strikte Assertion-Lebenszyklus-Verwaltung und Fail-safe.
+- Die Keep-Awake-Aktionen (Start/Stop/Toggle, Dauer-Presets) werden **Aktionen im gemeinsamen Register** (`ActionIdentifier`), sodass globale Shortcuts, Hyper, Leader, FlickRing und die Menueleiste sie ausloesen koennen — starke Wiederverwendung.
+- Eigener Settings-Sidebar-Eintrag "Keep Awake", getrennt vom Switcher.
+
+Technischer Kern:
+
+- System wach: `kIOPMAssertPreventUserIdleSystemSleep`.
+- Display wach: zusaetzlich `kIOPMAssertPreventUserIdleDisplaySleep`.
+- Nur-System-wach (Display darf schlafen / Bildschirmschoner erlaubt): nur die System-Assertion, nicht die Display-Assertion.
+- Laufwerke wach: die passende Disk-Idle-Assertion.
+- Genau eine aktive Assertion pro Kategorie; beim Wechsel alt freigeben, neu setzen. Assertion-IDs werden nicht persistiert — nach Crash/Neustart ist der Zustand sauber inaktiv (Fail-safe).
+- Session-Timer auf Wall-Clock, robust gegen Sleep/Wake-Drift.
+
+Feature-Kandidaten (Checkliste; Empfehlung pro Punkt, frei auf `BEHALTEN`/`OPTIONAL`/`ENTFERNEN`/`SPAETER` setzbar):
+
+MVP / Must-have (Caffeine-Niveau und etwas mehr):
+
+- [BEHALTEN] Menubar-Toggle "Mac wach halten".
+- [BEHALTEN] Session Start/Stop per Klick.
+- [BEHALTEN] Unbegrenzte Session.
+- [BEHALTEN] Feste Dauer (Minuten/Stunden, Presets plus frei).
+- [BEHALTEN] Bis konkrete Uhrzeit.
+- [BEHALTEN] Laufende Session verlaengern.
+- [BEHALTEN] Nur System wach halten, Display darf schlafen.
+- [BEHALTEN] Optional Display aktiv halten.
+- [BEHALTEN] Menubar zeigt Restlaufzeit (12h/24h-Format).
+- [BEHALTEN] Globale Shortcuts fuer Start/Stop/Toggle ueber das Aktionsregister.
+- [BEHALTEN] Auto-Ende bei niedrigem Batteriestand (Schwelle konfigurierbar).
+- [BEHALTEN] Klares State-Modell: `inactive`, `active`, `displayAllowedToSleep`, `triggerActive`, `batteryProtected`, `error`.
+- [BEHALTEN] Fail-safe: nach Crash/Logout/Neustart inaktiv; Assertion nie geleakt; `applicationWillTerminate` und Wake geben frei bzw. synchronisieren.
+- [BEHALTEN] Lokal, ohne Account, ohne Tracking.
+
+Should-have (Ausbaustufe):
+
+- [OPTIONAL] Auto-Start bei Login (bestehende Login-Item-Infra).
+- [OPTIONAL] Optional Auto-Aktivierung direkt nach App-Start.
+- [OPTIONAL] Anpassbare Menubar-Icons.
+- [OPTIONAL] Lokale Notifications bei Start/Ende/Auto-Deaktivierung/Fehler.
+- [OPTIONAL] Trigger: aktiv solange bestimmte App laeuft (NSWorkspace launch/terminate).
+- [OPTIONAL] Trigger: aktiv bei externer Stromversorgung; Ende auf Batterie (IOKit Power Source).
+- [OPTIONAL] Trigger: aktiv bei Batterie-Schwellwert.
+- [OPTIONAL] Trigger: aktiv bei gemountetem Volume; optional Laufwerke wach halten (NSWorkspace didMount plus Disk-Assertion).
+- [OPTIONAL] Trigger: aktiv bei externer Anzeige oder Screen Mirroring (NSScreen / CGDisplay-Reconfiguration-Callback).
+- [OPTIONAL] Saubere Trennung manuelle vs. triggerbasierte Session und Prioritaetsregeln bei konkurrierenden Triggern.
+- [OPTIONAL] Debug/Log-Ansicht der Trigger-Entscheidungen.
+
+Nice-to-have / spaeter:
+
+- [SPAETER] Trigger: WLAN/SSID (CoreWLAN — braucht Standort-Berechtigung zum SSID-Lesen; explizit einholen und melden).
+- [SPAETER] Trigger: USB- oder Bluetooth-Geraet verbunden (IOKit-Matching / IOBluetooth).
+- [SPAETER] Trigger: Idle-Time/Inaktivitaet (IOHIDSystem `HIDIdleTime`).
+- [SPAETER] Trigger: CPU-Schwellwert (Polling; Energiekosten beachten).
+- [SPAETER] Trigger: IP-/VPN-/DNS-Umgebung (NWPathMonitor / SystemConfiguration).
+- [SPAETER] AppleScript- oder URL-Scheme-Automation.
+- [SPAETER] Anpassbare Benachrichtigungssounds.
+
+Bewusst nicht uebernehmen (mit Begruendung):
+
+- [ENTFERNEN] Trigger "Download laeuft / Ende nach Download": kein verlaesslicher oeffentlicher, systemweiter Weg, "ein Download laeuft" zu erkennen; nur app-spezifische Heuristik. Faellt raus, bis es einen belastbaren Pfad gibt.
+- [ENTFERNEN] Periodische Mausbewegung simulieren ("Jiggle"): Power-Assertions sind der saubere Weg und machen das Jiggeln ueberfluessig; ein synthetischer Input-Pfad waere unnoetiges Risiko und widerspricht dem Assertion-Modell.
+- [ENTFERNEN] "Screen nach Inaktivitaet sperren trotz aktiver Session": Sperr-Policy gehoert zu macOS; keine App-Umgehung.
+
+UX:
+
+- Menubar: Klick toggelt; Untermenue mit Dauer-Presets, "Bis Uhrzeit", "Display aktiv halten", Restlaufzeit und "Beenden". Icon zeigt aktiv/inaktiv, optional Restzeit.
+- Settings-Tab "Keep Awake": Default-Dauer, Display-Policy, Batterie-Schutz-Schwelle, Auto-Start, Notifications, Trigger-Editor (Liste von Triggern mit Bedingung und Modus).
+- Session-Picker und Trigger-Editor kompakt in AppKit, konsistent mit dem Rest.
+
+Edge Cases, Sicherheit, Energie:
+
+- Assertion-Leak verhindern: genau ein Owner pro Kategorie; Terminierung und Crash-Recovery geben frei; nach Wake Zustand konsistent halten.
+- Batterie: Auto-Ende bei Schwelle mit klarer Meldung.
+- Sleep/Wake, Logout/Login, Netzwerkwechsel: Trigger neu auswerten, Timer gegen Wall-Clock.
+- Konkurrierende Trigger: definierte Prioritaet (z.B. Batterie-Schutz sticht Aktiv-Trigger).
+- Datenschutz: keine Netzwerkuebertragung, lokale Konfiguration; SSID-/Netzwerk-Trigger nur mit erteilter Berechtigung.
+
+Nicht im MVP:
+
+- Trigger jenseits App-laeuft / Stromversorgung / Batterie / Volume / externe Anzeige.
+- Automation-Schnittstelle.
+- Per-App- oder Regel-Engine.
+
 ## Settings-Modell
 
 Status: Minimal halten
