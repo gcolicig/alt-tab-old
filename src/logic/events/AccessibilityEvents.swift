@@ -95,7 +95,8 @@ class AccessibilityEvents {
             Applications.windowListUpdateThrottler.throttleOrProceed(key: "\(wid)") {
                 guard let app = Applications.findOrCreate(pid, false) else { return }
                 Logger.info { "\(type) wid:\(wid) app:\(app.debugId)" }
-                let findOrCreate = Windows.findOrCreate(element, wid, app, level, a.title, a.subrole, a.role, a.size, a.position, a.isFullscreen, a.isMinimized)
+                // a notification tells us nothing about the accessibility window list of the app
+                let findOrCreate = Windows.findOrCreate(element, wid, app, level, a.title, a.subrole, a.role, a.size, a.position, a.isFullscreen, a.isMinimized, .unknown)
                 guard let window = findOrCreate.0 else {
                     // we don't know this window, but it got focused, so let's update app.focusedWindow with nil
                     if type == kAXFocusedWindowChangedNotification && a.role != kAXSheetRole {

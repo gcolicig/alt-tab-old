@@ -129,10 +129,11 @@ extension AXUIElement {
     /// we combine both the normal approach and brute-force to get all possible windows
     /// with only normal approach: we miss other-Spaces windows
     /// with only brute-force approach: we miss windows when the app launches (e.g. launch Note.app: first window is not found by brute-force)
-    func allWindows(_ pid: pid_t) throws -> [AXUIElement] {
+    /// we keep both groups apart: only the first one is the list the application curates itself
+    func allWindows(_ pid: pid_t) throws -> AxWindowCandidates {
         let aWindows = try windows()
-        let bWindows = Self.windowsByBruteForce(pid)
-        return Array(Set(aWindows + bWindows))
+        let bWindows = Set(Self.windowsByBruteForce(pid)).subtracting(aWindows)
+        return AxWindowCandidates(listed: aWindows, bruteForcedOnly: Array(bWindows))
     }
 
     /// doesn't return windows on other Spaces
@@ -242,6 +243,20 @@ extension AXUIElement {
 /// this means that long-lived apps (e.g. Finder) may have high IDs
 /// we don't know how high it can go, and if it wraps around
 typealias AXUIElementID = UInt64
+
+/// The windows of one application, split by source.
+/// `listed` comes from `kAXWindowsAttribute`, which the application curates. `bruteForcedOnly` comes from
+/// the `_AXUIElementCreateWithRemoteToken` scan, which also returns windows the application hid but never
+/// destroyed. An empty `listed` means the application gave us no usable list, not that it has no window.
+struct AxWindowCandidates {
+    let listed: [AXUIElement]
+    let bruteForcedOnly: [AXUIElement]
+
+    var isEmpty: Bool { listed.isEmpty && bruteForcedOnly.isEmpty }
+    var axWindowListIsUsable: Bool { !listed.isEmpty }
+    /// what the application said about a window we only found by brute force
+    var bruteForcedMembership: AxWindowListMembership { axWindowListIsUsable ? .notListed : .unknown }
+}
 
 enum AxError: Error {
     case runtimeError

@@ -136,7 +136,8 @@ class Windows {
     static func refreshWhichWindowsToShowTheUser() {
         if Preferences.onlyShowApplications() {
             // Group windows by application and select the optimal main window
-            let windowsGroupedByApp = Dictionary(grouping: list) { $0.application.pid }
+            // unreachable windows are excluded: one of them as the main window would hide the whole app
+            let windowsGroupedByApp = Dictionary(grouping: list.filter { $0.isReachable }) { $0.application.pid }
             windowsGroupedByApp.forEach { (app, windows) in
                 if windows.count > 1, let mainWindow = findMainWindow(windows) {
                     windows.forEach { window in
@@ -167,6 +168,7 @@ class Windows {
 
     private static func refreshIfWindowShouldBeShownToTheUser(_ window: Window) {
         window.shouldShowTheUser =
+            window.isReachable &&
             !(window.application.bundleIdentifier.flatMap { id in
                 Preferences.exceptions.contains {
                     id.hasPrefix($0.bundleIdentifier) && shouldHideWindow(window, $0)
@@ -490,16 +492,34 @@ class Windows {
         return windowsToRefresh
     }
 
-    static func findOrCreate(_ windowAxUiElement: AXUIElement, _ wid: CGWindowID, _ app: Application, _ level: CGWindowLevel, _ title: String?, _ subrole: String?, _ role: String?, _ size: CGSize?, _ position: CGPoint?, _ isFullscreen: Bool?, _ isMinimized: Bool?) -> (Window?, Bool) {
+    static func findOrCreate(_ windowAxUiElement: AXUIElement, _ wid: CGWindowID, _ app: Application, _ level: CGWindowLevel, _ title: String?, _ subrole: String?, _ role: String?, _ size: CGSize?, _ position: CGPoint?, _ isFullscreen: Bool?, _ isMinimized: Bool?, _ membership: AxWindowListMembership) -> (Window?, Bool) {
         if let window = (list.first { $0.isEqualRobust(windowAxUiElement, wid) }) {
             // on any window event, we take the opportunity to refresh all window attributes
             window.updateFromAxAttributes(title, size, position, isFullscreen, isMinimized)
+            // a window event tells us nothing about the accessibility window list; we keep what we know
+            if membership != .unknown {
+                window.axWindowListMembership = membership
+            }
             return (window, false)
         }
         guard WindowDiscriminator.isActualWindow(app, wid, level, title, subrole, role, size) else { return (nil, false) }
-        let window = Window(windowAxUiElement, app, wid, title, isFullscreen, isMinimized, position, size)
+        guard !isNewWindowUnreachable(wid, app, membership, isMinimized) else { return (nil, false) }
+        let window = Window(windowAxUiElement, app, wid, title, isFullscreen, isMinimized, position, size, membership)
         appendWindow(window)
         return (window, true)
+    }
+
+    /// The application answered with its window list, and this window was not in it. Such a window is added
+    /// only when the user can still reach it: minimized, on a Space, or on screen.
+    private static func isNewWindowUnreachable(_ wid: CGWindowID, _ app: Application, _ membership: AxWindowListMembership, _ isMinimized: Bool?) -> Bool {
+        let facts = WindowReachabilityFacts(
+            membership: membership,
+            isMinimized: isMinimized ?? false,
+            applicationIsHidden: app.isHidden,
+            isOnAnySpace: !wid.spaces().isEmpty)
+        guard WindowReachabilityPolicy.rejectsNewWindow(facts, { CGWindow.isOnScreen(wid) }) else { return false }
+        Logger.debug { "Window rejected \(app.debugId) because it is unreachable \((wid, facts))" }
+        return true
     }
 
     static func appendWindow(_ window: Window) {
@@ -508,6 +528,23 @@ class Windows {
         if list.count > TilesView.recycledViews.count {
             TilesView.recycledViews.append(TileView())
         }
+    }
+
+    /// The application no longer lists these windows, and the user cannot reach them any more.
+    /// We drop them instead of keeping dead entries with live accessibility observers.
+    static func removeUnreachableWindows(_ app: Application, _ listedWids: Set<CGWindowID>) {
+        var unreachable = [Window]()
+        for window in list {
+            guard window.application.pid == app.pid, let wid = window.cgWindowId, !listedWids.contains(wid) else { continue }
+            window.axWindowListMembership = .notListed
+            window.updateSpacesAndScreen()
+            if !window.isReachable {
+                unreachable.append(window)
+            }
+        }
+        guard !unreachable.isEmpty else { return }
+        Logger.info { "removing unreachable windows: \(unreachable.map { $0.debugId })" }
+        removeWindows(unreachable, true)
     }
 
     static func removeWindows(_ windows: [Window], _ addWindowlessWindowIfNeeded: Bool) {
