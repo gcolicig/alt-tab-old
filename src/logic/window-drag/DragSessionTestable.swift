@@ -62,13 +62,24 @@ enum DragSessionMachine {
 }
 
 /// The targets AltTab+ provides inside its own modifier drag. They exist because an AX-driven drag never
-/// triggers Apple's title-bar tiling, so these three would otherwise be unreachable during such a drag.
-/// Everything Tahoe already covers outside our drag stays untouched.
+/// triggers Apple's title-bar tiling, so they would otherwise be unreachable during such a drag. Everything
+/// Tahoe already covers outside our drag stays untouched.
+///
+/// Phase 5 grows the set beyond halves and fill: the four corners snap to quarters, and pushing into a
+/// left/right edge past the half band offers a third and then a two-thirds column.
 enum DragSnapTarget: Equatable {
     case none
     case leftHalf
     case rightHalf
     case fill
+    case leftThird
+    case rightThird
+    case leftTwoThirds
+    case rightTwoThirds
+    case topLeftQuarter
+    case topRightQuarter
+    case bottomLeftQuarter
+    case bottomRightQuarter
 }
 
 /// Coordinates here are Quartz, matching `CGEvent.location` and the AX position attribute: the origin is
@@ -99,30 +110,68 @@ struct DragSnapContext: Equatable {
 enum DragSnapPolicy {
     static let edgeTolerance = CGFloat(3)
     static let sharedEdgeDwell = 0.2
+    /// A corner box this many points on each side takes priority over the edge it shares, so the corner
+    /// snaps to a quarter instead of a half or a depth band.
+    static let cornerReach = CGFloat(48)
+    /// How far a left/right edge reads inward, split into three equal depth bands.
+    static let edgeReach = CGFloat(48)
+    static var bandWidth: CGFloat { edgeReach / 3 }
 
-    /// Which edge the cursor is on, ignoring whether that edge is currently usable. Separated from
+    /// Which target the cursor geometry points at, ignoring whether it is currently usable. Separated from
     /// `target` so the caller can track how long the cursor has been on one edge without asking the same
     /// question twice with a fake dwell.
     static func edge(_ cursor: CGPoint, _ visibleFrame: CGRect) -> DragSnapTarget {
         guard visibleFrame.width > 0, visibleFrame.height > 0 else { return .none }
-        // the bottom edge (maxY in Quartz) collides with Dock auto-hide and magnification, so it carries
-        // no zone at all; only the top edge fills
+        let atLeft = cursor.x <= visibleFrame.minX + cornerReach
+        let atRight = cursor.x >= visibleFrame.maxX - cornerReach
+        let atTop = cursor.y <= visibleFrame.minY + cornerReach
+        let atBottom = cursor.y >= visibleFrame.maxY - cornerReach
+        // corners win over the edges they share: the 48x48 box at each end snaps to a quarter
+        if atLeft && atTop { return .topLeftQuarter }
+        if atRight && atTop { return .topRightQuarter }
+        if atLeft && atBottom { return .bottomLeftQuarter }
+        if atRight && atBottom { return .bottomRightQuarter }
+        // the bottom edge (maxY in Quartz) collides with Dock auto-hide and magnification, so its middle
+        // carries no zone; only the top middle fills
         if cursor.y <= visibleFrame.minY + edgeTolerance { return .fill }
-        if cursor.x <= visibleFrame.minX + edgeTolerance { return .leftHalf }
-        if cursor.x >= visibleFrame.maxX - edgeTolerance { return .rightHalf }
+        // left/right edges, in the mid-height strip left between the corner boxes: the very edge stays the
+        // familiar half, and pushing inward offers a third and then a two-thirds column
+        if cursor.x <= visibleFrame.minX + edgeReach { return depthTarget(cursor.x - visibleFrame.minX, left: true) }
+        if cursor.x >= visibleFrame.maxX - edgeReach { return depthTarget(visibleFrame.maxX - cursor.x, left: false) }
         return .none
+    }
+
+    private static func depthTarget(_ depth: CGFloat, left: Bool) -> DragSnapTarget {
+        if depth < bandWidth { return left ? .leftHalf : .rightHalf }
+        if depth < bandWidth * 2 { return left ? .leftThird : .rightThird }
+        return left ? .leftTwoThirds : .rightTwoThirds
     }
 
     static func target(_ context: DragSnapContext) -> DragSnapTarget {
         let edge = edge(context.cursor, context.visibleFrame)
         switch edge {
-            case .none: return edge
+            case .none:
+                return .none
             // not merely delayed: with a display above, the top edge is a route to it. Dwell still let the
             // overlay appear while the cursor was passing through, and the window flickered between screens
             // while our target and its actual position disagreed. There is no fill zone there at all.
-            case .fill: return context.hasNeighbourAbove ? .none : edge
-            case .leftHalf: return isAvailable(shared: context.hasNeighbourLeft, dwell: context.dwellElapsed) ? edge : .none
-            case .rightHalf: return isAvailable(shared: context.hasNeighbourRight, dwell: context.dwellElapsed) ? edge : .none
+            case .fill:
+                return context.hasNeighbourAbove ? .none : edge
+            default:
+                return isAvailable(shared: shares(edge, context), dwell: context.dwellElapsed) ? edge : .none
+        }
+    }
+
+    /// Whether this target sits on an edge shared with another display, which turns it into a route the
+    /// cursor may only be passing through. A top corner is shared by either the edge to its side or the one
+    /// above it.
+    private static func shares(_ target: DragSnapTarget, _ context: DragSnapContext) -> Bool {
+        switch target {
+            case .leftHalf, .leftThird, .leftTwoThirds, .bottomLeftQuarter: return context.hasNeighbourLeft
+            case .rightHalf, .rightThird, .rightTwoThirds, .bottomRightQuarter: return context.hasNeighbourRight
+            case .topLeftQuarter: return context.hasNeighbourLeft || context.hasNeighbourAbove
+            case .topRightQuarter: return context.hasNeighbourRight || context.hasNeighbourAbove
+            case .none, .fill: return false
         }
     }
 
@@ -133,12 +182,24 @@ enum DragSnapPolicy {
     static func frame(_ target: DragSnapTarget, in visibleFrame: CGRect) -> CGRect? {
         guard visibleFrame.width > 0, visibleFrame.height > 0 else { return nil }
         let half = floor(visibleFrame.width / 2)
+        let halfHeight = floor(visibleFrame.height / 2)
         switch target {
             case .none: return nil
             case .leftHalf: return CGRect(x: visibleFrame.minX, y: visibleFrame.minY, width: half, height: visibleFrame.height)
             case .rightHalf: return CGRect(x: visibleFrame.minX + half, y: visibleFrame.minY, width: visibleFrame.width - half, height: visibleFrame.height)
             // the visible desktop rect, deliberately not a macOS fullscreen Space
             case .fill: return visibleFrame
+            // full-height columns, shared with the keyboard Window Layouts so a drag and a shortcut land
+            // on the exact same rect
+            case .leftThird: return WindowLayoutGeometry.frame(.leftThird, in: visibleFrame)
+            case .rightThird: return WindowLayoutGeometry.frame(.rightThird, in: visibleFrame)
+            case .leftTwoThirds: return WindowLayoutGeometry.frame(.leftTwoThirds, in: visibleFrame)
+            case .rightTwoThirds: return WindowLayoutGeometry.frame(.rightTwoThirds, in: visibleFrame)
+            // Quartz coordinates: minY is the top, so the top quarters sit at minY
+            case .topLeftQuarter: return CGRect(x: visibleFrame.minX, y: visibleFrame.minY, width: half, height: halfHeight)
+            case .topRightQuarter: return CGRect(x: visibleFrame.minX + half, y: visibleFrame.minY, width: visibleFrame.width - half, height: halfHeight)
+            case .bottomLeftQuarter: return CGRect(x: visibleFrame.minX, y: visibleFrame.minY + halfHeight, width: half, height: visibleFrame.height - halfHeight)
+            case .bottomRightQuarter: return CGRect(x: visibleFrame.minX + half, y: visibleFrame.minY + halfHeight, width: visibleFrame.width - half, height: visibleFrame.height - halfHeight)
         }
     }
 }
