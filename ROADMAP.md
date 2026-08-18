@@ -142,6 +142,15 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 - Private Multitouch-API strikt nach macOS-Version gaten.
 - Default-Aktivierung erst mit Helper-Prozess; unbekannte Version deaktiviert das Modul.
 
+## Phase 9: Keep Awake (Sleep Override)
+
+- Eigenstaendiges Modul, per Default aus: Caffeine als Minimal-Referenz (Menubar-Toggle), Amphetamine als Funktionsreferenz (Sessions, Trigger, Energie-Policies). Kein Event-Tap und keine private API — nur oeffentliche `IOPMAssertion` plus System-Observer; damit ausserhalb der Q-01..Q-16-Input-Sicherung.
+- MVP: Menubar-Toggle, Sessions (unbegrenzt / feste Dauer / bis Uhrzeit / verlaengern), System- vs. Display-wach, Restlaufzeit, globale Shortcuts ueber das Aktionsregister, Batterie-Auto-Ende, striktes Fail-safe gegen Assertion-Leak.
+- Ausbaustufe: Trigger (App laeuft, Stromversorgung, Batterie-Schwelle, Volume gemountet, externe Anzeige), Notifications, Auto-Start, Trennung manuell/triggerbasiert mit Prioritaetsregeln.
+- Spaeter: WLAN/SSID (Standort-Berechtigung), USB/Bluetooth, Idle, CPU, Netzwerkumgebung, Automation.
+- Bewusst nicht: Download-Trigger (kein verlaesslicher oeffentlicher Pfad), Maus-Jiggle (Assertions machen es ueberfluessig), Umgehung der Sperr-Policy.
+- Vollstaendige Spezifikation und die editierbare Feature-Checkliste in `backlog.md` unter Story 9 "Keep Awake / Sleep Override".
+
 ## Release-Gates
 
 Vor jeder oeffentlichen Version:
