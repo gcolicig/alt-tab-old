@@ -8,7 +8,8 @@ enum Actions {
             DisplayMoveAction.allCases.map(displayMoveRegistration) +
             SpaceAction.all.map(spaceRegistration) +
             (0..<Preferences.maxLaunchAppCount).map(launchAppRegistration) +
-            (0..<Preferences.maxOpenUrlCount).map(openUrlRegistration)
+            (0..<Preferences.maxOpenUrlCount).map(openUrlRegistration) +
+            (0..<Preferences.maxProfileCount).map(profileRegistration)
     )
 
     @discardableResult
@@ -63,6 +64,12 @@ enum Actions {
     private static func openUrlRegistration(_ index: Int) -> RegisteredAction {
         RegisteredAction(id: .openUrl(index), title: { OpenUrlAction.localizedTitle(index) }, availability: { OpenUrlAction.availability(index) }) {
             OpenUrlAction.perform(index)
+        }
+    }
+
+    private static func profileRegistration(_ index: Int) -> RegisteredAction {
+        RegisteredAction(id: .activateProfile(index), title: { ProfileController.title(index) }, availability: { ProfileController.availability(index) }) {
+            ProfileController.activate(index)
         }
     }
 

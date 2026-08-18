@@ -169,6 +169,8 @@ class Windows {
     private static func refreshIfWindowShouldBeShownToTheUser(_ window: Window) {
         window.shouldShowTheUser =
             window.isReachable &&
+            // an active project profile filters the switcher to its own apps; no active profile passes all
+            ProfileController.allows(window) &&
             !(window.application.bundleIdentifier.flatMap { id in
                 Preferences.exceptions.contains {
                     id.hasPrefix($0.bundleIdentifier) && shouldHideWindow(window, $0)

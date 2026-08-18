@@ -43,6 +43,15 @@
 		C0DE1000000000000000003F /* MenuShortcutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000031 /* MenuShortcutTests.swift */; };
 		C0DE10000000000000000039 /* LeaderSequenceTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000002D /* LeaderSequenceTestable.swift */; };
 		C0DE1000000000000000003A /* LeaderSequenceTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000002D /* LeaderSequenceTestable.swift */; };
+		C0DE100000000000000000B1 /* ProfileController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000AE /* ProfileController.swift */; };
+		C0DE100000000000000000B2 /* ProfileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000AF /* ProfileStore.swift */; };
+		C0DE100000000000000000B3 /* ProfilesTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000B0 /* ProfilesTab.swift */; };
+		C0DE100000000000000000AE /* ProfileTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000AC /* ProfileTestable.swift */; };
+		C0DE100000000000000000AF /* ProfileTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000AC /* ProfileTestable.swift */; };
+		C0DE100000000000000000B0 /* ProfileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000AD /* ProfileTests.swift */; };
+		C0DE100000000000000000AB /* SpaceIdentityTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000AA /* SpaceIdentityTestable.swift */; };
+		C0DE100000000000000000AC /* SpaceIdentityTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000AA /* SpaceIdentityTestable.swift */; };
+		C0DE100000000000000000AD /* SpaceIdentityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000AB /* SpaceIdentityTests.swift */; };
 		C0DE100000000000000000A9 /* LeaderTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000A8 /* LeaderTab.swift */; };
 		C0DE100000000000000000AA /* FlickRingTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000A9 /* FlickRingTab.swift */; };
 		C0DE100000000000000000A3 /* LeaderController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000A2 /* LeaderController.swift */; };
@@ -424,6 +433,13 @@
 		C0DE20000000000000000031 /* MenuShortcutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuShortcutTests.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000002D /* LeaderSequenceTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderSequenceTestable.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000002E /* LeaderSequenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderSequenceTests.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000AE /* ProfileController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileController.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000AF /* ProfileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileStore.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000B0 /* ProfilesTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilesTab.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000AC /* ProfileTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileTestable.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000AD /* ProfileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileTests.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000AA /* SpaceIdentityTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpaceIdentityTestable.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000AB /* SpaceIdentityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpaceIdentityTests.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000A8 /* LeaderTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderTab.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000A9 /* FlickRingTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlickRingTab.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000A2 /* LeaderController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderController.swift; sourceTree = "<group>"; };
@@ -1311,6 +1327,8 @@
 		BF0C8719351B41D268CE8B70 /* unit-tests */ = {
 			isa = PBXGroup;
 			children = (
+				C0DE200000000000000000AD /* ProfileTests.swift */,
+				C0DE200000000000000000AB /* SpaceIdentityTests.swift */,
 				C0DE200000000000000000A1 /* FlickRingTests.swift */,
 				C0DE2000000000000000001B /* PointerOwnershipTests.swift */,
 				C0DE2000000000000000002A /* SystemValueOwnershipTests.swift */,
@@ -1575,6 +1593,7 @@
 				C0DE30000000000000000005 /* window-cursor */,
 				C0DE30000000000000000006 /* window-drag */,
 				C0DE30000000000000000007 /* leader */,
+				C0DE3000000000000000000A /* profiles */,
 				C0DE30000000000000000009 /* flick-ring */,
 				C0DE30000000000000000008 /* shortcut-clues */,
 				C0DE30000000000000000003 /* spaces */,
@@ -1788,6 +1807,7 @@
 		D04BA3FA52AA40B827A72F10 /* tabs */ = {
 			isa = PBXGroup;
 			children = (
+				C0DE200000000000000000B0 /* ProfilesTab.swift */,
 				C0DE200000000000000000A9 /* FlickRingTab.swift */,
 				C0DE200000000000000000A8 /* LeaderTab.swift */,
 				5F21C9DE2C6E93F10091F72F /* appearance */,
@@ -1830,6 +1850,7 @@
 		C0DE30000000000000000003 /* spaces */ = {
 			isa = PBXGroup;
 			children = (
+				C0DE200000000000000000AA /* SpaceIdentityTestable.swift */,
 				C0DE20000000000000000007 /* InstantSpacesTestable.swift */,
 				C0DE20000000000000000008 /* InstantSpaces.swift */,
 			);
@@ -1854,6 +1875,16 @@
 				C0DE200000000000000000A0 /* FlickRingTestable.swift */,
 			);
 			path = "flick-ring";
+			sourceTree = "<group>";
+		};
+		C0DE3000000000000000000A /* profiles */ = {
+			isa = PBXGroup;
+			children = (
+				C0DE200000000000000000AF /* ProfileStore.swift */,
+				C0DE200000000000000000AE /* ProfileController.swift */,
+				C0DE200000000000000000AC /* ProfileTestable.swift */,
+			);
+			path = "profiles";
 			sourceTree = "<group>";
 		};
 		C0DE30000000000000000007 /* leader */ = {
@@ -2824,6 +2855,10 @@
 				C0DE1000000000000000002C /* DragSessionTestable.swift in Sources */,
 				C0DE10000000000000000037 /* WindowResizeTestable.swift in Sources */,
 				C0DE1000000000000000003A /* LeaderSequenceTestable.swift in Sources */,
+				C0DE100000000000000000AF /* ProfileTestable.swift in Sources */,
+				C0DE100000000000000000B0 /* ProfileTests.swift in Sources */,
+				C0DE100000000000000000AC /* SpaceIdentityTestable.swift in Sources */,
+				C0DE100000000000000000AD /* SpaceIdentityTests.swift in Sources */,
 				C0DE100000000000000000A1 /* FlickRingTestable.swift in Sources */,
 				C0DE100000000000000000A2 /* FlickRingTests.swift in Sources */,
 				C0DE1000000000000000003D /* MenuShortcutTestable.swift in Sources */,
@@ -2874,6 +2909,11 @@
 				C0DE1000000000000000002B /* DragSessionTestable.swift in Sources */,
 				C0DE10000000000000000036 /* WindowResizeTestable.swift in Sources */,
 				C0DE10000000000000000039 /* LeaderSequenceTestable.swift in Sources */,
+				C0DE100000000000000000B1 /* ProfileController.swift in Sources */,
+				C0DE100000000000000000B2 /* ProfileStore.swift in Sources */,
+				C0DE100000000000000000B3 /* ProfilesTab.swift in Sources */,
+				C0DE100000000000000000AE /* ProfileTestable.swift in Sources */,
+				C0DE100000000000000000AB /* SpaceIdentityTestable.swift in Sources */,
 				C0DE100000000000000000A9 /* LeaderTab.swift in Sources */,
 				C0DE100000000000000000AA /* FlickRingTab.swift in Sources */,
 				C0DE100000000000000000A3 /* LeaderController.swift in Sources */,

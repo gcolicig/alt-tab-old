@@ -12,6 +12,7 @@ class KeyboardEventsTestable {
         let afterDisplayMoves: Int = afterLayouts + DisplayMoveAction.allCases.count
         let afterSpaceActions: Int = afterDisplayMoves + SpaceAction.all.count
         let afterLaunchApps: Int = afterSpaceActions + Preferences.maxLaunchAppCount
+        let afterOpenUrls: Int = afterLaunchApps + Preferences.maxOpenUrlCount
         var ids = [String: Int]()
         (0..<shortcutCount).forEach { ids[Preferences.indexToName("nextWindowShortcut", $0)] = $0 }
         (0..<shortcutCount).forEach { ids[Preferences.indexToName("holdShortcut", $0)] = shortcutCount + $0 }
@@ -29,6 +30,9 @@ class KeyboardEventsTestable {
         }
         (0..<Preferences.maxOpenUrlCount).forEach {
             ids[OpenUrlAction.shortcutPreferenceKey($0)] = afterLaunchApps + $0
+        }
+        (0..<Preferences.maxProfileCount).forEach {
+            ids[ProfileStore.shortcutPreferenceKey($0)] = afterOpenUrls + $0
         }
         return ids
     }

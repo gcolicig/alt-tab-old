@@ -474,8 +474,16 @@ Aktionsregister. Vollstaendige Spezifikation in `spec-shortcut-clues.md`.
 
 ### 2D. Projektprofile und Workspace-Restore
 
-Status: Spaeterer Folgeumfang
+Status: Fundament + Stufe 1 umgesetzt 2026-08-18; Menueleisten-Name und Session-Restore zurueckgestellt, manuelle Abnahme offen
 Prioritaet: Mittel
+
+Umsetzungsstand 2026-08-18:
+
+- Fundament: `CGSCopyManagedDisplaySpaces` liefert neben `id64` (sitzungslokal) einen stabilen `uuid`-String je Space; er wird als `Spaces.uuidsById` gelesen und als `currentSpaceUuid` sowie `identitySnapshot()` bereitgestellt. Der reine `SpaceIdentity`-Resolver bildet UUID zu aktuellem Index und zurueck ab und liefert nil, wenn kein Space die UUID traegt. Ein Space ohne UUID (manche Fullscreen-Spaces) bleibt unbindbar. Unit-getestet.
+- Stufe 1: fuenf Profil-Slots (`Profile`: Name, Bundle-IDs, optionales Layout-RawValue, optionale Space-UUID). `ProfileActivation.plan` loest ein Profil gegen die aktuellen Spaces auf; ein gebundener, aber fehlender Space wird als `bindingLost` gemeldet statt umgebogen. `ProfileController.activate` wechselt den Space (nur wenn 1..9 und aufloesbar) und schaltet den Switcher-Filter (`allows`) so, dass nur Profil-Apps sichtbar sind; erneutes Ausloesen deaktiviert. Der per-Profil-Shortcut ist eine globale Aktion (`ActionIdentifier.activateProfile`) im gemeinsamen Register. `ProfilesTab` pflegt Name, Apps, Layout, Space-Binding (mit Status "Bound"/"Bound space is gone"/"Not bound") und Shortcut.
+- Bewusst weggelassen: kein Start/Beenden/Verstecken/Verschieben von Apps (getrennte Opt-in-Aktionen, Stufe 2); das Layout wird gespeichert, aber nicht bei Aktivierung angewendet; der Profilname erscheint noch nicht in der Menueleiste.
+
+Ursprungsstand (spaeterer Folgeumfang):
 
 Produktmodell:
 
