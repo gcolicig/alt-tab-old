@@ -99,6 +99,13 @@ class Preferences {
             values["leaderSlotKeys\(index)"] = ""
             values["leaderSlotAction\(index)"] = ""
         }
+        (0..<maxProfileCount).forEach { index in
+            values["profileName\(index)"] = ""
+            values["profileApps\(index)"] = ""
+            values["profileLayout\(index)"] = ""
+            values["profileSpaceUuid\(index)"] = ""
+            values[ProfileStore.shortcutPreferenceKey(index)] = defaultShortcut("")
+        }
         SpaceAction.all.forEach { values[$0.shortcutPreferenceKey] = defaultShortcut("") }
         (0..<maxLaunchAppCount).forEach { index in
             values[indexToName("launchAppBundleIdentifier", index)] = ""
@@ -243,6 +250,7 @@ class Preferences {
     static let maxLaunchAppCount = 9
     static let maxOpenUrlCount = 9
     static let maxLeaderSlotCount = 8
+    static let maxProfileCount = 5
     static var shortcutCount: Int {
         max(minShortcutCount, min(maxShortcutCount, CachedUserDefaults.int("shortcutCount")))
     }

@@ -124,10 +124,11 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 ## Phase 6: Projektprofile und Session Restore
 
-- Stabile Profile mit Name, Apps, optionalem Layout, Space-Binding und konfliktgeprueftem Shortcut einfuehren.
-- Profilname kann in der Spaces-Menueleiste statt der Nummer erscheinen; verlorene Space-Bindings werden sichtbar und nicht automatisch umgebogen.
-- Zuerst explizite Profilaktivierung und App-Filterung, danach Opt-in-Aktionen zum Starten oder Zuordnen von Apps.
-- Session-/Layout-Restore erst nach robustem Fenster-Matching sowie App- und Display-Matrix; keine automatische Wiederherstellung im ersten Schritt.
+- Umgesetzt (Fundament): stabile Managed-Space-Identitaet im Code (`Spaces.uuidsById`, `currentSpaceUuid`, `identitySnapshot()`), reiner `SpaceIdentity`-Resolver. Eine UUID ohne aktuellen Space loest zu nil auf.
+- Umgesetzt (Stufe 1): fuenf Profil-Slots mit Name, Apps (Bundle-IDs), optionalem Layout, optionalem Space-Binding (per stabiler UUID) und eigenem konfliktgepruefter Shortcut (als globale Aktion im Register). Aktivierung wechselt auf den gebundenen Space, sofern das Binding noch aufloest, und **filtert** den Switcher auf die Profil-Apps; erneutes Ausloesen schaltet das Profil wieder ab. Ein verlorenes Binding wird gemeldet und nie umgebogen. Keine App wird gestartet, beendet, versteckt oder verschoben. Reines Modell + Planer + Space-Identitaet sind unit-getestet.
+- Zurueckgestellt: der Profilname in der Spaces-Menueleiste (statt der Nummer) — Menueleisten-Integration, spaeter.
+- Zurueckgestellt: das Profil-Layout wird gespeichert, aber bei Aktivierung noch nicht angewendet (unerwartete Fenstermutation vermeiden); Anwendung wird eine eigene Aktion.
+- Offen (Geraete-Gate): Session-/Layout-Restore erst nach robustem Fenster-Matching sowie App- und Display-Matrix; keine automatische Wiederherstellung im ersten Schritt. Manuelle Abnahme von Stufe 1 am Zielgeraet: `docs/profiles-checklist.md`.
 
 ## Phase 7: Scroll
 
