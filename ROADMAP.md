@@ -117,9 +117,9 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 ## Phase 5: Weiteres Snapping
 
-- Ausserhalb des eigenen Modifier-Drags nur Luecken schliessen, die Tahoe nicht nativ abdeckt.
-- Drag-Overlay fuer Thirds, Two-Thirds und weitere bestaetigte Ziele.
-- Display-Topologien, Separate Spaces und dynamische Display-Wechsel pruefen.
+- Umgesetzt: der eigene Modifier-Drag bietet neben Left/Right half und Fill jetzt vier Eck-Viertel und Kanten-Tiefenbaender (Haelfte am Rand, dann Drittel, dann Zwei-Drittel). Die Thirds teilen die Rechteck-Geometrie mit den Tastatur-Window-Layouts, sodass Drag und Shortcut auf demselben Rahmen landen. Reine Zonenlogik in `DragSnapPolicy`, unit-getestet; das bestehende Overlay zeichnet die neuen Ziele ueber denselben Rahmenpfad. Neighbour-/Dwell-Gating gilt fuer alle neuen Ziele.
+- Offen und bewusst zurueckgestellt: Luecken ausserhalb des eigenen Modifier-Drags. Der Scope dafuer haengt an der Tahoe-Feature-Matrix (offenes Geraete-Gate); ohne sie wuerde geraten, was Tahoe nativ abdeckt.
+- Offen: Display-Topologien, Separate Spaces und dynamische Display-Wechsel am Zielgeraet pruefen (`docs/window-drag-checklist.md`).
 - Padding, Bewegungsanimation und konfigurierbare Snap-Zonenstaerke bleiben Folgeumfang nach festen, getesteten MVP-Werten.
 
 ## Phase 6: Projektprofile und Session Restore
