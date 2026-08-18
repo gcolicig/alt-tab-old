@@ -6,6 +6,11 @@ class Spaces {
     static var visibleSpaces = [CGSSpaceID]()
     static var screenSpacesMap = [ScreenUuid: [CGSSpaceID]]()
     static var idsAndIndexes = [(CGSSpaceID, SpaceIndex)]()
+    /// The stable, restart-surviving managed-space UUID per session-local space id. A space without one
+    /// (some fullscreen spaces expose none) cannot be bound to; the binding stays unresolved rather than
+    /// pointing at the wrong space.
+    static var uuidsById = [CGSSpaceID: String]()
+    static var currentSpaceUuid: String?
 
     static func isSingleSpace() -> Bool {
         return idsAndIndexes.count == 1
@@ -35,12 +40,14 @@ class Spaces {
         currentSpaceIndex = idsAndIndexes.first { (spaceId: CGSSpaceID, _) -> Bool in
             spaceId == currentSpaceId
         }?.1 ?? SpaceIndex(1)
+        currentSpaceUuid = uuidsById[currentSpaceId]
     }
 
     private static func refreshAllIdsAndIndexes() -> Void {
         idsAndIndexes.removeAll()
         screenSpacesMap.removeAll()
         visibleSpaces.removeAll()
+        uuidsById.removeAll()
         var spaceIndex = SpaceIndex(1)
         (CGSCopyManagedDisplaySpaces(CGS_CONNECTION) as! [NSDictionary]).forEach { (screen: NSDictionary) in
             var display = screen["Display Identifier"] as! ScreenUuid
@@ -50,12 +57,19 @@ class Spaces {
             (screen["Spaces"] as! [NSDictionary]).forEach { (space: NSDictionary) in
                 let spaceId = space["id64"] as! CGSSpaceID
                 idsAndIndexes.append((spaceId, spaceIndex))
+                // the same CGS dictionary carries the stable UUID; some spaces expose none
+                if let uuid = space["uuid"] as? String {
+                    uuidsById[spaceId] = uuid
+                }
                 screenSpacesMap[display, default: []].append(spaceId)
                 spaceIndex += 1
             }
             visibleSpaces.append((screen["Current Space"] as! NSDictionary)["id64"] as! CGSSpaceID)
         }
     }
-}
 
-typealias SpaceIndex = Int
+    /// A snapshot the pure `SpaceIdentity` resolver can work on without touching CGS.
+    static func identitySnapshot() -> [SpaceIdentityEntry] {
+        idsAndIndexes.map { SpaceIdentityEntry(uuid: uuidsById[$0.0], index: $0.1) }
+    }
+}
