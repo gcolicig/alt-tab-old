@@ -132,9 +132,9 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 ## Phase 7: Scroll
 
-- Reverse Scrolling und Scroll Speed mit engem `scrollWheel`-Tap.
-- Nur nach bestandener Tap-, Berechtigungs- und Energiepruefung.
-- Keine App- oder geraetespezifischen Regeln im MVP.
+- Umgesetzt: getrenntes Reverse-Scrolling und Scroll-Speed fuer Maus und Trackpad ueber den bestehenden `scrollWheel`-Tap. Der Tap laeuft nur, wenn der Switcher blockieren will oder eine Scroll-Einstellung aktiv ist; das Blockieren kontinuierlichen Scrollens bleibt strikt auf den aktiven Switcher beschraenkt, damit Trackpad-Scrollen ausserhalb nie blockiert wird. Kategorie ueber `kCGScrollWheelEventIsContinuous` (kontinuierlich = Trackpad/Magic Mouse, diskret = Rasterrad). Die reine `ScrollTransform`-Logik ist unit-getestet; sie schreibt Linien-, Pixel- und Fixed-Point-Deltas konsistent um. Safe Mode schaltet die Scroll-Modifikation ab.
+- Reverse betrifft im MVP nur die vertikale Achse; Speed skaliert beide. Keine App- oder geraetespezifischen Regeln, kein Smoothing, keine eigenen Kurven.
+- Offen (Geraete-Gate): Tap-, Berechtigungs- und Energiepruefung am Zielgeraet (`docs/scroll-checklist.md`), inkl. Momentum-/Phase-Verhalten.
 
 ## Phase 8: Gesten
 

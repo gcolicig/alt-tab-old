@@ -913,7 +913,16 @@ Repo-Learnings:
 
 ### 6. Reverse Scrolling und Scroll Speed
 
-Status: Tap-basierter Folge-Spike
+Status: MVP umgesetzt 2026-08-18; manuelle Tap-/Berechtigungs-/Energiepruefung am Zielgeraet offen (`docs/scroll-checklist.md`)
+
+Umsetzungsstand 2026-08-18:
+
+- `ScrollwheelEvents` veraendert jetzt statt nur durchzulassen. Die reine `ScrollTransform`-Logik whlt je Kategorie (kontinuierlich = Trackpad, diskret = Maus) die Einstellungen und liefert einen Vertikal-Faktor (Reverse = Vorzeichen, Speed = Betrag) und Horizontal-Faktor (nur Speed). Der Runtime skaliert damit Linien-, Pixel- und Fixed-Point-Deltas konsistent.
+- Der Tap laeuft nur bei Bedarf: Switcher-Blockieren oder aktive Scroll-Einstellung. Das Blockieren kontinuierlichen Scrollens ist strikt an den aktiven Switcher gebunden (`switcherWantsTap`), sodass Trackpad-Scrollen ausserhalb nie blockiert wird. Safe Mode deaktiviert die Modifikation.
+- Settings im Tab `Pointer & Scroll`: `Reverse … vertical scrolling` je Maus/Trackpad und `… scroll speed` (0.5×/1×/2×/3×). Aenderungen rufen `scrollSettingsChanged`, das den Tap an-/abschaltet.
+- Unit-getestet: Kategorieauswahl, Faktoren, No-op bei Default. Nicht geprueft: reales Momentum-/Phase-Verhalten und Energie am Geraet.
+
+Ursprungsstand (Tap-basierter Folge-Spike):
 Prioritaet: **2026-08-13 hochgestuft.** Der Nutzer nennt die getrennte Scrollrichtung als einzige Funktion aus LinearMouse, die im taeglichen Gebrauch wirklich fehlt. Damit steht sie ueber Pointer Accel/Speed, nicht darunter
 
 Beschreibung:
