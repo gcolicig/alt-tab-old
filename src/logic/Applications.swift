@@ -43,8 +43,8 @@ class Applications {
     static func manuallyUpdateWindows(_ app: Application) {
         AXCallScheduler.shared.schedule(key: "pid-\(app.pid)", context: app.debugId, pid: app.pid) { [weak app] in
             guard let app, let axUiElement = app.axUiElement else { return }
-            let axWindows = try axUiElement.allWindows(app.pid)
-            guard !axWindows.isEmpty else {
+            let candidates = try axUiElement.allWindows(app.pid)
+            guard !candidates.isEmpty else {
                 // workaround: some apps launch but take a while to create their window(s)
                 // initial windows don't trigger a windowCreated notification, so we won't get notified
                 // it's very unlikely an app would launch with no initial window
@@ -55,15 +55,27 @@ class Applications {
                 }
                 return
             }
-            for axWindow in axWindows {
+            var listedWids = Set<CGWindowID>()
+            for axWindow in candidates.listed {
                 guard let wid = try? axWindow.cgWindowId(), wid != 0 else { continue }
-                updateWindowAttributes(axWindow, wid, app)
+                listedWids.insert(wid)
+                updateWindowAttributes(axWindow, wid, app, .listed)
+            }
+            for axWindow in candidates.bruteForcedOnly {
+                guard let wid = try? axWindow.cgWindowId(), wid != 0 else { continue }
+                updateWindowAttributes(axWindow, wid, app, candidates.bruteForcedMembership)
+            }
+            // an empty list means the application exposes no usable window list; we can't conclude anything from it
+            guard candidates.axWindowListIsUsable else { return }
+            DispatchQueue.main.async { [weak app] in
+                guard let app else { return }
+                Windows.removeUnreachableWindows(app, listedWids)
             }
         }
     }
 
     /// Unified window attribute fetch + main-thread update. Used by both manual sync and reviewExistingWindows.
-    static func updateWindowAttributes(_ axWindow: AXUIElement, _ wid: CGWindowID, _ app: Application) {
+    static func updateWindowAttributes(_ axWindow: AXUIElement, _ wid: CGWindowID, _ app: Application, _ membership: AxWindowListMembership = .unknown) {
         AXCallScheduler.shared.schedule(key: "wid-\(wid)", context: app.debugId, pid: app.pid) { [weak app] in
             guard let app else { return }
             guard wid != 0 && wid != TilesPanel.shared.windowNumber else { return }
@@ -75,7 +87,7 @@ class Applications {
             DispatchQueue.main.async { [weak app] in
                 guard let app else { return }
                 windowListUpdateThrottler.throttleOrProceed(key: "\(wid)") {
-                    let findOrCreate = Windows.findOrCreate(axWindow, wid, app, level, a.title, a.subrole, a.role, a.size, a.position, a.isFullscreen, a.isMinimized)
+                    let findOrCreate = Windows.findOrCreate(axWindow, wid, app, level, a.title, a.subrole, a.role, a.size, a.position, a.isFullscreen, a.isMinimized, membership)
                     guard let window = findOrCreate.0 else { return }
                     var tabStateChanged = false
                     if tabSiblingTitles != nil || window.tabbedSiblingWids != nil {
@@ -110,14 +122,9 @@ class Applications {
         guard !wIds.isEmpty else { return }
         // CGWindowListCreateDescriptionFromArray is a synchronous WindowServer IPC call; run it off main thread
         AXCallScheduler.shared.submit {
-            let rawIds: CFArray = wIds.map { UnsafeRawPointer(bitPattern: UInt($0)) }.withUnsafeBufferPointer {
-                CFArrayCreate(nil, UnsafeMutablePointer(mutating: $0.baseAddress), $0.count, nil)
-            }
-            let descriptions = CGWindowListCreateDescriptionFromArray(rawIds) as? [[CFString: Any]]
-            let existingWids = descriptions?.compactMap { $0[kCGWindowNumber] } as? [CGWindowID]
-            guard let existingWids else { return }
+            guard let descriptions = CGWindow.descriptions(wIds) else { return }
             let believedAlive = Set(wIds)
-            let confirmedAlive = Set(existingWids)
+            let confirmedAlive = Set(descriptions.compactMap { $0.id() })
             let zombies = believedAlive.subtracting(confirmedAlive)
             guard !zombies.isEmpty else { return }
             DispatchQueue.main.async {
