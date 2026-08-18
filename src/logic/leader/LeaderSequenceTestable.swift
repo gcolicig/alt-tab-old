@@ -98,6 +98,17 @@ struct LeaderTrie: Equatable {
         }
     }
 
+    /// The children reachable right after `sequence`, for the overlay to list what may be pressed next.
+    /// Returns nil when the path runs through an action leaf (nothing can follow) or does not exist.
+    func level(after sequence: [LeaderKey]) -> [LeaderKey: LeaderNode]? {
+        var level = root
+        for key in sequence {
+            guard case .group(let children)? = level[key] else { return nil }
+            level = children
+        }
+        return level
+    }
+
     func lookup(_ sequence: [LeaderKey]) -> LeaderLookup {
         var level = root
         for (index, key) in sequence.enumerated() {

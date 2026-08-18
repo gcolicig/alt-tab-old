@@ -79,6 +79,17 @@ class Preferences {
             "windowDragGestureOwnership": "",
             "windowResizeModifier": "0",
             "shortcutCluesShortcut": defaultShortcut(""),
+            "leaderEnabled": "false",
+            "leaderTriggerShortcut": defaultShortcut(""),
+            "leaderBindings": "",
+            "flickRingEnabled": "false",
+            // a side button by default: the middle button clashes with the three-finger middle-click of the
+            // future gestures module, so the ring reserves a side button whole instead
+            "flickRingButton": "3",
+            "flickRingUp": "",
+            "flickRingRight": "",
+            "flickRingDown": "",
+            "flickRingLeft": "",
         ]
         (0..<maxShortcutCount).forEach { index in
             // Shortcut 1 mirrors Command-Tab, Shortcut 2 the native Command plus key above Tab
@@ -144,6 +155,9 @@ class Preferences {
     static var windowDragModifier: DragModifierPreference { CachedUserDefaults.macroPref("windowDragModifier", DragModifierPreference.selectable) }
     static var windowResizeModifier: DragModifierPreference { CachedUserDefaults.macroPref("windowResizeModifier", DragModifierPreference.selectable) }
     static var windowDragArmingMarker: Bool { CachedUserDefaults.bool("windowDragArmingMarker") }
+    static var leaderEnabled: Bool { CachedUserDefaults.bool("leaderEnabled") }
+    static var flickRingEnabled: Bool { CachedUserDefaults.bool("flickRingEnabled") }
+    static var flickRingButton: Int { CachedUserDefaults.int("flickRingButton") }
     static var pointerMouseAcceleration: PointerAccelerationPreference { CachedUserDefaults.macroPref("pointerMouseAcceleration", PointerAccelerationPreference.allCases) }
     static var pointerTrackpadAcceleration: PointerAccelerationPreference { CachedUserDefaults.macroPref("pointerTrackpadAcceleration", PointerAccelerationPreference.allCases) }
     static var pointerMouseSpeed: Double { PointerSpeedSteps.value(CachedUserDefaults.int("pointerMouseSpeed")) }
