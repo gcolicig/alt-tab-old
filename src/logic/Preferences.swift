@@ -81,7 +81,6 @@ class Preferences {
             "shortcutCluesShortcut": defaultShortcut(""),
             "leaderEnabled": "false",
             "leaderTriggerShortcut": defaultShortcut(""),
-            "leaderBindings": "",
             "flickRingEnabled": "false",
             // a side button by default: the middle button clashes with the three-finger middle-click of the
             // future gestures module, so the ring reserves a side button whole instead
@@ -95,6 +94,10 @@ class Preferences {
             // Shortcut 1 mirrors Command-Tab, Shortcut 2 the native Command plus key above Tab
             values[indexToName("holdShortcut", index)] = defaultShortcut(index <= 1 ? "⌘" : "⌥")
             values[indexToName("nextWindowShortcut", index)] = defaultShortcut(index == 0 ? "⇥" : (index == 1 ? keyAboveTabDependingOnInputSource() : ""))
+        }
+        (0..<maxLeaderSlotCount).forEach { index in
+            values["leaderSlotKeys\(index)"] = ""
+            values["leaderSlotAction\(index)"] = ""
         }
         SpaceAction.all.forEach { values[$0.shortcutPreferenceKey] = defaultShortcut("") }
         (0..<maxLaunchAppCount).forEach { index in
@@ -239,6 +242,7 @@ class Preferences {
     static let maxShortcutCount = 9
     static let maxLaunchAppCount = 9
     static let maxOpenUrlCount = 9
+    static let maxLeaderSlotCount = 8
     static var shortcutCount: Int {
         max(minShortcutCount, min(maxShortcutCount, CachedUserDefaults.int("shortcutCount")))
     }

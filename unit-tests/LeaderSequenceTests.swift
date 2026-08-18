@@ -143,4 +143,36 @@ final class LeaderSequenceTests: XCTestCase {
     func testBuildAcceptsAnEmptyBindingListAsAnEmptyTrie() {
         XCTAssertEqual(LeaderTrie.build(from: []), .success(LeaderTrie()))
     }
+
+    // MARK: - the overlay's view of what may follow
+
+    func testLevelAfterReturnsTheRootThenTheChildrenThenNil() {
+        XCTAssertEqual(trie().level(after: [])?.keys.sorted { $0.keyCode < $1.keyCode }, [s, w].sorted { $0.keyCode < $1.keyCode })
+        XCTAssertEqual(trie().level(after: [w])?.keys.sorted { $0.keyCode < $1.keyCode }, [r, l].sorted { $0.keyCode < $1.keyCode })
+        // past an action leaf there is nothing to show
+        XCTAssertNil(trie().level(after: [s]))
+        XCTAssertNil(trie().level(after: [w, l]))
+    }
+
+    // MARK: - the settings editor's text parsing
+
+    func testParseTurnsLettersAndDigitsIntoKeys() {
+        XCTAssertEqual(LeaderKeyParsing.parse("wl"), [LeaderKey(keyCode: 13), LeaderKey(keyCode: 37)])
+        // whitespace is a readability separator and is ignored
+        XCTAssertEqual(LeaderKeyParsing.parse("w l"), LeaderKeyParsing.parse("wl"))
+        XCTAssertEqual(LeaderKeyParsing.parse("WL"), LeaderKeyParsing.parse("wl"))
+    }
+
+    func testParseRejectsUnmappedCharactersAndEmptyText() {
+        XCTAssertNil(LeaderKeyParsing.parse("w-"))
+        XCTAssertNil(LeaderKeyParsing.parse("→"))
+        XCTAssertNil(LeaderKeyParsing.parse("   "))
+        XCTAssertNil(LeaderKeyParsing.parse(""))
+    }
+
+    func testTextRoundTripsALettersAndDigitsPath() {
+        XCTAssertEqual(LeaderKeyParsing.text(for: [LeaderKey(keyCode: 13), LeaderKey(keyCode: 37)]), "wl")
+        // a key carrying a modifier has no plain-text form
+        XCTAssertEqual(LeaderKeyParsing.text(for: [LeaderKey(keyCode: 13, modifiers: [.command])]), "?")
+    }
 }

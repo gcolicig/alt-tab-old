@@ -129,6 +129,38 @@ struct LeaderTrie: Equatable {
     }
 }
 
+/// Turns the compact settings editor's text into a key path and back. The editor accepts US-ANSI letters and
+/// digits, which covers vim-style Leader sequences; modifiers and other keys are out of its scope on purpose,
+/// so the editor stays a plain text field instead of a multi-key recorder.
+enum LeaderKeyParsing {
+    /// character → US-ANSI virtual key code
+    static let characterKeyCodes: [Character: UInt32] = [
+        "a": 0, "s": 1, "d": 2, "f": 3, "h": 4, "g": 5, "z": 6, "x": 7, "c": 8, "v": 9,
+        "b": 11, "q": 12, "w": 13, "e": 14, "r": 15, "y": 16, "t": 17, "o": 31, "u": 32,
+        "i": 34, "p": 35, "l": 37, "j": 38, "k": 40, "n": 45, "m": 46,
+        "1": 18, "2": 19, "3": 20, "4": 21, "5": 23, "6": 22, "7": 26, "8": 28, "9": 25, "0": 29,
+    ]
+
+    /// nil when a character has no mapping, or the trimmed text is empty. Whitespace separates keys for
+    /// readability and is ignored.
+    static func parse(_ text: String) -> [LeaderKey]? {
+        var keys = [LeaderKey]()
+        for character in text.lowercased() where !character.isWhitespace {
+            guard let keyCode = characterKeyCodes[character] else { return nil }
+            keys.append(LeaderKey(keyCode: keyCode))
+        }
+        return keys.isEmpty ? nil : keys
+    }
+
+    /// The text an all-letters/digits path reads as; a key with modifiers or no mapping shows as "?".
+    static func text(for keys: [LeaderKey]) -> String {
+        keys.map { key -> String in
+            guard key.modifiers == 0, let character = characterKeyCodes.first(where: { $0.value == key.keyCode })?.key else { return "?" }
+            return String(character)
+        }.joined()
+    }
+}
+
 enum LeaderSessionState: Equatable {
     case idle
     case collecting([LeaderKey])

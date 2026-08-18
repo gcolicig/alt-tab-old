@@ -10,7 +10,6 @@ import ShortcutRecorder
 /// thread, off the tap callback (Q-16).
 enum LeaderController {
     static let triggerPreferenceKey = "leaderTriggerShortcut"
-    static let bindingsPreferenceKey = "leaderBindings"
 
     private static let lock = NSLock()
     private static var state = LeaderSessionState.idle
