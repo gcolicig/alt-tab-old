@@ -16,6 +16,19 @@ enum Actions {
         registry.perform(id)
     }
 
+    /// Resolves the string in `ActionIdentifier.stableId` back to an identifier. Leader and FlickRing store
+    /// their bindings by this string, so a binding to an action that no longer exists resolves to nil and is
+    /// dropped instead of crashing.
+    static func identifier(forStableId stableId: String) -> ActionIdentifier? {
+        byStableId[stableId]
+    }
+
+    private static let byStableId: [String: ActionIdentifier] = {
+        var map = [String: ActionIdentifier]()
+        registry.registeredActions.forEach { map[$0.id.stableId] = $0.id }
+        return map
+    }()
+
     private static func windowLayoutRegistration(_ action: WindowLayoutAction) -> RegisteredAction {
         RegisteredAction(id: .windowLayout(action), title: { action.localizedTitle }, availability: windowLayoutAvailability) {
             WindowLayouts.perform(action)

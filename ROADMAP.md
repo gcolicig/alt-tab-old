@@ -109,10 +109,11 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 ## Phase 4: Leader und FlickRing
 
 - Dual-Role-Hyper bleibt umgesetzt und deaktiviert per Default; Caps Lock kurz tippen schaltet weiterhin Caps Lock.
-- Leader erhaelt einen eigenen Trigger, verschachtelte Sequenzen, Escape, Timeout und eine kompakte AppKit-Uebersicht.
-- FlickRing verwendet eine konfigurierbare zusaetzliche Maustaste, Totbereich und vier Richtungen.
-- Beide Module fuehren ausschliesslich Aktionen aus dem gemeinsamen Register aus.
-- Die sichere Input-Laufzeit jeweils nur um den konkret benoetigten Modulpfad erweitern.
+- Umgesetzt: Leader hat einen eigenen konfigurierbaren Trigger, verschachtelte Sequenzen, Escape, Timeout und eine kompakte AppKit-Uebersicht. Er reitet auf dem bestehenden Keyboard-Tap, ohne zweiten Tap oder eigenen Arming-Marker; der Settings-Tab pflegt acht Sequenz-Slots mit Konfliktwarnung.
+- Umgesetzt: FlickRing nutzt eine konfigurierbare Maustaste (Default Seitentaste), einen 5pt-Totbereich und vier Richtungen mit Ring-Overlay; der Tap existiert nur bei aktivem Modul.
+- Umgesetzt: beide Module fuehren ausschliesslich Aktionen aus dem gemeinsamen Register aus, gebunden ueber die stabile Action-ID.
+- Umgesetzt: die sichere Input-Laufzeit ist nur um den benoetigten Pfad erweitert — Leader haengt an Not-Aus, Safe Mode und Sleep/Wake des Keyboard-Taps; FlickRing bringt einen eigenen Circuit Breaker mit und wird vom Not-Aus geschlossen.
+- Offen: die manuelle Abnahme beider Module am Tahoe-Zielgeraet gemaess `docs/leader-flickring-checklist.md`.
 
 ## Phase 5: Weiteres Snapping
 

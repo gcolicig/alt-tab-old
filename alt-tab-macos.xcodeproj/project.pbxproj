@@ -43,6 +43,17 @@
 		C0DE1000000000000000003F /* MenuShortcutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000031 /* MenuShortcutTests.swift */; };
 		C0DE10000000000000000039 /* LeaderSequenceTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000002D /* LeaderSequenceTestable.swift */; };
 		C0DE1000000000000000003A /* LeaderSequenceTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000002D /* LeaderSequenceTestable.swift */; };
+		C0DE100000000000000000A9 /* LeaderTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000A8 /* LeaderTab.swift */; };
+		C0DE100000000000000000AA /* FlickRingTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000A9 /* FlickRingTab.swift */; };
+		C0DE100000000000000000A3 /* LeaderController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000A2 /* LeaderController.swift */; };
+		C0DE100000000000000000A4 /* LeaderBindingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000A3 /* LeaderBindingsStore.swift */; };
+		C0DE100000000000000000A5 /* LeaderPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000A4 /* LeaderPanel.swift */; };
+		C0DE100000000000000000A6 /* FlickRingEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000A5 /* FlickRingEvents.swift */; };
+		C0DE100000000000000000A7 /* FlickRingBindingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000A6 /* FlickRingBindingsStore.swift */; };
+		C0DE100000000000000000A8 /* FlickRingPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000A7 /* FlickRingPanel.swift */; };
+		C0DE100000000000000000A0 /* FlickRingTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000A0 /* FlickRingTestable.swift */; };
+		C0DE100000000000000000A1 /* FlickRingTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000A0 /* FlickRingTestable.swift */; };
+		C0DE100000000000000000A2 /* FlickRingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000A1 /* FlickRingTests.swift */; };
 		C0DE1000000000000000003B /* LeaderSequenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000002E /* LeaderSequenceTests.swift */; };
 		C0DE10000000000000000036 /* WindowResizeTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000002B /* WindowResizeTestable.swift */; };
 		C0DE10000000000000000037 /* WindowResizeTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE2000000000000000002B /* WindowResizeTestable.swift */; };
@@ -413,6 +424,16 @@
 		C0DE20000000000000000031 /* MenuShortcutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuShortcutTests.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000002D /* LeaderSequenceTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderSequenceTestable.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000002E /* LeaderSequenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderSequenceTests.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000A8 /* LeaderTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderTab.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000A9 /* FlickRingTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlickRingTab.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000A2 /* LeaderController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderController.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000A3 /* LeaderBindingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderBindingsStore.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000A4 /* LeaderPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderPanel.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000A5 /* FlickRingEvents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlickRingEvents.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000A6 /* FlickRingBindingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlickRingBindingsStore.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000A7 /* FlickRingPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlickRingPanel.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000A0 /* FlickRingTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlickRingTestable.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000A1 /* FlickRingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlickRingTests.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000002B /* WindowResizeTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowResizeTestable.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000022 /* DragSessionTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragSessionTestable.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000002C /* WindowResizeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowResizeTests.swift; sourceTree = "<group>"; };
@@ -1290,6 +1311,7 @@
 		BF0C8719351B41D268CE8B70 /* unit-tests */ = {
 			isa = PBXGroup;
 			children = (
+				C0DE200000000000000000A1 /* FlickRingTests.swift */,
 				C0DE2000000000000000001B /* PointerOwnershipTests.swift */,
 				C0DE2000000000000000002A /* SystemValueOwnershipTests.swift */,
 				C0DE20000000000000000021 /* CursorWindowTests.swift */,
@@ -1553,6 +1575,7 @@
 				C0DE30000000000000000005 /* window-cursor */,
 				C0DE30000000000000000006 /* window-drag */,
 				C0DE30000000000000000007 /* leader */,
+				C0DE30000000000000000009 /* flick-ring */,
 				C0DE30000000000000000008 /* shortcut-clues */,
 				C0DE30000000000000000003 /* spaces */,
 				C0DE30000000000000000001 /* window-layouts */,
@@ -1677,6 +1700,8 @@
 		D04BA229883E5D540D00232D /* ui */ = {
 			isa = PBXGroup;
 			children = (
+				C0DE200000000000000000A7 /* FlickRingPanel.swift */,
+				C0DE200000000000000000A4 /* LeaderPanel.swift */,
 				D04BAAB92261FC04854FDDE9 /* App.swift */,
 				D04BA62E30174C336E4080FA /* main-window */,
 				D04BABCD12CA72B06290C248 /* settings-window */,
@@ -1763,6 +1788,8 @@
 		D04BA3FA52AA40B827A72F10 /* tabs */ = {
 			isa = PBXGroup;
 			children = (
+				C0DE200000000000000000A9 /* FlickRingTab.swift */,
+				C0DE200000000000000000A8 /* LeaderTab.swift */,
 				5F21C9DE2C6E93F10091F72F /* appearance */,
 				5F21C9DD2C6E93E60091F72F /* controls */,
 				C0DE20000000000000000003 /* WindowLayoutsTab.swift */,
@@ -1819,9 +1846,21 @@
 			path = "shortcut-clues";
 			sourceTree = "<group>";
 		};
+		C0DE30000000000000000009 /* flick-ring */ = {
+			isa = PBXGroup;
+			children = (
+				C0DE200000000000000000A6 /* FlickRingBindingsStore.swift */,
+				C0DE200000000000000000A5 /* FlickRingEvents.swift */,
+				C0DE200000000000000000A0 /* FlickRingTestable.swift */,
+			);
+			path = "flick-ring";
+			sourceTree = "<group>";
+		};
 		C0DE30000000000000000007 /* leader */ = {
 			isa = PBXGroup;
 			children = (
+				C0DE200000000000000000A3 /* LeaderBindingsStore.swift */,
+				C0DE200000000000000000A2 /* LeaderController.swift */,
 				C0DE2000000000000000002D /* LeaderSequenceTestable.swift */,
 			);
 			path = leader;
@@ -2785,6 +2824,8 @@
 				C0DE1000000000000000002C /* DragSessionTestable.swift in Sources */,
 				C0DE10000000000000000037 /* WindowResizeTestable.swift in Sources */,
 				C0DE1000000000000000003A /* LeaderSequenceTestable.swift in Sources */,
+				C0DE100000000000000000A1 /* FlickRingTestable.swift in Sources */,
+				C0DE100000000000000000A2 /* FlickRingTests.swift in Sources */,
 				C0DE1000000000000000003D /* MenuShortcutTestable.swift in Sources */,
 				C0DE1000000000000000003F /* MenuShortcutTests.swift in Sources */,
 				C0DE1000000000000000003B /* LeaderSequenceTests.swift in Sources */,
@@ -2833,6 +2874,15 @@
 				C0DE1000000000000000002B /* DragSessionTestable.swift in Sources */,
 				C0DE10000000000000000036 /* WindowResizeTestable.swift in Sources */,
 				C0DE10000000000000000039 /* LeaderSequenceTestable.swift in Sources */,
+				C0DE100000000000000000A9 /* LeaderTab.swift in Sources */,
+				C0DE100000000000000000AA /* FlickRingTab.swift in Sources */,
+				C0DE100000000000000000A3 /* LeaderController.swift in Sources */,
+				C0DE100000000000000000A4 /* LeaderBindingsStore.swift in Sources */,
+				C0DE100000000000000000A5 /* LeaderPanel.swift in Sources */,
+				C0DE100000000000000000A6 /* FlickRingEvents.swift in Sources */,
+				C0DE100000000000000000A7 /* FlickRingBindingsStore.swift in Sources */,
+				C0DE100000000000000000A8 /* FlickRingPanel.swift in Sources */,
+				C0DE100000000000000000A0 /* FlickRingTestable.swift in Sources */,
 				C0DE1000000000000000003C /* MenuShortcutTestable.swift in Sources */,
 				C0DE1000000000000000003E /* MenuShortcutReader.swift in Sources */,
 				C0DE10000000000000000040 /* ShortcutCluesController.swift in Sources */,

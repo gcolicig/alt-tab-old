@@ -212,6 +212,27 @@ class LabelAndControl: NSObject {
         return setupControl(dropdown, rawName, extraAction: extraAction) as! NSPopUpButton
     }
 
+    /// A popup of every registry action plus a leading "None", used by the Leader and FlickRing editors.
+    /// It carries each action's `stableId` as the item's represented object and reports the selected one back
+    /// through `onChange` (nil for "None"), so callers persist by stableId, not by menu index.
+    static func makeActionPopup(_ currentStableId: String, _ onChange: @escaping (String?) -> Void) -> NSPopUpButton {
+        let popup = PopupButtonLikeSystemSettings()
+        popup.addItem(withTitle: NSLocalizedString("None", comment: ""))
+        popup.lastItem?.representedObject = ""
+        var selectedIndex = 0
+        for (offset, action) in Actions.registry.registeredActions.enumerated() {
+            popup.addItem(withTitle: action.title())
+            popup.lastItem?.representedObject = action.id.stableId
+            if action.id.stableId == currentStableId { selectedIndex = offset + 1 }
+        }
+        popup.selectItem(at: selectedIndex)
+        popup.onAction = { control in
+            let stableId = (control as? NSPopUpButton)?.selectedItem?.representedObject as? String
+            onChange((stableId?.isEmpty ?? true) ? nil : stableId)
+        }
+        return popup
+    }
+
     // periphery:ignore
     static func makeLabelWithRadioButtons(_ labelText: String,
                                           _ rawName: String,

@@ -42,6 +42,11 @@ class KeyboardEvents {
         if type == .keyDown {
             let keyCode = UInt32(cgEvent.getIntegerValueField(.keyboardEventKeycode))
             let modifiers = NSEvent.ModifierFlags(rawValue: UInt(cgEvent.flags.rawValue))
+            // Leader owns the keyboard while a sequence is armed: the trigger arms it, and every following
+            // key is fed to the pure state machine and absorbed. It rides this tap, so nothing is opened here.
+            if LeaderController.handleKeyDown(keyCode, modifiers) {
+                return nil
+            }
             // Escape cancels a running modifier drag. The key is not absorbed: it keeps meaning whatever
             // it means to the app in front, and a drag is only ever cancelled if one is actually running.
             if keyCode == UInt32(kVK_Escape) {
@@ -326,6 +331,8 @@ class KeyboardEvents {
         addPanicHotKey()
         observeSecureInputChanges()
         hyperKeyEnabledChanged()
+        LeaderController.rebuildTrie()
+        FlickRingEvents.enabledChanged()
         if Preferences.recoveredInputModuleAtLaunch {
             DispatchQueue.main.async {
                 showSafetyAlert(NSLocalizedString("Input extensions were disabled because AltTab+ did not finish its previous Hyper startup.", comment: ""))
@@ -547,11 +554,15 @@ class KeyboardEvents {
         Preferences.set("hyperKeyEnabled", "false", false)
         Preferences.set("hyperKeyArmingMarker", "false", false)
         Preferences.set("nextWindowGesture", GesturePreference.disabled.indexAsString, false)
+        Preferences.set("leaderEnabled", "false", false)
+        Preferences.set("flickRingEnabled", "false", false)
         setHyperKeyRuntimeEnabled(false)
         removeHyperKeyHidMonitor()
         TrackpadEvents.disableForSafety()
         ScrollwheelEvents.disableForSafety()
         WindowDragEvents.disableForSafety()
+        LeaderController.reset()
+        FlickRingEvents.disableForSafety()
         ShortcutCluesController.triggerReleased()
         App.hideUi()
         if let message { showSafetyAlert(message) }

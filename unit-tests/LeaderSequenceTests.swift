@@ -96,4 +96,83 @@ final class LeaderSequenceTests: XCTestCase {
         XCTAssertEqual(LeaderKey(keyCode: 13, modifiers: [.command, .capsLock]), LeaderKey(keyCode: 13, modifiers: [.command]))
         XCTAssertNotEqual(LeaderKey(keyCode: 13, modifiers: [.command]), LeaderKey(keyCode: 13, modifiers: [.control]))
     }
+
+    // MARK: - building a trie from flat bindings
+
+    func testBuildFoldsFlatBindingsIntoTheSameTrie() {
+        let bindings = [
+            LeaderBinding(keys: [w, l], action: .windowLayout(.leftThird)),
+            LeaderBinding(keys: [w, r], action: .windowLayout(.rightThird)),
+            LeaderBinding(keys: [s], action: .space(.left)),
+        ]
+        guard case .success(let built) = LeaderTrie.build(from: bindings) else { return XCTFail("expected success") }
+        XCTAssertEqual(built, trie())
+    }
+
+    func testBuildRejectsAnEmptyPath() {
+        XCTAssertEqual(LeaderTrie.build(from: [LeaderBinding(keys: [], action: .space(.left))]), .failure(.emptyPath))
+    }
+
+    func testBuildRejectsTwoBindingsOnTheSamePath() {
+        let bindings = [
+            LeaderBinding(keys: [w, l], action: .windowLayout(.leftThird)),
+            LeaderBinding(keys: [w, l], action: .space(.left)),
+        ]
+        XCTAssertEqual(LeaderTrie.build(from: bindings), .failure(.duplicatePath([w, l])))
+    }
+
+    /// A shorter path that is a prefix of a longer one is ambiguous whichever order the two arrive in: the
+    /// user could not tell whether pressing the shorter path runs its action or waits for the longer one.
+    func testBuildRejectsAPrefixConflictInEitherOrder() {
+        let shortThenLong = [
+            LeaderBinding(keys: [w], action: .space(.left)),
+            LeaderBinding(keys: [w, l], action: .windowLayout(.leftThird)),
+        ]
+        guard case .failure(.prefixConflict) = LeaderTrie.build(from: shortThenLong) else {
+            return XCTFail("expected a prefix conflict")
+        }
+        let longThenShort = [
+            LeaderBinding(keys: [w, l], action: .windowLayout(.leftThird)),
+            LeaderBinding(keys: [w], action: .space(.left)),
+        ]
+        guard case .failure(.prefixConflict) = LeaderTrie.build(from: longThenShort) else {
+            return XCTFail("expected a prefix conflict")
+        }
+    }
+
+    func testBuildAcceptsAnEmptyBindingListAsAnEmptyTrie() {
+        XCTAssertEqual(LeaderTrie.build(from: []), .success(LeaderTrie()))
+    }
+
+    // MARK: - the overlay's view of what may follow
+
+    func testLevelAfterReturnsTheRootThenTheChildrenThenNil() {
+        XCTAssertEqual(trie().level(after: [])?.keys.sorted { $0.keyCode < $1.keyCode }, [s, w].sorted { $0.keyCode < $1.keyCode })
+        XCTAssertEqual(trie().level(after: [w])?.keys.sorted { $0.keyCode < $1.keyCode }, [r, l].sorted { $0.keyCode < $1.keyCode })
+        // past an action leaf there is nothing to show
+        XCTAssertNil(trie().level(after: [s]))
+        XCTAssertNil(trie().level(after: [w, l]))
+    }
+
+    // MARK: - the settings editor's text parsing
+
+    func testParseTurnsLettersAndDigitsIntoKeys() {
+        XCTAssertEqual(LeaderKeyParsing.parse("wl"), [LeaderKey(keyCode: 13), LeaderKey(keyCode: 37)])
+        // whitespace is a readability separator and is ignored
+        XCTAssertEqual(LeaderKeyParsing.parse("w l"), LeaderKeyParsing.parse("wl"))
+        XCTAssertEqual(LeaderKeyParsing.parse("WL"), LeaderKeyParsing.parse("wl"))
+    }
+
+    func testParseRejectsUnmappedCharactersAndEmptyText() {
+        XCTAssertNil(LeaderKeyParsing.parse("w-"))
+        XCTAssertNil(LeaderKeyParsing.parse("→"))
+        XCTAssertNil(LeaderKeyParsing.parse("   "))
+        XCTAssertNil(LeaderKeyParsing.parse(""))
+    }
+
+    func testTextRoundTripsALettersAndDigitsPath() {
+        XCTAssertEqual(LeaderKeyParsing.text(for: [LeaderKey(keyCode: 13), LeaderKey(keyCode: 37)]), "wl")
+        // a key carrying a modifier has no plain-text form
+        XCTAssertEqual(LeaderKeyParsing.text(for: [LeaderKey(keyCode: 13, modifiers: [.command])]), "?")
+    }
 }

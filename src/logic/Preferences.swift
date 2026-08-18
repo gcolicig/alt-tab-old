@@ -79,11 +79,25 @@ class Preferences {
             "windowDragGestureOwnership": "",
             "windowResizeModifier": "0",
             "shortcutCluesShortcut": defaultShortcut(""),
+            "leaderEnabled": "false",
+            "leaderTriggerShortcut": defaultShortcut(""),
+            "flickRingEnabled": "false",
+            // a side button by default: the middle button clashes with the three-finger middle-click of the
+            // future gestures module, so the ring reserves a side button whole instead
+            "flickRingButton": "3",
+            "flickRingUp": "",
+            "flickRingRight": "",
+            "flickRingDown": "",
+            "flickRingLeft": "",
         ]
         (0..<maxShortcutCount).forEach { index in
             // Shortcut 1 mirrors Command-Tab, Shortcut 2 the native Command plus key above Tab
             values[indexToName("holdShortcut", index)] = defaultShortcut(index <= 1 ? "⌘" : "⌥")
             values[indexToName("nextWindowShortcut", index)] = defaultShortcut(index == 0 ? "⇥" : (index == 1 ? keyAboveTabDependingOnInputSource() : ""))
+        }
+        (0..<maxLeaderSlotCount).forEach { index in
+            values["leaderSlotKeys\(index)"] = ""
+            values["leaderSlotAction\(index)"] = ""
         }
         SpaceAction.all.forEach { values[$0.shortcutPreferenceKey] = defaultShortcut("") }
         (0..<maxLaunchAppCount).forEach { index in
@@ -144,6 +158,9 @@ class Preferences {
     static var windowDragModifier: DragModifierPreference { CachedUserDefaults.macroPref("windowDragModifier", DragModifierPreference.selectable) }
     static var windowResizeModifier: DragModifierPreference { CachedUserDefaults.macroPref("windowResizeModifier", DragModifierPreference.selectable) }
     static var windowDragArmingMarker: Bool { CachedUserDefaults.bool("windowDragArmingMarker") }
+    static var leaderEnabled: Bool { CachedUserDefaults.bool("leaderEnabled") }
+    static var flickRingEnabled: Bool { CachedUserDefaults.bool("flickRingEnabled") }
+    static var flickRingButton: Int { CachedUserDefaults.int("flickRingButton") }
     static var pointerMouseAcceleration: PointerAccelerationPreference { CachedUserDefaults.macroPref("pointerMouseAcceleration", PointerAccelerationPreference.allCases) }
     static var pointerTrackpadAcceleration: PointerAccelerationPreference { CachedUserDefaults.macroPref("pointerTrackpadAcceleration", PointerAccelerationPreference.allCases) }
     static var pointerMouseSpeed: Double { PointerSpeedSteps.value(CachedUserDefaults.int("pointerMouseSpeed")) }
@@ -225,6 +242,7 @@ class Preferences {
     static let maxShortcutCount = 9
     static let maxLaunchAppCount = 9
     static let maxOpenUrlCount = 9
+    static let maxLeaderSlotCount = 8
     static var shortcutCount: Int {
         max(minShortcutCount, min(maxShortcutCount, CachedUserDefaults.int("shortcutCount")))
     }

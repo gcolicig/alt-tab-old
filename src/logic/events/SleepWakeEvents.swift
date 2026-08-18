@@ -21,9 +21,12 @@ class SleepWakeEvents {
 
     private static func reEnableAllTaps() {
         KeyboardEvents.resetHyperKeyState()
+        // a Leader session must not survive a sleep; it rides the keyboard tap, so it only needs clearing
+        LeaderController.reset()
         TrackpadEvents.reEnableTapIfNeeded()
         ScrollwheelEvents.reEnableTapIfNeeded()
         KeyboardEvents.reEnableTapIfNeeded()
         CursorEvents.reEnableTapIfNeeded()
+        FlickRingEvents.reEnableTapIfNeeded()
     }
 }
