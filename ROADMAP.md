@@ -142,6 +142,16 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 - Private Multitouch-API strikt nach macOS-Version gaten.
 - Default-Aktivierung erst mit Helper-Prozess; unbekannte Version deaktiviert das Modul.
 
+## Phase 10: Switcher-Verhalten (minimierte Fenster, Per-App-Policies, Cmd+Tab)
+
+- Betrifft den Switcher-Kern, kein Add-on-Modul. Alt-Tab+ ist ein AltTab-Fork, darum nur das bewusst abweichende Verhalten bauen; vieles ist schon da (minimierte/versteckte Fenster konfigurierbar, Auswahl deminiaturisiert, Per-App-`ExceptionEntry`, `Cmd+Tab` als Default-Trigger).
+- Delta 1: Policy fuer minimierte Fenster erweitern um `ShowButDoNotRestore` und `RestoreOnlyOnExplicitAction` (heute nur Sichtbarkeit plus Auto-Restore). Default bleibt AlwaysRestore.
+- Delta 2: Per-App-Regeln (`ExceptionEntry`) um eine Minimized-Policy, App- vs. Window-Switching und Priorisierung erweitern; reichere Match-Kriterien spaeter.
+- Delta 3: neue Aktion `Restore most recent minimized window of selected app` im gemeinsamen Register.
+- Delta 4: `Cmd+Tab`-Remap ist bereits Realitaet; offen nur Onboarding-Hinweis und Reset-Pfad.
+- Benannte Default-Profile: Konservativ, Power-User, Windows-like.
+- Vollstaendige Spezifikation in `backlog.md` unter Story 10.
+
 ## Phase 9: Keep Awake (Sleep Override)
 
 - Eigenstaendiges Modul, per Default aus: Caffeine als Minimal-Referenz (Menubar-Toggle), Amphetamine als Funktionsreferenz (Sessions, Trigger, Energie-Policies). Kein Event-Tap und keine private API — nur oeffentliche `IOPMAssertion` plus System-Observer; damit ausserhalb der Q-01..Q-16-Input-Sicherung.
