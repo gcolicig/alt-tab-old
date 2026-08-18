@@ -29,11 +29,73 @@ enum LeaderLookup: Equatable {
     case noMatch
 }
 
+/// One user-configured Leader binding: the keys pressed after the trigger, and the action they run.
+/// This is the flat shape the settings store; `LeaderTrie.build` folds a list of them into the trie the
+/// session walks. Keeping storage flat makes the settings editor and the persisted JSON simple, and moves
+/// every ambiguity check into one place.
+struct LeaderBinding: Equatable {
+    let keys: [LeaderKey]
+    let action: ActionIdentifier
+}
+
+/// Why a set of bindings cannot form a deterministic trie. Both cases would make the same keystrokes mean
+/// two things, which is exactly what the trie's "a node runs an action or leads on, never both" rule forbids.
+enum LeaderBuildError: Equatable, Error {
+    /// two bindings share the same key path
+    case duplicatePath([LeaderKey])
+    /// one binding's path is a strict prefix of another's, so the shorter one could never be reached
+    case prefixConflict(shorter: [LeaderKey], longer: [LeaderKey])
+    /// a binding has no keys at all; the trigger itself cannot also be a binding
+    case emptyPath
+}
+
 struct LeaderTrie: Equatable {
     let root: [LeaderKey: LeaderNode]
 
     init(_ root: [LeaderKey: LeaderNode] = [:]) {
         self.root = root
+    }
+
+    /// Folds flat bindings into the nested trie, refusing any set that would be ambiguous. Insertion order
+    /// does not change the outcome: a conflict is reported whichever binding is seen first.
+    static func build(from bindings: [LeaderBinding]) -> Result<LeaderTrie, LeaderBuildError> {
+        var root = [LeaderKey: LeaderNode]()
+        for binding in bindings {
+            guard !binding.keys.isEmpty else { return .failure(.emptyPath) }
+            if let error = insert(binding.keys[...], binding.action, into: &root, pathSoFar: []) {
+                return .failure(error)
+            }
+        }
+        return .success(LeaderTrie(root))
+    }
+
+    private static func insert(_ keys: ArraySlice<LeaderKey>, _ action: ActionIdentifier,
+                               into level: inout [LeaderKey: LeaderNode], pathSoFar: [LeaderKey]) -> LeaderBuildError? {
+        guard let key = keys.first else { return nil }
+        let path = pathSoFar + [key]
+        let rest = keys.dropFirst()
+        if rest.isEmpty {
+            // this key is the leaf; anything already sitting here is a conflict
+            switch level[key] {
+                case .none: level[key] = .action(action); return nil
+                case .action: return .duplicatePath(path)
+                case .group(let children): return .prefixConflict(shorter: path, longer: path + [Array(children.keys)[0]])
+            }
+        }
+        switch level[key] {
+            case .none:
+                var child = [LeaderKey: LeaderNode]()
+                let error = insert(rest, action, into: &child, pathSoFar: path)
+                level[key] = .group(child)
+                return error
+            case .action:
+                // the shorter binding already claimed this key as a leaf; the longer one cannot pass through it
+                return .prefixConflict(shorter: path, longer: pathSoFar + Array(keys))
+            case .group(var children):
+                let error = insert(rest, action, into: &children, pathSoFar: path)
+                level[key] = .group(children)
+                return error
+        }
     }
 
     func lookup(_ sequence: [LeaderKey]) -> LeaderLookup {
