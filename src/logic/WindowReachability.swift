@@ -55,3 +55,16 @@ enum WindowReachabilityPolicy {
         return facts.membership == .notListed && isUnreachable(facts, isOnScreen)
     }
 }
+
+/// Debounces the reachability verdict over successive checks. The underlying check reads volatile signals
+/// (`CGSCopySpacesForWindows`, `kCGWindowIsOnscreen`), and `kAXWindowsAttribute` legitimately omits
+/// other-Space windows, so a single unreachable read is often a race. Acting on one flickered reachable
+/// tiles in and out of the switcher, so the verdict must persist for `threshold` checks before a window is
+/// hidden. A reachable read clears the count at once, and an already-hidden window stays hidden.
+enum ReachabilityDebounce {
+    static func next(strikes: Int, isReachable: Bool, unreachableNow: Bool, threshold: Int) -> (strikes: Int, isReachable: Bool) {
+        guard unreachableNow else { return (0, true) }
+        let raised = strikes + 1
+        return (raised, raised >= threshold ? false : isReachable)
+    }
+}

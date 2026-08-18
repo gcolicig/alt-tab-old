@@ -81,6 +81,37 @@ final class WindowReachabilityTests: XCTestCase {
         XCTAssertFalse(isUnreachable(facts, onScreen: true))
     }
 
+    // MARK: - debounce (flicker fix)
+
+    /// A single unreachable read never hides a window; the verdict must persist for the whole threshold.
+    func testOneUnreachableReadDoesNotHide() {
+        var strikes = 0
+        var reachable = true
+        for _ in 0..<2 {
+            (strikes, reachable) = ReachabilityDebounce.next(strikes: strikes, isReachable: reachable, unreachableNow: true, threshold: 3)
+            XCTAssertTrue(reachable)
+        }
+        (strikes, reachable) = ReachabilityDebounce.next(strikes: strikes, isReachable: reachable, unreachableNow: true, threshold: 3)
+        XCTAssertFalse(reachable) // third consecutive read crosses the threshold
+    }
+
+    /// A reachable read clears the count immediately, so a blip in the middle resets the streak.
+    func testAReachableReadResetsTheStreak() {
+        var (strikes, reachable) = ReachabilityDebounce.next(strikes: 2, isReachable: true, unreachableNow: false, threshold: 3)
+        XCTAssertEqual(strikes, 0)
+        XCTAssertTrue(reachable)
+        // after the reset it takes the full threshold again
+        (strikes, reachable) = ReachabilityDebounce.next(strikes: strikes, isReachable: reachable, unreachableNow: true, threshold: 3)
+        XCTAssertTrue(reachable)
+    }
+
+    /// An orphan that is already hidden stays hidden while it keeps reading unreachable.
+    func testAnAlreadyHiddenWindowStaysHidden() {
+        let (strikes, reachable) = ReachabilityDebounce.next(strikes: 5, isReachable: false, unreachableNow: true, threshold: 3)
+        XCTAssertFalse(reachable)
+        XCTAssertEqual(strikes, 6)
+    }
+
     /// kCGWindowIsOnscreen costs one window-server call; the cheap facts must decide first
     func testOnScreenIsReadOnlyAsTheLastResort() {
         var reads = 0
