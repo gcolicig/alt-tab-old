@@ -155,7 +155,7 @@ Umsetzungsstand 2026-08-03, Kern:
 - Umgesetzt als reine Logik mit 12 Tests: Trie fuer verschachtelte Sequenzen, Sitzungsautomat, Timeout, Escape.
 - Festgelegt: Ein Knoten fuehrt entweder eine Aktion aus oder fuehrt zu weiteren Tasten, nie beides. Ein Praefix, das zugleich Bindung ist, waere mehrdeutig und der Nutzer koennte nicht erkennen, ob noch Tasten folgen duerfen.
 - Festgelegt: Eine Taste ohne Treffer bricht die Sequenz ab, statt ignoriert zu werden. Tastenanschlaege stillschweigend zu schlucken ist schlechter, als den Nutzer neu ansetzen zu lassen.
-- Noch nicht umgesetzt: Trigger-Anbindung, Interception im Tap-Callback, die kompakte AppKit-Uebersicht und die Settings-Oberflaeche zum Pflegen der Sequenzen. Ohne diese ist das Modul nicht aktivierbar.
+- Umgesetzt 2026-08-18: Trigger-Anbindung, Interception im Tap-Callback, kompakte AppKit-Uebersicht und Settings-Oberflaeche. `LeaderController` reitet auf dem bestehenden Keyboard-Tap (kein zweiter Tap, kein eigener Arming-Marker/Circuit-Breaker): der Trigger scharft eine Sitzung, jede Folgetaste geht an die reine Zustandsmaschine und wird absorbiert, die aufgeloeste Aktion laeuft ausserhalb des Callbacks. `LeaderPanel` ist ein nicht-aktivierendes AppKit-Overlay mit den moeglichen Folgetasten. Timeout, Escape, Sleep/Wake und Safe Mode raeumen jede Sitzung ab. Der `Leader`-Settings-Tab pflegt acht Sequenz-Slots (Buchstaben/Ziffern plus Aktions-Popup) mit Live-Warnung bei Praefix-Konflikt, halb gefuellter Zeile oder unparsbarem Text. Automatisiert getestet sind Trie-Bau, Session, Timeout, `level(after:)` und der Text-Parser; die Tap-/Overlay-Verdrahtung braucht `docs/leader-flickring-checklist.md`.
 
 - Leader erhaelt einen eigenen, noch festzulegenden Trigger; Caps-Lock-Tap bleibt fuer normales Caps Lock reserviert.
 - Verschachtelte, deterministische Sequenzen verwenden einen Trie oder eine gleichwertige Zustandsmaschine.
@@ -1015,8 +1015,19 @@ Nicht im MVP:
 
 ### 8. FlickRing: Aktionsring an der Maus
 
-Status: Aufgenommen 2026-08-13. Der Trigger war bisher nur als Stichwort im Aktionskern und in Q-16 vermerkt; hier steht erstmals der Umfang
+Status: MVP umgesetzt 2026-08-18; manuelle Abnahme am Zielgeraet offen (`docs/leader-flickring-checklist.md`)
 Prioritaet: Nach Aktionskern und Move/Resize
+
+Umsetzungsstand 2026-08-18:
+
+- `FlickRingEvents` oeffnet einen eigenen Maus-Tap nur bei aktivem Modul, reserviert die konfigurierte Taste vollstaendig (Down und Up werden absorbiert), oeffnet den Ring beim Druck, verfolgt den Sektor beim Ziehen und fuehrt die gebundene Aktion beim Loslassen ausserhalb des Callbacks aus (Q-16).
+- Reine Richtungslogik `FlickRing.direction`: vier Sektoren per `atan2`, 5pt-Totbereich (darunter keine Wahl), `+y`-oben-Vertrag fuer den Aufrufer. Automatisiert getestet.
+- `FlickRingPanel` zeichnet vier Sektoren mit einer Totbereichs-Nabe in reinem AppKit; die gewaehlte Richtung ist hervorgehoben.
+- Aktionen kommen aus dem gemeinsamen Register; Default-Taste ist eine Seitentaste (die Mitte kollidiert mit der Drei-Finger-Mittelklick-Geste aus Story 7). Mittelklick-Passthrough bleibt Folgeumfang.
+- Q-01/Q-12: der Not-Aus und Safe Mode schliessen den Ring und geben die Taste frei; ein Circuit Breaker deaktiviert das Modul nach wiederholtem Tap-Ausfall. Ein eigener Arming-Marker entfaellt, weil der Tap nur einen Button liest und mutiert nichts Riskantes beim Scharfschalten.
+- `Send Key`, `Open URL` und die Scroll-Aktionen der Vorlage sind im MVP bewusst weg.
+
+Ursprungsstand (aufgenommen 2026-08-13, Umfang):
 
 Vorlage: `mikker/FlickRing`, MIT-Lizenz. Gelesen wurde die Quelle, nicht nur die Beschreibung; die Angaben unten stammen aus `MouseListener.swift`, `Controller.swift` und `Defaults.swift`.
 
