@@ -503,7 +503,7 @@ class Windows {
             return (window, false)
         }
         guard WindowDiscriminator.isActualWindow(app, wid, level, title, subrole, role, size) else { return (nil, false) }
-        guard !isNewWindowUnreachable(wid, app, membership, isMinimized) else { return (nil, false) }
+        guard !isNewWindowUnreachable(wid, app, membership, isMinimized, title) else { return (nil, false) }
         let window = Window(windowAxUiElement, app, wid, title, isFullscreen, isMinimized, position, size, membership)
         appendWindow(window)
         return (window, true)
@@ -511,11 +511,14 @@ class Windows {
 
     /// The application answered with its window list, and this window was not in it. Such a window is added
     /// only when the user can still reach it: minimized, on a Space, or on screen.
-    private static func isNewWindowUnreachable(_ wid: CGWindowID, _ app: Application, _ membership: AxWindowListMembership, _ isMinimized: Bool?) -> Bool {
+    private static func isNewWindowUnreachable(_ wid: CGWindowID, _ app: Application, _ membership: AxWindowListMembership, _ isMinimized: Bool?, _ title: String?) -> Bool {
+        // the facts below cost window-server calls; only a window the application did not list can be refused
+        guard membership == .notListed else { return false }
         let facts = WindowReachabilityFacts(
             membership: membership,
             isMinimized: isMinimized ?? false,
             applicationIsHidden: app.isHidden,
+            hasOwnTitle: Window.ownTitle(title, wid) != nil,
             isOnAnySpace: !wid.spaces().isEmpty)
         guard WindowReachabilityPolicy.rejectsNewWindow(facts, { CGWindow.isOnScreen(wid) }) else { return false }
         Logger.debug { "Window rejected \(app.debugId) because it is unreachable \((wid, facts))" }

@@ -31,6 +31,8 @@ class Window {
     var axWindowListMembership = AxWindowListMembership.unknown
     /// false when the user has no way to bring this window up; see `WindowReachabilityPolicy`
     var isReachable = true
+    /// false when the window carries no title of its own, and the switcher shows the application name
+    var hasOwnTitle = false
     var position: CGPoint?
     var size: CGSize?
     var spaceIds = [CGSSpaceID.max]
@@ -86,7 +88,9 @@ class Window {
     }
 
     func updateFromAxAttributes(_ title: String?, _ size: CGSize?, _ position: CGPoint?, _ isFullscreen: Bool?, _ isMinimized: Bool?) {
-        self.title = bestEffortTitle(title)
+        let ownTitle = Window.ownTitle(title, cgWindowId)
+        hasOwnTitle = ownTitle != nil
+        self.title = ownTitle ?? application.localizedName ?? ""
         self.size = size
         self.position = position
         self.isFullscreen = isFullscreen ?? false
@@ -272,13 +276,19 @@ class Window {
 
     // for some windows (e.g. Slack), the AX API doesn't return a title; we try CG API; finally we resort to the app name
     func bestEffortTitle(_ axTitle: String?) -> String {
+        return Window.ownTitle(axTitle, cgWindowId) ?? application.localizedName ?? ""
+    }
+
+    /// the title the window provides itself, from accessibility or from the window server
+    /// nil when it carries none, and the switcher has to show the application name instead
+    static func ownTitle(_ axTitle: String?, _ wid: CGWindowID?) -> String? {
         if let axTitle, !axTitle.isEmpty {
             return axTitle
         }
-        if let cgWindowId, let cgTitle = cgWindowId.title(), !cgTitle.isEmpty {
+        if let wid, let cgTitle = wid.title(), !cgTitle.isEmpty {
             return cgTitle
         }
-        return application.localizedName ?? ""
+        return nil
     }
 
     func updateSpacesAndScreen() {
@@ -315,6 +325,7 @@ class Window {
             isMinimized: isMinimized,
             isTabbed: isTabbed,
             applicationIsHidden: application.isHidden,
+            hasOwnTitle: hasOwnTitle,
             isOnAnySpace: !spaceIds.isEmpty)
     }
 
