@@ -904,8 +904,8 @@ Repo-Learnings:
 
 ### 6. Reverse Scrolling und Scroll Speed
 
-Status: Tap-basierter Folge-Spike
-Prioritaet: **2026-08-13 hochgestuft.** Der Nutzer nennt die getrennte Scrollrichtung als einzige Funktion aus LinearMouse, die im taeglichen Gebrauch wirklich fehlt. Damit steht sie ueber Pointer Accel/Speed, nicht darunter
+Status: Schritt 6a (Scrollrichtung der Maus, vertikal) am 2026-09-10 umgesetzt, V-17 offen. Schritt 6b (Trackpad-Richtung, Scroll-Geschwindigkeit) offen
+Prioritaet: **2026-08-13 hochgestuft.** Der Nutzer nennt die getrennte Scrollrichtung als einzige Funktion aus LinearMouse, die im taeglichen Gebrauch wirklich fehlt. Damit steht sie ueber Pointer Accel/Speed, nicht darunter. **2026-09-10 nachgetragen**: Die Hochstufung war nie in `ROADMAP.md` gelaufen, wo Scroll als Phase 7 hinter Leader/FlickRing, Snapping und Profilen stand. Genau deshalb blieb die Funktion liegen
 
 Beschreibung:
 
@@ -941,6 +941,38 @@ Korrigierte Akzeptanzidee:
 
 - Kein Event-Tap, solange keine tap-abhaengige Einstellung aktiv ist.
 - Sobald Reverse Scrolling oder Scroll Speed aktiv ist, darf ein permanenter, enger `scrollWheel`-Tap laufen.
+
+#### Schnitt in zwei Schritte, festgelegt 2026-09-10
+
+Der MVP-Scope oben bleibt das Ziel. Er wird in zwei Schritten gebaut, weil nur der erste ohne offene Frage umsetzbar ist.
+
+**Schritt 6a: Scrollrichtung der Maus, vertikal.** Umgesetzt 2026-09-10.
+
+- Eine Praeferenz `scrollReverseMouse`, Vorgabe `false`.
+- Betrifft ausschliesslich diskrete Ereignisse, also das Rasterrad. Kontinuierliche Ereignisse von Trackpad und Magic Mouse bleiben unangetastet und folgen weiter der System-Praeferenz.
+- Betrifft ausschliesslich Achse 1, also vertikal. Horizontal ist bewusst ausgelassen, nicht vergessen: ein Rasterrad hat keine horizontale Achse, und ein Kipprad meldet Achse 2 diskret — die Umkehr dort ist ein eigener Fall mit eigenem Schalter.
+- Alle drei Delta-Felder derselben Achse werden gemeinsam gespiegelt: `scrollWheelEventDeltaAxis1`, `scrollWheelEventPointDeltaAxis1` und `scrollWheelEventFixedPtDeltaAxis1`. Sie tragen dieselbe Bewegung in verschiedenen Aufloesungen, und jede App liest das Feld, dem sie traut. Nur eines zu spiegeln ergibt eine App-Klasse, die weiter in die alte Richtung scrollt.
+
+**Schritt 6b: Trackpad-Richtung und Scroll-Geschwindigkeit.** Offen.
+
+- Erst hier wird die Behandlung von Momentum und Phase konkret: ein diskretes Rasterrad hat kein Momentum, ein Trackpad-Schwung besteht aus einer Ereigniskette mit `scrollWheelEventScrollPhase` und `scrollWheelEventMomentumPhase`. Eine Kette darf nicht mitten im Schwung die Richtung wechseln.
+- Die Scroll-Geschwindigkeit ist ein Faktor auf dieselben Delta-Felder. Zu klaeren ist das Runden: ein Faktor unter 1 auf einem ganzzahligen Feld darf eine Zeile nicht auf null kuerzen, sonst haelt Scrollen ganz an.
+
+#### Wie sich das zu den geltenden Regeln verhaelt
+
+- **Q-08, Vorgabe aus.** `scrollReverseMouse` ist mit `false` vorgegeben. Import und Migration aktivieren das Modul nicht.
+- **Q-01, Panic-Kill-Switch.** Der Sicherheitspfad `disableInputModulesForSafety` ruft `ScrollwheelEvents.disableForSafety()` bereits heute auf. Festgelegt: Safe Mode schaltet das Umschreiben ab, **loescht die Praeferenz aber nicht**. Der Schalter bleibt gesetzt und wirkt wieder, sobald der Nutzer Safe Mode verlaesst. Damit der Schalter nicht behauptet, was er nicht tut, meldet die Oberflaeche die Unterdrueckung beim Einschalten in Safe Mode — dasselbe Muster wie `WindowDragEvents.modifierPreferenceChanged(announceSuppression:)`.
+- **Der Tap existiert schon.** `ScrollwheelEvents` haelt einen aktiven Tap auf `scrollWheel`. Neu ist nur, dass er zwei unabhaengige Gruende hat, zu laufen: Absorbieren fuer den Switcher und Umschreiben fuer die Richtung. Er laeuft, wenn einer der beiden gilt. Bei ausgeschalteter Richtung ist das Verhalten Ereignis fuer Ereignis identisch mit vorher.
+- **Latenz, und warum `1a85669b` hier nicht dieselbe Wucht hat.** Die Tap-Teilung in `TrackpadEvents` war noetig, weil Gestenereignisse ununterbrochen fliessen, solange ein Finger aufliegt, und der WindowServer dabei bei jedem Ereignis auf unseren Callback wartete — die Cursorlatenz haengt daran. Ein Tap auf `scrollWheel` bekommt keine Gesten- und keine `mouseMoved`-Ereignisse; er sieht nur Scroll-Ereignisse, und die fliessen nur waehrend des Scrollens. Die Loesung von dort — passiv erkennen, aktiv nur bewaffnet — traegt hier ohnehin nicht, weil Umschreiben einen aktiven Tap verlangt. **Unverifiziert bis V-17**: dass ein dauerhaft aktiver `scrollWheel`-Tap die Scroll-Latenz und den Leerlaufverbrauch nicht messbar verschlechtert. Der Punkt aus `ROADMAP.md` Phase 7 bleibt damit bestehen, er ist nur eingegrenzt.
+
+#### Exit-Kriterium fuer Schritt 6a
+
+- Bei ausgeschalteter Einstellung ist der Tap genau dann aktiv, wenn er es vor der Aenderung war: waehrend einer Switcher-Geste.
+- Bei eingeschalteter Einstellung scrollt das Mausrad in beide Richtungen gespiegelt, in einer AppKit-App, in einem Browser und in einem Terminal.
+- Das Trackpad scrollt unveraendert weiter, mit derselben Einstellung aktiv.
+- Safe Mode schaltet die Umkehr ab und sagt es; das Verlassen von Safe Mode stellt sie ohne Neustart wieder her.
+- Nach `tapDisabledByTimeout` kommt die Umkehr von selbst zurueck.
+- Die reine Entscheidungslogik ist durch Unit-Tests abgedeckt; der Tap selbst durch V-17.
 
 ### 6b. Kleinkram mit klarem Nutzen
 
@@ -1253,6 +1285,7 @@ Default-Settings, Reset-Verhalten und Migration werden nach jedem neuen Modul ge
 | V-14 | Spaces-Menueleiste | Checkliste `docs/spaces-menubar-checklist.md`. Ein bis 16 Spaces, mehrere Displays, Fullscreen-Spaces, Reorder, Create/Delete, Wake, Mission-Control-Ende, Statusleisten-Ueberlauf und VoiceOver pruefen; mit drei Bildschirmen und deaktivierten separaten Spaces pruefen, dass nur Gruppen mit mehr als einem Space erscheinen und kein Trenner uebrig bleibt |
 | V-15 | Profile und Session-Restore | Fenster-Matching, App-Start, verlorene Space-Bindings, geaenderte Titel, mehrere Fenster derselben App und geaenderte Display-Topologie ohne falsche Mutation pruefen |
 | V-16 | Dock-Aktivierung ueber Space-Grenzen | Beobachtung 2A-1 zuordnen: Klick im Dock auf eine App, deren Fenster auf einem anderen Space liegt, wirkt erst beim zweiten Mal. Mit beendetem AltTab+ wiederholen; tritt es weiter auf, ist es Systemverhalten und die Beobachtung wird geschlossen, sonst beginnt die Suche bei den Maus-Taps |
+| V-17 | Scrollrichtung der Maus | Story 6a am Geraet: Umkehr wirkt in mehreren App-Klassen, das Trackpad bleibt unberuehrt, Safe Mode schaltet ab und gibt frei, der Tap kommt nach einem Timeout zurueck. Dazu die offene Messung: Scroll-Latenz und Leerlaufverbrauch mit dauerhaft aktivem `scrollWheel`-Tap gegen die Baseline. Checkliste in `docs/scroll-direction-checklist.md` |
 
 ## Provenienz-Register
 

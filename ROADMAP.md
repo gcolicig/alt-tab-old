@@ -130,8 +130,11 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 ## Phase 7: Scroll
 
+- **Vorgezogen am 2026-08-13, in der Roadmap nachgetragen am 2026-09-10.** Die getrennte Scrollrichtung ist die einzige LinearMouse-Funktion, die im taeglichen Gebrauch fehlt. Sie laeuft damit parallel zu den Phasen 4 bis 6 und wartet nicht auf sie.
+- Schritt 6a umgesetzt: Scrollrichtung der Maus, vertikal, ueber den bestehenden `scrollWheel`-Tap. Vorgabe aus.
+- Offen: Trackpad-Richtung und Scroll Speed, mit Momentum- und Phase-Behandlung.
 - Reverse Scrolling und Scroll Speed mit engem `scrollWheel`-Tap.
-- Nur nach bestandener Tap-, Berechtigungs- und Energiepruefung.
+- Nur nach bestandener Tap-, Berechtigungs- und Energiepruefung. Die Energie- und Latenzmessung fuer den dauerhaft aktiven Tap ist V-17 und noch offen.
 - Keine App- oder geraetespezifischen Regeln im MVP.
 
 ## Phase 8: Gesten
