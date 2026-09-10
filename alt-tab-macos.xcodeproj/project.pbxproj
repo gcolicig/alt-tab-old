@@ -56,6 +56,9 @@
 		C0DE10000000000000000029 /* CursorWindowResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000020 /* CursorWindowResolver.swift */; };
 		C0DE1000000000000000002A /* CursorWindowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000021 /* CursorWindowTests.swift */; };
 		C0DE10000000000000000032 /* SystemValueOwnership.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000028 /* SystemValueOwnership.swift */; };
+		C0DE10000000000000000093 /* ScrollWheelPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000092 /* ScrollWheelPolicy.swift */; };
+		C0DE10000000000000000094 /* ScrollWheelPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000092 /* ScrollWheelPolicy.swift */; };
+		C0DE10000000000000000095 /* ScrollWheelPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000093 /* ScrollWheelPolicyTests.swift */; };
 		C0DE10000000000000000090 /* WindowReachability.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000090 /* WindowReachability.swift */; };
 		C0DE10000000000000000091 /* WindowReachability.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000090 /* WindowReachability.swift */; };
 		C0DE10000000000000000092 /* WindowReachabilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000091 /* WindowReachabilityTests.swift */; };
@@ -422,6 +425,8 @@
 		C0DE20000000000000000020 /* CursorWindowResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorWindowResolver.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000021 /* CursorWindowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorWindowTests.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000028 /* SystemValueOwnership.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemValueOwnership.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000092 /* ScrollWheelPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollWheelPolicy.swift; sourceTree = "<group>"; };
+		C0DE20000000000000000093 /* ScrollWheelPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollWheelPolicyTests.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000090 /* WindowReachability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowReachability.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000091 /* WindowReachabilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowReachabilityTests.swift; sourceTree = "<group>"; };
 		C0DE2000000000000000001A /* PointerOwnershipTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointerOwnershipTestable.swift; sourceTree = "<group>"; };
@@ -1300,6 +1305,7 @@
 				C0DE2000000000000000000A /* InstantSpacesTests.swift */,
 				C0DE20000000000000000004 /* WindowLayoutTests.swift */,
 				C0DE20000000000000000091 /* WindowReachabilityTests.swift */,
+				C0DE20000000000000000093 /* ScrollWheelPolicyTests.swift */,
 				C0DE20000000000000000017 /* MenubarSpaceRowTests.swift */,
 				C0DE20000000000000000019 /* OpenUrlTargetTests.swift */,
 				BF0C84933936C6FE676CD33C /* AppearanceTests.swift */,
@@ -2283,6 +2289,7 @@
 				BF0C8643F524515224BF1618 /* KeyboardEventsTestable.swift */,
 				BF0C8C69316EAAF6DC9AE391 /* CliEvents.swift */,
 				BF0C8FAF34022E23582797F3 /* ScrollwheelEvents.swift */,
+				C0DE20000000000000000092 /* ScrollWheelPolicy.swift */,
 				BF0C81DD40D5AAD9B7C09028 /* CursorEvents.swift */,
 				BF0C8F8E1B7A3C4D5E6F7081 /* ContextMenuEvents.swift */,
 			);
@@ -2796,6 +2803,8 @@
 				C0DE10000000000000000005 /* WindowLayoutTests.swift in Sources */,
 				C0DE10000000000000000091 /* WindowReachability.swift in Sources */,
 				C0DE10000000000000000092 /* WindowReachabilityTests.swift in Sources */,
+				C0DE10000000000000000093 /* ScrollWheelPolicy.swift in Sources */,
+				C0DE10000000000000000095 /* ScrollWheelPolicyTests.swift in Sources */,
 				C0DE1000000000000000001C /* MenubarTestable.swift in Sources */,
 				C0DE1000000000000000001D /* MenubarSpaceRowTests.swift in Sources */,
 				C0DE1000000000000000001F /* ActionTargetsTestable.swift in Sources */,
@@ -2901,6 +2910,7 @@
 				D04BAD2A7F2E8BF64EE982E9 /* TextArea.swift in Sources */,
 				5F17452E2F1A908D00128EF8 /* WindowDiscriminator.swift in Sources */,
 				C0DE10000000000000000090 /* WindowReachability.swift in Sources */,
+				C0DE10000000000000000094 /* ScrollWheelPolicy.swift in Sources */,
 				D04BA11E56383D082D7BE5A5 /* TilesView.swift in Sources */,
 				D04BAFC1A1B2C3D4E5F60002 /* TileOverView.swift in Sources */,
 				D04BAFC3A1B2C3D4E5F60004 /* TileUnderLayer.swift in Sources */,

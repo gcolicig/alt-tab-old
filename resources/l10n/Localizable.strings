@@ -47,7 +47,7 @@
 "Additional controls…" = "Additional controls…";
 
 /* No comment provided by engineer. */
-"Adjust pointer acceleration and speed for mouse and trackpad." = "Adjust pointer acceleration and speed for mouse and trackpad.";
+"Adjust pointer acceleration and speed, and the direction of the mouse wheel." = "Adjust pointer acceleration and speed, and the direction of the mouse wheel.";
 
 /* No comment provided by engineer. */
 "Advanced" = "Advanced";
@@ -141,6 +141,9 @@
 
 /* No comment provided by engineer. */
 "Applications" = "Applications";
+
+/* No comment provided by engineer. */
+"Applies to vertical scrolling with a mouse wheel. The trackpad keeps following the system setting." = "Applies to vertical scrolling with a mouse wheel. The trackpad keeps following the system setting.";
 
 /* No comment provided by engineer. */
 "Apply" = "Apply";
@@ -357,6 +360,9 @@
 
 /* No comment provided by engineer. */
 "Input extensions are in safe mode, so moving windows stays off. Turn safe mode off to use it." = "Input extensions are in safe mode, so moving windows stays off. Turn safe mode off to use it.";
+
+/* No comment provided by engineer. */
+"Input extensions are in safe mode, so the mouse wheel stays unchanged. Turn safe mode off to use it." = "Input extensions are in safe mode, so the mouse wheel stays unchanged. Turn safe mode off to use it.";
 
 /* No comment provided by engineer. */
 "Input extensions are in safe mode." = "Input extensions are in safe mode.";
@@ -601,6 +607,9 @@
 
 /* No comment provided by engineer. */
 "Restore" = "Restore";
+
+/* No comment provided by engineer. */
+"Reverse the mouse wheel" = "Reverse the mouse wheel";
 
 /* No comment provided by engineer. */
 "Right focus" = "Right focus";
