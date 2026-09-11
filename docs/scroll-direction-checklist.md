@@ -34,21 +34,22 @@ observable at the device. That is this checklist.
 | 6 | Setting on. Scroll with the trackpad, two fingers | **Unchanged.** The trackpad still follows the system's Natural Scrolling preference |
 | 7 | Setting on. Scroll with a Magic Mouse, if one is available | Unchanged; it reports continuous like a trackpad |
 | 8 | Setting on. Scroll sideways with a tilt wheel, if one is available | Unchanged; only the vertical axis is in scope |
-| 9 | Setting on. Turn on `Disable input extensions (safe mode)` | Wheel direction returns to normal at once, no restart |
-| 10 | Still in safe mode, toggle the scroll setting off and on | A notice says the module stays off in safe mode; the direction does not change |
-| 11 | Turn safe mode off | The setting still shows on, and the direction is inverted again, without a restart |
-| 12 | Setting on. Trigger the input safety kill switch | Direction returns to normal, together with the other input modules |
-| 13 | Setting on. Let the machine sleep and wake it | Direction still inverted; the tap survived or was re-enabled |
-| 14 | Setting on. Provoke a tap timeout: hold a heavy load, or leave the machine busy while scrolling | The direction comes back on its own; a `tapDisabledByTimeout` line is in the log |
-| 15 | Setting on. Quit and relaunch AltTab+ | Direction inverted from launch, without opening Settings |
-| 16 | Setting on, then delete the app's preferences and relaunch | The module is off. Q-08: nothing enables it but the user |
-| 17 | **Latency.** Setting on. Scroll a long list fast, watch for lag against the same list with the setting off | No perceptible difference |
-| 18 | **Energy.** Setting on, machine idle for 10 minutes. Compare against the documented idle baseline | No measurable increase. An idle machine produces no scroll events, so the active tap should cost nothing |
+| 9 | Setting on. Hold shift and scroll the wheel where that scrolls sideways (Finder column view, a wide table) | Decide and record what you see. A shift-scroll carries its movement on the vertical axis, so it is mirrored with it. If that reads wrong, the axis-1 rule needs an exception for a held shift |
+| 10 | Setting on. Turn on `Disable input extensions (safe mode)` | Wheel direction returns to normal at once, no restart |
+| 11 | Still in safe mode, toggle the scroll setting off and on | A notice says the module stays off in safe mode; the direction does not change |
+| 12 | Turn safe mode off | The setting still shows on, and the direction is inverted again, without a restart |
+| 13 | Setting on. Trigger the input safety kill switch | Direction returns to normal, together with the other input modules |
+| 14 | Setting on. Let the machine sleep and wake it | Direction still inverted; the tap survived or was re-enabled |
+| 15 | Setting on. Provoke a tap timeout: hold a heavy load, or leave the machine busy while scrolling | The direction comes back on its own; a `tapDisabledByTimeout` line is in the log |
+| 16 | Setting on. Quit and relaunch AltTab+ | Direction inverted from launch, without opening Settings |
+| 17 | Setting on, then delete the app's preferences and relaunch | The module is off. Q-08: nothing enables it but the user |
+| 18 | **Latency.** Setting on. Scroll a long list fast, watch for lag against the same list with the setting off | No perceptible difference |
+| 19 | **Energy.** Setting on, machine idle for 10 minutes. Compare against the documented idle baseline | No measurable increase. An idle machine produces no scroll events, so the active tap should cost nothing |
 
-Steps 17 and 18 are the ones ROADMAP Phase 7 gates the module on. They are the reason this module keeps a
+Steps 18 and 19 are the ones ROADMAP Phase 7 gates the module on. They are the reason this module keeps a
 permanently active tap while the trackpad module deliberately does not: a `scrollWheel` tap never sees
 gesture or `mouseMoved` events, so the WindowServer only waits for this process while the user is actually
-scrolling. That reasoning is an argument, not a measurement, until step 17 and 18 are filled in.
+scrolling. That reasoning is an argument, not a measurement, until step 18 and 19 are filled in.
 
 ## Results
 
