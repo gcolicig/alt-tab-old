@@ -17,13 +17,13 @@
   "devDependencies": {
     "@commitlint/cli": "^8.1.0",
     "@commitlint/config-conventional": "^8.1.0",
-    "@semantic-release/changelog": "^3.0.4",
-    "@semantic-release/git": "^7.0.16",
+    "@semantic-release/changelog": "^7.0.0",
+    "@semantic-release/git": "^11.0.1",
     "@types/node": "^26.1.1",
     "glob": "^10.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.8",
-    "semantic-release": "^15.13.24",
+    "semantic-release": "^25.0.9",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
   },
