@@ -4,12 +4,6 @@
   "version": "1.0.0",
   "author": "",
   "license": "MIT",
-  "husky": {
-    "hooks": {
-      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS",
-      "pre-commit": "lint-staged"
-    }
-  },
   "lint-staged": {
     "*.swift": [
       "node scripts/swiftformat.js --lint"
@@ -17,7 +11,8 @@
   },
   "scripts": {
     "format": "node scripts/swiftformat.js",
-    "format:check": "node scripts/swiftformat.js --lint"
+    "format:check": "node scripts/swiftformat.js --lint",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@commitlint/cli": "^8.1.0",
@@ -25,12 +20,12 @@
     "@semantic-release/changelog": "^3.0.4",
     "@semantic-release/git": "^7.0.16",
     "glob": "^10.0.0",
-    "husky": "^3.0.4",
-    "lint-staged": "^13.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.8",
     "semantic-release": "^15.13.24"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.22.1"
   },
   "dependencies": {
     "@types/node": "^22.10.2",
