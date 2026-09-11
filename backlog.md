@@ -1015,6 +1015,22 @@ Prioritaet: Niedrig, aber billig
 - Argument dagegen: Q-08 ist absolut formuliert und deckt genau diesen Fall ab. Hyperkey belegt Caps Lock systemweit ueber einen Event-Tap; das ist der eingriffsstaerkste Schalter der App. Eine Ausnahme fuer den einen Schalter hoehlt die Regel fuer alle aus.
 - Falls dafuer entschieden wird: Q-08 ist zu aendern, nicht zu umgehen, und die Zusammenfassung im Dialog muss den Eingriff ausdruecklich benennen statt ihn unter `Assigns the Hyper presets` mitlaufen zu lassen — das klingt heute nach Tastenkuerzeln, nicht nach einer Caps-Lock-Umbelegung.
 
+**Der SwiftFormat-Check beim Commit ist wirkungslos. Aufgenommen 2026-09-11.** Der pre-commit-Hook laeuft, meldet Erfolg und prueft nichts. Drei Ursachen, alle am 2026-09-11 nachgemessen:
+
+- `.swiftformatignore` endet mit der Zeile `**/*`. Damit ignoriert der Glob in `scripts/swiftformat.js` jede Datei; das Skript findet null Swift-Dateien und gibt `No Swift files to format.` aus. Die Zeile ist absichtlich gesetzt und traegt den Kommentar "We will open a new branch to deal with code format issues at the next release" — sie stammt aus dem Original, nicht aus diesem Fork.
+- Selbst mit Treffern koennte der Hook nicht fehlschlagen. `scripts/swiftformat.js` faengt einen fehlgeschlagenen `execFileSync` ab und schreibt nur eine Warnung; das Skript endet mit Code 0. Ein Formatfehler kommt damit nie beim Hook an.
+- Das Binary `swiftformat` ist auf dem Arbeitsgeraet ZO-18298 gar nicht installiert. `scripts/install_swiftformat.js` existiert, wird aber von keinem Hook und keiner CI-Stufe aufgerufen. Auf einem Rechner ohne Binary waere der Lauf ohnehin nur die abgefangene Ausnahme von oben.
+
+Nebenbefund: Das Skript haengt die von `lint-staged` uebergebenen Dateinamen vorne an und ergaenzt dahinter **alle** Swift-Dateien des Repos (`process.argv.slice(2).concat(files)`). Es formatiert also nie nur das Gestagte. Mit der Ignore-Zeile faellt das heute nicht auf.
+
+Zu entscheiden, nicht nebenbei zu erledigen:
+
+- **Einschalten** heisst, die Zeile `**/*` zu entfernen und vorher einen einzelnen Formatierungs-Commit ueber 176 Swift-Dateien zu fahren. Danach ist jeder spaetere Diff sauber, aber `git blame` zeigt fuer jede Zeile diesen Commit. Der Nachbau von Upstream-Fixes wird dadurch schwerer, und genau das ist im Abschnitt `Upstream-Abgleich` die laufende Arbeitsweise dieses Forks.
+- **Abschalten** heisst, den Hook und `scripts/swiftformat.js` zu entfernen und im Beitragstext zu sagen, dass dieses Repo Formatierung nicht prueft. Ehrlich, aber der Fork verliert eine Zusage, die das Original macht.
+- **Liegenlassen** ist die dritte Moeglichkeit und die schlechteste: Der Hook sagt weiter bei jedem Commit `[COMPLETED] node scripts/swiftformat.js --lint` und meint damit nichts.
+
+Der Aufwand liegt in der Entscheidung, nicht im Handgriff. Alle drei Wege sind an einem Nachmittag umsetzbar.
+
 ### 7. Trackpad-Gesten fuer Middle Click
 
 Status: Letzter Spike
