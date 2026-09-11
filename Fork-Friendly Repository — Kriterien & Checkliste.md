@@ -1,5 +1,8 @@
 # Fork-Friendly Repository - Kriterien & Checkliste
 
+> Kanonische Fassung samt kopierbaren Scripts: eigenes Repo `~/Code/fork-friendly`.
+> Diese Kopie hier wird nicht mehr gepflegt.
+
 Diese Checkliste hilft dabei, ein Repository so vorzubereiten, dass es realistisch geforkt, lokal gebaut, angepasst und unabhaengig weitergefuehrt werden kann.
 
 Sie basiert auf der Analyse eines macOS-App-Forks von `lwouis/alt-tab-macos` auf Stand `v10.12.0` sowie auf allgemeinen Open-Source-Kriterien.
