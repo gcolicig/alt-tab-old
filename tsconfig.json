@@ -4,6 +4,9 @@
     "target": "ESNext",
     "module": "CommonJS",
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": [
+      "node"
+    ]
   }
 }
