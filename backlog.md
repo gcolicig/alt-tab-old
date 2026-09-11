@@ -1051,6 +1051,99 @@ Exit-Kriterium:
 - Bei ausgeschaltetem Modul existiert kein Tap.
 - Ein Druck loest hoechstens eine Aktion aus; Loslassen ausserhalb des Rings bricht folgenlos ab.
 
+### 9. Thumbnail-Drop
+
+Status: Spezifiziert 2026-08-06, am 2026-09-11 aus einem liegengebliebenen Branch in den Backlog uebernommen
+Dabei berichtigt: Der URL-basierte Vorlaeufer sitzt nicht in `TilesDocumentView`, das es nicht mehr gibt, sondern in `src/ui/main-window/TilesView.swift` — `registerForDraggedTypes` auf `kUTTypeURL`, `draggingEntered`, `draggingUpdated`, `performDragOperation`
+Prioritaet: Mittel; unabhaengig von AX-Kern und Input-Laufzeit einplanbar
+
+Beschreibung:
+
+- Waehrend einer laufenden System-Drag-Sitzung wird der Switcher zum Ziel: Thumbnails nehmen den Drag entgegen.
+- Zwei Ergebnisse sind moeglich: Spring-Loading fokussiert das Zielfenster und laesst die Drag-Sitzung weiterlaufen; ein Drop auf dem Thumbnail uebergibt die Nutzlast an die App des Zielfensters.
+- Das Modul ist reine AppKit-Dragging-Destination-Logik im eigenen Panel. Es braucht keinen Event-Tap, kein Event-Posting und keine zusaetzliche TCC-Berechtigung ueber den bestehenden AltTab+-Bedarf hinaus.
+- Der Switcher bleibt waehrend des Drags in seinem normalen Zustand: gleiche Auswahl-, Hover- und Navigationslogik, keine zweite Bedienoberflaeche.
+
+Abgrenzung zu Story 2H:
+
+- Beide Stories machen die Switcher-Kachel zum Ziel eines Drags, und sie schliessen einander nicht aus.
+- 2H zieht ein **Fenster** und liefert es an den Space der Kachel. Diese Story zieht eine **Datei- oder Web-URL** und liefert sie an die App des Kachelfensters.
+- Die Wege trennen sich an der Herkunft des Drags: 2H laeuft in einer AltTab+-eigenen Modifier-Drag-Sitzung und braucht dafuer ein Abschlussergebnis, das kein Rahmen ist. Diese Story laeuft in einer System-Drag-Sitzung und ist reine `NSDraggingDestination`-Logik im Panel.
+- Gemeinsam ist ihnen nur die Trefferpruefung auf der Kachel. Wer zuerst gebaut wird, liefert sie fuer die andere mit.
+
+Zustandsmaschine:
+
+1. `idle -> entered -> targeting -> springLoading -> handedOff` fuer den Spring-Loading-Pfad.
+2. `idle -> entered -> targeting -> dropping -> finished/failed` fuer den Drop-Pfad.
+3. `targeting -> idle` bei Verlassen des Panels, leerem oder nicht unterstuetztem Pasteboard und bei jedem Abbruchgrund aus TD-08.
+4. Jeder Uebergang nach `idle` verwirft Ziel, Dwell-Timer und Hover-Hervorhebung in einem Schritt.
+
+Zielaufloesung:
+
+- Das Ziel ist genau der Tile unter der Drag-Position, ermittelt ueber dieselbe Trefferpruefung wie Hover; es gibt keine eigene Geometrie fuer den Drag.
+- Der Tile referenziert ein `Window`; daraus folgen PID, `CGWindowID` und Bundle-URL.
+- Ohne aufloesbare Bundle-URL ist das Fenster kein gueltiges Ziel; der Tile lehnt den Drag ab, statt auf die Frontmost-App auszuweichen.
+- Grenze, die dokumentiert bleibt: Die Zustellung erfolgt prozessweit an die App, nicht an ein bestimmtes Fenster. Fenstergenauigkeit entsteht nur ueber Spring-Loading plus manuellen Drop in der Ziel-App.
+
+Nutzlast-Modell:
+
+| Pasteboard-Inhalt | Verhalten |
+|---|---|
+| Datei-URLs | Werden mit der App des Zielfensters geoeffnet |
+| Web-URLs | Werden mit der App des Zielfensters geoeffnet |
+| Gemischt Datei- und Web-URLs | Gemeinsam in einem Aufruf, gleiche Reihenfolge wie im Pasteboard |
+| Text, Bilder, App-eigene Typen | Kein Drop-Ziel; nur Spring-Loading bleibt zulaessig |
+| Leeres oder unlesbares Pasteboard | Kein Ziel, keine Hervorhebung, keine Aktion |
+
+Anforderungen:
+
+| ID | Anforderung | Begruendung |
+|---|---|---|
+| TD-01 | Spring-Loading loest nach einer Dwell-Zeit ueber demselben Tile aus, fokussiert dessen Fenster, blendet den Switcher aus und laesst die Drag-Sitzung unangetastet | Der haeufigste Fall ist "Fenster nach vorne holen und dort selbst ablegen" |
+| TD-02 | Die Dwell-Zeit wird erst zurueckgesetzt, wenn der Zeiger den Tile wechselt oder sich um mehr als eine definierte Distanz bewegt | Zittern waehrend eines Drags darf den Timer nicht endlos verlaengern |
+| TD-03 | Ein Drop auf dem Tile beendet den Drag sofort und uebergibt die Nutzlast an die App des Zielfensters | Zweiter Pfad ohne Wartezeit fuer entschlossene Nutzer |
+| TD-04 | Nach erfolgreicher Uebergabe wird der Switcher ausgeblendet und das Zielfenster fokussiert | Ohne Fokus bleibt unklar, wohin die Nutzlast gegangen ist |
+| TD-05 | Schlaegt die Uebergabe fehl, bleibt der Switcher offen, es wird keine Auswahl geaendert und der Fehlschlag wird im Q-07-Ringbuffer erfasst | Stilles Schliessen sieht wie ein Erfolg aus |
+| TD-06 | Die zurueckgegebene Drag-Operation ist nur dann `.link`, wenn Ziel und Nutzlast gueltig sind, sonst leer | Der Cursor ist die einzige Vorabrueckmeldung der Drag-Sitzung |
+| TD-07 | Das Ziel wird waehrend des Drags sichtbar hervorgehoben, mit demselben Zustand wie Hover per Maus | Kein zweites, abweichendes Auswahlbild |
+| TD-08 | Escape, Loslassen ausserhalb des Panels, Tastaturnavigation, Ausblenden des Switchers, Space-/Display-Wechsel und Mission Control brechen Ziel und Dwell-Timer ab | Q-15: keine ueber die Sitzung hinaus haengenden Trigger |
+| TD-09 | Bei deaktiviertem Modul registriert das Panel keine Dragging-Typen und legt keinen Timer an | Q-10: ausgeschaltete Module hinterlassen keine Laufzeitkosten |
+| TD-10 | Der Drop oeffnet ausschliesslich die Nutzlast der Drag-Sitzung; es werden keine Pfade aus anderen Quellen ergaenzt oder aufgeloest | Ein Drop darf nicht mehr oeffnen als der Nutzer gezogen hat |
+
+Settings:
+
+- Ein Schalter `Drop auf Thumbnails`, Default an, im bestehenden Switcher-Abschnitt; kein eigener Sidebar-Eintrag.
+- Eine Dwell-Zeit fuer Spring-Loading, Default 1.5 s, Bereich 0.5 bis 3.0 s.
+- Keine App- oder typspezifischen Regeln, keine getrennten Schalter fuer Spring-Loading und Drop.
+
+Nicht im Scope:
+
+- Thumbnail als Drag-Quelle, also Fenster oder Fenstertitel aus dem Switcher herausziehen.
+- Zustellung an ein bestimmtes Fenster einer App.
+- Drop auf Tabs, Icons, Titel oder andere Teilbereiche eines Tiles.
+- Simulierte Drops per Event-Posting in die Ziel-App.
+- Drop auf App-Gruppen, leere Bereiche des Panels oder das Panel selbst.
+- Neue Berechtigungen oder private API.
+
+Pruefraster:
+
+| Pruefung | Erwartung |
+|---|---|
+| Trigger waehrend Drag | Der Switcher laesst sich waehrend einer laufenden Drag-Sitzung oeffnen; sonst faellt das Modul auf reines Maus-Hover-Verhalten zurueck |
+| Zielwechsel | Wechsel zwischen benachbarten Tiles setzt Hervorhebung und Dwell-Timer sofort neu |
+| Spring-Loading | Zielfenster ist fokussiert, Switcher ist weg, die Drag-Sitzung laeuft unveraendert weiter |
+| Drop | Nutzlast wird von der Ziel-App geoeffnet, Zielfenster ist danach fokussiert |
+| Ablehnung | App ohne Bundle-URL, nicht unterstuetzte Typen und leeres Pasteboard erzeugen keinen `.link`-Cursor und keine Aktion |
+| Fehlschlag | Nicht unterstuetzter Dateityp in der Ziel-App laesst den Switcher offen und wird protokolliert |
+| Abbruch | Nach jedem Grund aus TD-08 bleiben kein Timer, keine Hervorhebung und kein Zielverweis zurueck |
+| Aus-Zustand | Bei deaktiviertem Modul ignoriert das Panel Drags vollstaendig |
+
+Offene Punkte:
+
+- Verhalten des Aktivierungs-Shortcuts waehrend einer laufenden Drag-Sitzung am Zielgeraet verifizieren, inklusive Tastaturnavigation zwischen Tiles.
+- Klaeren, ob minimierte Fenster und Fenster in anderen Spaces als Ziel zugelassen werden oder nur Spring-Loading erhalten.
+- Pruefen, ob `NSWorkspace` beim Oeffnen mit einer bestimmten App unterscheidbare Fehler fuer "App unterstuetzt Typ nicht" liefert; sonst bleibt TD-05 auf einen generischen Fehlschlag beschraenkt.
+
 ## Settings-Modell
 
 Status: Minimal halten
