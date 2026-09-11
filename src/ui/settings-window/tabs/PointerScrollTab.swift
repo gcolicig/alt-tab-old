@@ -20,7 +20,27 @@ class PointerScrollTab {
         addCategory(table, .mouse, NSLocalizedString("Mouse pointer acceleration", comment: ""), NSLocalizedString("Mouse pointer speed", comment: ""))
         table.addNewTable()
         addCategory(table, .trackpad, NSLocalizedString("Trackpad pointer acceleration", comment: ""), NSLocalizedString("Trackpad pointer speed", comment: ""))
+        table.addNewTable()
+        addScroll(table)
         return TableGroupSetView(originalViews: [table], bottomPadding: 0)
+    }
+
+    /// Scrolling owns no system value, so it has no ownership row: it rewrites events on their way to the
+    /// focused app and leaves the system's own Natural Scrolling preference alone. That is also why it is
+    /// limited to the mouse wheel — the wheel is what macOS cannot separate from the trackpad.
+    private static func addScroll(_ table: TableGroupView) {
+        table.addRow(TableGroupView.Row(
+            leftTitle: NSLocalizedString("Reverse the mouse wheel", comment: ""),
+            subTitle: NSLocalizedString("Applies to vertical scrolling with a mouse wheel. The trackpad keeps following the system setting.", comment: ""),
+            rightViews: [LabelAndControl.makeSwitch("scrollReverseMouse") { _ in scrollDirectionChanged() }]))
+    }
+
+    /// Safe mode keeps the setting but not its effect. Saying so is the difference between a switch that is
+    /// suppressed and a switch that looks broken.
+    private static func scrollDirectionChanged() {
+        ScrollwheelEvents.directionPreferenceChanged()
+        guard Preferences.scrollReverseMouse, Preferences.inputModulesSafeMode else { return }
+        TransientNotice.show(NSLocalizedString("Input extensions are in safe mode, so the mouse wheel stays unchanged. Turn safe mode off to use it.", comment: ""))
     }
 
     private static func addCategory(_ table: TableGroupView, _ category: PointerCategory, _ accelerationTitle: String, _ speedTitle: String) {

@@ -72,6 +72,7 @@ class Preferences {
             "pointerTrackpadAcceleration": PointerAccelerationPreference.systemDefault.indexAsString,
             "pointerMouseSpeed": String(PointerSpeedSteps.maximumIndex),
             "pointerTrackpadSpeed": "4",
+            "scrollReverseMouse": "false",
             "pointerOwnershipMouse": "",
             "pointerOwnershipTrackpad": "",
             "windowDragModifier": "0",
@@ -146,6 +147,7 @@ class Preferences {
     static var windowDragArmingMarker: Bool { CachedUserDefaults.bool("windowDragArmingMarker") }
     static var pointerMouseAcceleration: PointerAccelerationPreference { CachedUserDefaults.macroPref("pointerMouseAcceleration", PointerAccelerationPreference.allCases) }
     static var pointerTrackpadAcceleration: PointerAccelerationPreference { CachedUserDefaults.macroPref("pointerTrackpadAcceleration", PointerAccelerationPreference.allCases) }
+    static var scrollReverseMouse: Bool { CachedUserDefaults.bool("scrollReverseMouse") }
     static var pointerMouseSpeed: Double { PointerSpeedSteps.value(CachedUserDefaults.int("pointerMouseSpeed")) }
     static var pointerTrackpadSpeed: Double { PointerSpeedSteps.value(CachedUserDefaults.int("pointerTrackpadSpeed")) }
 
