@@ -4,6 +4,12 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # ts-node 10 reads `ts.sys` from the compiler it loads, and the native port in TypeScript 7.0 does
+      # not expose it: every script under scripts/ dies with "Cannot read properties of undefined
+      # (reading 'fileExists')". Measured 2026-09-11. Drop this entry once ts-node can load a 7.x compiler.
+      - dependency-name: "typescript"
+        versions: [">=7.0.0"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
