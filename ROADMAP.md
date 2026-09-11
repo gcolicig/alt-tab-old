@@ -42,6 +42,13 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 - Die Menueleiste enthaelt keine eigene Fenster- oder Space-Aktionslogik.
 - Keine beliebigen Makros oder Shell-Kommandos im ersten Umfang.
 
+## Phase 1C: Thumbnail-Drop
+
+- Thumbnails nehmen waehrend einer laufenden Drag-Sitzung Datei- und Web-URLs entgegen.
+- Spring-Loading fokussiert das Zielfenster und laesst den Drag weiterlaufen; ein Drop uebergibt die Nutzlast an die App des Zielfensters.
+- Reine AppKit-Dragging-Destination-Logik: kein Event-Tap, kein Event-Posting, keine zusaetzliche Berechtigung; damit unabhaengig von der Input-Laufzeit einplanbar.
+- Zustellung an ein bestimmtes Fenster ist nicht Teil des Scopes; Fenstergenauigkeit entsteht ueber Spring-Loading.
+
 ## Phase 2A: Instant Spaces
 
 - Umgesetzt: Space links/rechts, direkter Wechsel zu Space 1 bis 9 und `Last Space` ueber das gemeinsame Aktionsregister.
