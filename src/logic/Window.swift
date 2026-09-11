@@ -27,6 +27,12 @@ class Window {
     var isMinimized = false
     var isOnAllSpaces = false
     var isWindowlessApp: Bool { get { cgWindowId == nil } }
+    /// what the application said about this window the last time we read its accessibility window list
+    var axWindowListMembership = AxWindowListMembership.unknown
+    /// false when the user has no way to bring this window up; see `WindowReachabilityPolicy`
+    var isReachable = true
+    /// false when the window carries no title of its own, and the switcher shows the application name
+    var hasOwnTitle = false
     var position: CGPoint?
     var size: CGSize?
     var spaceIds = [CGSSpaceID.max]
@@ -42,13 +48,15 @@ class Window {
     var swTitleResults: [SWResult] = []
     var swBestSimilarity = 0.0
 
-    init(_ axUiElement: AXUIElement, _ application: Application, _ wid: CGWindowID, _ title: String?, _ isFullscreen: Bool?, _ isMinimized: Bool?, _ position: CGPoint?, _ size: CGSize?) {
+    init(_ axUiElement: AXUIElement, _ application: Application, _ wid: CGWindowID, _ title: String?, _ isFullscreen: Bool?, _ isMinimized: Bool?, _ position: CGPoint?, _ size: CGSize?, _ axWindowListMembership: AxWindowListMembership) {
         id = "wid-\(wid)"
         self.axUiElement = axUiElement
         self.application = application
+        self.axWindowListMembership = axWindowListMembership
         cgWindowId = wid
-        self.updateSpacesAndScreen()
+        // the attributes come first: updateSpacesAndScreen judges reachability, and it needs isMinimized
         updateFromAxAttributes(title, size, position, isFullscreen, isMinimized)
+        self.updateSpacesAndScreen()
         debugId = "\(self.application.debugId) (wid:\(cgWindowId) title:\(self.title))"
         Window.globalCreationCounter += 1
         creationOrder = Window.globalCreationCounter
@@ -80,7 +88,9 @@ class Window {
     }
 
     func updateFromAxAttributes(_ title: String?, _ size: CGSize?, _ position: CGPoint?, _ isFullscreen: Bool?, _ isMinimized: Bool?) {
-        self.title = bestEffortTitle(title)
+        let ownTitle = Window.ownTitle(title, cgWindowId)
+        hasOwnTitle = ownTitle != nil
+        self.title = ownTitle ?? application.localizedName ?? ""
         self.size = size
         self.position = position
         self.isFullscreen = isFullscreen ?? false
@@ -266,13 +276,19 @@ class Window {
 
     // for some windows (e.g. Slack), the AX API doesn't return a title; we try CG API; finally we resort to the app name
     func bestEffortTitle(_ axTitle: String?) -> String {
+        return Window.ownTitle(axTitle, cgWindowId) ?? application.localizedName ?? ""
+    }
+
+    /// the title the window provides itself, from accessibility or from the window server
+    /// nil when it carries none, and the switcher has to show the application name instead
+    static func ownTitle(_ axTitle: String?, _ wid: CGWindowID?) -> String? {
         if let axTitle, !axTitle.isEmpty {
             return axTitle
         }
-        if let cgWindowId, let cgTitle = cgWindowId.title(), !cgTitle.isEmpty {
+        if let wid, let cgTitle = wid.title(), !cgTitle.isEmpty {
             return cgTitle
         }
-        return application.localizedName ?? ""
+        return nil
     }
 
     func updateSpacesAndScreen() {
@@ -281,6 +297,7 @@ class Window {
         // note: for some reason, it behaves differently if you minimize the tab group after moving it to another space
         updateSpaces()
         updateScreenId()
+        updateReachability()
     }
 
     private func updateSpaces() {
@@ -293,6 +310,23 @@ class Window {
         self.spaceIds = spaceIds
         self.spaceIndexes = spaceIds.compactMap { spaceId in Spaces.idsAndIndexes.first { $0.0 == spaceId }?.1 }
         self.isOnAllSpaces = spaceIds.count > 1
+    }
+
+    /// An application can hide a window without destroying it (e.g. Electron OAuth helper windows). The
+    /// window server still lists it, so we re-evaluate reachability every time we refresh Spaces.
+    private func updateReachability() {
+        guard let cgWindowId else { return }
+        isReachable = !WindowReachabilityPolicy.isUnreachable(reachabilityFacts()) { CGWindow.isOnScreen(cgWindowId) }
+    }
+
+    private func reachabilityFacts() -> WindowReachabilityFacts {
+        return WindowReachabilityFacts(
+            membership: axWindowListMembership,
+            isMinimized: isMinimized,
+            isTabbed: isTabbed,
+            applicationIsHidden: application.isHidden,
+            hasOwnTitle: hasOwnTitle,
+            isOnAnySpace: !spaceIds.isEmpty)
     }
 
     private func updateScreenId() {
