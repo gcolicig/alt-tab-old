@@ -123,9 +123,25 @@ class AccessibilityEvents {
         }
     }
 
+    private static var pendingDestroyedWindows = [Window]()
+    private static var destroyFlushScheduled = false
+
+    /// Destroy notifications arrive one per window, and each removal is O(windows). An app that closes many
+    /// windows at once (the Sequoia / Logic Pro bursts the code notes elsewhere) would be O(windows^2). The
+    /// destroys that land in one runloop turn are coalesced into a single batched removal. This runs on the
+    /// main thread (the caller dispatches here), so the buffer needs no lock.
     private static func windowDestroyed(_ windowAxUiElement: AXUIElement, _ pid: pid_t, _ wid: CGWindowID) {
-        if let window = (Windows.list.first { $0.isEqualRobust(windowAxUiElement, wid) }) {
-            Windows.removeWindows([window], true)
+        guard let window = (Windows.list.first { $0.isEqualRobust(windowAxUiElement, wid) }) else { return }
+        pendingDestroyedWindows.append(window)
+        guard !destroyFlushScheduled else { return }
+        destroyFlushScheduled = true
+        DispatchQueue.main.async {
+            destroyFlushScheduled = false
+            var seen = Set<ObjectIdentifier>()
+            let batch = pendingDestroyedWindows.filter { seen.insert(ObjectIdentifier($0)).inserted }
+            pendingDestroyedWindows.removeAll()
+            guard !batch.isEmpty else { return }
+            Windows.removeWindows(batch, true)
         }
     }
 
