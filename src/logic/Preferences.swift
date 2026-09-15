@@ -65,6 +65,7 @@ class Preferences {
             "previewFocusedWindow": "true",
             "captureWindowsInBackground": "true",
             "screenRecordingPermissionSkipped": "false",
+            "screenRecordingAccessRequested": "false",
             "trackpadHapticFeedbackEnabled": "true",
             "settingsWindowShownOnFirstLaunch": "false",
             "pointerMouseAcceleration": PointerAccelerationPreference.systemDefault.indexAsString,
@@ -193,6 +194,7 @@ class Preferences {
             previewSelectedWindow)
     }
     static var screenRecordingPermissionSkipped: Bool { CachedUserDefaults.bool("screenRecordingPermissionSkipped") }
+    static var screenRecordingAccessRequested: Bool { CachedUserDefaults.bool("screenRecordingAccessRequested") }
     static var settingsWindowShownOnFirstLaunch: Bool { CachedUserDefaults.bool("settingsWindowShownOnFirstLaunch") }
 
     // macro values

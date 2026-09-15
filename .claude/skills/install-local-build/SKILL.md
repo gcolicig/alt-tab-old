@@ -23,12 +23,23 @@ Release build (the project's own script):
 scripts/build_app.sh
 ```
 
-Debug build (no overrides needed since the Xcode 27 build fix):
+Debug build, signed with the local identity `AltTab+ Local Codesign`:
 
 ```bash
 xcodebuild -workspace alt-tab-macos.xcworkspace -scheme Debug -configuration Debug \
-  -derivedDataPath ./DerivedData build
+  -derivedDataPath ./DerivedData \
+  CODE_SIGN_IDENTITY="AltTab+ Local Codesign" CODE_SIGN_STYLE=Manual build
 ```
+
+The stable identity keeps the Accessibility and Screen Recording grants across rebuilds.
+An ad-hoc build (`CODE_SIGN_IDENTITY = -`, the Debug default) loses them on every rebuild.
+Check that the identity exists before the build:
+
+```bash
+security find-identity -v -p codesigning | grep "AltTab+ Local Codesign"
+```
+
+If it is missing, run `scripts/codesign/setup_local.sh` once. `build.sh` uses the same identity.
 
 Before you push a code change, also run the test suite that CI runs:
 
@@ -76,11 +87,20 @@ Verify the installed binary is the new one:
 stat -f "%Sm %N" "/Applications/AltTab+.app/Contents/MacOS/AltTab+"
 ```
 
-## Step 4 — Reset the app's permissions before the first launch
+## Step 4 — Reset the app's permissions only when the signature changed
 
-A re-signed build has a new code signature. macOS still holds the old Accessibility and
-Screen Recording grants, which now do not match. The stale grants make the new build
-misbehave and restart. Remove them BEFORE the first launch, so macOS asks again cleanly.
+Skip this step when the installed app and the new build are both signed with
+`AltTab+ Local Codesign`. The grants stay valid (measured 2026-09-15: three rebuilds, no new grant).
+
+Do this step when the signing identity changed, for example from ad-hoc to the local identity.
+macOS then still holds grants that do not match the new signature. The stale grants make the
+new build misbehave and restart. Remove them BEFORE the first launch, so macOS asks again cleanly.
+
+Check the installed signature:
+
+```bash
+codesign -dvv "/Applications/AltTab+.app" 2>&1 | grep -E "Authority|Signature=adhoc"
+```
 
 Command line:
 
@@ -114,7 +134,7 @@ ps -Ao pid,etime,command | grep 'AltTab+.app/Contents/MacOS' | grep -v grep
 - LetsMove handoff. Launching a build from outside `/Applications` makes LetsMove defer to
   the `/Applications` copy. The DerivedData instance then does not own the menubar item, so
   its CPU reads near 0. Measure the `/Applications` instance, or you measure the wrong process.
-- TCC permission loss. An ad-hoc re-signed build has a new code signature. macOS treats it
+- TCC permission loss. Sign with the local identity (Step 1) to avoid it. An ad-hoc re-signed build has a new code signature. macOS treats it
   as a new app and drops its Screen Recording and Accessibility grants. The app then
   re-requests them and restarts once. Grant the permissions again after the install.
 - Nesting. See Step 3. Always remove or overwrite the target bundle; never copy into it.
