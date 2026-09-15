@@ -36,6 +36,9 @@ class PermissionsWindow: NSWindow {
     private func setupWindow() {
         title = NSLocalizedString("AltTab needs some permissions", comment: "")
         hidesOnDeactivate = false
+        // Since macOS 14 activation is cooperative and `activate(ignoringOtherApps:)` is ignored, so a launch while
+        // another app is frontmost left this window behind that app's windows. AltTab+ has no Dock icon to find it by.
+        level = .floating
         isReleasedWhenClosed = false
         styleMask.insert([.closable])
     }
