@@ -13,6 +13,17 @@ class Menubar {
     /// display a drop landed on instead of always taking the next one in physical order.
     private static var groupBoundsInButton = [(ScreenUuid, CGRect)]()
 
+    /// One clickable segment of the rendered row, in the status button's coordinates. The row is drawn as a
+    /// single image (see refreshSpaces), so a click on the button maps to a segment by position here instead
+    /// of hitting a live NSButton.
+    private struct SegmentTarget {
+        let rect: CGRect
+        let displayUuid: String
+        let spaceIndex: Int
+        let overflowIndexes: [Int]?
+    }
+    private static var segmentTargets = [SegmentTarget]()
+
     private struct SpaceGroup {
         let displayUuid: ScreenUuid
         let spaceIds: [CGSSpaceID]
@@ -86,14 +97,44 @@ class Menubar {
         }?.0
     }
 
-    private static func clickIsOnSpaceSegments() -> Bool {
-        guard let segments = spaceSegmentsView, let button = statusItem?.button,
-              let event = NSApp.currentEvent, event.type == .leftMouseDown else { return false }
-        return segments.frame.contains(button.convert(event.locationInWindow, from: nil))
+    /// Handles a left click that landed on a rendered segment, if any. The row is one image, so the click is
+    /// mapped to a segment by position. Returns false when the click was on the icon or empty area, so the
+    /// icon's own behaviour (menu or switcher) runs.
+    private static func handleSegmentClick() -> Bool {
+        guard let button = statusItem?.button, let event = NSApp.currentEvent, event.type == .leftMouseDown else { return false }
+        let point = button.convert(event.locationInWindow, from: nil)
+        guard let target = segmentTargets.first(where: { $0.rect.contains(point) }) else { return false }
+        // a synthetic Space switch reaches only the display the cursor is on, so a click on another display's
+        // group is refused with the same notice the live buttons showed
+        if let cursorUuid = NSScreen.withMouse()?.cachedUuid(),
+           !MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: target.displayUuid == cursorUuid as String,
+                                             separateSpaces: NSScreen.screensHaveSeparateSpaces) {
+            TransientNotice.show(crossDisplayTooltip())
+            return true
+        }
+        if let overflowIndexes = target.overflowIndexes {
+            showOverflowMenu(overflowIndexes, atX: point.x)
+        } else if target.spaceIndex <= 9 {
+            Actions.perform(.space(.index(target.spaceIndex)))
+        } else {
+            InstantSpaces.perform(.index(target.spaceIndex))
+        }
+        return true
+    }
+
+    private static func showOverflowMenu(_ indexes: [Int], atX x: CGFloat) {
+        guard let button = statusItem?.button else { return }
+        let menu = NSMenu()
+        indexes.forEach { index in
+            let item = menu.addItem(withTitle: String(format: NSLocalizedString("Space %d", comment: ""), index), action: #selector(spaceOverflowItemOnClick(_:)), keyEquivalent: "")
+            item.target = self
+            item.tag = index
+        }
+        menu.popUp(positioning: nil, at: NSPoint(x: x, y: button.bounds.height), in: button)
     }
 
     @objc static func statusItemOnClick() {
-        if clickIsOnSpaceSegments() { return }
+        if handleSegmentClick() { return }
         refreshSpaces()
         // NSApp.currentEvent == nil if the icon is "clicked" through VoiceOver
         if let type = NSApp.currentEvent?.type, type != .leftMouseDown {
@@ -185,14 +226,63 @@ class Menubar {
         }
         groupBoundsInButton = groupBounds
         statusItem.length = iconWidth + totalWidth + 2
-        statusButton.image = nil
-        let iconView = PassthroughImageView(frame: MenubarSpaceRow.centeredRect(x: 4, width: 20, availableHeight: rowHeight, preferredHeight: MenubarSpaceRow.iconHeight))
-        iconView.image = preferredIcon()
+        // Render the icon and segments as one image instead of hosting live, translucent subviews. On macOS 26
+        // the status item re-snapshots live translucent subviews on every frame to draw its menu-bar shadow,
+        // which burned a CPU core at idle. A rendered image is snapshotted once. Clicks map to a segment by
+        // position (handleSegmentClick), so switching and the window drag keep working.
+        let rowWidth = iconWidth + totalWidth + 2
+        let row = NSView(frame: NSRect(x: 0, y: 0, width: rowWidth, height: rowHeight))
+        let iconView = NSImageView(frame: MenubarSpaceRow.centeredRect(x: 4, width: 20, availableHeight: rowHeight, preferredHeight: MenubarSpaceRow.iconHeight))
+        iconView.image = tintedMenubarIcon()
         iconView.imageScaling = .scaleProportionallyUpOrDown
-        statusButton.addSubview(iconView)
-        statusButton.addSubview(container)
-        customIconView = iconView
-        spaceSegmentsView = container
+        row.addSubview(iconView)
+        row.addSubview(container) // container already carries x: iconWidth
+        segmentTargets = collectSegmentTargets(container)
+        statusButton.image = renderRowImage(row)
+        statusButton.imageScaling = .scaleNone
+        statusButton.alignment = .center
+        customIconView = nil
+        spaceSegmentsView = nil
+    }
+
+    /// Bakes the menu-bar tint into the icon. A template image renders black off-screen, so the rendered row
+    /// would show a black icon on a dark menu bar; tinting with the row's own text colour matches the bar.
+    private static func tintedMenubarIcon() -> NSImage {
+        let icon = preferredIcon()
+        guard icon.isTemplate else { return icon }
+        let tinted = NSImage(size: icon.size)
+        tinted.lockFocus()
+        icon.draw(in: NSRect(origin: .zero, size: icon.size))
+        segmentColor().set()
+        NSRect(origin: .zero, size: icon.size).fill(using: .sourceAtop)
+        tinted.unlockFocus()
+        tinted.isTemplate = false
+        return tinted
+    }
+
+    /// Records the clickable rect of every segment in the status button's coordinates, before the row is
+    /// flattened to an image. The container sits at `iconWidth`, so each button's row x adds that offset.
+    private static func collectSegmentTargets(_ container: NSView) -> [SegmentTarget] {
+        container.subviews.compactMap { subview in
+            guard let button = subview as? NSButton, let uuid = button.identifier?.rawValue else { return nil }
+            let rect = CGRect(x: iconWidth + button.frame.minX, y: button.frame.minY, width: button.frame.width, height: button.frame.height)
+            return SegmentTarget(rect: rect, displayUuid: uuid, spaceIndex: button.tag, overflowIndexes: overflowIndexesByButton[ObjectIdentifier(button)])
+        }
+    }
+
+    /// Renders a view tree to an image through a throwaway offscreen window. A window-less view can drop the
+    /// layer styling of the segment buttons under cacheDisplay, so the row gets a real backing to draw into.
+    private static func renderRowImage(_ view: NSView) -> NSImage {
+        let window = NSWindow(contentRect: view.bounds, styleMask: .borderless, backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.backgroundColor = .clear
+        window.contentView = view
+        view.layoutSubtreeIfNeeded()
+        guard let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return NSImage(size: view.bounds.size) }
+        view.cacheDisplay(in: view.bounds, to: rep)
+        let image = NSImage(size: view.bounds.size)
+        image.addRepresentation(rep)
+        return image
     }
 
     /// Adds the segments for one display group and returns the width consumed. `displayOrdinal` is only
