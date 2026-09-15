@@ -465,6 +465,13 @@ private final class SpaceSegmentsView: NSView {
 
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
+        // The NSStatusItem replicant snapshot forces a layout pass on every frame while this view lives in
+        // the status button. Rebuilding the tracking area unconditionally dirtied the view inside that pass,
+        // which triggered the next snapshot: a per-frame layout->snapshot->layout loop that burned a full
+        // CPU core in AltTab and WindowServer at idle. Rebuild only when the rect actually changed.
+        if let cursorTrackingArea, cursorTrackingArea.rect == bounds {
+            return
+        }
         if let cursorTrackingArea {
             removeTrackingArea(cursorTrackingArea)
         }
