@@ -195,9 +195,11 @@ class Menubar {
         statusButton.image = preferredIcon()
         statusItem.length = NSStatusItem.squareLength
         statusButton.alignment = .center
+        statusButton.setAccessibilityLabel(App.name)
         guard Preferences.menubarIconShown, Preferences.spacesInMenubarShown else { return }
         let groups = spaceGroups()
         guard !groups.isEmpty else { return }
+        statusButton.setAccessibilityLabel(spacesAccessibilityLabel(groups))
         let switchingEnabled = InstantSpaces.runtimeAvailability().isAvailable
         let cursorUuid = NSScreen.withMouse()?.cachedUuid()
         // the row must never collapse: the status button can still be unsized the first time this runs,
@@ -243,6 +245,19 @@ class Menubar {
         statusButton.alignment = .center
         customIconView = nil
         spaceSegmentsView = nil
+    }
+
+    /// VoiceOver reads the rendered row through this label. Per-segment accessibility children were measured
+    /// on 2026-09-15 and do not work: the menu bar item exposes the button's label but drops its children,
+    /// on the button and on its cell alike. So the row's information goes into one spoken summary.
+    private static func spacesAccessibilityLabel(_ groups: [SpaceGroup]) -> String {
+        let summaries = groups.enumerated().map { offset, group -> String in
+            let activeIndex = group.spaceIds.firstIndex { $0 == group.activeSpaceId }.map { $0 + 1 } ?? 0
+            let summary = String(format: NSLocalizedString("Space %d of %d", comment: "Menubar VoiceOver label"), activeIndex, group.spaceIds.count)
+            guard groups.count > 1 else { return summary }
+            return String(format: NSLocalizedString("Display %d: %@", comment: "Menubar VoiceOver label"), offset + 1, summary)
+        }
+        return ([App.name] + summaries).joined(separator: ", ")
     }
 
     /// Bakes the menu-bar tint into the icon. A template image renders black off-screen, so the rendered row
