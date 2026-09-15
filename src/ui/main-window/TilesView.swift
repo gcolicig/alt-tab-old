@@ -1,5 +1,6 @@
 import Cocoa
 import Carbon.HIToolbox.Events
+import UniformTypeIdentifiers
 import ShortcutRecorder
 
 enum SearchMode {
@@ -670,7 +671,7 @@ class TilesDocumentView: FlippedView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         // we only handle URLs (i.e. not text, image, or other draggable things)
-        registerForDraggedTypes([NSPasteboard.PasteboardType(kUTTypeURL as String)])
+        registerForDraggedTypes([NSPasteboard.PasteboardType(UTType.url.identifier)])
     }
 
     required init?(coder: NSCoder) {
@@ -700,9 +701,15 @@ class TilesDocumentView: FlippedView {
               let appUrl = window.application.bundleURL else { return false }
         guard let urls = sender.draggingPasteboard.readObjects(forClasses: [NSURL.self]) as? [URL],
               !urls.isEmpty else { return false }
-        let open = try? NSWorkspace.shared.open(urls, withApplicationAt: appUrl, options: [], configuration: [:])
-        if open != nil { App.hideUi() }
-        return open != nil
+        // The synchronous open(_:withApplicationAt:options:configuration:) was deprecated in 11.0. The
+        // replacement reports the result asynchronously, so the drag counts as accepted here and the UI
+        // hides once the open succeeds.
+        NSWorkspace.shared.open(urls, withApplicationAt: appUrl, configuration: NSWorkspace.OpenConfiguration()) { _, error in
+            if error == nil {
+                DispatchQueue.main.async { App.hideUi() }
+            }
+        }
+        return true
     }
 
     override func concludeDragOperation(_ sender: NSDraggingInfo?) {

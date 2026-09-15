@@ -99,7 +99,11 @@ class Menubar {
         if let type = NSApp.currentEvent?.type, type != .leftMouseDown {
             App.showUiFromShortcut0()
         } else {
-            statusItem.popUpMenu(Menubar.menu)
+            // popUpMenu was deprecated in 10.14. Pop the menu at the button instead of assigning
+            // statusItem.menu, so the click paths handled above keep control of when the menu opens.
+            if let button = statusItem.button {
+                Menubar.menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height), in: button)
+            }
         }
     }
 
