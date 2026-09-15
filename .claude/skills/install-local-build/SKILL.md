@@ -23,13 +23,17 @@ Release build (the project's own script):
 scripts/build_app.sh
 ```
 
-Debug build on Xcode 27 needs three overrides, because the Pods target macOS 10.12 and
-the project treats warnings as errors:
+Debug build (no overrides needed since the Xcode 27 build fix):
 
 ```bash
 xcodebuild -workspace alt-tab-macos.xcworkspace -scheme Debug -configuration Debug \
-  -derivedDataPath ./DerivedData \
-  MACOSX_DEPLOYMENT_TARGET=13.1 SWIFT_TREAT_WARNINGS_AS_ERRORS=NO GCC_TREAT_WARNINGS_AS_ERRORS=NO build
+  -derivedDataPath ./DerivedData build
+```
+
+Before you push a code change, also run the test suite that CI runs:
+
+```bash
+./build.sh --test
 ```
 
 Record the built path. For Debug it is `DerivedData/Build/Products/Debug/AltTab+.app`.
@@ -55,21 +59,16 @@ ps -Ao pid,command | grep 'AltTab+.app/Contents/MacOS' | grep -v grep
 Do not `cp -R` onto an existing bundle. `cp -R src /Applications/AltTab+.app` nests the
 build as `/Applications/AltTab+.app/AltTab+.app` when the target already exists.
 
-Replace the whole bundle:
+Make the installed bundle an exact copy of the build. The trailing slashes are required:
 
 ```bash
 NEW="DerivedData/Build/Products/Debug/AltTab+.app"   # or the Release path
-rm -rf "/Applications/AltTab+.app"
-cp -R "$NEW" "/Applications/AltTab+.app"
+rsync -a --delete "$NEW/" "/Applications/AltTab+.app/"
 ```
 
-If `rm` is blocked, use `ditto`, which overwrites files in place without nesting:
-
-```bash
-ditto "$NEW" "/Applications/AltTab+.app"
-```
-
-`ditto` leaves files that the new build removed. Prefer `rm -rf` + `cp -R` for an exact copy.
+`rsync --delete` also removes files that the new build no longer contains (for example a
+removed framework). Do not use `rm -rf "/Applications/AltTab+.app"`: macOS refuses it with
+"Permission denied". Do not use `ditto` alone: it leaves removed files in the bundle.
 
 Verify the installed binary is the new one:
 
