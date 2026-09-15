@@ -487,20 +487,6 @@ enum UpdatePolicyPreference: CaseIterable, MacroPreference {
     }
 }
 
-enum CrashPolicyPreference: CaseIterable, MacroPreference {
-    case never
-    case ask
-    case always
-
-    var localizedString: LocalizedString {
-        switch self {
-            case .never: return NSLocalizedString("Never send crash reports", comment: "")
-            case .ask: return NSLocalizedString("Ask whether to send crash reports", comment: "")
-            case .always: return NSLocalizedString("Always send crash reports", comment: "")
-        }
-    }
-}
-
 enum ExceptionHidePreference: String/* required for jsonEncode */, CaseIterable, MacroPreference, Codable {
     case none = "0"
     case always = "1"

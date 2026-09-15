@@ -113,7 +113,7 @@ else
   echo "Run scripts/codesign/setup_local.sh once to keep macOS permissions stable across local builds." >&2
 fi
 
-POD_SCHEMES=(AppCenter LetsMove ShortcutRecorder Sparkle SwiftyBeaver Pods-alt-tab-macos)
+POD_SCHEMES=(LetsMove ShortcutRecorder Sparkle SwiftyBeaver Pods-alt-tab-macos)
 if [[ "$RUN_TESTS" == true ]]; then
   POD_SCHEMES+=(Pods-unit-tests)
 fi

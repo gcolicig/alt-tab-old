@@ -125,7 +125,7 @@ Diese Punkte waren in der konkreten AltTab-Fork-Arbeit besonders wichtig:
 - Der Fork braucht einen eigenen Bundle Identifier, hier `com.gcolicig.alttab-plus`.
 - Auto-Update darf nicht unbemerkt wieder auf Upstream oder eine neuere kostenpflichtige Version zeigen.
 - Sparkle-Feeds muessen geleert, deaktiviert oder auf eigene Infrastruktur umgestellt werden.
-- AppCenter und Feedback-Code sollten optional sein, damit fehlende Maintainer-Accounts den Fork nicht brechen.
+- Feedback-Code sollte optional sein, damit fehlende Maintainer-Accounts den Fork nicht brechen. (AppCenter ist entfernt.)
 - Lokale Builds muessen ohne Apple Developer Certificate funktionieren.
 - Lokale AltTab+-Entwicklungsbuilds sollten mit `AltTab+ Local Codesign` signiert werden, sobald dieses Zertifikat im Login-Schluesselbund existiert.
 - Reines ad-hoc signing kann macOS-TCC verwirren: System Settings zeigt dann Berechtigungen als aktiv, waehrend die neu gebaute App intern als andere Binary gilt und `Not allowed` meldet.
