@@ -2,9 +2,8 @@ import Cocoa
 import Darwin
 import LetsMove
 import ShortcutRecorder
-import AppCenterCrashes
 
-class App: AppCenterApplication {
+class App: NSApplication {
     /// periphery:ignore
     static let activity = ProcessInfo.processInfo.beginActivity(options: .userInitiatedAllowingIdleSystemSleep,
         reason: "Prevent App Nap to preserve responsiveness")
@@ -24,8 +23,6 @@ class App: AppCenterApplication {
     private static var isFirstSummon = true
     private static var isVeryFirstSummon = true
     private static var pendingShowSettingsWindow = false
-    // periphery:ignore
-    private static var appCenterDelegate: AppCenterCrash?
     // don't queue multiple delayed rebuildUi() calls
     private static var delayedDisplayScheduled = 0
     private static let refreshOpenUiThrottler = Throttler(delayInMs: 200)
@@ -391,9 +388,6 @@ class App: AppCenterApplication {
 
 extension App: NSApplicationDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {
-        if AppCenterCrash.isConfigured {
-            App.appCenterDelegate = AppCenterCrash()
-        }
         App.shared.disableRelaunchOnLogin()
         Logger.initialize()
         Logger.info { "Launching AltTab \(App.version)" }

@@ -4,10 +4,6 @@
 <dict>
 	<key>ATSApplicationFontsPath</key>
 	<string></string>
-	<key>AppCenterApplicationForwarderEnabled</key>
-	<string>0</string>
-	<key>AppCenterSecret</key>
-	<string></string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleExecutable</key>
@@ -37,7 +33,7 @@
 	<key>NSHumanReadableCopyright</key>
 	<string>GPL-3.0 licence</string>
 	<key>NSPrincipalClass</key>
-	<string>AppCenterApplication</string>
+	<string>NSApplication</string>
 	<key>NSSupportsAutomaticTermination</key>
 	<string>false</string>
 	<key>NSSupportsSuddenTermination</key>

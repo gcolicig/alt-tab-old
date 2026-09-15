@@ -60,7 +60,6 @@ sudo chown -R "$USER" DerivedData
 The fork does not require these services for local development:
 
 - Sparkle updates are disabled by default.
-- AppCenter crash reporting starts only when `AppCenterSecret` is configured.
 - The in-app feedback form opens GitHub Issues unless a `FeedbackToken` is configured.
 - Release notarization is not required for local builds.
 

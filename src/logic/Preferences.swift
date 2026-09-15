@@ -58,7 +58,6 @@ class Preferences {
             "language": LanguagePreference.systemDefault.indexAsString,
             "exceptions": defaultExceptions(),
             "updatePolicy": UpdatePolicyPreference.manual.indexAsString,
-            "crashPolicy": CrashPolicyPreference.never.indexAsString,
             "hideAppBadges": "false",
             "hideThumbnails": "false",
             "hideSpaceNumberLabels": "false",
@@ -208,7 +207,6 @@ class Preferences {
     static var showAppsOrWindows: ShowAppsOrWindowsPreference { CachedUserDefaults.macroPref("showAppsOrWindows", ShowAppsOrWindowsPreference.allCases) }
     static var showTitles: ShowTitlesPreference { CachedUserDefaults.macroPref("showTitles", ShowTitlesPreference.allCases) }
     static var updatePolicy: UpdatePolicyPreference { CachedUserDefaults.macroPref("updatePolicy", UpdatePolicyPreference.allCases) }
-    static var crashPolicy: CrashPolicyPreference { CachedUserDefaults.macroPref("crashPolicy", CrashPolicyPreference.allCases) }
     static var appsToShow: [AppsToShowPreference] { (0...maxShortcutCount).map { CachedUserDefaults.macroPref(indexToName("appsToShow", $0), AppsToShowPreference.allCases) } }
     static var spacesToShow: [SpacesToShowPreference] { (0...maxShortcutCount).map { CachedUserDefaults.macroPref(indexToName("spacesToShow", $0), SpacesToShowPreference.allCases) } }
     static var screensToShow: [ScreensToShowPreference] { (0...maxShortcutCount).map { CachedUserDefaults.macroPref(indexToName("screensToShow", $0), ScreensToShowPreference.allCases) } }
@@ -252,7 +250,6 @@ class Preferences {
 
     private static func enforceForkPolicies() {
         set("updatePolicy", UpdatePolicyPreference.manual.indexAsString, false)
-        set("crashPolicy", CrashPolicyPreference.never.indexAsString, false)
     }
 
     private static func applyInputSafetyOverrides() {
