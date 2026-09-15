@@ -221,8 +221,15 @@ class Window {
             Windows.previewSelectedWindowIfNeeded()
         } else if isWindowlessApp || cgWindowId == nil || Preferences.onlyShowApplications() {
             if let bundleUrl = application.bundleURL, isWindowlessApp {
-                if (try? NSWorkspace.shared.launchApplication(at: bundleUrl, configuration: [:])) == nil {
-                    application.runningApplication.activate(options: .activateAllWindows)
+                // launchApplication(at:configuration:) was deprecated in 11.0. The replacement reports the
+                // result asynchronously, so the fallback that activates the running app moves into the handler.
+                let targetApp = application
+                NSWorkspace.shared.openApplication(at: bundleUrl, configuration: NSWorkspace.OpenConfiguration()) { runningApp, _ in
+                    if runningApp == nil {
+                        DispatchQueue.main.async {
+                            targetApp.runningApplication.activate(options: .activateAllWindows)
+                        }
+                    }
                 }
             } else {
                 application.runningApplication.activate(options: .activateAllWindows)

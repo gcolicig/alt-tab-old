@@ -25,7 +25,9 @@ class Appearance {
     // theme
     static var fontColor = NSColor.red
     static var imagesShadowColor = NSColor.red // for icon, thumbnail and windowless images
-    static var material = NSVisualEffectView.Material.ultraDark
+    // `ultraDark` (rawValue 9) was deprecated in 10.14. The semantic replacements change the switcher
+    // blur, so access the material by rawValue to keep the exact look without the deprecation error.
+    static var material = NSVisualEffectView.Material(rawValue: 9)!
     static var highlightBorderWidth = CGFloat(3)
 
     // theme: constants
@@ -41,7 +43,7 @@ class Appearance {
     private static var currentSize: AppearanceSizePreference { Preferences.appearanceSize }
     static var currentTheme: AppearanceThemePreference {
         if Preferences.appearanceTheme == .system {
-            return NSAppearance.current.getThemeName()
+            return NSAppearance.currentDrawing().getThemeName()
         } else {
             return Preferences.appearanceTheme
         }
@@ -188,12 +190,12 @@ class Appearance {
     private static func lightTheme() {
         fontColor = .black.withAlphaComponent(0.8)
         imagesShadowColor = .gray.withAlphaComponent(0.8)
-        material = .mediumLight
+        material = NSVisualEffectView.Material(rawValue: 8)! // `mediumLight`, deprecated in 10.14; rawValue keeps the exact material
     }
 
     private static func darkTheme() {
         fontColor = .white.withAlphaComponent(0.85)
         imagesShadowColor = .gray.withAlphaComponent(0.8)
-        material = .dark
+        material = NSVisualEffectView.Material(rawValue: 2)! // `dark`, deprecated in 10.14; rawValue keeps the exact material
     }
 }
