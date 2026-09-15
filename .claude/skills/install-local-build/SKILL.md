@@ -1,0 +1,123 @@
+---
+name: install-local-build
+description: Build AltTab+ locally and replace the /Applications copy cleanly, so a fresh build actually runs. Use when the user says "install the build", "replace the app", "run my fixed build", or when a code change must be verified in the real running app on this Mac.
+---
+
+# Install a local build over the /Applications copy
+
+Use this skill to put a fresh local build into `/Applications` and run it. Follow every
+step in order. The pitfalls at the end explain why each step exists — skipping one
+produced a nested bundle and a false measurement in the past.
+
+## Facts
+
+- App name: `AltTab+`. Bundle id: `com.gcolicig.alttab-plus`.
+- The app uses LetsMove. It is present in `/Applications` after the first run.
+- Debug and Release builds land in `./DerivedData/Build/Products/<config>-*/AltTab+.app`.
+
+## Step 1 — Build the app
+
+Release build (the project's own script):
+
+```bash
+scripts/build_app.sh
+```
+
+Debug build on Xcode 27 needs three overrides, because the Pods target macOS 10.12 and
+the project treats warnings as errors:
+
+```bash
+xcodebuild -workspace alt-tab-macos.xcworkspace -scheme Debug -configuration Debug \
+  -derivedDataPath ./DerivedData \
+  MACOSX_DEPLOYMENT_TARGET=13.1 SWIFT_TREAT_WARNINGS_AS_ERRORS=NO GCC_TREAT_WARNINGS_AS_ERRORS=NO build
+```
+
+Record the built path. For Debug it is `DerivedData/Build/Products/Debug/AltTab+.app`.
+
+## Step 2 — Quit every running instance
+
+Quit both the DerivedData instance and the `/Applications` instance. Two instances at once
+cause LetsMove to hand off between them.
+
+```bash
+osascript -e 'quit app "AltTab+"' 2>/dev/null
+pkill -f 'AltTab\+\.app/Contents/MacOS/AltTab\+' 2>/dev/null
+```
+
+Confirm none remain before you continue:
+
+```bash
+ps -Ao pid,command | grep 'AltTab+.app/Contents/MacOS' | grep -v grep
+```
+
+## Step 3 — Remove the old /Applications copy, then copy the fresh build
+
+Do not `cp -R` onto an existing bundle. `cp -R src /Applications/AltTab+.app` nests the
+build as `/Applications/AltTab+.app/AltTab+.app` when the target already exists.
+
+Replace the whole bundle:
+
+```bash
+NEW="DerivedData/Build/Products/Debug/AltTab+.app"   # or the Release path
+rm -rf "/Applications/AltTab+.app"
+cp -R "$NEW" "/Applications/AltTab+.app"
+```
+
+If `rm` is blocked, use `ditto`, which overwrites files in place without nesting:
+
+```bash
+ditto "$NEW" "/Applications/AltTab+.app"
+```
+
+`ditto` leaves files that the new build removed. Prefer `rm -rf` + `cp -R` for an exact copy.
+
+Verify the installed binary is the new one:
+
+```bash
+stat -f "%Sm %N" "/Applications/AltTab+.app/Contents/MacOS/AltTab+"
+```
+
+## Step 4 — Reset the app's permissions before the first launch
+
+A re-signed build has a new code signature. macOS still holds the old Accessibility and
+Screen Recording grants, which now do not match. The stale grants make the new build
+misbehave and restart. Remove them BEFORE the first launch, so macOS asks again cleanly.
+
+Command line:
+
+```bash
+tccutil reset Accessibility com.gcolicig.alttab-plus
+tccutil reset ScreenCapture com.gcolicig.alttab-plus
+```
+
+Manual alternative, done before the first launch:
+- Open System Settings > Privacy & Security > Accessibility.
+- Select the `AltTab+` entry and click the minus button to delete it.
+- Open System Settings > Privacy & Security > Screen Recording.
+- Select the `AltTab+` entry and click the minus button to delete it.
+
+Grant both permissions again after the first launch.
+
+## Step 5 — Launch and confirm
+
+```bash
+open "/Applications/AltTab+.app"
+```
+
+Confirm one instance runs from `/Applications`:
+
+```bash
+ps -Ao pid,etime,command | grep 'AltTab+.app/Contents/MacOS' | grep -v grep
+```
+
+## Pitfalls
+
+- LetsMove handoff. Launching a build from outside `/Applications` makes LetsMove defer to
+  the `/Applications` copy. The DerivedData instance then does not own the menubar item, so
+  its CPU reads near 0. Measure the `/Applications` instance, or you measure the wrong process.
+- TCC permission loss. An ad-hoc re-signed build has a new code signature. macOS treats it
+  as a new app and drops its Screen Recording and Accessibility grants. The app then
+  re-requests them and restarts once. Grant the permissions again after the install.
+- Nesting. See Step 3. Always remove or overwrite the target bundle; never copy into it.
+- Verification. To test a menubar change, run the `/Applications` copy as the only instance,
+  grant permissions, wait for a stable PID, then sample. A single confounded reading is not proof.
