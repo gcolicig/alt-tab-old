@@ -77,7 +77,28 @@ Verify the installed binary is the new one:
 stat -f "%Sm %N" "/Applications/AltTab+.app/Contents/MacOS/AltTab+"
 ```
 
-## Step 4 — Launch and confirm
+## Step 4 — Reset the app's permissions before the first launch
+
+A re-signed build has a new code signature. macOS still holds the old Accessibility and
+Screen Recording grants, which now do not match. The stale grants make the new build
+misbehave and restart. Remove them BEFORE the first launch, so macOS asks again cleanly.
+
+Command line:
+
+```bash
+tccutil reset Accessibility com.gcolicig.alttab-plus
+tccutil reset ScreenCapture com.gcolicig.alttab-plus
+```
+
+Manual alternative, done before the first launch:
+- Open System Settings > Privacy & Security > Accessibility.
+- Select the `AltTab+` entry and click the minus button to delete it.
+- Open System Settings > Privacy & Security > Screen Recording.
+- Select the `AltTab+` entry and click the minus button to delete it.
+
+Grant both permissions again after the first launch.
+
+## Step 5 — Launch and confirm
 
 ```bash
 open "/Applications/AltTab+.app"
