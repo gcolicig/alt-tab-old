@@ -1585,6 +1585,100 @@ Nicht im Scope:
 - Automatisches Isolieren beim Fokuswechsel.
 - Per-App-Ausnahmen.
 
+### 13. Debug-Untermenue in der Menueleiste
+
+Status: Spezifiziert 2026-09-16; nicht begonnen
+Prioritaet: Hoch fuer die Entwicklung. Spart bei jedem Geraetebericht Rueckfragen und Handschritte
+
+Referenz: Supercharge, Menue `… > Debug` mit `Copy Debug Info`, `Copy Accessibility Tree` und `Reset Permissions` (Art A, siehe `Supercharge-Abgleich`).
+
+Ausgangslage im Fork (nicht neu bauen):
+
+- Das Menueleisten-Menue (`Menubar.initialize()`) hat heute einen Eintrag `Debug tools`, der das `DebugWindow` oeffnet (Logs, `Inspect window`, `Dump frontmost app's menu shortcuts`).
+- `DebugProfile.make()` erzeugt bereits einen Textbericht: App-Version, alle Praeferenzen, Fensterzustaende, macOS, Hardware, Ressourcen und den Q-07-Ringpuffer `Window drag AX deviations`. Er wird heute nur im Feedback-Fenster verwendet.
+- `SystemPermissions` kennt den Zustand von Accessibility und Screen Recording.
+
+Menue-Gestaltung:
+
+Der Eintrag `Debug tools` wird zu einem Eintrag `Debug` mit Untermenue, an derselben Stelle (nach `About`, vor `Quit`):
+
+```
+About AltTab+
+Debug                         >   Copy Debug Info
+                                  Copy Accessibility Tree
+                                  Reset Permissions…
+                                  ─────────────
+                                  Debug Tools…
+─────────────
+Quit AltTab+                  ⌘Q
+```
+
+- Symbole wie die uebrigen Eintraege ueber `Menubar.addMenuItem` (nur ab macOS 26): `Debug` = `wrench.and.screwdriver`, beide Kopier-Eintraege = `doc.on.doc`, `Reset Permissions…` = `arrow.uturn.backward`, `Debug Tools…` = `scope` (das heutige Symbol).
+- `Debug Tools…` oeffnet das bestehende Fenster; die Auslassungspunkte folgen der macOS-Regel fuer Eintraege, die ein Fenster oder eine Rueckfrage oeffnen.
+- Keine Tastenkombinationen im Untermenue.
+- `addMenuItem` fuegt heute nur ins Hauptmenue ein; fuer das Untermenue bekommt es einen Parameter fuer das Zielmenue statt einer zweiten Hilfsfunktion.
+
+#### D1. Copy Debug Info
+
+- Kopiert einen Textbericht in die Zwischenablage und bestaetigt mit `TransientNotice` ("Debug info copied").
+- Inhalt: `DebugProfile.make()`, erweitert um:
+  - Berechtigungen: Accessibility und Screen Recording, je `granted`/`notGranted`.
+  - Signatur: Signing-Identitaet oder `adhoc` (entscheidet ueber TCC-Verlust, siehe Skill `install-local-build`).
+  - Safe Mode und Safe-Start-Gate: an/aus.
+  - Aktive Input-Module: welche Taps gerade laufen (Keyboard/Hyper, Window-Drag, Scroll mit Grund Switcher/Einstellung, Trackpad, FlickRing, Leader).
+  - Pointer-Besitz je Kategorie (`PointerOwnership.state`).
+  - Startzeit und Laufzeit des Prozesses.
+- Kopfzeile mit Datum, App-Version und Build-Commit, damit ein eingefuegter Bericht eindeutig zuzuordnen ist.
+
+Datenschutz (Pflicht, weil der Bericht geteilt wird):
+
+- Fenstertitel sind heute nicht enthalten und bleiben es.
+- Praeferenzwerte mit Nutzerinhalt werden ersetzt durch `<set>`/`<empty>`: Open-URL-Slots, App-Pfade der Launch-Slots, Profilnamen, Ausnahmeliste (`exceptions`: nur Anzahl), Leader- und FlickRing-Bindungen bleiben lesbar (sie enthalten nur Aktions-IDs).
+- Keine Benutzernamen in Pfaden: `/Users/<name>` wird zu `~`.
+- Eine Liste der geschwaerzten Schluessel steht in `DebugProfile` an einer Stelle und ist unit-getestet.
+
+#### D2. Copy Accessibility Tree
+
+- Kopiert den AX-Baum des fokussierten Fensters der frontmost App. Das Oeffnen des Menueleisten-Menues aendert die frontmost App nicht, das Ziel ist also das Fenster, mit dem der Nutzer zuletzt gearbeitet hat.
+- Kopfzeile: App-Name, Bundle-ID, App-Version, PID, `CGWindowID`, Fensterrahmen, Display, Space.
+- Pro Element eine eingerueckte Zeile mit `AXRole`, `AXSubrole`, `AXRoleDescription`, `AXTitle` (gekuerzt auf 60 Zeichen), `AXIdentifier`, `AXFrame`, `AXEnabled`, `AXFocused` sowie der Liste der einstellbaren Attribute (`AXUIElementIsAttributeSettable` fuer Position, Size, Minimized, Fullscreen). Genau die entscheiden ueber Fensterkompatibilitaet.
+- Grenzen: Tiefe hoechstens 8, hoechstens 500 Elemente; wird eine Grenze erreicht, steht das in der letzten Zeile.
+- Laeuft auf `accessibilityCommandsQueue` mit Messaging-Timeout (Q-02, Q-03). Antwortet die App nicht, wird der bis dahin gelesene Teil kopiert und der Timeout vermerkt.
+- Datenschutz: `AXValue` wird nie gelesen. Elemente mit Rolle `AXSecureTextField` werden nur mit Rolle ausgegeben. Titel von Textfeldern und Dokumenten werden auf ihre Laenge reduziert (`<title 23 chars>`); Titel von Knoepfen, Menues und Fenstertyp-Elementen bleiben lesbar.
+- Ohne fokussiertes Fenster oder ohne Accessibility-Berechtigung: kein Kopieren, `TransientNotice` mit dem Grund.
+- Bestaetigung wie D1 ("Accessibility tree of <App> copied").
+
+#### D3. Reset Permissions…
+
+- Setzt die TCC-Eintraege der eigenen Bundle-ID zurueck, damit macOS sauber neu fragt. Anwendungsfall: Die Signatur hat sich geaendert und alte Freigaben passen nicht mehr (Skill `install-local-build`, Schritt 4).
+- Vor der Ausfuehrung ein `NSAlert` mit Erklaerung und den Knoepfen `Reset and Restart` / `Cancel`. Standard ist `Cancel`.
+- Ausfuehrung: `/usr/bin/tccutil reset Accessibility <bundle-id>` und `/usr/bin/tccutil reset ScreenCapture <bundle-id>` ueber `Process`, Bundle-ID aus `Bundle.main`, nie aus einer Eingabe. Kein `sudo`.
+- Danach Input-Module ueber den bestehenden Sicherheitspfad abschalten (`disableInputModulesForSafety`) und die App ueber `App.restart()` neu starten; beim Start greift der normale Berechtigungsablauf.
+- Schlaegt `tccutil` fehl (Exit-Code ungleich 0), kein Neustart; `NSAlert` mit der Ausgabe des Befehls.
+- **Unverifiziert**: dass `tccutil reset` fuer die eigene Bundle-ID ohne Admin-Rechte aus der App heraus funktioniert. Im Terminal ist es belegt (Skill `install-local-build`); aus einem Prozess mit Hardened Runtime vor der Umsetzung pruefen.
+
+Regeln:
+
+| ID | Anforderung | Begruendung |
+|---|---|---|
+| DB-01 | Das Untermenue ist immer sichtbar, auch in Release-Builds | Genau dort werden Geraeteberichte gebraucht |
+| DB-02 | Kopieren ueberschreibt die Zwischenablage nur nach vollstaendigem Aufbau des Textes | Kein halber Bericht bei Fehlern |
+| DB-03 | Keine Fenstertitel, URL-Slots, Pfade mit Benutzernamen, Textfeldinhalte oder sicheren Felder im kopierten Text | Globale Regel: keine PII in geteilten Diagnosen |
+| DB-04 | AX-Arbeit nie auf dem Main-Thread; das Menue schliesst sofort | Q-02; eine haengende App darf die Menueleiste nicht blockieren |
+| DB-05 | Reset nur nach ausdruecklicher Bestaetigung, nur fuer die eigene Bundle-ID, nie mit erhoehten Rechten | Zurueckgesetzte Freigaben muss der Nutzer von Hand neu erteilen |
+| DB-06 | Kein neuer Tap, Timer oder Hintergrundprozess | Q-10 |
+
+Tests:
+
+- Unit: Schwaerzung (`DebugProfile`), Ausgabeformat und Grenzen des AX-Baums ueber eine abstrahierte Elementquelle, Aufbau der `tccutil`-Argumente.
+- Geraet: Checkliste folgt mit der Umsetzung, mindestens: Bericht in einem Texteditor pruefen (keine URLs, keine Titel, kein Benutzername), AX-Baum fuer Finder, Safari, eine Electron-App und eine haengende App, Reset mit anschliessendem Neustart und erneuter Freigabe.
+
+Nicht im Scope:
+
+- Automatisches Hochladen oder Versenden von Berichten.
+- Datei-Export (die Zwischenablage reicht; ein Export kann spaeter aus demselben Text entstehen).
+- Aenderungen am `DebugWindow` selbst.
+
 ## Distribution und Migration
 
 - Produktname und Bundle-ID bleiben fork-spezifisch: AltTab+ und `com.gcolicig.alttab-plus`.
@@ -1781,59 +1875,68 @@ Quelle: Menue von Supercharge (Sindre Sorhus, https://sindresorhus.com/superchar
 Entschieden 2026-09-16:
 
 - **Nicht vorsehen**: Dock-Klick-Logik (minimieren, durch Fenster wechseln, Mittelklick-Aktionen) und Aktionen in Mission Control. Beide stehen unter `Nicht-Ziele`.
-- **Spezifiziert**: `Isolate Window` samt Verwandten als Story 12.
+- **Spezifiziert**: `Isolate Window` samt Verwandten als Story 12, die Debug-Eintraege als Story 13.
 
-Legende: `STORY 12` = dort spezifiziert; `VORHANDEN` = im Fork schon abgedeckt; `OPTIONAL` = passt, aber kein Bedarf festgestellt; `SPAETER` = passt, aber offene technische Frage; `ENTFERNEN` = passt nicht zum Produkt.
+Legende: `STORY 12` und `STORY 13` = dort spezifiziert; `VORHANDEN` = im Fork schon abgedeckt; `OPTIONAL` = passt, aber kein Bedarf festgestellt; `SPAETER` = passt, aber offene technische Frage; `ENTFERNEN` = passt nicht zum Produkt.
 
-| Gruppe | Supercharge-Eintrag | Einstufung | Begruendung |
-|---|---|---|---|
-| Fenster und Apps | Isolate Window | STORY 12 | Kern der Story |
-| Fenster und Apps | Minimize App Windows Except Frontmost | STORY 12 | Baustein B2 |
-| Fenster und Apps | Hide All Windows | STORY 12 | Stufe 12b, optional |
-| Fenster und Apps | Minimize All Windows | STORY 12 | Stufe 12b, optional |
-| Fenster und Apps | Minimize All Windows Except Frontmost | STORY 12 | Stufe 12b, optional |
-| Fenster und Apps | Show Desktop | STORY 12 | Stufe 12b, spaeter |
-| Fenster und Apps | Quit All Apps | OPTIONAL | Passt ins Aktionsregister (`Application.quit()` existiert). Nur mit Bestaetigung, weil es viele Apps auf einmal trifft |
-| Fenster und Apps | Quit All Apps Except Frontmost | OPTIONAL | Wie oben |
-| Fenster und Apps | Auto-Quit Apps | SPAETER | Apps nach Inaktivitaet beenden; braucht einen dauerhaften Beobachter und Regeln je App. Beruehrt Story 11 (Per-App-Policies) |
-| Energie und Anzeige | Keep Awake | VORHANDEN | Story 10 |
-| Energie und Anzeige | Sleep Displays | OPTIONAL | Billig ueber `pmset displaysleepnow`, **unverifiziert** ohne Admin-Rechte |
-| Energie und Anzeige | Low Power Mode | ENTFERNEN | Umschalten braucht nach Kenntnisstand Admin-Rechte (**unverifiziert**); globale Regel: kein `sudo` |
-| Energie und Anzeige | Dark Mode | ENTFERNEN | Nur ueber AppleScript an System Events, also neue Automation-Berechtigung; kein Bezug zu Fenstern |
-| Energie und Anzeige | Night Shift | ENTFERNEN | Nur ueber private API (**unverifiziert**); kein Bezug zum Produkt |
-| Energie und Anzeige | Grayscale Mode | ENTFERNEN | Wie Night Shift |
-| Desktop und Dock | Desktop Icons | ENTFERNEN | Schreibt Finder-Einstellungen und startet Finder neu; widerspricht dem Besitz-Modell fuer Systemwerte (Story 4) |
-| Desktop und Dock | Desktop Widgets | ENTFERNEN | Wie oben, fuer WindowManager |
-| Desktop und Dock | Desktop Icons & Widgets | ENTFERNEN | Kombination der beiden |
-| Desktop und Dock | Hot Corners | ENTFERNEN | Schreibt Dock-Einstellungen und startet das Dock neu; stoert Instant Spaces |
-| Eingabe und Ton | Function Keys | SPAETER | Passt thematisch zu Hyperkey. Wirksames Umschalten ohne Neuanmeldung ist **unverifiziert** |
-| Eingabe und Ton | Mute Sound | OPTIONAL | Oeffentliche CoreAudio-API; kein Fensterbezug, aber als Leader-/FlickRing-Aktion praktisch |
-| Eingabe und Ton | Mute Microphone | OPTIONAL | Wie oben; nuetzlich in Videocalls |
-| Eingabe und Ton | Cleaning Mode | ENTFERNEN | Sperrt alle Eingaben ueber einen umfassenden Tap; kollidiert mit Q-01 (Panic-Kill-Switch muss immer wirken) |
-| Eingabe und Ton | Cat Mode | ENTFERNEN | Wie Cleaning Mode |
-| Bildschirm-Werkzeuge | Pick Color | ENTFERNEN | Eigenes Produktfeld; macOS hat den Farbwaehler |
-| Bildschirm-Werkzeuge | Capture Text | ENTFERNEN | OCR-Werkzeug, kein Fensterbezug |
-| Bildschirm-Werkzeuge | Capture & Translate | ENTFERNEN | Wie oben, mit Uebersetzung |
-| Bildschirm-Werkzeuge | Scan QR Code | ENTFERNEN | Wie oben |
-| Bildschirm-Werkzeuge | Scan QR Code from Clipboard | ENTFERNEN | Wie oben |
-| Mitteilungen | Clear Visible Notifications | ENTFERNEN | Nur ueber AX-Fernsteuerung des Notification Center; bricht bei jedem macOS-Update |
-| Mitteilungen | Clear All Notifications | ENTFERNEN | Wie oben |
-| Mitteilungen | iOS Notifications | ENTFERNEN | Betrifft iPhone-Mirroring, kein Bezug |
-| Aufraeumen | Clear Clipboard | OPTIONAL | Trivial; nur als Aktion im Register, falls gewuenscht |
-| Aufraeumen | Eject All Disks | OPTIONAL | Oeffentliche API (`NSWorkspace.unmountAndEjectDevice`); kein Fensterbezug |
-| Aufraeumen | Empty Trash | ENTFERNEN | Endgueltiges Loeschen per Tastendruck ist zu riskant fuer eine Aktion ohne Rueckfrage |
-| Systemeinstellungen | Default Browser (Untermenue) | OPTIONAL | Oeffentliche API, macOS zeigt eine Bestaetigung; passt neben die Open-URL-Slots |
-| Systemeinstellungen | VPN & Filters | VORHANDEN | Ist nur ein Sprung in die Systemeinstellungen; geht heute ueber einen Open-URL-Slot mit `x-apple.systempreferences:` |
-| Systemeinstellungen | Hide My Email | VORHANDEN | Wie oben |
-| Systemeinstellungen | Private Relay | VORHANDEN | Wie oben |
-| App-Menue | Settings, About, Release Notes, Website, Quit | VORHANDEN | Standard jeder App |
-| App-Menue | Support & Feedback, Tips, FAQ, Share App, More Apps | ENTFERNEN | Vertriebsfunktionen, fuer einen Fork ohne Nutzen |
-| App-Menue | Troubleshooting | OPTIONAL | Ein Einstieg zu `docs/high-cpu-troubleshooting.md` und den Checklisten |
-| Debug | Copy Debug Info | OPTIONAL, hoher Nutzen | Kopiert macOS-Build, App-Version, Berechtigungen, aktive Module und den Q-07-Ringbuffer. Spart bei jedem Geraetebericht Rueckfragen |
-| Debug | Copy Accessibility Tree | OPTIONAL, hoher Nutzen | AX-Baum des fokussierten Fensters kopieren. Genau das fehlt bei App-Kompatibilitaetsfehlern |
-| Debug | Reset Permissions | OPTIONAL, hoher Nutzen | `tccutil reset` fuer die eigene Bundle-ID. Ersetzt den Handschritt aus dem Skill `install-local-build`, Schritt 4 |
+| # | Gruppe | Supercharge-Eintrag | Einstufung | Begruendung |
+|---|---|---|---|---|
+| 1 | Fenster und Apps | Hide All Windows | STORY 12 | Stufe 12b, optional |
+| 2 | Fenster und Apps | Minimize All Windows | STORY 12 | Stufe 12b, optional |
+| 3 | Fenster und Apps | Minimize All Windows Except Frontmost | STORY 12 | Stufe 12b, optional |
+| 4 | Fenster und Apps | Minimize App Windows Except Frontmost | STORY 12 | Baustein B2, behalten |
+| 5 | Fenster und Apps | Isolate Window | STORY 12 | Kern der Story |
+| 6 | Fenster und Apps | Show Desktop | STORY 12 | Stufe 12b, spaeter |
+| 7 | Bildschirm-Werkzeuge | Pick Color | ENTFERNEN | Eigenes Produktfeld; macOS hat den Farbwaehler |
+| 8 | Bildschirm-Werkzeuge | Capture Text | ENTFERNEN | OCR-Werkzeug, kein Fensterbezug |
+| 9 | Bildschirm-Werkzeuge | Capture & Translate | ENTFERNEN | Wie oben, mit Uebersetzung |
+| 10 | Bildschirm-Werkzeuge | Scan QR Code | ENTFERNEN | Wie oben |
+| 11 | Bildschirm-Werkzeuge | Scan QR Code from Clipboard | ENTFERNEN | Wie oben |
+| 12 | Mitteilungen | Clear Visible Notifications | ENTFERNEN | Nur ueber AX-Fernsteuerung des Notification Center; bricht bei jedem macOS-Update |
+| 13 | Mitteilungen | Clear All Notifications | ENTFERNEN | Wie oben |
+| 14 | Aufraeumen | Clear Clipboard | OPTIONAL | Trivial; nur als Aktion im Register, falls gewuenscht |
+| 15 | Fenster und Apps | Quit All Apps | OPTIONAL | Passt ins Aktionsregister (`Application.quit()` existiert). Nur mit Bestaetigung |
+| 16 | Fenster und Apps | Quit All Apps Except Frontmost | OPTIONAL | Wie oben |
+| 17 | Aufraeumen | Eject All Disks | OPTIONAL | Oeffentliche API (`NSWorkspace.unmountAndEjectDevice`); kein Fensterbezug |
+| 18 | Aufraeumen | Empty Trash | ENTFERNEN | Endgueltiges Loeschen per Tastendruck ist zu riskant |
+| 19 | Eingabe und Ton | Cleaning Mode | ENTFERNEN | Sperrt alle Eingaben ueber einen umfassenden Tap; kollidiert mit Q-01 |
+| 20 | Eingabe und Ton | Cat Mode | ENTFERNEN | Wie Cleaning Mode |
+| 21 | Energie und Anzeige | Sleep Displays | OPTIONAL | Billig ueber `pmset displaysleepnow`, **unverifiziert** ohne Admin-Rechte |
+| 22 | Energie und Anzeige | Dark Mode | ENTFERNEN | Nur ueber AppleScript an System Events, also neue Automation-Berechtigung |
+| 23 | Energie und Anzeige | Night Shift | ENTFERNEN | Nur ueber private API (**unverifiziert**); kein Produktbezug |
+| 24 | Energie und Anzeige | Grayscale Mode | ENTFERNEN | Wie Night Shift |
+| 25 | Energie und Anzeige | Low Power Mode | ENTFERNEN | Umschalten braucht nach Kenntnisstand Admin-Rechte (**unverifiziert**); kein `sudo` |
+| 26 | Energie und Anzeige | Keep Awake | VORHANDEN | Story 10 |
+| 27 | Desktop und Dock | Desktop Icons | ENTFERNEN | Schreibt Finder-Einstellungen und startet Finder neu; widerspricht dem Besitz-Modell fuer Systemwerte |
+| 28 | Desktop und Dock | Desktop Widgets | ENTFERNEN | Wie oben, fuer WindowManager |
+| 29 | Desktop und Dock | Desktop Icons & Widgets | ENTFERNEN | Kombination der beiden |
+| 30 | Desktop und Dock | Hot Corners | ENTFERNEN | Schreibt Dock-Einstellungen und startet das Dock neu; stoert Instant Spaces |
+| 31 | Eingabe und Ton | Function Keys | SPAETER | Passt zu Hyperkey; wirksames Umschalten ohne Neuanmeldung **unverifiziert** |
+| 32 | Eingabe und Ton | Mute Sound | OPTIONAL | Oeffentliche CoreAudio-API; als Leader-/FlickRing-Aktion praktisch |
+| 33 | Eingabe und Ton | Mute Microphone | OPTIONAL | Wie oben; nuetzlich in Videocalls |
+| 34 | Mitteilungen | iOS Notifications | ENTFERNEN | Betrifft iPhone-Mirroring, kein Bezug |
+| 35 | Fenster und Apps | Auto-Quit Apps | SPAETER | Braucht dauerhaften Beobachter und Regeln je App; beruehrt Story 11 |
+| 36 | Systemeinstellungen | Default Browser (Untermenue) | OPTIONAL | Oeffentliche API, macOS fragt nach; passt neben die Open-URL-Slots |
+| 37 | Systemeinstellungen | VPN & Filters | VORHANDEN | Nur ein Sprung in die Systemeinstellungen; geht ueber einen Open-URL-Slot |
+| 38 | Systemeinstellungen | Hide My Email | VORHANDEN | Wie oben |
+| 39 | Systemeinstellungen | Private Relay | VORHANDEN | Wie oben |
+| 40 | App-Menue | Settings… | VORHANDEN | Standard |
+| 41 | App-Menue | About | VORHANDEN | Standard |
+| 42 | App-Menue | Support & Feedback | VORHANDEN | Das Feedback-Fenster des Forks existiert (`FeedbackWindow`) |
+| 43 | App-Menue | Release Notes | OPTIONAL | Ein Link auf das Changelog; billig |
+| 44 | App-Menue | Troubleshooting | OPTIONAL | Einstieg zu `docs/high-cpu-troubleshooting.md` und den Checklisten |
+| 45 | App-Menue | Tips | ENTFERNEN | Vertriebs- und Onboarding-Inhalt ohne Nutzen fuer den Fork |
+| 46 | App-Menue | FAQ | ENTFERNEN | Wie oben |
+| 47 | App-Menue | Website | OPTIONAL | Ein Link auf das Repo |
+| 48 | App-Menue | Share App | ENTFERNEN | Vertriebsfunktion |
+| 49 | App-Menue | More Apps by Me | ENTFERNEN | Vertriebsfunktion |
+| 50 | Debug | Copy Debug Info | STORY 13 | D1 |
+| 51 | Debug | Copy Accessibility Tree | STORY 13 | D2 |
+| 52 | Debug | Reset Permissions | STORY 13 | D3 |
+| 53 | App-Menue | Quit Supercharge | VORHANDEN | Standard |
+| 54 | App-Menue | Buy App | ENTFERNEN | Vertriebsfunktion |
 
-Empfehlung aus dem Abgleich: Die drei Debug-Eintraege sind fuer die Entwicklung dieses Forks wertvoller als alle uebrigen optionalen Punkte und sollten als naechste eigene Story aufgenommen werden.
+Die drei Debug-Eintraege sind fuer die Entwicklung dieses Forks wertvoller als alle uebrigen optionalen Punkte; sie sind am 2026-09-16 als Story 13 aufgenommen. Die Tabelle fuehrt die Eintraege in der Reihenfolge des Menues (54 Eintraege; die Browser-Liste im Untermenue `Default Browser` zaehlt nicht mit, sie zeigt installierte Apps).
 
 ## Gelesene Inspirationsquellen
 

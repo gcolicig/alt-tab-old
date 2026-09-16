@@ -178,6 +178,12 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 - Danach die verwandten Aktionen aus denselben zwei Bausteinen, einzeln waehlbar.
 - Vollstaendige Spezifikation und der ganze Supercharge-Abgleich in `backlog.md` unter Story 12 und `Supercharge-Abgleich`.
 
+## Phase 13: Debug-Untermenue
+
+- Der Menueleisten-Eintrag `Debug tools` wird zu `Debug` mit Untermenue: Debug-Info kopieren, Accessibility-Baum des fokussierten Fensters kopieren, Berechtigungen zuruecksetzen, dazu das bestehende Debug-Fenster.
+- Geschwaerzt: keine Fenstertitel, URL-Slots, Benutzernamen oder Textfeldinhalte im kopierten Text.
+- Vollstaendige Spezifikation in `backlog.md` unter Story 13.
+
 ## Release-Gates
 
 Vor jeder oeffentlichen Version:
