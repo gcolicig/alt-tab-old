@@ -1909,7 +1909,7 @@ Gruppen und Reihenfolge:
 
 Aufbau:
 
-- **Entschieden 2026-09-16**: Die Gruppen `Werkzeuge` und `Schalter` stehen zusammen mit `Standards` (`Default Browser >`) unter einem Eintrag `Other… >` (zuerst `Other Tools`, am selben Tag umbenannt), an der Stelle der ersten dieser Gruppen. Darin sind sie Abschnitte mit Ueberschrift `Tools` und `Toggles`, wie die Gruppen im Hauptmenue, keine weiteren Untermenues. Nur Keep Awake behaelt sein eigenes Untermenue mit den Dauern. `Fenster` bleibt flach. Eine leere Untergruppe faellt weg; sind beide leer, faellt `Other Tools` weg.
+- **Entschieden 2026-09-16**: Alle Gruppen ausser `Switcher`, `Fenster` und dem AltTab+-Block stehen unter einem Eintrag `Other… >` (zuerst `Other Tools`, am selben Tag umbenannt), an der Stelle der ersten dieser Gruppen. Darin sind sie Abschnitte mit Ueberschrift `Tools` und `Toggles`, wie die Gruppen im Hauptmenue, keine weiteren Untermenues. Nur Keep Awake behaelt sein eigenes Untermenue mit den Dauern. `Fenster` bleibt flach. Eine leere Untergruppe faellt weg; sind beide leer, faellt `Other Tools` weg.
 - Ueberschriften ueber `NSMenuItem.sectionHeader(title:)` ab macOS 14; darunter nur Trenner ohne Ueberschrift (SA-05).
 - Die Gruppe `Schalter` zeigt Zustaende mit Haekchen (`state = .on`), wie im Supercharge-Menue. Eintraege mit Rueckfrage oder Fenster tragen Auslassungspunkte.
 - Die Gruppe `AltTab+` steht immer zuletzt, ohne Ueberschrift, nur durch einen Trenner abgesetzt.
@@ -1918,19 +1918,17 @@ Aufbau:
 - Das Menue wird nicht bei jedem Oeffnen neu gebaut, sondern bei Aenderung der Sichtbarkeit; nur dynamische Inhalte (Haekchen, Restzeit, Browser-Liste, Verfuegbarkeit) aktualisiert `menuNeedsUpdate`. Das haelt das Oeffnen schnell (Bezug: Befund zum Idle-CPU der Spaces-Reihe, PR #44).
 - `Menubar.addMenuItem` bekommt das Zielmenue als Parameter (siehe Story 13) und einen Parameter fuer die Gruppe; eine zweite Hilfsfunktion entsteht nicht.
 
-Sichtbarkeit:
+Sichtbarkeit (ersetzt am 2026-09-16):
 
-- Settings, neuer Abschnitt `Menu bar menu` im Tab `General`: je Gruppe ein Schalter, darunter je Eintrag ein Schalter.
-- Standard: `Switcher`, `Fenster` und `AltTab+` sichtbar (`Systemeinstellungen` entfiel am 2026-09-16); alle anderen Gruppen ausgeblendet, bis der Nutzer sie einschaltet. So bleibt das Menue nach dem Update so kurz wie heute plus die Fenster-Aktionen.
-- Die Gruppe `AltTab+` laesst sich nicht ausblenden, damit `Settings…` und `Quit` immer erreichbar sind.
-- Eine ausgeblendete Aktion bleibt im Register und ueber Shortcut, Hyper, Leader und FlickRing ausloesbar. Ausblenden betrifft nur das Menue.
+- **Entschieden 2026-09-16**: Es gibt kein Ein- und Ausblenden mehr. Alle Eintraege sind immer sichtbar. Im Hauptmenue stehen nur `Switcher`, `Fenster` und der AltTab+-Block; alle anderen Gruppen (`Apps`, `Werkzeuge`, `Mitteilungen`, `System`, `Schalter`, `Standards`) sind Abschnitte mit Ueberschrift im Untermenue `Other… >`.
+- Die frueheren Schalter-Praeferenzen (`menuGroupVisible.*`, `menuEntryVisible.*`) entfernt eine Migration beim Start.
+- Der Settings-Tab heisst jetzt `Menu Actions` und vergibt nur noch globale Shortcuts fuer die Aktionen, gruppiert wie im Menue. Keep-Awake-Shortcuts bleiben im Tab `Keep Awake`, damit je Praeferenz genau ein Recorder existiert.
 
 Umsetzungsstand 2026-09-16:
 
 - `MenuLayout` (rein, unit-getestet) liefert die Struktur; `MenubarMenu` setzt sie um und aktualisiert Titel, Haekchen und Verfuegbarkeit in `menuNeedsUpdate`. Submenues bauen sich beim Oeffnen neu.
-- **Abweichung**: Die Sichtbarkeit steht in einem eigenen Sidebar-Eintrag `Menu Bar Menu`, nicht in `General`. Mit rund 40 Eintraegen haette sie den General-Tab ueberladen. Derselbe Tab vergibt die Shortcuts der neuen Aktionen.
+- Der eigene Sidebar-Eintrag (zuerst `Menu Bar Menu`, jetzt `Menu Actions`) vergibt die Shortcuts der neuen Aktionen.
 - `Menubar.addMenuItem` ist entfallen; das Menue entsteht vollstaendig im Builder.
-- Die Permission-Callout-Zeile wandert beim Neuaufbau ins neue Menue.
 
 Regeln:
 
@@ -1938,7 +1936,7 @@ Regeln:
 |---|---|---|
 | MG-01 | Gruppen und Reihenfolge stammen aus einer einzigen Tabelle im Code | Keine verstreute Menuelogik |
 | MG-02 | Neue Eintraege spaeterer Stories werden einer bestehenden Gruppe zugeordnet; eine neue Gruppe entsteht nur, wenn der Inhalt in keine passt, und wird hier nachgetragen | Taxonomie folgt dem Inhalt |
-| MG-03 | `Settings…` und `Quit AltTab+` sind immer sichtbar | Ausweg aus jeder Einstellung |
+| MG-03 | `Settings…` und `Quit AltTab+` stehen immer im Hauptmenue | Ausweg aus jeder Einstellung |
 | MG-04 | Das Oeffnen des Menues loest keine AX-Arbeit und keinen Prozessstart aus | Menue muss sofort erscheinen |
 | MG-05 | Die bestehende Permission-Callout-Zeile bleibt ganz oben und wird wie heute ein- und ausgefuegt | Bestehendes Verhalten |
 

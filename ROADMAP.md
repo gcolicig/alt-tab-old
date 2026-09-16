@@ -201,10 +201,10 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 ## Phase 15: Menueleisten-Menue gruppiert
 
-- Umgesetzt 2026-09-16; Sichtbarkeit im eigenen Tab `Menu Bar Menu`.
+- Umgesetzt 2026-09-16; Shortcuts im Tab `Menu Actions`.
 
 - Alle Eintraege in inhaltlichen Gruppen mit Ueberschrift: Switcher, Fenster, Apps, Werkzeuge, Mitteilungen, System, Schalter, Standards, AltTab+. Die Gruppe Systemeinstellungen wurde am 2026-09-16 wieder entfernt.
-- Sichtbarkeit je Gruppe und Eintrag einstellbar; ab Werk nur Switcher, Fenster und AltTab+ sichtbar.
+- Alles immer sichtbar: Switcher, Fenster und AltTab+ im Hauptmenue, alle anderen Gruppen als Abschnitte in `Other…`. Kein Ein- und Ausblenden (entschieden 2026-09-16).
 - Waechst mit Story 10, 12, 13 und 14. Vollstaendige Spezifikation in `backlog.md` unter Story 15.
 
 ## Release-Gates

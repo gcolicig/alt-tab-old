@@ -11,12 +11,12 @@ Emergency shortcut: `Command+Control+Option+Shift+Escape`.
 
 | # | Action | Expectation |
 |---|---|---|
-| 1 | Open the menubar menu after the update | Groups Switcher, Windows, an `Other… >` entry whose `Tools` section lists all five tools, and the AltTab+ block; headings on macOS 14+; no double or trailing separator |
-| 2 | `Settings > Menu Bar Menu`: turn every group on | In order: Switcher, Windows, Apps, `Other… >` (sections `Tools` and `Toggles`), Notifications, System, Defaults, AltTab+ |
-| 3 | Turn one entry off, then its whole group | The entry disappears, then the heading and separator of the group |
-| 4 | Assign a shortcut to `Isolate Window` in the same tab | The shortcut works outside the menu |
+| 1 | Open the menubar menu | Main menu: Switcher, Windows (all six actions), `Other… >`, the AltTab+ block; headings on macOS 14+; no double or trailing separator |
+| 2 | Open `Other…` | Headed sections in order: Apps, Tools, Notifications, System, Toggles, Defaults; no further submenus except Keep Awake and Default Browser |
+| 3 | `Settings > Menu Actions` | Every action with a shortcut recorder, grouped like the menu; no visibility switches |
+| 4 | Assign a shortcut to `Isolate Window` in `Menu Actions` | The shortcut works outside the menu |
 | 5 | Bind `Clear Clipboard` to a Leader key and a FlickRing direction | Both run it |
-| 6 | Open the menu with a disabled entry (e.g. `Eject All Disks` with no disk) | Entry greyed out; tooltip names the reason |
+| 6 | Open `Other…` with a disabled entry (e.g. `Eject All Disks` with no disk) | Entry greyed out; tooltip names the reason |
 
 ## Windows (story 12)
 
