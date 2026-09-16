@@ -1412,6 +1412,13 @@ Nicht im MVP:
 - Automation-Schnittstelle.
 - Per-App- oder Regel-Engine.
 
+Nachtrag 2026-09-16, Einbindung ins Menueleisten-Menue (aus dem Supercharge-Abgleich):
+
+- Keep Awake erscheint in der Gruppe `Schalter` (Story 15) als Eintrag mit Haekchen und Untermenue: `Keep Awake` > `Indefinitely`, `15 Minutes`, `1 Hour`, `2 Hours`, `5 Hours`, `Until…`, Trenner, `Keep Display Awake` (Haekchen), Trenner, `Stop`.
+- Ein Klick auf den Haupteintrag selbst schaltet mit der zuletzt gewaehlten Dauer um; waehrend einer Session steht die Restzeit rechts im Eintrag (`Keep Awake  1:24`).
+- Die Aktionen `keepAwake.toggle`, `keepAwake.start.<preset>` und `keepAwake.stop` kommen ins gemeinsame Register und sind damit auch ueber Shortcut, Hyper, Leader und FlickRing ausloesbar.
+- Das eigene Menueleisten-Symbol aus dem MVP-Umfang bleibt optional; Standard ist der Eintrag im bestehenden Menue, damit AltTab+ nicht zwei Symbole belegt.
+
 ### 11. Erweitertes Window-Switching-Verhalten (minimierte Fenster, Per-App-Policies, Cmd+Tab)
 
 Status: Spezifiziert 2026-08-19; nicht begonnen. Betrifft den Switcher-Kern, kein Add-on-Modul
@@ -1679,6 +1686,224 @@ Nicht im Scope:
 - Datei-Export (die Zwischenablage reicht; ein Export kann spaeter aus demselben Text entstehen).
 - Aenderungen am `DebugWindow` selbst.
 
+### 14. System-Aktionen und Werkzeuge aus dem Supercharge-Abgleich
+
+Status: Spezifiziert 2026-09-16; nicht begonnen
+Prioritaet: Niedrig bis mittel je Block; die Bloecke sind unabhaengig und einzeln umsetzbar
+
+Referenz: Supercharge-Menue, Einordnung unter `Supercharge-Abgleich`. Verhalten nur aus Namen und Menue abgeleitet (Art A). Am 2026-09-16 vom Nutzer zur Uebernahme bestimmt, auch fuer Eintraege, die der Abgleich zuerst als `ENTFERNEN` gefuehrt hatte (Bildschirm-Werkzeuge, Mitteilungen, Cat Mode). Die dort genannten Risiken bleiben und sind unten als Regeln gefasst.
+
+Gemeinsame Regeln fuer alle Bloecke:
+
+| ID | Anforderung | Begruendung |
+|---|---|---|
+| SA-01 | Jede Funktion ist eine Aktion im gemeinsamen Register (`ActionIdentifier`) und erscheint im Menueleisten-Menue in ihrer Gruppe (Story 15) | Ein Weg fuer Menue, Shortcut, Hyper, Leader und FlickRing |
+| SA-02 | Keine Tastenkombination ab Werk | Q-08 sinngemaess |
+| SA-03 | Kein Tap, Timer oder Beobachter, solange die Funktion nicht aktiv genutzt wird. Ausnahmen sind benannt (Auto-Quit, Cat Mode) und laufen nur, solange ihr Schalter an ist | Q-10 |
+| SA-04 | Keine erhoehten Rechte, kein `sudo`, kein Aufruf mit Admin-Abfrage | Globale Regel |
+| SA-05 | Schnittstellen jenseits des Deployment-Ziels macOS 13.1 werden mit `#available` geprueft; nicht verfuegbare Eintraege sind im Menue deaktiviert und nennen den Grund im Tooltip | Kein Absturz, keine stille Funktionslosigkeit |
+| SA-06 | Nicht-oeffentliche Wege (AX-Fernsteuerung fremder System-UI, undokumentierte Praeferenzen) unterliegen Q-09: bei unbekannter macOS-Major-Version deaktiviert und sichtbar gemeldet | Diese Wege brechen bei Updates |
+| SA-07 | Jede Funktion bestaetigt ihr Ergebnis mit `TransientNotice` oder dem Haekchen im Menue; Fehler nennen den Grund | Keine stillen Aktionen |
+| SA-08 | Punkte mit **unverifiziert** werden vor der Umsetzung in einem kurzen Spike am Geraet belegt; faellt der Beleg negativ aus, wird der Punkt hier nachgetragen statt umgangen | Hallucination-Safety |
+
+#### 14A. Sprung in Systemeinstellungen
+
+Eintraege: `VPN & Filters`, `Hide My Email`, `Private Relay`, dazu `iPhone Notifications` (siehe 14H).
+
+- Eine feste, eingebaute Liste von Sprungzielen, jeweils eine `x-apple.systempreferences:`-Adresse, geoeffnet mit `NSWorkspace.shared.open`. Technisch dasselbe wie ein Open-URL-Slot, aber ohne Konfiguration und mit eigenem Titel und Symbol.
+- Aktions-IDs `settingsJump.vpn`, `settingsJump.hideMyEmail`, `settingsJump.privateRelay`, `settingsJump.iphoneNotifications`.
+- **Unverifiziert**: die genauen Adressen je Bereich unter macOS Tahoe. Der Spike oeffnet Kandidaten und haelt die funktionierenden in einer Tabelle hier fest. Faellt eine Adresse auf einen falschen Bereich, wird der Eintrag entfernt statt geraten.
+- Die Liste liegt an einer Stelle im Code und ist erweiterbar; weitere Ziele nur auf Wunsch.
+
+#### 14B. Apps beenden
+
+Eintraege: `Quit All Apps`, `Quit All Apps Except Frontmost`.
+
+- Betrifft alle laufenden Apps mit `activationPolicy == .regular`, ausser AltTab+ selbst und Finder. Finder folgt der bestehenden Regel `Application.canBeQuit()`.
+- Beenden ueber `NSRunningApplication.terminate()`, nie `forceTerminate()`. Apps mit ungesicherten Dokumenten fragen selbst nach; AltTab+ wartet nicht und wiederholt nicht.
+- Vor der Ausfuehrung ein `NSAlert` mit der Anzahl und den Namen der betroffenen Apps (hoechstens zehn Namen, dann `und n weitere`). Knoepfe `Quit` / `Cancel`, Standard `Cancel`. Ein Schalter `Nicht mehr fragen` ist bewusst nicht vorgesehen.
+- Bei Ausloesung per Shortcut, Leader oder FlickRing erscheint dieselbe Rueckfrage.
+- Nach Ablauf von 5 s meldet `TransientNotice`, welche Apps noch laufen.
+- Aktions-IDs `apps.quitAll`, `apps.quitAllExceptFrontmost`.
+
+#### 14C. Apps automatisch beenden (Auto-Quit)
+
+Eintrag: `Auto-Quit Apps` als Schalter mit Haekchen.
+
+- Verhalten: Schliesst der Nutzer das letzte Fenster einer App, wird die App nach einer Wartezeit beendet, sofern sie in der Zwischenzeit kein neues Fenster geoeffnet hat und nicht frontmost ist.
+- **Unverifiziert**: ob Supercharge genau so vorgeht. Die Definition hier ist die eigene und massgeblich.
+- Quelle des Ereignisses ist der bestehende Fensterbestand (`Windows`), der das Schliessen bereits per AX-Beobachter erfaehrt. Kein neuer Tap, kein Polling.
+- Wartezeit Standard 10 s, einstellbar 0 bis 300 s.
+- Liste der betroffenen Apps: Standard ist eine Positivliste (nur ausdruecklich eingetragene Apps). Eine Umschaltung auf `alle ausser` ist moeglich. Nie betroffen: Finder, AltTab+, Apps ohne regulaere Aktivierung, Apps, die nie ein Fenster hatten (reine Hintergrund- und Menueleisten-Apps).
+- Beenden wie 14B, ohne Rueckfrage, weil die Liste die Zustimmung ist.
+- Settings: eigener Abschnitt im Tab `General` oder neuer Tab `Apps`, Entscheid bei der Umsetzung; Tabelle mit Bundle-IDs wie der `Exceptions`-Tab.
+- Standard aus (Q-08). Solange aus, existiert kein Timer.
+- Aktion `apps.autoQuit.toggle`.
+- Beruehrt Story 11 (Per-App-Policies): Wird dort `ExceptionEntry` erweitert, zieht die Auto-Quit-Liste in dieselbe Tabelle um.
+
+#### 14D. Displays schlafen legen
+
+Eintrag: `Sleep Displays`.
+
+- Weg 1: `/usr/bin/pmset displaysleepnow` ueber `Process`. **Unverifiziert** ohne Admin-Rechte aus einer App mit Hardened Runtime.
+- Weg 2, falls Weg 1 scheitert: den Idle-Zustand ueber IOKit (`IODisplayWrangler`) anfordern. **Unverifiziert**, ob das unter Tahoe noch wirkt.
+- Scheitern beide, entfaellt der Eintrag.
+- Kurze Verzoegerung von 0.5 s vor der Ausfuehrung, damit das Loslassen der ausloesenden Taste den Bildschirm nicht sofort wieder weckt.
+- Aktion `system.sleepDisplays`.
+
+#### 14E. Ton und Mikrofon stummschalten
+
+Eintraege: `Mute Sound`, `Mute Microphone`, beide als Schalter mit Haekchen.
+
+- Oeffentliche CoreAudio-API: Standard-Ausgabe- bzw. Standard-Eingabegeraet ermitteln, `kAudioDevicePropertyMute` im jeweiligen Scope setzen.
+- Unterstuetzt ein Geraet kein Mute, wird fuer das Mikrofon die Eingangslautstaerke auf 0 gesetzt und der vorherige Wert gemerkt; fuer den Ton wird der Eintrag deaktiviert statt die Lautstaerke zu veraendern.
+- Das Haekchen zeigt den tatsaechlichen Zustand des Geraets, gelesen beim Oeffnen des Menues; ein Wechsel des Standardgeraets wird ueber einen CoreAudio-Property-Listener verfolgt, der nur existiert, solange das Mikrofon durch AltTab+ stummgeschaltet ist.
+- Beim Beenden von AltTab+ bleibt der Zustand, wie er ist, mit einer Ausnahme: eine per Lautstaerke 0 simulierte Mikrofon-Stummschaltung wird zurueckgesetzt, weil sie sonst ohne Hinweis bestehen bleibt.
+- Aktionen `audio.muteOutput.toggle`, `audio.muteInput.toggle`.
+
+#### 14F. Zwischenablage leeren
+
+Eintrag: `Clear Clipboard`.
+
+- `NSPasteboard.general.clearContents()`. Keine Rueckfrage.
+- Aktion `system.clearClipboard`.
+
+#### 14G. Alle Laufwerke auswerfen
+
+Eintrag: `Eject All Disks`.
+
+- Kandidaten: `FileManager.mountedVolumeURLs` mit `volumeIsEjectableKey` oder `volumeIsRemovableKey` gesetzt und `volumeIsInternalKey` nicht gesetzt; Netzlaufwerke zaehlen mit, Disk-Images auch.
+- Auswerfen je Laufwerk ueber `NSWorkspace.shared.unmountAndEjectDevice(at:)` auf einer Hintergrund-Queue.
+- Ergebnis per `TransientNotice`: Anzahl ausgeworfen, Namen der Laufwerke, die belegt waren.
+- Ohne Kandidaten ist der Eintrag deaktiviert.
+- Aktion `system.ejectAllDisks`.
+
+#### 14H. Mitteilungen
+
+Eintraege: `Clear Visible Notifications`, `Clear All Notifications`, `iPhone Notifications`.
+
+- Die ersten beiden steuern die Mitteilungszentrale ueber AX fern: Prozess `NotificationCenter`, Suche nach den Aktionen zum Schliessen bzw. `Clear All` und Ausloesen per `AXPerformAction`. Laeuft auf der AX-Queue mit Timeout (Q-02, Q-03).
+- Unterliegt SA-06: Die Rollen und Aktionsnamen werden je macOS-Major-Version in einer Tabelle gefuehrt; eine unbekannte Version deaktiviert die Eintraege.
+- `Clear Visible` betrifft nur Banner und gestapelte Mitteilungen, die gerade sichtbar sind; `Clear All` oeffnet die Mitteilungszentrale nicht sichtbar, falls das ohne Oeffnen nicht erreichbar ist, wird sie kurz geoeffnet und wieder geschlossen.
+- **Unverifiziert**: ob beides unter Tahoe ohne sichtbares Oeffnen geht. Der Spike entscheidet.
+- `iPhone Notifications` ist ein Systemschalter ohne oeffentliche Schnittstelle. Er wird deshalb nicht umgeschaltet, sondern als Sprung (14A) in den passenden Bereich der Systemeinstellungen umgesetzt. Titel im Menue mit Auslassungspunkten.
+- Aktionen `notifications.clearVisible`, `notifications.clearAll`.
+
+#### 14I. Bildschirm-Werkzeuge
+
+Eintraege: `Pick Color`, `Capture Text`, `Capture & Translate`, `Scan QR Code`, `Scan QR Code from Clipboard`.
+
+- **Pick Color**: `NSColorSampler` (oeffentlich). Ergebnis als Hex-Wert `#RRGGBB` in die Zwischenablage; `TransientNotice` zeigt den Wert mit Farbfeld. Das Format (Hex, `rgb()`, `NSColor`-Code) ist spaeter einstellbar, Standard Hex.
+- **Bereichsauswahl** fuer die drei Aufnahme-Werkzeuge: eigenes Auswahl-Overlay ueber alle Displays (Fadenkreuz, Escape bricht ab), dann Aufnahme des Bereichs ueber ScreenCaptureKit (`SCScreenshotManager`, ab macOS 14; darunter Eintraege deaktiviert, SA-05). Die Screen-Recording-Berechtigung hat AltTab+ bereits.
+- **Capture Text**: Texterkennung mit Vision (`VNRecognizeTextRequest`, Genauigkeit `accurate`, Sprachkorrektur an, Sprachen automatisch). Ergebnis zeilenweise in die Zwischenablage.
+- **Capture & Translate**: wie Capture Text, danach Uebersetzung in die Systemsprache mit dem Translation-Framework. **Unverifiziert**: ob sich eine Uebersetzung ohne SwiftUI-Ansicht programmatisch anstossen laesst und ab welcher macOS-Version. Ergebnis in einem kleinen Panel mit Original und Uebersetzung und einem Kopier-Knopf. Fehlende Sprachpakete: Hinweis mit Sprung in die Systemeinstellungen.
+- **Scan QR Code**: Bereichsauswahl, dann `VNDetectBarcodesRequest` auf QR (und weitere 2D-Codes). Ergebnis: Inhalt in die Zwischenablage; ist er eine URL, bietet `TransientNotice` `Open` an. Nie automatisch oeffnen.
+- **Scan QR Code from Clipboard**: dieselbe Erkennung auf einem Bild aus `NSPasteboard.general`. Ohne Bild in der Zwischenablage ist der Eintrag deaktiviert (wie im Supercharge-Menue ausgegraut).
+- Alles lokal. Keine Netzwerkaufrufe, keine Speicherung der Aufnahmen; Bilder leben nur im Speicher bis zum Ende der Erkennung.
+- Aktionen `tools.pickColor`, `tools.captureText`, `tools.captureTranslate`, `tools.scanQr`, `tools.scanQrClipboard`.
+
+#### 14J. Funktionstasten umschalten
+
+Eintrag: `Function Keys` als Schalter mit Haekchen (an = F1-F12 als Standard-Funktionstasten).
+
+- Systemwert `com.apple.keyboard.fnState` in der globalen Domain.
+- **Unverifiziert**: ob Schreiben des Werts allein wirkt oder ob das System ihn erst nach Neuanmeldung liest, und welcher oeffentliche oder private Weg ihn sofort anwendet. Der Spike entscheidet; ohne sofortige Wirkung entfaellt der Schalter.
+- Besitzmodell wie Story 4 (Pointer): AltTab+ merkt sich den Ausgangswert, schreibt nur nach ausdruecklicher Aktion und gibt beim Ausschalten des Moduls den Ausgangswert zurueck. Aendert ein anderes Werkzeug den Wert, zeigt das Haekchen den tatsaechlichen Zustand.
+- Beruehrt Hyperkey: Die Belegung der F-Tasten im Hyper-Pfad wird im Spike mitgeprueft.
+- Aktion `keyboard.fnKeys.toggle`.
+
+#### 14K. Cat Mode
+
+Eintrag: `Cat Mode` als Schalter mit Haekchen.
+
+- Sperrt die Tastatur, damit eine Katze (oder ein Kleinkind) nichts ausloest. Maus und Trackpad bleiben aktiv; das Sperren auch von Zeigergeraeten ist nicht vorgesehen, weil dann das Menue als Ausweg fehlt.
+- Umsetzung: ein aktiver Tap auf `keyDown`, `keyUp` und `flagsChanged`, der alle Ereignisse verschluckt. Er existiert nur, solange Cat Mode an ist.
+- **Pflicht-Auswege, alle drei aktiv**:
+  1. Der Panic-Kill-Switch (Q-01) wird vor dem Verschlucken ausgewertet und beendet Cat Mode immer.
+  2. Der Menue-Eintrag (per Maus) beendet Cat Mode.
+  3. Eine feste Tastenfolge beendet Cat Mode: das Wort `unlock` in Folge tippen. Eine Katze trifft das praktisch nie; ein Mensch ohne Maus kommt heraus.
+- Sichtbarer Zustand: ein kleines, nicht aktivierendes Overlay unten auf jedem Display (`Cat Mode — click the menu or type "unlock"`), dazu das Haekchen im Menue.
+- Automatisches Ende nach 60 Minuten (einstellbar 5 bis 240) und bei Sleep, Bildschirmsperre, Benutzerwechsel und Berechtigungsverlust (Q-15).
+- Tap-Recovery und Circuit Breaker wie Q-04 und Q-12. Faellt der Tap aus, endet Cat Mode sichtbar, statt stillschweigend nichts mehr zu sperren.
+- Safe Mode verhindert das Einschalten und beendet eine laufende Sperre.
+- Keine Tastenkombination zum Einschalten ab Werk; Einschalten per Leader oder Hyper ist erlaubt.
+- Aktion `system.catMode.toggle`.
+- Geraetepruefung Pflicht vor Freigabe, Punkt V-19.
+
+Pruefraster (Checklisten folgen je Block mit der Umsetzung):
+
+| Block | Kernpruefung |
+|---|---|
+| 14A | Jeder Eintrag landet im richtigen Bereich der Systemeinstellungen |
+| 14B | Rueckfrage nennt die richtigen Apps; eine App mit ungesichertem Dokument fragt selbst und bleibt bei Abbruch offen |
+| 14C | Schliessen des letzten Fensters beendet nur gelistete Apps, nach der Wartezeit; neues Fenster in der Wartezeit verhindert es |
+| 14D | Displays gehen aus und wachen bei Tastendruck normal auf |
+| 14E | Haekchen stimmt nach Geraetewechsel (AirPods an/aus) |
+| 14G | USB-Stick, Disk-Image und Netzlaufwerk werden ausgeworfen; ein belegtes Laufwerk wird gemeldet |
+| 14H | Beide Aktionen wirken unter der aktuellen macOS-Version; unbekannte Version deaktiviert sie |
+| 14I | Alle Werkzeuge auf zwei Displays mit unterschiedlicher Skalierung; Escape bricht ohne Rest ab |
+| 14J | Umschalten wirkt sofort; Ausschalten gibt den Ausgangswert zurueck |
+| 14K | Alle drei Auswege; Tap-Ausfall beendet sichtbar; Auto-Ende nach Ablauf und bei Sleep |
+
+#### 14L. Standardbrowser
+
+Eintrag: `Default Browser` mit Untermenue.
+
+- Untermenue: alle installierten Apps, die `https` oeffnen koennen (`NSWorkspace.urlsForApplications(toOpen:)` mit einer `https`-URL), je mit App-Symbol (16 pt) und Namen, alphabetisch. Der aktuelle Standard (`NSWorkspace.urlForApplication(toOpen:)`) traegt ein Haekchen.
+- Auswahl setzt den Standard fuer `http` und `https` ueber `NSWorkspace.setDefaultApplication(at:toOpenURLsWithScheme:)`. macOS zeigt dabei seine eigene Rueckfrage; AltTab+ umgeht sie nicht.
+- Die Liste wird beim Oeffnen des Untermenues gebaut (`menuNeedsUpdate`), nicht beim Start.
+- Doppelte Eintraege derselben Bundle-ID (mehrere Installationen) zeigen den Pfad als Untertitel.
+- Aktionen: `browser.setDefault.<bundleId>` werden dynamisch registriert, damit Leader und FlickRing einen bestimmten Browser setzen koennen; fehlt der Browser spaeter, ist die Aktion `unavailable`.
+
+### 15. Menueleisten-Menue nach Kategorien gruppiert
+
+Status: Spezifiziert 2026-09-16; nicht begonnen. Setzt die Eintraege aus Story 10, 12, 13 und 14 voraus und waechst mit ihnen
+Prioritaet: Mittel. Ohne Gruppierung wird das Menue mit den neuen Eintraegen unbenutzbar lang
+
+Ziel: Alle Eintraege des Menueleisten-Menues stehen in Gruppen, die sich aus ihrem Inhalt ergeben. Jede Gruppe hat eine Ueberschrift und ist durch Trenner abgesetzt. Vorbild ist die Gliederung des Supercharge-Menues (Aktionen, Schalter, Untermenues, Systemeinstellungen, App-Menue), verfeinert nach Inhalt.
+
+Gruppen und Reihenfolge:
+
+| # | Gruppe | Eintraege | Herkunft |
+|---|---|---|---|
+| 1 | Switcher | `Show` | vorhanden |
+| 2 | Fenster | `Isolate Window`, `Minimize App Windows Except Frontmost`, `Hide Other Apps`, dazu die in 12b gewaehlten | Story 12 |
+| 3 | Apps | `Quit All Apps…`, `Quit All Apps Except Frontmost…` | Story 14B |
+| 4 | Werkzeuge | `Pick Color`, `Capture Text`, `Capture & Translate`, `Scan QR Code`, `Scan QR Code from Clipboard` | Story 14I |
+| 5 | Mitteilungen | `Clear Visible Notifications`, `Clear All Notifications` | Story 14H |
+| 6 | System | `Clear Clipboard`, `Eject All Disks`, `Sleep Displays` | Story 14D, 14F, 14G |
+| 7 | Schalter | `Keep Awake >`, `Mute Sound`, `Mute Microphone`, `Function Keys`, `Auto-Quit Apps`, `Cat Mode` | Story 10, 14C, 14E, 14J, 14K |
+| 8 | Standards | `Default Browser >` | Story 14L |
+| 9 | Systemeinstellungen | `VPN & Filters…`, `Hide My Email…`, `Private Relay…`, `iPhone Notifications…` | Story 14A, 14H |
+| 10 | AltTab+ | `Settings…`, `Check Permissions…`, `About AltTab+`, `Debug >`, `Quit AltTab+` | vorhanden, Story 13 |
+
+Aufbau:
+
+- Ueberschriften ueber `NSMenuItem.sectionHeader(title:)` ab macOS 14; darunter nur Trenner ohne Ueberschrift (SA-05).
+- Die Gruppe `Schalter` zeigt Zustaende mit Haekchen (`state = .on`), wie im Supercharge-Menue. Eintraege mit Rueckfrage oder Fenster tragen Auslassungspunkte.
+- Die Gruppe `AltTab+` steht immer zuletzt, ohne Ueberschrift, nur durch einen Trenner abgesetzt.
+- Eine leere Gruppe (alle Eintraege ausgeblendet oder nicht verfuegbar) erscheint samt Ueberschrift und Trenner nicht. Doppelte oder fuehrende Trenner werden beim Aufbau entfernt.
+- Der Aufbau liegt in einer reinen Funktion, die aus einer Liste von Gruppen und Sichtbarkeiten die Menuestruktur als Daten liefert (unit-getestet: leere Gruppen, Trenner, Reihenfolge). `Menubar` setzt diese Daten nur in `NSMenuItem`s um.
+- Das Menue wird nicht bei jedem Oeffnen neu gebaut, sondern bei Aenderung der Sichtbarkeit; nur dynamische Inhalte (Haekchen, Restzeit, Browser-Liste, Verfuegbarkeit) aktualisiert `menuNeedsUpdate`. Das haelt das Oeffnen schnell (Bezug: Befund zum Idle-CPU der Spaces-Reihe, PR #44).
+- `Menubar.addMenuItem` bekommt das Zielmenue als Parameter (siehe Story 13) und einen Parameter fuer die Gruppe; eine zweite Hilfsfunktion entsteht nicht.
+
+Sichtbarkeit:
+
+- Settings, neuer Abschnitt `Menu bar menu` im Tab `General`: je Gruppe ein Schalter, darunter je Eintrag ein Schalter.
+- Standard: `Switcher`, `Fenster`, `Systemeinstellungen` und `AltTab+` sichtbar; alle anderen Gruppen ausgeblendet, bis der Nutzer sie einschaltet. So bleibt das Menue nach dem Update so kurz wie heute plus die Fenster-Aktionen.
+- Die Gruppe `AltTab+` laesst sich nicht ausblenden, damit `Settings…` und `Quit` immer erreichbar sind.
+- Eine ausgeblendete Aktion bleibt im Register und ueber Shortcut, Hyper, Leader und FlickRing ausloesbar. Ausblenden betrifft nur das Menue.
+
+Regeln:
+
+| ID | Anforderung | Begruendung |
+|---|---|---|
+| MG-01 | Gruppen und Reihenfolge stammen aus einer einzigen Tabelle im Code | Keine verstreute Menuelogik |
+| MG-02 | Neue Eintraege spaeterer Stories werden einer bestehenden Gruppe zugeordnet; eine neue Gruppe entsteht nur, wenn der Inhalt in keine passt, und wird hier nachgetragen | Taxonomie folgt dem Inhalt |
+| MG-03 | `Settings…` und `Quit AltTab+` sind immer sichtbar | Ausweg aus jeder Einstellung |
+| MG-04 | Das Oeffnen des Menues loest keine AX-Arbeit und keinen Prozessstart aus | Menue muss sofort erscheinen |
+| MG-05 | Die bestehende Permission-Callout-Zeile bleibt ganz oben und wird wie heute ein- und ausgefuegt | Bestehendes Verhalten |
+
 ## Distribution und Migration
 
 - Produktname und Bundle-ID bleiben fork-spezifisch: AltTab+ und `com.gcolicig.alttab-plus`.
@@ -1844,6 +2069,7 @@ Default-Settings, Reset-Verhalten und Migration werden nach jedem neuen Modul ge
 | V-16 | Dock-Aktivierung ueber Space-Grenzen | Beobachtung 2A-1 zuordnen: Klick im Dock auf eine App, deren Fenster auf einem anderen Space liegt, wirkt erst beim zweiten Mal. Mit beendetem AltTab+ wiederholen; tritt es weiter auf, ist es Systemverhalten und die Beobachtung wird geschlossen, sonst beginnt die Suche bei den Maus-Taps |
 | V-17 | Scrollrichtung der Maus | Story 6a am Geraet: Umkehr wirkt in mehreren App-Klassen, das Trackpad bleibt unberuehrt, Safe Mode schaltet ab und gibt frei, der Tap kommt nach einem Timeout zurueck. Dazu die offene Messung: Scroll-Latenz und Leerlaufverbrauch mit dauerhaft aktivem `scrollWheel`-Tap gegen die Baseline. Checkliste in `docs/scroll-direction-checklist.md` |
 | V-18 | Smoothed Scrolling | Story 6c am Geraet: Fluss und Auslauf in AppKit, Safari, Chromium/Electron und Terminal, zusammen mit Reverse und Speed; Abbruch durch Safe Mode, Switcher, Sleep und Beenden ohne Nachlaufen; Leerlauf ohne Timer; Verbrauch waehrend des Scrollens. Das Ergebnis entscheidet ueber die Gesten-Begleiter (6c-2). Voraussetzung: V-17 bestanden. Checkliste folgt mit der Umsetzung |
+| V-19 | Cat Mode | Story 14K am Geraet: alle drei Auswege (Panic-Kill-Switch, Menue, `unlock`), Tap-Ausfall beendet sichtbar, Auto-Ende nach Ablauf, bei Sleep und Bildschirmsperre; keine haengenden Modifier nach dem Ende. Vor jeder Freigabe Pflicht |
 
 ## Provenienz-Register
 
@@ -1876,6 +2102,7 @@ Entschieden 2026-09-16:
 
 - **Nicht vorsehen**: Dock-Klick-Logik (minimieren, durch Fenster wechseln, Mittelklick-Aktionen) und Aktionen in Mission Control. Beide stehen unter `Nicht-Ziele`.
 - **Spezifiziert**: `Isolate Window` samt Verwandten als Story 12, die Debug-Eintraege als Story 13.
+- **Zur Uebernahme bestimmt, 2026-09-16**: Keep Awake (Story 10, Menue-Nachtrag), die Systemeinstellungs-Spruenge, Apps beenden, Auto-Quit, Displays schlafen, Ton und Mikrofon, Zwischenablage, Laufwerke, Standardbrowser, Funktionstasten, Bildschirm-Werkzeuge, Mitteilungen und Cat Mode als Story 14; die Gruppierung des Menues als Story 15. Bleiben `ENTFERNEN`: Empty Trash, Cleaning Mode, Dark Mode, Night Shift, Grayscale, Low Power Mode, die Desktop- und Dock-Schalter sowie die Vertriebs-Eintraege.
 
 Legende: `STORY n` = in dieser Story spezifiziert; `VORHANDEN` = im Fork schon abgedeckt; `OPTIONAL` = passt, aber kein Bedarf festgestellt; `SPAETER` = passt, aber offene technische Frage; `ENTFERNEN` = passt nicht zum Produkt.
 
@@ -1887,39 +2114,39 @@ Legende: `STORY n` = in dieser Story spezifiziert; `VORHANDEN` = im Fork schon a
 | 4 | Fenster und Apps | Minimize App Windows Except Frontmost | STORY 12 | Baustein B2, behalten |
 | 5 | Fenster und Apps | Isolate Window | STORY 12 | Kern der Story |
 | 6 | Fenster und Apps | Show Desktop | STORY 12 | Stufe 12b, spaeter |
-| 7 | Bildschirm-Werkzeuge | Pick Color | ENTFERNEN | Eigenes Produktfeld; macOS hat den Farbwaehler |
-| 8 | Bildschirm-Werkzeuge | Capture Text | ENTFERNEN | OCR-Werkzeug, kein Fensterbezug |
-| 9 | Bildschirm-Werkzeuge | Capture & Translate | ENTFERNEN | Wie oben, mit Uebersetzung |
-| 10 | Bildschirm-Werkzeuge | Scan QR Code | ENTFERNEN | Wie oben |
-| 11 | Bildschirm-Werkzeuge | Scan QR Code from Clipboard | ENTFERNEN | Wie oben |
-| 12 | Mitteilungen | Clear Visible Notifications | ENTFERNEN | Nur ueber AX-Fernsteuerung des Notification Center; bricht bei jedem macOS-Update |
-| 13 | Mitteilungen | Clear All Notifications | ENTFERNEN | Wie oben |
-| 14 | Aufraeumen | Clear Clipboard | OPTIONAL | Trivial; nur als Aktion im Register, falls gewuenscht |
-| 15 | Fenster und Apps | Quit All Apps | OPTIONAL | Passt ins Aktionsregister (`Application.quit()` existiert). Nur mit Bestaetigung |
-| 16 | Fenster und Apps | Quit All Apps Except Frontmost | OPTIONAL | Wie oben |
-| 17 | Aufraeumen | Eject All Disks | OPTIONAL | Oeffentliche API (`NSWorkspace.unmountAndEjectDevice`); kein Fensterbezug |
+| 7 | Bildschirm-Werkzeuge | Pick Color | STORY 14 | 14I; am 2026-09-16 vom Nutzer zur Uebernahme bestimmt |
+| 8 | Bildschirm-Werkzeuge | Capture Text | STORY 14 | 14I |
+| 9 | Bildschirm-Werkzeuge | Capture & Translate | STORY 14 | 14I; Uebersetzung **unverifiziert** |
+| 10 | Bildschirm-Werkzeuge | Scan QR Code | STORY 14 | 14I |
+| 11 | Bildschirm-Werkzeuge | Scan QR Code from Clipboard | STORY 14 | 14I |
+| 12 | Mitteilungen | Clear Visible Notifications | STORY 14 | 14H; AX-Fernsteuerung, versionsgegatet |
+| 13 | Mitteilungen | Clear All Notifications | STORY 14 | 14H; wie oben |
+| 14 | Aufraeumen | Clear Clipboard | STORY 14 | 14F |
+| 15 | Fenster und Apps | Quit All Apps | STORY 14 | 14B, mit Rueckfrage |
+| 16 | Fenster und Apps | Quit All Apps Except Frontmost | STORY 14 | 14B, mit Rueckfrage |
+| 17 | Aufraeumen | Eject All Disks | STORY 14 | 14G |
 | 18 | Aufraeumen | Empty Trash | ENTFERNEN | Endgueltiges Loeschen per Tastendruck ist zu riskant |
 | 19 | Eingabe und Ton | Cleaning Mode | ENTFERNEN | Sperrt alle Eingaben ueber einen umfassenden Tap; kollidiert mit Q-01 |
-| 20 | Eingabe und Ton | Cat Mode | ENTFERNEN | Wie Cleaning Mode |
-| 21 | Energie und Anzeige | Sleep Displays | OPTIONAL | Billig ueber `pmset displaysleepnow`, **unverifiziert** ohne Admin-Rechte |
+| 20 | Eingabe und Ton | Cat Mode | STORY 14 | 14K; drei Pflicht-Auswege inkl. Q-01 |
+| 21 | Energie und Anzeige | Sleep Displays | STORY 14 | 14D; Weg ohne Admin-Rechte **unverifiziert** |
 | 22 | Energie und Anzeige | Dark Mode | ENTFERNEN | Nur ueber AppleScript an System Events, also neue Automation-Berechtigung |
 | 23 | Energie und Anzeige | Night Shift | ENTFERNEN | Nur ueber private API (**unverifiziert**); kein Produktbezug |
 | 24 | Energie und Anzeige | Grayscale Mode | ENTFERNEN | Wie Night Shift |
 | 25 | Energie und Anzeige | Low Power Mode | ENTFERNEN | Umschalten braucht nach Kenntnisstand Admin-Rechte (**unverifiziert**); kein `sudo` |
-| 26 | Energie und Anzeige | Keep Awake | STORY 10 | Nur spezifiziert (2026-08-19), noch kein Code |
+| 26 | Energie und Anzeige | Keep Awake | STORY 10 | Spezifiziert; Menue-Einbindung nachgetragen 2026-09-16 |
 | 27 | Desktop und Dock | Desktop Icons | ENTFERNEN | Schreibt Finder-Einstellungen und startet Finder neu; widerspricht dem Besitz-Modell fuer Systemwerte |
 | 28 | Desktop und Dock | Desktop Widgets | ENTFERNEN | Wie oben, fuer WindowManager |
 | 29 | Desktop und Dock | Desktop Icons & Widgets | ENTFERNEN | Kombination der beiden |
 | 30 | Desktop und Dock | Hot Corners | ENTFERNEN | Schreibt Dock-Einstellungen und startet das Dock neu; stoert Instant Spaces |
-| 31 | Eingabe und Ton | Function Keys | SPAETER | Passt zu Hyperkey; wirksames Umschalten ohne Neuanmeldung **unverifiziert** |
-| 32 | Eingabe und Ton | Mute Sound | OPTIONAL | Oeffentliche CoreAudio-API; als Leader-/FlickRing-Aktion praktisch |
-| 33 | Eingabe und Ton | Mute Microphone | OPTIONAL | Wie oben; nuetzlich in Videocalls |
-| 34 | Mitteilungen | iOS Notifications | ENTFERNEN | Betrifft iPhone-Mirroring, kein Bezug |
-| 35 | Fenster und Apps | Auto-Quit Apps | SPAETER | Braucht dauerhaften Beobachter und Regeln je App; beruehrt Story 11 |
-| 36 | Systemeinstellungen | Default Browser (Untermenue) | OPTIONAL | Oeffentliche API, macOS fragt nach; passt neben die Open-URL-Slots |
-| 37 | Systemeinstellungen | VPN & Filters | VORHANDEN | Nur ein Sprung in die Systemeinstellungen; geht ueber einen Open-URL-Slot mit `x-apple.systempreferences:`-Adresse. Die genaue Adresse je Bereich ist **unverifiziert** |
-| 38 | Systemeinstellungen | Hide My Email | VORHANDEN | Wie oben |
-| 39 | Systemeinstellungen | Private Relay | VORHANDEN | Wie oben |
+| 31 | Eingabe und Ton | Function Keys | STORY 14 | 14J; sofortige Wirkung **unverifiziert** |
+| 32 | Eingabe und Ton | Mute Sound | STORY 14 | 14E |
+| 33 | Eingabe und Ton | Mute Microphone | STORY 14 | 14E |
+| 34 | Mitteilungen | iOS Notifications | STORY 14 | 14H; als Sprung in die Systemeinstellungen |
+| 35 | Fenster und Apps | Auto-Quit Apps | STORY 14 | 14C |
+| 36 | Systemeinstellungen | Default Browser (Untermenue) | STORY 14 | 14L, Untermenue mit App-Symbolen |
+| 37 | Systemeinstellungen | VPN & Filters | STORY 14 | 14A; Adresse **unverifiziert** |
+| 38 | Systemeinstellungen | Hide My Email | STORY 14 | 14A; wie oben |
+| 39 | Systemeinstellungen | Private Relay | STORY 14 | 14A; wie oben |
 | 40 | App-Menue | Settings… | VORHANDEN | Standard |
 | 41 | App-Menue | About | VORHANDEN | Standard |
 | 42 | App-Menue | Support & Feedback | VORHANDEN | Das Feedback-Fenster des Forks existiert (`FeedbackWindow`) |
