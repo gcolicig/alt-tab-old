@@ -956,7 +956,7 @@ MVP-Scope:
 
 Nicht im MVP:
 
-- Smoothed Scrolling.
+- Smoothed Scrolling. Ausgeloest als Story 6c.
 - Eigene Scroll-Kurven.
 - Button-Remapping.
 - Per-Device-Regeln.
@@ -999,6 +999,91 @@ Der MVP-Scope oben bleibt das Ziel. Er wird in zwei Schritten gebaut, weil nur d
 - Safe Mode schaltet die Umkehr ab und sagt es; das Verlassen von Safe Mode stellt sie ohne Neustart wieder her.
 - Nach `tapDisabledByTimeout` kommt die Umkehr von selbst zurueck.
 - Die reine Entscheidungslogik ist durch Unit-Tests abgedeckt; der Tap selbst durch V-17.
+
+### 6c. Smoothed Scrolling fuer das Mausrad
+
+Status: Spezifiziert 2026-09-16; nicht begonnen. Wartet auf V-17 (Story 6 am Geraet)
+Prioritaet: Mittel. Folgestufe von Story 6, aus deren `Nicht im MVP` herausgeloest
+
+Referenz: LinearMouse, Scrolling-Modus `Smoothed (beta)`, Stand `d82e98fba7f2` vom 2026-09-14 (Release `v0.12.0-beta.5`), MIT. Gelesen: `SmoothedScrollingEngine.swift`, `SmoothedScrollingTransformer.swift`, `Scheme/Scrolling/Smoothed.swift`, `GestureKit/GestureEvent+Scroll.swift`. Das Feature ist dort Beta und wird aktiv umgebaut.
+
+Beschreibung:
+
+- Ein klassisches Rasterrad springt pro Raste um eine Zeile. Smoothed Scrolling macht daraus eine fluessige Bewegung mit weichem Anlauf und Auslauf, wie beim Trackpad.
+- Das ist kein Faktor auf ein Ereignis mehr, sondern eine eigene Bewegung ueber Zeit: Jede Raste wird verschluckt und speist eine Physik-Engine. Ein Timer erzeugt daraus eine Folge synthetischer Scroll-Ereignisse mit Scroll- und Momentum-Phasen.
+
+Wie LinearMouse es loest (gelesen, nicht gemessen):
+
+- **Engine**: reine Logik ohne Systemzugriff. `feed(deltaX:deltaY:timestamp:)` nimmt Eingaben an, `advance(to:)` liefert je Takt ein Delta und eine Phase (`touchBegan` … `momentumEnded`). Pro Achse ein Profil aus `response`, `inputExponent`, `accelerationGain`, `decay` und `velocityScale`; dazu ein Geschwindigkeitsschaetzer fuer schnell folgende Rasten und das Abbrechen von Momentum bei Gegenrichtung. Eigene Unit-Tests.
+- **Transformer**: verschluckt die Raste (oder nullt nur die geglaettete Achse), startet einen Timer mit 120 Hz und postet die Ausgabe als neue `scrollWheel`-Ereignisse auf `cgSessionEventTap`. Eigene Ereignisse markiert er und laesst sie beim Wiederkommen durch.
+- **Gesten-Begleiter**: Zu jeder synthetischen Scroll-Phase postet er zusaetzlich ein Ereignis vom Typ `NSEvent.EventType.gesture` mit undokumentierten Feldern (`gestureHIDType`, `gesturePhase`, `gestureScrollX/Y`, Start/Ende einer Gesten-Serie). Das laesst Apps die Folge wie eine echte Trackpad-Geste behandeln, etwa fuer Gummiband-Effekt am Rand. Das ist kein privates Symbol, aber ein undokumentiertes Ereignisformat und faellt damit unter dieselbe Vorsicht.
+- **Konfiguration**: 13 Presets (Vorgabe `easeInOut`) plus `custom`; Regler `response`, `speed`, `acceleration`, `inertia`; Schalter `bouncing`; je Achse getrennt.
+
+Zentrale Entscheidung:
+
+- **Engine uebernehmen, Anbindung neu bauen.** Die Engine ist Art C (Code uebernommen) mit MIT-Kopf in der Zieldatei und Eintrag in `THIRD-PARTY.md`. Transformer, Timer, Posting und Abbruchpfade werden fuer `ScrollwheelEvents` neu geschrieben, weil LinearMouse eine eigene Event-Thread- und Transformer-Kette hat, die hier nicht existiert.
+- Die Engine kommt als eigene Datei nach `src/logic/events/` mit ihren Tests nach `unit-tests/`; beide von Hand in `project.pbxproj` eintragen.
+
+Reihenfolge im Tap:
+
+1. Switcher absorbiert: kontinuierlich blockieren wie heute; diskret geht unveraendert durch und bewegt die Auswahl. **Keine Glaettung waehrend des Switchers.**
+2. Eigenes synthetisches Ereignis (Markierung ueber `eventSourceUserData`, eigener Wert, gleiches Muster wie `syntheticCapsLockMarker`): unveraendert durchlassen.
+3. Kontinuierliches Ereignis: wie Story 6, nie glaetten.
+4. Diskretes Ereignis bei aktivem Smoothed: Richtung und Geschwindigkeit aus Story 6 zuerst anwenden, dann das Ergebnis an die Engine geben und das Original verschlucken.
+5. Sonst: Story 6 wie heute.
+
+**Zu verifizieren**: Der Tap sitzt auf `cghidEventTap`, gepostet wird auf `cgSessionEventTap`. Ob die eigenen Ereignisse den HID-Tap dann ueberhaupt noch passieren, ist offen. Die Markierung bleibt trotzdem Pflicht, weil sie auch andere Taps und die Diagnose betrifft.
+
+Schnitt in Schritte:
+
+**Schritt 6c-1: Engine und minimale Anbindung.**
+
+- Nur diskrete Ereignisse, nur vertikal (Achse 1). Horizontal und Kipprad bleiben unveraendert.
+- Ein fester Preset (`easeInOut`), keine Regler.
+- Eine Praeferenz `smoothScrollMouse`, Vorgabe `false`. Ein Schalter im Tab `Pointer & Scroll` im Maus-Block, Titel mit `(beta)`.
+- **Ohne Gesten-Begleiter.** Nur `scrollWheel`-Ereignisse mit gesetzter `scrollWheelEventScrollPhase` und `scrollWheelEventMomentumPhase`, sowie `scrollWheelEventIsContinuous = 1`, damit Apps pixelgenau scrollen.
+- Timer laeuft nur, solange die Engine eine Bewegung hat, und stoppt bei Ruhe selbst.
+
+**Schritt 6c-2: Messung am Geraet, dann Entscheidung ueber die Gesten-Begleiter.**
+
+- Checkliste in AppKit (Finder, Settings-Listen), Safari, Chromium/Electron und Terminal.
+- Nur wenn dort sichtbare Fehler bleiben (kein Momentum, Spruenge, kein Randverhalten, Browser ignoriert die Phasen), werden die Gesten-Begleiter nachgezogen. Dann nach Q-09: bei unbekannter macOS-Major-Version fallen nur die Begleiter weg, nicht das Glaetten.
+
+**Schritt 6c-3: Presets und Regler.**
+
+- Auswahl aus den Presets, danach `speed`, `inertia` und die uebrigen Regler. Nur, was sich im Alltag als noetig zeigt; nicht alle 13 Presets ungeprueft uebernehmen.
+- Horizontal und Trackpad bleiben ausserhalb, bis es einen konkreten Wunsch gibt.
+
+Anforderungen:
+
+| ID | Anforderung | Begruendung |
+|---|---|---|
+| SS-01 | Vorgabe aus; Import und Migration schalten es nie ein | Q-08 |
+| SS-02 | Einstellung aus: Tap-Verhalten Ereignis fuer Ereignis wie Story 6, kein Timer existiert | Q-10 |
+| SS-03 | Timer laeuft nur waehrend einer Bewegung, stoppt bei Ruhe, und maximal eine Instanz existiert | Q-10, Energie |
+| SS-04 | Die Engine rechnet nicht im Tap-Callback nach; der Callback fuettert nur und verschluckt | Q-02, Q-16: der Callback bleibt kurz |
+| SS-05 | Safe Mode, Panic-Kill-Switch, Ausschalten, Tap-Ausfall, Sleep, Berechtigungsverlust und Beenden stoppen den Timer sofort, verwerfen die Restbewegung und senden hoechstens ein abschliessendes `ended`, nie weiteres Momentum | Q-01, Q-15: nichts scrollt nach dem Abbruch weiter |
+| SS-06 | Oeffnen des Switchers verwirft eine laufende Bewegung | Sonst scrollt die App unter dem Switcher weiter |
+| SS-07 | Synthetische Ereignisse sind markiert und werden nie erneut geglaettet | Q-13 sinngemaess; verhindert Rueckkopplung |
+| SS-08 | Eine Raste in Gegenrichtung bricht laufendes Momentum ab | Erwartetes Verhalten, von der Engine bereits geleistet |
+| SS-09 | Kontinuierliche Ereignisse (Trackpad, Magic Mouse) bleiben unberuehrt | Die Geraeteunterscheidung aus Story 6 |
+| SS-10 | Modifier des letzten echten Ereignisses werden auf die synthetischen uebertragen | Shift-Scroll und Zoom mit Cmd duerfen sich nicht aendern |
+| SS-11 | Gesten-Begleiter nur nach Schritt 6c-2 und dann versionsgegatet | Q-09 |
+
+Nicht im Scope:
+
+- Glaetten von Trackpad oder Magic Mouse.
+- App- oder geraetespezifische Regeln.
+- Uebernahme der LinearMouse-Konfiguration.
+- Eigene Kurven jenseits der uebernommenen Presets.
+
+Exit-Kriterium fuer Schritt 6c-1:
+
+- Mit ausgeschalteter Einstellung ist kein Unterschied zu Story 6 messbar, und kein Timer existiert.
+- Mit eingeschalteter Einstellung scrollt das Rad in Finder, Safari und Terminal fluessig mit Auslauf, in beiden Richtungen, auch zusammen mit Reverse und Speed.
+- Safe Mode und das Oeffnen des Switchers beenden jede Bewegung sofort.
+- Die Engine ist durch die mitgebrachten Unit-Tests abgedeckt; der Rest durch V-18.
+- Leerlauf ohne Scrollen: kein messbarer Mehrverbrauch. Waehrend des Scrollens wird der Verbrauch dokumentiert.
 
 ### 6b. Kleinkram mit klarem Nutzen
 
@@ -1587,6 +1672,7 @@ Default-Settings, Reset-Verhalten und Migration werden nach jedem neuen Modul ge
 | V-15 | Profile und Session-Restore | Fenster-Matching, App-Start, verlorene Space-Bindings, geaenderte Titel, mehrere Fenster derselben App und geaenderte Display-Topologie ohne falsche Mutation pruefen |
 | V-16 | Dock-Aktivierung ueber Space-Grenzen | Beobachtung 2A-1 zuordnen: Klick im Dock auf eine App, deren Fenster auf einem anderen Space liegt, wirkt erst beim zweiten Mal. Mit beendetem AltTab+ wiederholen; tritt es weiter auf, ist es Systemverhalten und die Beobachtung wird geschlossen, sonst beginnt die Suche bei den Maus-Taps |
 | V-17 | Scrollrichtung der Maus | Story 6a am Geraet: Umkehr wirkt in mehreren App-Klassen, das Trackpad bleibt unberuehrt, Safe Mode schaltet ab und gibt frei, der Tap kommt nach einem Timeout zurueck. Dazu die offene Messung: Scroll-Latenz und Leerlaufverbrauch mit dauerhaft aktivem `scrollWheel`-Tap gegen die Baseline. Checkliste in `docs/scroll-direction-checklist.md` |
+| V-18 | Smoothed Scrolling | Story 6c am Geraet: Fluss und Auslauf in AppKit, Safari, Chromium/Electron und Terminal, zusammen mit Reverse und Speed; Abbruch durch Safe Mode, Switcher, Sleep und Beenden ohne Nachlaufen; Leerlauf ohne Timer; Verbrauch waehrend des Scrollens. Das Ergebnis entscheidet ueber die Gesten-Begleiter (6c-2). Voraussetzung: V-17 bestanden. Checkliste folgt mit der Umsetzung |
 
 ## Provenienz-Register
 
