@@ -28,8 +28,8 @@ The unit-test suite passes. Build with `./build.sh --test`; `SCHEME=Release ./bu
 
 ## What happened between 2026-08-10 and 2026-08-14
 
-- **V-10 ran, at last.** Steps 1–7, 9, 10 and 12 pass. Step 8 failed and is fixed by #21, but has not been
-  measured again. Three defects were found by operating, none by tests:
+- **V-10 ran, at last.** Steps 1–10 and 12 pass. Step 8 failed, was fixed by #21, and passed when run again
+  on 2026-09-16. Three defects were found by operating, none by tests:
   a disabled sentinel the HID system silently clamped to 0 while reporting success (#16), a speed slider
   that could re-acquire mid-drag and adopt a foreign value as its own baseline (#18), and a quit path
   that kept the value instead of handing it back (#21). Step 11's negative half (sleep) is still open —
