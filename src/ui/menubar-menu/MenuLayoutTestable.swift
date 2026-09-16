@@ -15,11 +15,11 @@ enum MenuGroup: String, CaseIterable {
 
     /// The app group closes the menu without a heading, like every macOS app menu. A group shown as a
     /// submenu is named by its own entry instead.
-    var hasHeader: Bool { self != .app && !isSubmenu }
+    var hasHeader: Bool { self != .app && !isInOther }
 
-    /// Decided 2026-09-16: these groups each become a submenu, and all of them sit together under one
-    /// `Other Tools` entry.
-    var isSubmenu: Bool { [.tools, .toggles].contains(self) }
+    /// Decided 2026-09-16: these groups leave the main menu and become headed sections of one `Other…`
+    /// submenu.
+    var isInOther: Bool { [.tools, .toggles, .defaults].contains(self) }
 
     /// Groups visible after the update; everything else waits until the user turns it on.
     var visibleByDefault: Bool { [.switcher, .windows, .app].contains(self) }
@@ -51,12 +51,12 @@ enum MenuLayout {
     /// empty group leaves no heading and no separator behind.
     static func build(_ entries: [MenuEntrySpec], headersSupported: Bool, isVisible: (MenuEntrySpec) -> Bool) -> [MenuLayoutItem] {
         var items = [MenuLayoutItem]()
-        let nested = MenuGroup.allCases.filter(\.isSubmenu).compactMap { group -> MenuGroupEntries? in
+        let nested = MenuGroup.allCases.filter(\.isInOther).compactMap { group -> MenuGroupEntries? in
             let ids = entries.filter { $0.group == group && isVisible($0) }.map(\.id)
             return ids.isEmpty ? nil : MenuGroupEntries(group: group, ids: ids)
         }
         for group in MenuGroup.allCases {
-            if group.isSubmenu {
+            if group.isInOther {
                 appendOtherTools(group, nested, &items)
                 continue
             }

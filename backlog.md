@@ -1873,6 +1873,7 @@ Umsetzungsstand 2026-09-16:
 - 14H: Die Struktur der Mitteilungszentrale ist nicht belegt; freigegeben ist nur macOS 26 (V-21). Gesucht wird nach benannten AX-Aktionen (`Close`, `Clear`, `Clear All`, deutsch `Schliessen`, `Löschen`, `Alle löschen`).
 - 14J: Lesen von `HIDFKeyMode` ueber `IOHIDCopyCFTypeParameter` und Schreiben desselben Werts ueber `IOHIDSetCFTypeParameter` am 2026-09-16 erfolgreich; die Wirkung eines echten Wechsels ist V-20. Die Rueckgabe des Ausgangswerts liegt als Knopf im Tab `System Actions`, weil es keinen separaten Modul-Schalter gibt.
 - 14K: Der Tap erkennt den Notfall-Shortcut selbst und ruft `KeyboardEvents.triggerEmergencyStop()`; der Sicherheitspfad beendet Cat Mode ebenfalls. Faellt der Tap aus, endet Cat Mode mit Hinweis (fail-closed statt Reaktivierung).
+- 14L: Als Browser zaehlt nur eine App, die Web-Adressen **und** HTML-Dateien oeffnet. Nur Web-Adressen melden auch BetterTouchTool, ChatGPT und cmux an; am 2026-09-16 so geprueft, die sieben echten Browser erfuellen beides.
 - 14L: Die Browser-Aktionen werden beim Start fuer die dann installierten Browser registriert; ein spaeter installierter Browser bleibt ueber seine `stableId` ausloesbar.
 
 #### 14L. Standardbrowser
@@ -1908,7 +1909,7 @@ Gruppen und Reihenfolge:
 
 Aufbau:
 
-- **Entschieden 2026-09-16**: Die Gruppen `Werkzeuge` und `Schalter` stehen gemeinsam unter einem Eintrag `Other… >` (zuerst `Other Tools`, am selben Tag umbenannt), an der Stelle der ersten dieser Gruppen. Darin sind sie Abschnitte mit Ueberschrift `Tools` und `Toggles`, wie die Gruppen im Hauptmenue, keine weiteren Untermenues. Nur Keep Awake behaelt sein eigenes Untermenue mit den Dauern. `Fenster` bleibt flach. Eine leere Untergruppe faellt weg; sind beide leer, faellt `Other Tools` weg.
+- **Entschieden 2026-09-16**: Die Gruppen `Werkzeuge` und `Schalter` stehen zusammen mit `Standards` (`Default Browser >`) unter einem Eintrag `Other… >` (zuerst `Other Tools`, am selben Tag umbenannt), an der Stelle der ersten dieser Gruppen. Darin sind sie Abschnitte mit Ueberschrift `Tools` und `Toggles`, wie die Gruppen im Hauptmenue, keine weiteren Untermenues. Nur Keep Awake behaelt sein eigenes Untermenue mit den Dauern. `Fenster` bleibt flach. Eine leere Untergruppe faellt weg; sind beide leer, faellt `Other Tools` weg.
 - Ueberschriften ueber `NSMenuItem.sectionHeader(title:)` ab macOS 14; darunter nur Trenner ohne Ueberschrift (SA-05).
 - Die Gruppe `Schalter` zeigt Zustaende mit Haekchen (`state = .on`), wie im Supercharge-Menue. Eintraege mit Rueckfrage oder Fenster tragen Auslassungspunkte.
 - Die Gruppe `AltTab+` steht immer zuletzt, ohne Ueberschrift, nur durch einen Trenner abgesetzt.

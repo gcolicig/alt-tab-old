@@ -37,7 +37,7 @@ Emergency shortcut: `Command+Control+Option+Shift+Escape`.
 | 14 | `Sleep Displays` | Displays go dark and wake normally on a key press. If not: record which of `pmset displaysleepnow` and `IODisplayWrangler` failed (log) |
 | 15 | `Mute Sound`, `Mute Microphone`, then switch AirPods on and off | Checkmarks follow the real device state; a crossed-out microphone appears in the menu bar while the microphone is muted, also when muted elsewhere, and a click on it unmutes |
 | 16 | `Eject All Disks` with a USB stick, a disk image and a busy disk | First two ejected; the busy one named in the notice |
-| 17 | `Default Browser >` | Installed browsers with icons, current one checked; choosing one shows macOS' own confirmation |
+| 17 | `Other… > Default Browser >` | Only real browsers (no ChatGPT, BetterTouchTool, cmux), with icons, current one checked; choosing one shows macOS' own confirmation |
 | 18 | `Function Keys` toggle (V-20) | F1–F12 switch between media and function keys at once; `Settings > System Actions > Restore Original Mode` gives back the earlier mode |
 | 19 | Open `Settings`, then every sidebar entry | No crash; `Menu Bar Menu` lists every group with its switches |
 

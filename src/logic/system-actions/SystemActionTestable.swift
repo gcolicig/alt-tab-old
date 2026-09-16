@@ -57,6 +57,12 @@ enum DefaultBrowserActionId {
         }
     }
 
+    /// Many apps register for web links (automation tools, chat clients, terminals). A browser also opens
+    /// HTML files, which those apps do not; checked on 2026-09-16 against BetterTouchTool, ChatGPT and cmux.
+    static func browserPaths(openingWebLinks web: [String], openingHtml html: Set<String>) -> [String] {
+        web.filter { html.contains($0) }
+    }
+
     static func bundleId(fromStableId stableId: String) -> String? {
         guard stableId.hasPrefix(prefix) else { return nil }
         let bundleId = String(stableId.dropFirst(prefix.count))

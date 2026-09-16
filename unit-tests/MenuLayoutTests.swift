@@ -55,7 +55,7 @@ class MenuLayoutTests: XCTestCase {
         XCTAssertFalse(MenuGroup.app.canBeHidden)
         XCTAssertFalse(MenuGroup.tools.canBeHidden)
         XCTAssertFalse(MenuGroup.tools.hasHeader)
-        XCTAssertEqual(MenuGroup.allCases.filter(\.isSubmenu), [.tools, .toggles])
+        XCTAssertEqual(MenuGroup.allCases.filter(\.isInOther), [.tools, .toggles, .defaults])
     }
 
     func testBrowserActionIdsRoundTrip() {
@@ -79,6 +79,12 @@ class MenuLayoutTests: XCTestCase {
     func testAPreferredPathOutsideTheListIsIgnored() {
         let unique = DefaultBrowserActionId.uniqueApps([("a", "/one.app"), ("a", "/two.app")]) { _ in "/elsewhere.app" }
         XCTAssertEqual(unique.map(\.path), ["/one.app"])
+    }
+
+    func testOnlyAppsThatAlsoOpenHtmlCountAsBrowsers() {
+        let web = ["/Applications/Safari.app", "/Applications/ChatGPT.app", "/Applications/cmux.app"]
+        XCTAssertEqual(DefaultBrowserActionId.browserPaths(openingWebLinks: web, openingHtml: ["/Applications/Safari.app", "/Applications/Preview.app"]),
+                       ["/Applications/Safari.app"])
     }
 
     func testSystemActionIdsAreUnique() {

@@ -1,4 +1,5 @@
 import Cocoa
+import UniformTypeIdentifiers
 
 /// Story 14L. macOS asks the user to confirm the change itself; AltTab+ never works around that prompt.
 enum DefaultBrowser {
@@ -6,7 +7,10 @@ enum DefaultBrowser {
 
     static func installed() -> [URL] {
         guard #available(macOS 12.0, *) else { return [] }
-        let candidates = NSWorkspace.shared.urlsForApplications(toOpen: probeUrl).map { (bundleId: bundleId($0), path: $0.path) }
+        let html = Set(NSWorkspace.shared.urlsForApplications(toOpen: UTType.html).map(\.path))
+        let web = NSWorkspace.shared.urlsForApplications(toOpen: probeUrl).map(\.path)
+        let candidates = DefaultBrowserActionId.browserPaths(openingWebLinks: web, openingHtml: html)
+            .map { (bundleId: bundleId(URL(fileURLWithPath: $0)), path: $0) }
         return DefaultBrowserActionId.uniqueApps(candidates) { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0)?.path }
             .map { URL(fileURLWithPath: $0.path) }
             .sorted { displayName($0).localizedCaseInsensitiveCompare(displayName($1)) == .orderedAscending }
