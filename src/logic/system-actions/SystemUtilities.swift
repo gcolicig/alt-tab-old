@@ -1,25 +1,8 @@
 import Cocoa
 import IOKit
 
-/// Story 14A, 14D, 14F, 14G: actions with no state of their own.
+/// Story 14D, 14F, 14G: actions with no state of their own.
 enum SystemUtilities {
-    /// Anchors verified 2026-09-16 on macOS 26.6 by reading the settings extensions' Info.plist: each
-    /// declares `allowsXAppleSystemPreferencesURLScheme`. Hide My Email and Private Relay have no anchor of
-    /// their own; they open the iCloud scene, where both live.
-    static func settingsUrl(_ action: SystemAction) -> URL? {
-        switch action {
-            case .settingsVpn: return URL(string: "x-apple.systempreferences:com.apple.NetworkExtensionSettingsUI.NESettingsUIExtension")
-            case .settingsHideMyEmail, .settingsPrivateRelay: return URL(string: "x-apple.systempreferences:com.apple.systempreferences.AppleIDSettings:icloud")
-            case .settingsIphoneNotifications: return URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension")
-            default: return nil
-        }
-    }
-
-    static func openSettings(_ action: SystemAction) {
-        guard let url = settingsUrl(action) else { return }
-        NSWorkspace.shared.open(url)
-    }
-
     static func clearClipboard() {
         NSPasteboard.general.clearContents()
         TransientNotice.show(NSLocalizedString("Clipboard cleared.", comment: ""))

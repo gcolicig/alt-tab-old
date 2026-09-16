@@ -84,7 +84,6 @@ final class MenubarMenu: NSObject, NSMenuDelegate {
             case .system: return NSLocalizedString("System", comment: "")
             case .toggles: return NSLocalizedString("Toggles", comment: "")
             case .defaults: return NSLocalizedString("Defaults", comment: "")
-            case .systemSettings: return NSLocalizedString("System Settings", comment: "")
             case .app: return App.name
         }
     }
@@ -104,13 +103,13 @@ final class MenubarMenu: NSObject, NSMenuDelegate {
     private static let keepAwakeSubmenuActions: Set<SystemAction> = [.keepAwakeToggle, .keepAwakeStop, .keepAwakeIndefinitely, .keepAwake15Minutes,
                                                                      .keepAwake1Hour, .keepAwake2Hours, .keepAwake5Hours]
 
-    private static let showEntry = MenubarEntry(id: "app.show", group: .switcher, title: { NSLocalizedString("Show", comment: "Menubar option") },
+    private static let showEntry = MenubarEntry(id: MenuLayout.showEntryId, group: .switcher, title: { NSLocalizedString("Show", comment: "Menubar option") },
         symbol: "eye") { App.showUiFromShortcut0() }
 
     private static let keepAwakeEntry = MenubarEntry(id: SystemAction.keepAwakeToggle.rawValue, group: .toggles, title: KeepAwake.menuTitle,
         symbol: "cup.and.saucer", isOn: { KeepAwake.isActive }, submenu: { SubmenuBuilder.keepAwake() }) {}
 
-    private static let defaultBrowserEntry = MenubarEntry(id: "defaults.browser", group: .defaults, title: { NSLocalizedString("Default Browser", comment: "") },
+    private static let defaultBrowserEntry = MenubarEntry(id: MenuLayout.defaultBrowserEntryId, group: .defaults, title: { NSLocalizedString("Default Browser", comment: "") },
         symbol: "globe", submenu: { SubmenuBuilder.defaultBrowser() }) {}
 
     private static let appEntries: [MenubarEntry] = [

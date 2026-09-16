@@ -33,10 +33,6 @@ enum SystemAction: String, CaseIterable {
     case keepAwake1Hour = "keepAwake.start.1h"
     case keepAwake2Hours = "keepAwake.start.2h"
     case keepAwake5Hours = "keepAwake.start.5h"
-    case settingsVpn = "settingsJump.vpn"
-    case settingsHideMyEmail = "settingsJump.hideMyEmail"
-    case settingsPrivateRelay = "settingsJump.privateRelay"
-    case settingsIphoneNotifications = "settingsJump.iphoneNotifications"
 }
 
 /// Default-browser actions exist per installed browser, so they are identified by bundle id instead of a
@@ -84,10 +80,11 @@ extension SystemAction {
         "systemAction_" + rawValue.replacingOccurrences(of: ".", with: "_") + "_Shortcut"
     }
 
-    /// Story 12b marks these as optional; they exist but stay out of the menu until the user shows them.
+    /// Story 12b marks the extra window actions as optional; they exist but stay out of the menu until the user
+    /// shows them. The single Keep Awake actions live in its submenu, whose entry is `keepAwakeToggle`.
     var visibleInMenuByDefault: Bool {
         ![.minimizeAllOthers, .minimizeAll, .hideAll, .keepAwakeStop, .keepAwakeIndefinitely, .keepAwake15Minutes,
-          .keepAwake1Hour, .keepAwake2Hours, .keepAwake5Hours, .keepAwakeToggle].contains(self)
+          .keepAwake1Hour, .keepAwake2Hours, .keepAwake5Hours].contains(self)
     }
 }
 

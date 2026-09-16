@@ -38,7 +38,7 @@ class MenuLayoutTests: XCTestCase {
 
     func testDefaultVisibilityKeepsTheMenuShort() {
         let visible = MenuGroup.allCases.filter(\.visibleByDefault)
-        XCTAssertEqual(visible, [.switcher, .windows, .systemSettings, .app])
+        XCTAssertEqual(visible, [.switcher, .windows, .app])
         XCTAssertFalse(MenuGroup.app.canBeHidden)
     }
 

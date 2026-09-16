@@ -14,7 +14,7 @@ struct SystemActionSpec {
 }
 
 enum SystemActions {
-    static let all: [SystemActionSpec] = windowActions + appActions + toolActions + notificationActions + systemActions + toggleActions + keepAwakeActions + settingsActions
+    static let all: [SystemActionSpec] = windowActions + appActions + toolActions + notificationActions + systemActions + toggleActions + keepAwakeActions
 
     static func spec(_ action: SystemAction) -> SystemActionSpec? {
         byAction[action]
@@ -81,13 +81,6 @@ enum SystemActions {
         make(.keepAwake1Hour, NSLocalizedString("Keep Awake for 1 Hour", comment: ""), "clock", .toggles) { KeepAwake.start(.hour1) },
         make(.keepAwake2Hours, NSLocalizedString("Keep Awake for 2 Hours", comment: ""), "clock", .toggles) { KeepAwake.start(.hours2) },
         make(.keepAwake5Hours, NSLocalizedString("Keep Awake for 5 Hours", comment: ""), "clock", .toggles) { KeepAwake.start(.hours5) },
-    ]
-
-    private static let settingsActions: [SystemActionSpec] = [
-        make(.settingsVpn, NSLocalizedString("VPN & Filters…", comment: ""), "network.badge.shield.half.filled", .systemSettings) { SystemUtilities.openSettings(.settingsVpn) },
-        make(.settingsHideMyEmail, NSLocalizedString("Hide My Email…", comment: ""), "envelope.badge.shield.half.filled", .systemSettings) { SystemUtilities.openSettings(.settingsHideMyEmail) },
-        make(.settingsPrivateRelay, NSLocalizedString("Private Relay…", comment: ""), "lock.shield", .systemSettings) { SystemUtilities.openSettings(.settingsPrivateRelay) },
-        make(.settingsIphoneNotifications, NSLocalizedString("iPhone Notifications…", comment: ""), "iphone.radiowaves.left.and.right", .systemSettings) { SystemUtilities.openSettings(.settingsIphoneNotifications) },
     ]
 
     private static func ejectAvailability() -> ActionAvailability {

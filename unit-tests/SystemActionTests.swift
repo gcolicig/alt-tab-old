@@ -12,6 +12,11 @@ class SystemActionTests: XCTestCase {
         XCTAssertTrue(keys.allSatisfy { $0.hasSuffix("_Shortcut") && !$0.contains(".") })
     }
 
+    func testKeepAwakeMenuEntryIsVisibleByDefault() {
+        XCTAssertTrue(SystemAction.keepAwakeToggle.visibleInMenuByDefault)
+        XCTAssertFalse(SystemAction.keepAwake1Hour.visibleInMenuByDefault)
+    }
+
     func testAutoQuitOnlyListedMode() {
         let rules = AutoQuitRules(mode: .onlyListed, bundleIds: ["com.example.a"])
         XCTAssertTrue(AutoQuitPolicy.applies("com.example.a", rules: rules, isRegular: true, isSelf: false))

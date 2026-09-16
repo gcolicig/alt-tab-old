@@ -11,14 +11,13 @@ enum MenuGroup: String, CaseIterable {
     case system
     case toggles
     case defaults
-    case systemSettings
     case app
 
     /// The app group closes the menu without a heading, like every macOS app menu.
     var hasHeader: Bool { self != .app }
 
     /// Groups visible after the update; everything else waits until the user turns it on.
-    var visibleByDefault: Bool { [.switcher, .windows, .systemSettings, .app].contains(self) }
+    var visibleByDefault: Bool { [.switcher, .windows, .app].contains(self) }
 
     /// `Settings…` and `Quit` live here, so hiding it would leave no way back.
     var canBeHidden: Bool { self != .app }
@@ -53,6 +52,12 @@ enum MenuLayout {
         if headersSupported && group.hasHeader { items.append(.header(group)) }
         items.append(contentsOf: entries.map { .entry($0.id) })
     }
+
+    /// Configurable menu entries that are not `SystemAction`s. Each needs a registered default, because
+    /// the settings switches read their preference unconditionally.
+    static let showEntryId = "app.show"
+    static let defaultBrowserEntryId = "defaults.browser"
+    static let nonActionEntryIds = [showEntryId, defaultBrowserEntryId]
 
     static func groupPreferenceKey(_ group: MenuGroup) -> String {
         "menuGroupVisible." + group.rawValue

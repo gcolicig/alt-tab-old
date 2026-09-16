@@ -115,6 +115,7 @@ class Preferences {
             values[$0.shortcutPreferenceKey] = defaultShortcut("")
             values[MenuLayout.entryPreferenceKey($0.rawValue)] = String($0.visibleInMenuByDefault)
         }
+        MenuLayout.nonActionEntryIds.forEach { values[MenuLayout.entryPreferenceKey($0)] = "true" }
         MenuGroup.allCases.forEach { values[MenuLayout.groupPreferenceKey($0)] = String($0.visibleByDefault) }
         values["autoQuitEnabled"] = "false"
         values["autoQuitDelaySeconds"] = "10"
