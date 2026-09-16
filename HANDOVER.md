@@ -1,6 +1,6 @@
 # Handover
 
-Written 2026-08-05, revised 2026-08-10 and 2026-08-14, for whoever picks this up next. It records what is built, what is
+Written 2026-08-05, revised 2026-08-10, 2026-08-14 and 2026-09-16, for whoever picks this up next. It records what is built, what is
 genuinely verified, and the traps this codebase has already sprung — so they need not be sprung twice.
 
 The feature branch was merged to `main` on 2026-08-09 with its history intact rather than squashed, because
@@ -22,7 +22,11 @@ part that is easy to lose: which claims rest on measurement and which do not.
 | Menubar drop target, stage 1 | yes | yes |
 | Menubar drop target, stage 2 | yes, 2026-08-07 | **no** |
 | Shortcut Clues (2E) | yes | reader measured; overlay **still not operated**, two defects found by reading |
-| Leader (Phase 4) | core only, **no caller** | no |
+| Leader and FlickRing (Phase 4) | yes, 2026-08-18 | **no** — `docs/leader-flickring-checklist.md` |
+| Profiles, window drag quarters, reverse scroll and speed | yes | **no** |
+| Window focus, system actions, screen tools, Keep Awake, Debug submenu (stories 10, 12–14) | yes, 2026-09-16 | partly — menu structure, settings, mic icon, browser list seen; actions not run |
+| Grouped menubar menu (story 15) | yes, 2026-09-16 | yes, by the user |
+| Settings window rework (story 16) | yes, 2026-09-16, three stacked branches | yes — pages, search, lists, profile add/delete, overview and `Show` |
 
 The unit-test suite passes. Build with `./build.sh --test`; `SCHEME=Release ./build.sh` also works again.
 
@@ -56,13 +60,32 @@ The unit-test suite passes. Build with `./build.sh --test`; `SCHEME=Release ./bu
 
 ## What happened on 2026-09-16
 
-- The two machines' histories were merged (`merge/reunify`); reverse scrolling, built twice, now has one
-  implementation (`ScrollTransform`).
-- Stories 10 (Keep Awake MVP), 12 (window focus actions), 13 (debug submenu), 14 (system actions and
-  tools from the Supercharge comparison) and 15 (grouped menubar menu) were built in one go. All pure
-  logic is unit-tested (280 tests pass); **none of it has been operated on the device yet**. The app
-  launches and idles at 0 % CPU. Start with `docs/system-actions-checklist.md`, then V-19 to V-21.
-- New settings sidebar entries: `Menu Bar Menu`, `System Actions`, `Keep Awake`.
+- **Two machines, one history.** The histories were merged (`merge/reunify`); reverse scrolling, built on
+  both, now has one implementation (`ScrollTransform`), with a one-time migration of `scrollReverseMouse`.
+- **Supercharge comparison.** Every Supercharge menu entry was classified in `backlog.md`
+  (`Supercharge-Abgleich`). Stories 10 (Keep Awake MVP), 12 (window focus), 13 (Debug submenu), 14 (system
+  actions and tools) and 15 (grouped menu) were built and merged as PR #56. Start device testing with
+  `docs/system-actions-checklist.md`, then V-19 to V-21.
+- **Found by running the app, not by tests** (again): a duplicate bundle id from Edge's updater copies
+  crashed the action registry's precondition on the first menu click; a settings switch read a
+  preference with no registered default and crashed the settings window; the Keep Awake entry was hidden
+  by default; the new action shortcuts were registered as local ones and only fired with the switcher
+  open (PR #57, not yet merged when this was written).
+- **CI is Xcode 16.4, local is Xcode 27.** Three traps: `resources/l10n/Localizable.strings` must be
+  regenerated with `scripts/l10n/extract_l10n_strings.sh` whenever a string changes; APIs from the
+  macOS 26 SDK need `#if compiler(>=6.2)` on top of `#available`; and the 250 ms type-check limit is hit far
+  earlier on the old compiler — long `+` chains of arrays and untyped array literals in tests failed there
+  while passing locally. Build such lists step by step and annotate literals.
+- **Settings window rework (story 16)** sits on three stacked branches above PR #57:
+  `feat/settings-pages` → `feat/settings-lists` → `feat/settings-shortcut-overview`. Merge them in that
+  order; after a squash merge, move the next one with `git rebase --onto`. The app, link and profile
+  slots stay the storage on purpose, because shortcuts, Leader and FlickRing bindings refer to slot
+  numbers.
+- **A settings layout trap:** a wrapping `NSTextField` without `preferredMaxLayoutWidth` asks for its
+  one-line width. One long section description widened the fixed-width settings window to 1141 pt, and
+  the frame autosave kept it.
+- Settings sidebar now: General and Shortcuts; Cmd-Tab, Cmd-Tab Controls, Exceptions; Window Layouts,
+  Spaces, Profiles; Hyperkey, Leader, FlickRing; Pointer & Scroll; System Actions, Keep Awake, Apps & URLs.
 
 ## The most important thing to understand
 

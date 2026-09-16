@@ -125,7 +125,7 @@ Vor Scope-Entscheidungen zu Snapping und Layouts am Zielgeraet klaeren:
 
 ### 0. Gemeinsamer Aktions- und Triggerkern
 
-Status: Teilweise umgesetzt; Dual-Role-Hyper und Apps/URLs-Register stehen, Leader und FlickRing sind offen
+Status: Umgesetzt; Dual-Role-Hyper, Apps/URLs-Register, Leader und FlickRing stehen (Leader und FlickRing seit 2026-08-18, Abnahme am Geraet offen)
 Prioritaet: Sehr hoch
 
 Beschreibung:
@@ -1905,7 +1905,7 @@ Gruppen und Reihenfolge:
 | 6 | System | `Clear Clipboard`, `Eject All Disks`, `Sleep Displays` | Story 14D, 14F, 14G |
 | 7 | Schalter | `Keep Awake >`, `Mute Sound`, `Mute Microphone`, `Function Keys`, `Auto-Quit Apps`, `Cat Mode` | Story 10, 14C, 14E, 14J, 14K |
 | 8 | Standards | `Default Browser >` | Story 14L |
-| 9 | AltTab+ | `Settings…`, `Check Permissions…`, `About AltTab+`, `Debug >`, `Quit AltTab+` | vorhanden, Story 13 |
+| 9 | AltTab+ | `About AltTab+`, `Check Permissions…`, `Debug >`, `Quit AltTab+`; `Settings…` steht seit 2026-09-16 als eigene Gruppe ganz oben | vorhanden, Story 13 |
 
 Aufbau:
 
@@ -1923,12 +1923,12 @@ Sichtbarkeit (ersetzt am 2026-09-16):
 - **Entschieden 2026-09-16**: `Settings…` steht als eigener Eintrag ganz oben, vor `Switcher`. Im AltTab+-Block steht `About AltTab+` vor `Check permissions…`.
 - **Entschieden 2026-09-16**: Es gibt kein Ein- und Ausblenden mehr. Alle Eintraege sind immer sichtbar. Im Hauptmenue stehen nur `Switcher`, `Fenster` und der AltTab+-Block; alle anderen Gruppen (`Apps`, `Werkzeuge`, `Mitteilungen`, `System`, `Schalter`, `Standards`) sind Abschnitte mit Ueberschrift im Untermenue `Other… >`.
 - Die frueheren Schalter-Praeferenzen (`menuGroupVisible.*`, `menuEntryVisible.*`) entfernt eine Migration beim Start.
-- Der Settings-Tab heisst jetzt `Menu Actions` und vergibt nur noch globale Shortcuts fuer die Aktionen, gruppiert wie im Menue. Keep-Awake-Shortcuts bleiben im Tab `Keep Awake`, damit je Praeferenz genau ein Recorder existiert.
+- Der Settings-Tab hiess danach `Menu Actions` und vergab nur noch globale Shortcuts; seit Story 16, Stufe 3, ist er die Seite `Shortcuts`. Keep-Awake-Shortcuts bleiben im Tab `Keep Awake`, damit je Praeferenz genau ein Recorder existiert.
 
 Umsetzungsstand 2026-09-16:
 
 - `MenuLayout` (rein, unit-getestet) liefert die Struktur; `MenubarMenu` setzt sie um und aktualisiert Titel, Haekchen und Verfuegbarkeit in `menuNeedsUpdate`. Submenues bauen sich beim Oeffnen neu.
-- Der eigene Sidebar-Eintrag (zuerst `Menu Bar Menu`, jetzt `Menu Actions`) vergibt die Shortcuts der neuen Aktionen.
+- Der eigene Sidebar-Eintrag (zuerst `Menu Bar Menu`, dann `Menu Actions`, seit Story 16 `Shortcuts`) vergibt die Shortcuts der neuen Aktionen.
 - `Menubar.addMenuItem` ist entfallen; das Menue entsteht vollstaendig im Builder.
 
 Regeln:
@@ -2008,6 +2008,8 @@ Exit: keine leeren Slots sichtbar; Hinzufuegen, Entfernen und Shortcuts funktion
 - **Konflikte.** Status je Zeile aus `CustomRecorderControlTestable.isShortcutAcceptable` fuer den gespeicherten Shortcut: doppelt belegt (mit Name der anderen Aktion), von macOS reserviert, vom Game Overlay belegt. Konfliktzeilen stehen oben und sind markiert. Die Pruefung laeuft beim Oeffnen der Seite und nach jeder Aenderung eines Shortcuts, nicht dauernd.
 - **Filter.** Ein Umschalter `All`, `Assigned`, `Conflicts`; die globale Suche der Seitenleiste bleibt die einzige Textsuche.
 - **Reine Logik** (`ShortcutOverviewTestable`): Zeilen aus Schluessel, Titel, Ort und Shortcut bilden, Konflikte paaren, sortieren (Konflikte zuerst, dann Gruppe, dann Titel). Unit-getestet.
+
+Checkliste: `docs/settings-window-checklist.md`.
 
 Exit: jeder Aktions-Shortcut erscheint genau einmal in der Uebersicht und genau einmal als Recorder; `Show` springt richtig; ein absichtlich doppelt vergebener Shortcut erscheint als Konflikt; alle Tests gruen.
 
@@ -2175,7 +2177,7 @@ Default-Settings, Reset-Verhalten und Migration werden nach jedem neuen Modul ge
 | V-02 | Versions-Policy nach Tahoe-only | Klaeren: nur aktuelle Major-Version `N` oder `N und N-1` |
 | V-03 | Private Symbolbindung | `_AXUIElementGetWindow` ist optional zur Laufzeit gebunden; weitere private Symbole vor ihrer ersten neuen Modulnutzung gleichwertig degradierbar machen |
 | V-04 | Provenienz-Register | `THIRD-PARTY.md` ist fuer die bisher ausgewerteten Quellen angelegt; Pflege im PR-Prozess bleibt zu erzwingen |
-| V-05 | Modul- und App-Klassen-Checklisten | `docs/input-safety-checklist.md`, `docs/window-layout-checklist.md`, `docs/window-drag-checklist.md`, `docs/shortcut-clues-checklist.md` `docs/spaces-menubar-checklist.md` und `docs/system-actions-checklist.md` vor jeder oeffentlichen Version und nach jedem unterstuetzten macOS-Major-Update ausfuehren |
+| V-05 | Modul- und App-Klassen-Checklisten | `docs/input-safety-checklist.md`, `docs/window-layout-checklist.md`, `docs/window-drag-checklist.md`, `docs/shortcut-clues-checklist.md` `docs/spaces-menubar-checklist.md`, `docs/system-actions-checklist.md` und `docs/settings-window-checklist.md` vor jeder oeffentlichen Version und nach jedem unterstuetzten macOS-Major-Update ausfuehren |
 | V-06 | Energie-Baseline | Idle- und Aktivmessungen auf dem Tahoe-/Apple-Silicon-Zielgeraet dokumentieren |
 | V-07 | Distribution | Signing, Notarisierung, Vertriebskanal und Update-Strategie vor erster oeffentlicher Version abschliessen; Sparkle bleibt optional |
 | V-08 | Safe Start und Circuit Breaker | Vor dem ersten ausgelieferten Input-Modul mit Login-Start, verbliebenem Arming-Marker und wiederholtem Tap-Timeout pruefen |

@@ -21,6 +21,9 @@ AltTab brings Windows-style window switching to macOS. It lists open windows, su
 - Apps with no open window are hidden by default for Shortcut 1, Shortcut 2, and gestures.
 - The `Window Layouts` settings section provides unassigned global shortcuts for thirds, two-thirds, three-quarters, edge-revealing focus layouts, moving a window between displays, and restoring the previous frame.
 - An optional dual-role Caps Lock key provides system-wide Hyper shortcuts while preserving normal Caps Lock toggling on a short tap.
+- Leader sequences, a mouse-button action ring (FlickRing), modifier-drag move and resize with snapping, profiles, and separate scroll direction and speed for mouse and trackpad are built in.
+- The menubar menu carries window focus actions, system actions, screen tools, Keep Awake, and a Debug submenu (see below).
+- The settings window shows one section at a time, grouped in the sidebar, with a `Shortcuts` page that lists every action shortcut and its conflicts.
 
 ## Window Layouts
 
@@ -40,11 +43,11 @@ A short Caps Lock tap still toggles Caps Lock on or off. Holding Caps Lock while
 
 Hyper combinations use the same global shortcuts configured in `Window Layouts`; there is no second set of arrow-action mappings. Left and Right focus reveal 24 pixels at the opposite edge, while Center focus leaves 12 pixels visible on both sides. AltTab+ keeps the last Center focus window between the two side windows in the stacking order so all three remain reachable by mouse. The module is disabled by default.
 
-The implementation adds Hyper modifiers to complete key-down/key-up pairs instead of posting standalone modifier-down events. Its own synthetic Caps Lock tap is tagged so AltTab+ does not process it recursively. Leader sequences, FlickRing, and mouse-driven move/resize remain planned work in [ROADMAP.md](ROADMAP.md).
+The implementation adds Hyper modifiers to complete key-down/key-up pairs instead of posting standalone modifier-down events. Its own synthetic Caps Lock tap is tagged so AltTab+ does not process it recursively. Leader sequences, FlickRing, and mouse-driven move/resize are described in [ROADMAP.md](ROADMAP.md) and specified in [backlog.md](backlog.md).
 
 ### Input Safety
 
-`Command+Control+Option+Shift+Escape` is a fixed emergency shortcut. It disables Hyper and gestures, closes the switcher, and blocks AltTab+ window-layout actions until an input extension is deliberately enabled again.
+`Command+Control+Option+Shift+Escape` is a fixed emergency shortcut. It disables Hyper and gestures, ends Cat Mode, closes the switcher, and blocks AltTab+ window-layout and window-focus actions until an input extension is deliberately enabled again.
 
 Repeated keyboard event-tap failures disable Hyper instead of retrying indefinitely. A startup marker also puts input extensions into safe mode if AltTab+ did not finish the previous Hyper activation. Safe mode can be set before launch with:
 
@@ -53,6 +56,49 @@ defaults write com.gcolicig.alttab-plus inputModulesSafeMode -bool true
 ```
 
 The manual verification procedure is in [docs/input-safety-checklist.md](docs/input-safety-checklist.md).
+
+## Menu Bar Menu
+
+The menubar menu is grouped by what the entries do:
+
+```text
+Settings…
+Switcher        Show
+Windows         Isolate Window · Minimize App Windows Except Frontmost · Hide Other Apps · Hide All Windows
+Other…      >   Apps           Quit All Apps… · Quit All Apps Except Frontmost…
+                Tools          Pick Color · Capture Text · Capture & Translate · Scan QR Code · Scan QR Code from Clipboard
+                Notifications  Clear Visible Notifications · Clear All Notifications
+                System         Clear Clipboard · Eject All Disks · Sleep Displays
+                Toggles        Mute Sound · Mute Microphone · Function Keys · Auto-Quit Apps · Cat Mode · Keep Awake >
+                Defaults       Default Browser >
+About AltTab+ · Check permissions… · Debug > · Quit AltTab+
+```
+
+Every action can also get a global shortcut in `Settings > Shortcuts`, and Leader and FlickRing can trigger it. No shortcut is assigned by default. An entry that cannot run right now is greyed out and its tooltip says why.
+
+- `Isolate Window` hides every other app and minimizes the other windows of the front app. Fullscreen windows and windows on other Spaces are left alone.
+- `Quit All Apps…` always asks first and never force-quits; apps with unsaved documents ask themselves.
+- `Auto-Quit Apps` quits a listed app some time after its last window closed. Configure the list and delay in `Settings > System Actions`. Finder is never quit.
+- The screen tools work locally: captures stay in memory, text recognition uses Vision, translation uses the macOS Translation framework (macOS 26 and later). A scanned link is copied and only opened after you confirm.
+- `Clear … Notifications` remote-controls Notification Center through accessibility and is only enabled on macOS versions whose structure is known.
+- `Mute Microphone` shows a crossed-out microphone in the menu bar while the default input is muted, also when another app muted it. Click it to unmute. Turn the icon off in `Settings > System Actions`.
+- `Function Keys` switches F1–F12 between media and standard function keys; `Settings > System Actions` can give the earlier mode back.
+- `Cat Mode` locks the keyboard. It ends from the menu, by typing `unlock`, with the emergency shortcut, after a configurable time, and on sleep or screen lock.
+- `Keep Awake` uses public power assertions only, never persists them, ends on low battery if configured, and releases everything when AltTab+ quits. Configure it in `Settings > Keep Awake`.
+- `Default Browser >` lists apps that open both web links and HTML files; macOS asks for confirmation when you switch.
+- `Debug >` copies a debug report or the accessibility tree of the front window, resets AltTab+'s permissions, or opens the debug window. Copied text leaves out window titles, URL slots, text field contents, and your user name.
+
+The manual verification procedure is in [docs/system-actions-checklist.md](docs/system-actions-checklist.md).
+
+## Settings Window
+
+The sidebar groups the sections under AltTab+, Switcher, Windows, Triggers, Devices, and Actions. Without a search, only the chosen section is shown; a search lists every matching section and clearing it returns to the chosen one.
+
+- `Shortcuts` lists every action shortcut with its status: used twice, reserved by macOS, used by the Game Overlay, or replacing a macOS shortcut while assigned. A shortcut that belongs to another page shows `Show`, which opens that page and marks the row. Switcher triggers, the Leader key, and the FlickRing button stay on their own pages.
+- `Apps & URLs` and `Profiles` show only filled entries. Add apps from a dialog; there are nine app places, nine link places, and five profiles.
+- Export, import, the creator's settings, and resetting all settings are in `General`.
+
+The manual verification procedure is in [docs/settings-window-checklist.md](docs/settings-window-checklist.md).
 
 ## Build
 
@@ -116,8 +162,8 @@ You can then launch it like any other macOS app. If you previously ran the app f
 
 ## Required macOS Permissions
 
-- Accessibility: needed to observe, list, and focus windows.
-- Screen Recording: needed for live window thumbnails.
+- Accessibility: needed to observe, list, and focus windows, for the window focus actions, for clearing notifications, and for copying an accessibility tree.
+- Screen Recording: needed for live window thumbnails and for the screen tools that capture an area.
 
 These permissions are granted locally in System Settings. The app does not upload window titles, screenshots, or usage statistics.
 
@@ -127,7 +173,15 @@ If permissions appear enabled in System Settings but AltTab+ still says `Not all
 
 ## Interacting macOS Settings
 
-AltTab+ changes exactly one class of system setting, and only on request: the keyboard shortcuts a preset needs, which it gives back when the preset is removed. Everything below is left alone, but it does change how the modules behave, so it is listed here rather than silently worked around.
+AltTab+ changes system settings only on request:
+
+- the keyboard shortcuts a preset or an assigned shortcut needs, which it gives back when the shortcut is removed
+- pointer acceleration and speed, handed back when you pick `System default` or quit
+- the function key mode, when you use `Function Keys`
+- mute of the default audio devices, when you use `Mute Sound` or `Mute Microphone`; a microphone without a mute control is muted through its volume, which AltTab+ restores when it quits
+- the default browser, through the macOS confirmation dialog
+
+Everything below is left alone, but it does change how the modules behave, so it is listed here rather than silently worked around.
 
 | Setting | Where | Effect on AltTab+ |
 |---|---|---|
@@ -166,8 +220,11 @@ Keyboard / mouse input
 AltTab+ running locally
         |
         +--> macOS Accessibility APIs
-        +--> macOS Screen Recording APIs
+        +--> macOS Screen Recording APIs (thumbnails, screen tools)
+        +--> Vision and Translation frameworks, on this Mac only
+        +--> CoreAudio, IOKit power assertions, HID system parameters
         +--> local UserDefaults preferences
+        +--> clipboard, only when you copy a result
 
 Optional, disabled unless configured:
         +--> Sparkle update feed
