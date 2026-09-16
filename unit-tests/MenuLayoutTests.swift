@@ -14,14 +14,14 @@ class MenuLayoutTests: XCTestCase {
         XCTAssertEqual(items, [
             .header(.switcher), .entry("show"), .separator,
             .header(.windows), .entry("isolate"), .separator,
-            .header(.tools), .entry("pick"), .separator,
+            .entry("pick"), .separator,
             .entry("settings"), .entry("quit"),
         ])
     }
 
     func testAnEmptyGroupLeavesNoHeaderOrSeparator() {
-        let items = MenuLayout.build(entries, headersSupported: true) { $0.group != .tools }
-        XCTAssertFalse(items.contains(.header(.tools)))
+        let items = MenuLayout.build(entries, headersSupported: true) { $0.group != .windows }
+        XCTAssertFalse(items.contains(.header(.windows)))
         XCTAssertFalse(zip(items, items.dropFirst()).contains { $0 == .separator && $1 == .separator })
     }
 
@@ -40,6 +40,8 @@ class MenuLayoutTests: XCTestCase {
         let visible = MenuGroup.allCases.filter(\.visibleByDefault)
         XCTAssertEqual(visible, [.switcher, .windows, .app])
         XCTAssertFalse(MenuGroup.app.canBeHidden)
+        XCTAssertFalse(MenuGroup.tools.canBeHidden)
+        XCTAssertFalse(MenuGroup.tools.hasHeader)
     }
 
     func testBrowserActionIdsRoundTrip() {

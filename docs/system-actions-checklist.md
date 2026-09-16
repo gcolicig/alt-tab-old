@@ -11,7 +11,7 @@ Emergency shortcut: `Command+Control+Option+Shift+Escape`.
 
 | # | Action | Expectation |
 |---|---|---|
-| 1 | Open the menubar menu after the update | Groups Switcher, Windows and the AltTab+ block; headings on macOS 14+; no double or trailing separator |
+| 1 | Open the menubar menu after the update | Groups Switcher, Windows, a `Tools >` submenu with all five tools, and the AltTab+ block; headings on macOS 14+; no double or trailing separator |
 | 2 | `Settings > Menu Bar Menu`: turn every group on | All groups appear in order: Switcher, Windows, Apps, Tools, Notifications, System, Toggles, Defaults, AltTab+ |
 | 3 | Turn one entry off, then its whole group | The entry disappears, then the heading and separator of the group |
 | 4 | Assign a shortcut to `Isolate Window` in the same tab | The shortcut works outside the menu |

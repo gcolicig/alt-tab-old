@@ -1898,7 +1898,7 @@ Gruppen und Reihenfolge:
 | 1 | Switcher | `Show` | vorhanden |
 | 2 | Fenster | `Isolate Window`, `Minimize App Windows Except Frontmost`, `Hide Other Apps`, dazu die in 12b gewaehlten | Story 12 |
 | 3 | Apps | `Quit All Apps…`, `Quit All Apps Except Frontmost…` | Story 14B |
-| 4 | Werkzeuge | `Pick Color`, `Capture Text`, `Capture & Translate`, `Scan QR Code`, `Scan QR Code from Clipboard` | Story 14I |
+| 4 | Werkzeuge | Ein Eintrag `Tools >` mit Untermenue: `Pick Color`, `Capture Text`, `Capture & Translate`, `Scan QR Code`, `Scan QR Code from Clipboard`. Immer sichtbar, ohne Schalter, ohne Ueberschrift (entschieden 2026-09-16) | Story 14I |
 | 5 | Mitteilungen | `Clear Visible Notifications`, `Clear All Notifications` | Story 14H |
 | 6 | System | `Clear Clipboard`, `Eject All Disks`, `Sleep Displays` | Story 14D, 14F, 14G |
 | 7 | Schalter | `Keep Awake >`, `Mute Sound`, `Mute Microphone`, `Function Keys`, `Auto-Quit Apps`, `Cat Mode` | Story 10, 14C, 14E, 14J, 14K |

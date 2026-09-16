@@ -13,14 +13,16 @@ enum MenuGroup: String, CaseIterable {
     case defaults
     case app
 
-    /// The app group closes the menu without a heading, like every macOS app menu.
-    var hasHeader: Bool { self != .app }
+    /// The app group closes the menu without a heading, like every macOS app menu. Tools is a single
+    /// submenu entry whose own title already names it.
+    var hasHeader: Bool { ![.app, .tools].contains(self) }
 
     /// Groups visible after the update; everything else waits until the user turns it on.
     var visibleByDefault: Bool { [.switcher, .windows, .app].contains(self) }
 
-    /// `Settings…` and `Quit` live here, so hiding it would leave no way back.
-    var canBeHidden: Bool { self != .app }
+    /// `Settings…` and `Quit` live in the app group, so hiding it would leave no way back. Tools is always
+    /// shown, as decided on 2026-09-16.
+    var canBeHidden: Bool { ![.app, .tools].contains(self) }
 }
 
 struct MenuEntrySpec: Equatable {
@@ -57,6 +59,7 @@ enum MenuLayout {
     /// the settings switches read their preference unconditionally.
     static let showEntryId = "app.show"
     static let defaultBrowserEntryId = "defaults.browser"
+    static let toolsEntryId = "tools.submenu"
     static let nonActionEntryIds = [showEntryId, defaultBrowserEntryId]
 
     static func groupPreferenceKey(_ group: MenuGroup) -> String {
