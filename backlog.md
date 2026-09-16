@@ -1877,7 +1877,7 @@ Entschieden 2026-09-16:
 - **Nicht vorsehen**: Dock-Klick-Logik (minimieren, durch Fenster wechseln, Mittelklick-Aktionen) und Aktionen in Mission Control. Beide stehen unter `Nicht-Ziele`.
 - **Spezifiziert**: `Isolate Window` samt Verwandten als Story 12, die Debug-Eintraege als Story 13.
 
-Legende: `STORY 12` und `STORY 13` = dort spezifiziert; `VORHANDEN` = im Fork schon abgedeckt; `OPTIONAL` = passt, aber kein Bedarf festgestellt; `SPAETER` = passt, aber offene technische Frage; `ENTFERNEN` = passt nicht zum Produkt.
+Legende: `STORY n` = in dieser Story spezifiziert; `VORHANDEN` = im Fork schon abgedeckt; `OPTIONAL` = passt, aber kein Bedarf festgestellt; `SPAETER` = passt, aber offene technische Frage; `ENTFERNEN` = passt nicht zum Produkt.
 
 | # | Gruppe | Supercharge-Eintrag | Einstufung | Begruendung |
 |---|---|---|---|---|
@@ -1906,7 +1906,7 @@ Legende: `STORY 12` und `STORY 13` = dort spezifiziert; `VORHANDEN` = im Fork sc
 | 23 | Energie und Anzeige | Night Shift | ENTFERNEN | Nur ueber private API (**unverifiziert**); kein Produktbezug |
 | 24 | Energie und Anzeige | Grayscale Mode | ENTFERNEN | Wie Night Shift |
 | 25 | Energie und Anzeige | Low Power Mode | ENTFERNEN | Umschalten braucht nach Kenntnisstand Admin-Rechte (**unverifiziert**); kein `sudo` |
-| 26 | Energie und Anzeige | Keep Awake | VORHANDEN | Story 10 |
+| 26 | Energie und Anzeige | Keep Awake | STORY 10 | Nur spezifiziert (2026-08-19), noch kein Code |
 | 27 | Desktop und Dock | Desktop Icons | ENTFERNEN | Schreibt Finder-Einstellungen und startet Finder neu; widerspricht dem Besitz-Modell fuer Systemwerte |
 | 28 | Desktop und Dock | Desktop Widgets | ENTFERNEN | Wie oben, fuer WindowManager |
 | 29 | Desktop und Dock | Desktop Icons & Widgets | ENTFERNEN | Kombination der beiden |
@@ -1917,13 +1917,13 @@ Legende: `STORY 12` und `STORY 13` = dort spezifiziert; `VORHANDEN` = im Fork sc
 | 34 | Mitteilungen | iOS Notifications | ENTFERNEN | Betrifft iPhone-Mirroring, kein Bezug |
 | 35 | Fenster und Apps | Auto-Quit Apps | SPAETER | Braucht dauerhaften Beobachter und Regeln je App; beruehrt Story 11 |
 | 36 | Systemeinstellungen | Default Browser (Untermenue) | OPTIONAL | Oeffentliche API, macOS fragt nach; passt neben die Open-URL-Slots |
-| 37 | Systemeinstellungen | VPN & Filters | VORHANDEN | Nur ein Sprung in die Systemeinstellungen; geht ueber einen Open-URL-Slot |
+| 37 | Systemeinstellungen | VPN & Filters | VORHANDEN | Nur ein Sprung in die Systemeinstellungen; geht ueber einen Open-URL-Slot mit `x-apple.systempreferences:`-Adresse. Die genaue Adresse je Bereich ist **unverifiziert** |
 | 38 | Systemeinstellungen | Hide My Email | VORHANDEN | Wie oben |
 | 39 | Systemeinstellungen | Private Relay | VORHANDEN | Wie oben |
 | 40 | App-Menue | Settings… | VORHANDEN | Standard |
 | 41 | App-Menue | About | VORHANDEN | Standard |
 | 42 | App-Menue | Support & Feedback | VORHANDEN | Das Feedback-Fenster des Forks existiert (`FeedbackWindow`) |
-| 43 | App-Menue | Release Notes | OPTIONAL | Ein Link auf das Changelog; billig |
+| 43 | App-Menue | Release Notes | VORHANDEN | Der About-Tab verlinkt `Latest releases` |
 | 44 | App-Menue | Troubleshooting | OPTIONAL | Einstieg zu `docs/high-cpu-troubleshooting.md` und den Checklisten |
 | 45 | App-Menue | Tips | ENTFERNEN | Vertriebs- und Onboarding-Inhalt ohne Nutzen fuer den Fork |
 | 46 | App-Menue | FAQ | ENTFERNEN | Wie oben |
