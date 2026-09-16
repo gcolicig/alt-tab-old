@@ -32,7 +32,6 @@ enum SystemActions {
         make(.isolateWindow, NSLocalizedString("Isolate Window", comment: ""), "macwindow", .windows, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.isolateWindow) },
         make(.minimizeAppOthers, NSLocalizedString("Minimize App Windows Except Frontmost", comment: ""), "macwindow.stack", .windows, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.minimizeAppOthers) },
         make(.hideOtherApps, NSLocalizedString("Hide Other Apps", comment: ""), "eye.slash", .windows, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.hideOtherApps) },
-        make(.minimizeAllOthers, NSLocalizedString("Minimize All Windows Except Frontmost", comment: ""), "rectangle.stack", .windows, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.minimizeAllOthers) },
         make(.hideAll, NSLocalizedString("Hide All Windows", comment: ""), "eye.slash.circle", .windows, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.hideAll) },
     ]
 

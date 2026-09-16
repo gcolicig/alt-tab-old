@@ -39,9 +39,8 @@ enum WindowFocusActions {
         switch action {
             case .isolateWindow:
                 hideApps(keeping: pid)
-                minimize(scope: .targetApp, targetPid: pid, keeping: windowId)
-            case .minimizeAppOthers: minimize(scope: .targetApp, targetPid: pid, keeping: windowId)
-            case .minimizeAllOthers: minimize(scope: .allApps, targetPid: pid, keeping: windowId)
+                minimize(targetPid: pid, keeping: windowId)
+            case .minimizeAppOthers: minimize(targetPid: pid, keeping: windowId)
             default: break
         }
     }
@@ -66,9 +65,9 @@ enum WindowFocusActions {
             isSelf: app.processIdentifier == ProcessInfo.processInfo.processIdentifier, isHidden: app.isHidden)
     }
 
-    private static func minimize(scope: WindowScope, targetPid: pid_t?, keeping windowId: CGWindowID?) {
+    private static func minimize(targetPid: pid_t, keeping windowId: CGWindowID) {
         let windows = Windows.list.filter { $0.cgWindowId != nil && !$0.isWindowlessApp }
-        let ids = WindowFocusPlan.windowsToMinimize(windows.map(windowInfo), scope: scope, targetPid: targetPid, keeping: windowId, visibleSpaces: Spaces.visibleSpaces.map { UInt64($0) })
+        let ids = WindowFocusPlan.windowsToMinimize(windows.map(windowInfo), targetPid: targetPid, keeping: windowId, visibleSpaces: Spaces.visibleSpaces.map { UInt64($0) })
         windows.filter { ids.contains($0.cgWindowId!) }.forEach(minimizeOnQueue)
     }
 

@@ -20,11 +20,6 @@ struct FocusWindowInfo: Equatable {
     let isOnAllSpaces: Bool
 }
 
-enum WindowScope {
-    case targetApp
-    case allApps
-}
-
 enum WindowFocusPlan {
     /// B1. The target app is never hidden, whatever the order of events (WF-06).
     static func appsToHide(_ apps: [FocusAppInfo], keeping targetPid: pid_t?) -> [pid_t] {
@@ -33,13 +28,12 @@ enum WindowFocusPlan {
 
     /// B2. Only windows the user can see right now: not minimized, not in fullscreen (WF-04), not a tab
     /// behind another, and on a Space currently visible on some display (WF-05).
-    static func windowsToMinimize(_ windows: [FocusWindowInfo], scope: WindowScope, targetPid: pid_t?, keeping targetWindowId: CGWindowID?, visibleSpaces: [UInt64]) -> [CGWindowID] {
-        windows.filter { isCandidate($0, scope, targetPid, targetWindowId, visibleSpaces) }.map(\.id)
+    static func windowsToMinimize(_ windows: [FocusWindowInfo], targetPid: pid_t, keeping targetWindowId: CGWindowID?, visibleSpaces: [UInt64]) -> [CGWindowID] {
+        windows.filter { isCandidate($0, targetPid, targetWindowId, visibleSpaces) }.map(\.id)
     }
 
-    private static func isCandidate(_ window: FocusWindowInfo, _ scope: WindowScope, _ targetPid: pid_t?, _ targetWindowId: CGWindowID?, _ visibleSpaces: [UInt64]) -> Bool {
-        guard window.id != targetWindowId, !window.isMinimized, !window.isFullscreen, !window.isTabbed else { return false }
-        guard scope == .allApps || window.pid == targetPid else { return false }
+    private static func isCandidate(_ window: FocusWindowInfo, _ targetPid: pid_t, _ targetWindowId: CGWindowID?, _ visibleSpaces: [UInt64]) -> Bool {
+        guard window.pid == targetPid, window.id != targetWindowId, !window.isMinimized, !window.isFullscreen, !window.isTabbed else { return false }
         return window.isOnAllSpaces || window.spaceIds.contains { visibleSpaces.contains($0) }
     }
 }

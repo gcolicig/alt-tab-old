@@ -24,17 +24,12 @@ class WindowFocusTests: XCTestCase {
             window(13, pid: 1, minimized: true), window(14, pid: 1, fullscreen: true),
             window(15, pid: 1, tabbed: true), window(16, pid: 1, spaces: [9]),
         ]
-        let ids = WindowFocusPlan.windowsToMinimize(windows, scope: .targetApp, targetPid: 1, keeping: 10, visibleSpaces: [1])
+        let ids = WindowFocusPlan.windowsToMinimize(windows, targetPid: 1, keeping: 10, visibleSpaces: [1])
         XCTAssertEqual(ids, [11])
     }
 
     func testWindowsOnAllSpacesCountAsVisible() {
         let windows = [window(20, pid: 1, spaces: [], allSpaces: true)]
-        XCTAssertEqual(WindowFocusPlan.windowsToMinimize(windows, scope: .targetApp, targetPid: 1, keeping: nil, visibleSpaces: [1]), [20])
-    }
-
-    func testAllAppsScopeKeepsOnlyTheTargetWindow() {
-        let windows = [window(30, pid: 1), window(31, pid: 2), window(32, pid: 3, fullscreen: true)]
-        XCTAssertEqual(WindowFocusPlan.windowsToMinimize(windows, scope: .allApps, targetPid: 1, keeping: 30, visibleSpaces: [1]), [31])
+        XCTAssertEqual(WindowFocusPlan.windowsToMinimize(windows, targetPid: 1, keeping: nil, visibleSpaces: [1]), [20])
     }
 }

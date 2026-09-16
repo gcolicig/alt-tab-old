@@ -1553,7 +1553,7 @@ Stufe 12b, Verwandte (je einzeln auf `BEHALTEN`/`OPTIONAL`/`ENTFERNEN`/`SPAETER`
 
 - [BEHALTEN] `Minimize App Windows Except Frontmost`: nur B2. `windowFocus.minimizeAppOthers`.
 - [BEHALTEN] `Hide Other Apps`: nur B1. Entspricht dem nativen `Cmd+Option+H`, aber ueber jeden Trigger erreichbar. `windowFocus.hideOthers`.
-- [OPTIONAL] `Minimize All Windows Except Frontmost`: B2 ueber alle Apps. Langsamer als B1 und mit Dock-Animation je Fenster; nur behalten, wenn Minimieren statt Ausblenden gewollt ist.
+- [ENTFERNEN] `Minimize All Windows Except Frontmost`: gebaut und am 2026-09-16 wieder gestrichen; gleiches Ergebnis wie `Isolate Window`, nur langsamer und mit vollem Dock. Frueher: B2 ueber alle Apps. Langsamer als B1 und mit Dock-Animation je Fenster; nur behalten, wenn Minimieren statt Ausblenden gewollt ist.
 - [ENTFERNEN] `Minimize All Windows`: gebaut und am 2026-09-16 wieder gestrichen. Gleiches Ergebnis wie `Hide All Windows`, aber langsamer (Animation je Fenster) und fuellt das Dock.
 - [OPTIONAL] `Hide All Windows`: B1 ohne Ausnahme, dazu Finder aktivieren, damit keine App den Fokus behaelt.
 - [SPAETER] `Show Desktop`: macOS hat dafuer eine eigene Geste und Mission-Control-Funktion, die sich nicht oeffentlich ausloesen laesst. Nachbau ueber B1 waere nicht umkehrbar wie das Original. Erst aufnehmen, wenn ein sauberer Weg belegt ist.
