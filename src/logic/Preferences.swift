@@ -117,6 +117,7 @@ class Preferences {
         }
         MenuLayout.nonActionEntryIds.forEach { values[MenuLayout.entryPreferenceKey($0)] = "true" }
         MenuGroup.allCases.forEach { values[MenuLayout.groupPreferenceKey($0)] = String($0.visibleByDefault) }
+        values["micMuteIndicator"] = "true"
         values["autoQuitEnabled"] = "false"
         values["autoQuitDelaySeconds"] = "10"
         values["autoQuitMode"] = String(AutoQuitMode.onlyListed.rawValue)
@@ -190,6 +191,7 @@ class Preferences {
     static var reverseScrollTrackpad: Bool { CachedUserDefaults.bool("reverseScrollTrackpad") }
     static var scrollSpeedMouse: ScrollSpeedPreference { CachedUserDefaults.macroPref("scrollSpeedMouse", ScrollSpeedPreference.allCases) }
     static var scrollSpeedTrackpad: ScrollSpeedPreference { CachedUserDefaults.macroPref("scrollSpeedTrackpad", ScrollSpeedPreference.allCases) }
+    static var micMuteIndicator: Bool { CachedUserDefaults.bool("micMuteIndicator") }
     static var autoQuitEnabled: Bool { CachedUserDefaults.bool("autoQuitEnabled") }
     static var autoQuitDelaySeconds: Int { CachedUserDefaults.int("autoQuitDelaySeconds") }
     static var autoQuitMode: Int { CachedUserDefaults.int("autoQuitMode") }

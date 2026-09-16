@@ -44,7 +44,7 @@ final class MenubarMenu: NSObject, NSMenuDelegate {
     /// main menu, not a further submenu. Its items stay in `items`, so the same refresh keeps checkmarks
     /// and availability current when the submenu opens.
     private func otherToolsItem(_ groups: [MenuGroupEntries]) -> NSMenuItem {
-        let item = NSMenuItem(title: NSLocalizedString("Other Tools", comment: ""), action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: NSLocalizedString("Other…", comment: ""), action: nil, keyEquivalent: "")
         if #available(macOS 26.0, *) {
             item.image = NSImage(systemSymbolName: "square.grid.2x2", accessibilityDescription: nil)
         }

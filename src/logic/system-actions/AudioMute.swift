@@ -37,6 +37,7 @@ enum AudioMute {
         simulatedInputMute = (device, volume)
         writeFloat(device, kAudioDevicePropertyVolumeScalar, scope(true), 0)
         observeDefaultInput(true)
+        MicMuteIndicator.refresh()
     }
 
     private static func restoreSimulatedInputMute() {
@@ -44,6 +45,7 @@ enum AudioMute {
         writeFloat(simulated.device, kAudioDevicePropertyVolumeScalar, scope(true), simulated.volume)
         simulatedInputMute = nil
         observeDefaultInput(false)
+        MicMuteIndicator.refresh()
     }
 
     /// A device switch while the volume stands in for mute would leave the old device silent without any
@@ -66,6 +68,10 @@ enum AudioMute {
 
     private static func globalAddress(_ selector: AudioObjectPropertySelector) -> AudioObjectPropertyAddress {
         AudioObjectPropertyAddress(mSelector: selector, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
+    }
+
+    static func defaultInputDevice() -> AudioObjectID? {
+        defaultDevice(input: true)
     }
 
     private static func defaultDevice(input: Bool) -> AudioObjectID? {

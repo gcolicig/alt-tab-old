@@ -1868,6 +1868,7 @@ Umsetzungsstand 2026-09-16:
 - 14C: Einhaengepunkt ist die gebuendelte Zerstoerung in `AccessibilityEvents.windowDestroyed`, nicht `Windows.removeWindows`, damit das Entfernen unerreichbarer Fenster kein Beenden ausloest. **Abweichung**: Die Einstellungen stehen im neuen Tab `System Actions`, nicht in `General`.
 - 14D: zuerst `pmset displaysleepnow`, sonst `IODisplayWrangler`; beides am Geraet offen.
 - 14E: wie spezifiziert; der Listener fuer das Standard-Eingabegeraet existiert nur waehrend einer simulierten Stummschaltung.
+- 14E, Nachtrag 2026-09-16 auf Wunsch des Nutzers: macOS zeigt ein stummes Mikrofon nirgends an. `MicMuteIndicator` legt deshalb ein eigenes Menueleisten-Symbol (`mic.slash.fill`) an, solange das Standard-Mikrofon stumm ist, egal wer es stummgeschaltet hat; ein Klick hebt die Stummschaltung auf. CoreAudio-Listener auf Mute und Lautstaerke des Geraets und auf den Wechsel des Standardgeraets laufen nur, solange die Einstellung `Show an icon in the menu bar while the microphone is muted` (Tab `System Actions`, Standard an) aktiv ist. Am Geraet gesehen: Symbol erscheint bei stummem Mikrofon.
 - 14I: Uebersetzung ueber `TranslationSession(installedSource:target:)`, das im SDK ab macOS 26 ohne SwiftUI verfuegbar ist (2026-09-16 im Interface gelesen); Quellsprache per `NLLanguageRecognizer`. Unter macOS 26 ist `Capture & Translate` deaktiviert, die anderen Aufnahme-Werkzeuge unter macOS 14.
 - 14H: Die Struktur der Mitteilungszentrale ist nicht belegt; freigegeben ist nur macOS 26 (V-21). Gesucht wird nach benannten AX-Aktionen (`Close`, `Clear`, `Clear All`, deutsch `Schliessen`, `Löschen`, `Alle löschen`).
 - 14J: Lesen von `HIDFKeyMode` ueber `IOHIDCopyCFTypeParameter` und Schreiben desselben Werts ueber `IOHIDSetCFTypeParameter` am 2026-09-16 erfolgreich; die Wirkung eines echten Wechsels ist V-20. Die Rueckgabe des Ausgangswerts liegt als Knopf im Tab `System Actions`, weil es keinen separaten Modul-Schalter gibt.
@@ -1907,7 +1908,7 @@ Gruppen und Reihenfolge:
 
 Aufbau:
 
-- **Entschieden 2026-09-16**: Die Gruppen `Werkzeuge` und `Schalter` stehen gemeinsam unter einem Eintrag `Other Tools >`, an der Stelle der ersten dieser Gruppen. Darin sind sie Abschnitte mit Ueberschrift `Tools` und `Toggles`, wie die Gruppen im Hauptmenue, keine weiteren Untermenues. Nur Keep Awake behaelt sein eigenes Untermenue mit den Dauern. `Fenster` bleibt flach. Eine leere Untergruppe faellt weg; sind beide leer, faellt `Other Tools` weg.
+- **Entschieden 2026-09-16**: Die Gruppen `Werkzeuge` und `Schalter` stehen gemeinsam unter einem Eintrag `Other… >` (zuerst `Other Tools`, am selben Tag umbenannt), an der Stelle der ersten dieser Gruppen. Darin sind sie Abschnitte mit Ueberschrift `Tools` und `Toggles`, wie die Gruppen im Hauptmenue, keine weiteren Untermenues. Nur Keep Awake behaelt sein eigenes Untermenue mit den Dauern. `Fenster` bleibt flach. Eine leere Untergruppe faellt weg; sind beide leer, faellt `Other Tools` weg.
 - Ueberschriften ueber `NSMenuItem.sectionHeader(title:)` ab macOS 14; darunter nur Trenner ohne Ueberschrift (SA-05).
 - Die Gruppe `Schalter` zeigt Zustaende mit Haekchen (`state = .on`), wie im Supercharge-Menue. Eintraege mit Rueckfrage oder Fenster tragen Auslassungspunkte.
 - Die Gruppe `AltTab+` steht immer zuletzt, ohne Ueberschrift, nur durch einen Trenner abgesetzt.

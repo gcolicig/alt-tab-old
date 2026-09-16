@@ -62,11 +62,15 @@ class SystemActionsTab {
             subTitle: NSLocalizedString("Locks the keyboard. End it from the menu, by typing “unlock”, or with the emergency shortcut ⌃⌥⇧⌘⎋.", comment: ""),
             width: SettingsWindow.contentWidth)
         catMode.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("End automatically after", comment: ""), rightViews: [SettingsControls.valuePopup("catModeMinutes", catModeOptions)]))
+        let microphone = TableGroupView(title: NSLocalizedString("Microphone", comment: ""), width: SettingsWindow.contentWidth)
+        microphone.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Show an icon in the menu bar while the microphone is muted", comment: ""),
+            subTitle: NSLocalizedString("macOS has no indicator for a muted microphone. Click the icon to unmute.", comment: ""),
+            rightViews: [LabelAndControl.makeSwitch("micMuteIndicator")]))
         let keys = TableGroupView(title: NSLocalizedString("Function Keys", comment: ""), width: SettingsWindow.contentWidth)
         let restore = NSButton(title: NSLocalizedString("Restore Original Mode", comment: ""), target: nil, action: nil)
         restore.onAction = { _ in FunctionKeys.releaseOwnership() }
         keys.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Give back the function key mode from before AltTab+ changed it", comment: ""), rightViews: [restore]))
-        return TableGroupSetView(originalViews: [autoQuit, catMode, keys], bottomPadding: 0)
+        return TableGroupSetView(originalViews: [autoQuit, catMode, microphone, keys], bottomPadding: 0)
     }
 
     private static let delayOptions: [(String, Int)] = [0, 5, 10, 30, 60, 120, 300].map { (String(format: NSLocalizedString("%d s", comment: ""), $0), $0) }

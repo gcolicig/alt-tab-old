@@ -434,6 +434,7 @@
 		C0DE100000000000000000D5 /* SystemActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000CB /* SystemActions.swift */; };
 		C0DE100000000000000000D6 /* MenubarMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000CC /* MenubarMenu.swift */; };
 		C0DE100000000000000000D7 /* SystemActionsSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000CD /* SystemActionsSettings.swift */; };
+		C0DE100000000000000000D8 /* MicMuteIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000CE /* MicMuteIndicator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -986,6 +987,7 @@
 		C0DE200000000000000000CB /* SystemActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemActions.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000CC /* MenubarMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenubarMenu.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000CD /* SystemActionsSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemActionsSettings.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000CE /* MicMuteIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicMuteIndicator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -2498,6 +2500,7 @@
 		C0DE3000000000000000000C /* menubar-menu */ = {
 			isa = PBXGroup;
 			children = (
+				C0DE200000000000000000CE /* MicMuteIndicator.swift */,
 				C0DE200000000000000000CC /* MenubarMenu.swift */,
 				C0DE200000000000000000B4 /* MenuLayoutTestable.swift */,
 			);
@@ -3035,6 +3038,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C0DE100000000000000000D8 /* MicMuteIndicator.swift in Sources */,
 				C0DE100000000000000000D7 /* SystemActionsSettings.swift in Sources */,
 				C0DE100000000000000000D6 /* MenubarMenu.swift in Sources */,
 				C0DE100000000000000000D5 /* SystemActions.swift in Sources */,

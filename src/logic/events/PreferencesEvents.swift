@@ -67,6 +67,7 @@ class PreferencesEvents {
         case "inputModulesSafeMode": KeyboardEvents.inputSafeModeChanged()
         case "startAtLogin": applyStartAtLoginPreference()
         case "autoQuitEnabled": AutoQuit.enabledChanged()
+        case "micMuteIndicator": MicMuteIndicator.preferenceChanged()
         case "keepAwakeDisplay": KeepAwake.displayPreferenceChanged()
         case let k where k.hasPrefix("menuGroupVisible.") || k.hasPrefix("menuEntryVisible."): Menubar.rebuildMenu()
         case "updatePolicy": applyUpdatePolicyPreference()

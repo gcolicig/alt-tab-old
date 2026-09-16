@@ -11,8 +11,8 @@ Emergency shortcut: `Command+Control+Option+Shift+Escape`.
 
 | # | Action | Expectation |
 |---|---|---|
-| 1 | Open the menubar menu after the update | Groups Switcher, Windows, an `Other Tools >` entry whose `Tools` section lists all five tools, and the AltTab+ block; headings on macOS 14+; no double or trailing separator |
-| 2 | `Settings > Menu Bar Menu`: turn every group on | In order: Switcher, Windows, Apps, `Other Tools >` (sections `Tools` and `Toggles`), Notifications, System, Defaults, AltTab+ |
+| 1 | Open the menubar menu after the update | Groups Switcher, Windows, an `Other… >` entry whose `Tools` section lists all five tools, and the AltTab+ block; headings on macOS 14+; no double or trailing separator |
+| 2 | `Settings > Menu Bar Menu`: turn every group on | In order: Switcher, Windows, Apps, `Other… >` (sections `Tools` and `Toggles`), Notifications, System, Defaults, AltTab+ |
 | 3 | Turn one entry off, then its whole group | The entry disappears, then the heading and separator of the group |
 | 4 | Assign a shortcut to `Isolate Window` in the same tab | The shortcut works outside the menu |
 | 5 | Bind `Clear Clipboard` to a Leader key and a FlickRing direction | Both run it |
@@ -35,7 +35,7 @@ Emergency shortcut: `Command+Control+Option+Shift+Escape`.
 | 12 | `Quit All Apps…` | Prompt lists the apps; Cancel changes nothing; Quit terminates them; an app with an unsaved document asks itself |
 | 13 | Auto-Quit on, TextEdit in the list, delay 10 s, close its last window, switch to another app | TextEdit quits after about 10 s; opening a new window inside the delay prevents it |
 | 14 | `Sleep Displays` | Displays go dark and wake normally on a key press. If not: record which of `pmset displaysleepnow` and `IODisplayWrangler` failed (log) |
-| 15 | `Mute Sound`, `Mute Microphone`, then switch AirPods on and off | Checkmarks follow the real device state |
+| 15 | `Mute Sound`, `Mute Microphone`, then switch AirPods on and off | Checkmarks follow the real device state; a crossed-out microphone appears in the menu bar while the microphone is muted, also when muted elsewhere, and a click on it unmutes |
 | 16 | `Eject All Disks` with a USB stick, a disk image and a busy disk | First two ejected; the busy one named in the notice |
 | 17 | `Default Browser >` | Installed browsers with icons, current one checked; choosing one shows macOS' own confirmation |
 | 18 | `Function Keys` toggle (V-20) | F1–F12 switch between media and function keys at once; `Settings > System Actions > Restore Original Mode` gives back the earlier mode |
