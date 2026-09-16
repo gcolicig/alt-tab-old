@@ -1316,7 +1316,7 @@ Offene Punkte:
 
 ### 10. Keep Awake / Sleep Override (Caffeine + Amphetamine)
 
-Status: Spezifiziert 2026-08-19; nicht begonnen
+Status: MVP umgesetzt 2026-09-16 (Must-have ohne Disk-Assertion); Should-have und spaeter offen; Geraetepruefung offen (`docs/system-actions-checklist.md`, Schritte 33-37)
 Prioritaet: Mittel. Eigenstaendiges Modul, unabhaengig von Switcher- und Input-Kern
 
 Referenzen:
@@ -1419,6 +1419,14 @@ Nachtrag 2026-09-16, Einbindung ins Menueleisten-Menue (aus dem Supercharge-Abgl
 - Die Aktionen `keepAwake.toggle`, `keepAwake.start.<preset>` und `keepAwake.stop` kommen ins gemeinsame Register und sind damit auch ueber Shortcut, Hyper, Leader und FlickRing ausloesbar.
 - Das eigene Menueleisten-Symbol aus dem MVP-Umfang bleibt optional; Standard ist der Eintrag im bestehenden Menue, damit AltTab+ nicht zwei Symbole belegt.
 
+Umsetzungsstand 2026-09-16:
+
+- `KeepAwake` haelt hoechstens je eine System- und Display-Assertion (`IOPMAssertionCreateWithName`), nie persistiert, beim Beenden freigegeben. Sessions laufen gegen die Wanduhr; ein Timer alle 30 s (Toleranz 10 s) und das Aufwachen pruefen Ablauf und Batterie. Er existiert nur waehrend einer Session.
+- **Abweichung**: Ein Menueeintrag mit Untermenue loest in AppKit selbst keine Aktion aus. Der Schalter steht deshalb als erster Eintrag im Untermenue (`Turn On`/`Turn Off`); der Haupteintrag zeigt Haekchen und Restzeit.
+- Untermenue: `Turn On/Off`, fuenf Dauern, `Until…` (Uhrzeit-Dialog, vergangene Zeit heisst morgen), `Extend by 1 Hour` waehrend einer befristeten Session, `Keep Display Awake`.
+- Settings-Tab `Keep Awake`: Dauer beim Einschalten, Display wach, Batterie-Schwelle (aus, 10, 20, 30, 50 %), Shortcuts fuer alle Keep-Awake-Aktionen.
+- Nicht umgesetzt: Disk-Assertion, 12h/24h-Wahl (die Restzeit ist `h:mm`), alle Should-have-Punkte.
+
 ### 11. Erweitertes Window-Switching-Verhalten (minimierte Fenster, Per-App-Policies, Cmd+Tab)
 
 Status: Spezifiziert 2026-08-19; nicht begonnen. Betrifft den Switcher-Kern, kein Add-on-Modul
@@ -1517,7 +1525,7 @@ Stand 2026-08-14, Vermessung per Probe-Merge auf einem Wegwerf-Branch (danach ab
 
 ### 12. Fenster-Fokus-Aktionen: Isolate Window und Verwandte
 
-Status: Spezifiziert 2026-09-16; nicht begonnen
+Status: Umgesetzt 2026-09-16 (12a und 12b ohne `Show Desktop` und `Undo`); Geraetepruefung offen (`docs/system-actions-checklist.md`, Schritte 7-11)
 Prioritaet: Mittel. Klein, ohne Event-Tap, sofort ueber alle Trigger nutzbar
 
 Referenz: Supercharge (Sindre Sorhus), Menue-Aktionen `Isolate Window`, `Hide All Windows`, `Minimize All Windows`, `Minimize All Windows Except Frontmost`, `Minimize App Windows Except Frontmost`, `Show Desktop`. Verhalten nur aus Namen und Menue abgeleitet (Art A); Supercharge ist nicht quelloffen. Abgleich des ganzen Menues unter `Supercharge-Abgleich`.
@@ -1586,6 +1594,13 @@ Pruefraster (Checkliste folgt mit der Umsetzung):
 | Zwei Displays | Apps auf dem zweiten Display sind ausgeblendet; minimiert wird nur auf dem aktuellen Space |
 | Aufruf ueber Shortcut, Leader und FlickRing | Gleiches Ergebnis |
 
+Umsetzungsstand 2026-09-16:
+
+- `WindowFocusPlan` (rein, unit-getestet) waehlt Apps und Fenster; `WindowFocusActions` fuehrt aus. Das fokussierte Fenster wird auf der AX-Queue gelesen, Minimieren laeuft je Fenster auf derselben Queue.
+- `Hide All Windows` nutzt `NSWorkspace.hideOtherApplications()`; das blendet alle Apps ausser AltTab+ aus und kommt ohne Finder-Aktivierung aus.
+- Im Safe Mode und ohne Accessibility-Berechtigung sind die Aktionen nicht verfuegbar.
+- Die optionalen Aktionen aus 12b sind gebaut, aber ab Werk im Menue ausgeblendet.
+
 Nicht im Scope:
 
 - Dock-Klick-Logik und Aktionen in Mission Control (siehe `Nicht-Ziele`).
@@ -1594,7 +1609,7 @@ Nicht im Scope:
 
 ### 13. Debug-Untermenue in der Menueleiste
 
-Status: Spezifiziert 2026-09-16; nicht begonnen
+Status: Umgesetzt 2026-09-16; Geraetepruefung offen (`docs/system-actions-checklist.md`, Schritte 38-41)
 Prioritaet: Hoch fuer die Entwicklung. Spart bei jedem Geraetebericht Rueckfragen und Handschritte
 
 Referenz: Supercharge, Menue `… > Debug` mit `Copy Debug Info`, `Copy Accessibility Tree` und `Reset Permissions` (Art A, siehe `Supercharge-Abgleich`).
@@ -1680,6 +1695,14 @@ Tests:
 - Unit: Schwaerzung (`DebugProfile`), Ausgabeformat und Grenzen des AX-Baums ueber eine abstrahierte Elementquelle, Aufbau der `tccutil`-Argumente.
 - Geraet: Checkliste folgt mit der Umsetzung, mindestens: Bericht in einem Texteditor pruefen (keine URLs, keine Titel, kein Benutzername), AX-Baum fuer Finder, Safari, eine Electron-App und eine haengende App, Reset mit anschliessendem Neustart und erneuter Freigabe.
 
+Umsetzungsstand 2026-09-16:
+
+- Untermenue wie oben, gebaut von `SubmenuBuilder.debug()`.
+- Die Schwaerzung (`DebugRedaction`) gilt fuer den ganzen `DebugProfile`, also auch fuer das Feedback-Fenster.
+- **Abweichung D2**: Auch Fenstertitel werden auf ihre Laenge reduziert. Die Regel "Fenstertyp-Elemente bleiben lesbar" widersprach DB-03; die strengere Regel gilt. Lesbar bleiben nur Titel von Bedienelementen (Knoepfe, Menues, Tabs und aehnliche).
+- **Abweichung D3**: Vor dem Neustart wird der Sicherheitspfad nicht aufgerufen, weil er Safe Mode dauerhaft setzt und der neu gestartete Prozess dann alle Module unterdrueckt. Der Neustart folgt unmittelbar; die Taps enden mit dem Prozess.
+- `tccutil` aus der App heraus ist weiterhin unverifiziert (Checkliste Schritt 41).
+
 Nicht im Scope:
 
 - Automatisches Hochladen oder Versenden von Berichten.
@@ -1688,7 +1711,7 @@ Nicht im Scope:
 
 ### 14. System-Aktionen und Werkzeuge aus dem Supercharge-Abgleich
 
-Status: Spezifiziert 2026-09-16; nicht begonnen
+Status: Umgesetzt 2026-09-16, alle Bloecke; Geraetepruefung offen (`docs/system-actions-checklist.md`), dazu V-19, V-20 und V-21
 Prioritaet: Niedrig bis mittel je Block; die Bloecke sind unabhaengig und einzeln umsetzbar
 
 Referenz: Supercharge-Menue, Einordnung unter `Supercharge-Abgleich`. Verhalten nur aus Namen und Menue abgeleitet (Art A). Am 2026-09-16 vom Nutzer zur Uebernahme bestimmt, auch fuer Eintraege, die der Abgleich zuerst als `ENTFERNEN` gefuehrt hatte (Bildschirm-Werkzeuge, Mitteilungen, Cat Mode). Die dort genannten Risiken bleiben und sind unten als Regeln gefasst.
@@ -1845,6 +1868,28 @@ Pruefraster (Checklisten folgen je Block mit der Umsetzung):
 | 14J | Umschalten wirkt sofort; Ausschalten gibt den Ausgangswert zurueck |
 | 14K | Alle drei Auswege; Tap-Ausfall beendet sichtbar; Auto-Ende nach Ablauf und bei Sleep |
 
+Umsetzungsstand 2026-09-16:
+
+- 14A, Adressen am 2026-09-16 unter macOS 26.6 aus den `Info.plist` der Settings-Erweiterungen gelesen; alle erlauben das Adressschema:
+
+  | Eintrag | Adresse | Bemerkung |
+  |---|---|---|
+  | VPN & Filters | `x-apple.systempreferences:com.apple.NetworkExtensionSettingsUI.NESettingsUIExtension` | eigener Bereich |
+  | Hide My Email | `x-apple.systempreferences:com.apple.systempreferences.AppleIDSettings:icloud` | kein eigener Anker; oeffnet iCloud |
+  | Private Relay | wie Hide My Email | kein eigener Anker; oeffnet iCloud |
+  | iPhone Notifications | `x-apple.systempreferences:com.apple.Notifications-Settings.extension` | oeffnet Mitteilungen |
+
+  Ob die Szene `:icloud` den iCloud-Bereich direkt oeffnet, ist am Geraet zu bestaetigen (Checkliste Schritt 19).
+- 14B: Rueckfrage mit "Cancel" als Standard, danach `terminate()`; nach 5 s Hinweis auf noch laufende Apps.
+- 14C: Einhaengepunkt ist die gebuendelte Zerstoerung in `AccessibilityEvents.windowDestroyed`, nicht `Windows.removeWindows`, damit das Entfernen unerreichbarer Fenster kein Beenden ausloest. **Abweichung**: Die Einstellungen stehen im neuen Tab `System Actions`, nicht in `General`.
+- 14D: zuerst `pmset displaysleepnow`, sonst `IODisplayWrangler`; beides am Geraet offen.
+- 14E: wie spezifiziert; der Listener fuer das Standard-Eingabegeraet existiert nur waehrend einer simulierten Stummschaltung.
+- 14I: Uebersetzung ueber `TranslationSession(installedSource:target:)`, das im SDK ab macOS 26 ohne SwiftUI verfuegbar ist (2026-09-16 im Interface gelesen); Quellsprache per `NLLanguageRecognizer`. Unter macOS 26 ist `Capture & Translate` deaktiviert, die anderen Aufnahme-Werkzeuge unter macOS 14.
+- 14H: Die Struktur der Mitteilungszentrale ist nicht belegt; freigegeben ist nur macOS 26 (V-21). Gesucht wird nach benannten AX-Aktionen (`Close`, `Clear`, `Clear All`, deutsch `Schliessen`, `Löschen`, `Alle löschen`).
+- 14J: Lesen von `HIDFKeyMode` ueber `IOHIDCopyCFTypeParameter` und Schreiben desselben Werts ueber `IOHIDSetCFTypeParameter` am 2026-09-16 erfolgreich; die Wirkung eines echten Wechsels ist V-20. Die Rueckgabe des Ausgangswerts liegt als Knopf im Tab `System Actions`, weil es keinen separaten Modul-Schalter gibt.
+- 14K: Der Tap erkennt den Notfall-Shortcut selbst und ruft `KeyboardEvents.triggerEmergencyStop()`; der Sicherheitspfad beendet Cat Mode ebenfalls. Faellt der Tap aus, endet Cat Mode mit Hinweis (fail-closed statt Reaktivierung).
+- 14L: Die Browser-Aktionen werden beim Start fuer die dann installierten Browser registriert; ein spaeter installierter Browser bleibt ueber seine `stableId` ausloesbar.
+
 #### 14L. Standardbrowser
 
 Eintrag: `Default Browser` mit Untermenue.
@@ -1857,7 +1902,7 @@ Eintrag: `Default Browser` mit Untermenue.
 
 ### 15. Menueleisten-Menue nach Kategorien gruppiert
 
-Status: Spezifiziert 2026-09-16; nicht begonnen. Setzt die Eintraege aus Story 10, 12, 13 und 14 voraus und waechst mit ihnen
+Status: Umgesetzt 2026-09-16; Menue am Geraet noch nicht angesehen (`docs/system-actions-checklist.md`, Schritte 1-6). Waechst mit neuen Eintraegen
 Prioritaet: Mittel. Ohne Gruppierung wird das Menue mit den neuen Eintraegen unbenutzbar lang
 
 Ziel: Alle Eintraege des Menueleisten-Menues stehen in Gruppen, die sich aus ihrem Inhalt ergeben. Jede Gruppe hat eine Ueberschrift und ist durch Trenner abgesetzt. Vorbild ist die Gliederung des Supercharge-Menues (Aktionen, Schalter, Untermenues, Systemeinstellungen, App-Menue), verfeinert nach Inhalt.
@@ -1893,6 +1938,13 @@ Sichtbarkeit:
 - Standard: `Switcher`, `Fenster`, `Systemeinstellungen` und `AltTab+` sichtbar; alle anderen Gruppen ausgeblendet, bis der Nutzer sie einschaltet. So bleibt das Menue nach dem Update so kurz wie heute plus die Fenster-Aktionen.
 - Die Gruppe `AltTab+` laesst sich nicht ausblenden, damit `Settings…` und `Quit` immer erreichbar sind.
 - Eine ausgeblendete Aktion bleibt im Register und ueber Shortcut, Hyper, Leader und FlickRing ausloesbar. Ausblenden betrifft nur das Menue.
+
+Umsetzungsstand 2026-09-16:
+
+- `MenuLayout` (rein, unit-getestet) liefert die Struktur; `MenubarMenu` setzt sie um und aktualisiert Titel, Haekchen und Verfuegbarkeit in `menuNeedsUpdate`. Submenues bauen sich beim Oeffnen neu.
+- **Abweichung**: Die Sichtbarkeit steht in einem eigenen Sidebar-Eintrag `Menu Bar Menu`, nicht in `General`. Mit rund 40 Eintraegen haette sie den General-Tab ueberladen. Derselbe Tab vergibt die Shortcuts der neuen Aktionen.
+- `Menubar.addMenuItem` ist entfallen; das Menue entsteht vollstaendig im Builder.
+- Die Permission-Callout-Zeile wandert beim Neuaufbau ins neue Menue.
 
 Regeln:
 
@@ -2055,7 +2107,7 @@ Default-Settings, Reset-Verhalten und Migration werden nach jedem neuen Modul ge
 | V-02 | Versions-Policy nach Tahoe-only | Klaeren: nur aktuelle Major-Version `N` oder `N und N-1` |
 | V-03 | Private Symbolbindung | `_AXUIElementGetWindow` ist optional zur Laufzeit gebunden; weitere private Symbole vor ihrer ersten neuen Modulnutzung gleichwertig degradierbar machen |
 | V-04 | Provenienz-Register | `THIRD-PARTY.md` ist fuer die bisher ausgewerteten Quellen angelegt; Pflege im PR-Prozess bleibt zu erzwingen |
-| V-05 | Modul- und App-Klassen-Checklisten | `docs/input-safety-checklist.md`, `docs/window-layout-checklist.md`, `docs/window-drag-checklist.md`, `docs/shortcut-clues-checklist.md` und `docs/spaces-menubar-checklist.md` vor jeder oeffentlichen Version und nach jedem unterstuetzten macOS-Major-Update ausfuehren |
+| V-05 | Modul- und App-Klassen-Checklisten | `docs/input-safety-checklist.md`, `docs/window-layout-checklist.md`, `docs/window-drag-checklist.md`, `docs/shortcut-clues-checklist.md` `docs/spaces-menubar-checklist.md` und `docs/system-actions-checklist.md` vor jeder oeffentlichen Version und nach jedem unterstuetzten macOS-Major-Update ausfuehren |
 | V-06 | Energie-Baseline | Idle- und Aktivmessungen auf dem Tahoe-/Apple-Silicon-Zielgeraet dokumentieren |
 | V-07 | Distribution | Signing, Notarisierung, Vertriebskanal und Update-Strategie vor erster oeffentlicher Version abschliessen; Sparkle bleibt optional |
 | V-08 | Safe Start und Circuit Breaker | Vor dem ersten ausgelieferten Input-Modul mit Login-Start, verbliebenem Arming-Marker und wiederholtem Tap-Timeout pruefen |
@@ -2070,6 +2122,8 @@ Default-Settings, Reset-Verhalten und Migration werden nach jedem neuen Modul ge
 | V-17 | Scrollrichtung der Maus | Story 6a am Geraet: Umkehr wirkt in mehreren App-Klassen, das Trackpad bleibt unberuehrt, Safe Mode schaltet ab und gibt frei, der Tap kommt nach einem Timeout zurueck. Dazu die offene Messung: Scroll-Latenz und Leerlaufverbrauch mit dauerhaft aktivem `scrollWheel`-Tap gegen die Baseline. Checkliste in `docs/scroll-direction-checklist.md` |
 | V-18 | Smoothed Scrolling | Story 6c am Geraet: Fluss und Auslauf in AppKit, Safari, Chromium/Electron und Terminal, zusammen mit Reverse und Speed; Abbruch durch Safe Mode, Switcher, Sleep und Beenden ohne Nachlaufen; Leerlauf ohne Timer; Verbrauch waehrend des Scrollens. Das Ergebnis entscheidet ueber die Gesten-Begleiter (6c-2). Voraussetzung: V-17 bestanden. Checkliste folgt mit der Umsetzung |
 | V-19 | Cat Mode | Story 14K am Geraet: alle drei Auswege (Panic-Kill-Switch, Menue, `unlock`), Tap-Ausfall beendet sichtbar, Auto-Ende nach Ablauf, bei Sleep und Bildschirmsperre; keine haengenden Modifier nach dem Ende. Vor jeder Freigabe Pflicht |
+| V-20 | Funktionstasten | Story 14J: wirkt ein Wechsel von `HIDFKeyMode` sofort, bleibt er nach Neustart, und gibt `Restore Original Mode` den Ausgangswert zurueck. Lesen und Schreiben desselben Werts sind belegt (2026-09-16) |
+| V-21 | Mitteilungen per AX | Story 14H: Struktur und Aktionsnamen der Mitteilungszentrale unter macOS 26 belegen; erst danach gilt die Versionsfreigabe als geprueft |
 
 ## Provenienz-Register
 

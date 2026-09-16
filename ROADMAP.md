@@ -155,6 +155,8 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 ## Phase 10: Keep Awake (Sleep Override)
 
+- MVP umgesetzt 2026-09-16 (ohne Disk-Assertion); Ausbaustufe offen.
+
 - Eigenstaendiges Modul, per Default aus: Caffeine als Minimal-Referenz (Menubar-Toggle), Amphetamine als Funktionsreferenz (Sessions, Trigger, Energie-Policies). Kein Event-Tap und keine private API — nur oeffentliche `IOPMAssertion` plus System-Observer; damit ausserhalb der Q-01..Q-16-Input-Sicherung.
 - MVP: Menubar-Toggle, Sessions (unbegrenzt / feste Dauer / bis Uhrzeit / verlaengern), System- vs. Display-wach, Restlaufzeit, globale Shortcuts ueber das Aktionsregister, Batterie-Auto-Ende, striktes Fail-safe gegen Assertion-Leak.
 - Ausbaustufe: Trigger (App laeuft, Stromversorgung, Batterie-Schwelle, Volume gemountet, externe Anzeige), Notifications, Auto-Start, Trennung manuell/triggerbasiert mit Prioritaetsregeln.
@@ -174,11 +176,15 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 ## Phase 12: Fenster-Fokus-Aktionen
 
+- Umgesetzt 2026-09-16; Geraetepruefung offen (`docs/system-actions-checklist.md`).
+
 - `Isolate Window` als Aktion im gemeinsamen Register: andere Apps ausblenden, uebrige Fenster der Ziel-App minimieren. Kein Tap, kein Timer.
 - Danach die verwandten Aktionen aus denselben zwei Bausteinen, einzeln waehlbar.
 - Vollstaendige Spezifikation und der ganze Supercharge-Abgleich in `backlog.md` unter Story 12 und `Supercharge-Abgleich`.
 
 ## Phase 13: Debug-Untermenue
+
+- Umgesetzt 2026-09-16; Geraetepruefung offen.
 
 - Der Menueleisten-Eintrag `Debug tools` wird zu `Debug` mit Untermenue: Debug-Info kopieren, Accessibility-Baum des fokussierten Fensters kopieren, Berechtigungen zuruecksetzen, dazu das bestehende Debug-Fenster.
 - Geschwaerzt: keine Fenstertitel, URL-Slots, Benutzernamen oder Textfeldinhalte im kopierten Text.
@@ -186,12 +192,16 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 ## Phase 14: System-Aktionen und Werkzeuge
 
+- Umgesetzt 2026-09-16, alle Bloecke; Geraetepruefung offen, dazu V-19 (Cat Mode), V-20 (Funktionstasten), V-21 (Mitteilungen).
+
 - Aus dem Supercharge-Abgleich uebernommen, in unabhaengigen Bloecken: Systemeinstellungs-Spruenge, Apps beenden (mit Rueckfrage), Auto-Quit, Displays schlafen, Ton und Mikrofon stummschalten, Zwischenablage leeren, Laufwerke auswerfen, Standardbrowser mit Untermenue, Funktionstasten, Bildschirm-Werkzeuge (Farbe, Texterkennung, Uebersetzung, QR), Mitteilungen leeren, Cat Mode.
 - Jede Funktion ist eine Aktion im gemeinsamen Register; keine Tastenkombination ab Werk; nichts laeuft im Hintergrund, solange es nicht benutzt wird.
 - Unverifizierte Wege (Systemeinstellungs-Adressen, Displays ohne Admin, Funktionstasten, Mitteilungen per AX, Uebersetzung) zuerst per Spike belegen. Cat Mode nur nach V-19.
 - Vollstaendige Spezifikation in `backlog.md` unter Story 14.
 
 ## Phase 15: Menueleisten-Menue gruppiert
+
+- Umgesetzt 2026-09-16; Sichtbarkeit im eigenen Tab `Menu Bar Menu`.
 
 - Alle Eintraege in inhaltlichen Gruppen mit Ueberschrift: Switcher, Fenster, Apps, Werkzeuge, Mitteilungen, System, Schalter, Standards, Systemeinstellungen, AltTab+.
 - Sichtbarkeit je Gruppe und Eintrag einstellbar; ab Werk nur Switcher, Fenster, Systemeinstellungen und AltTab+ sichtbar.
