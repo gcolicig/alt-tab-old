@@ -71,6 +71,9 @@
 "Accessibility tree of %@ copied." = "Accessibility tree of %@ copied.";
 
 /* No comment provided by engineer. */
+"Actions" = "Actions";
+
+/* No comment provided by engineer. */
 "Active app" = "Active app";
 
 /* No comment provided by engineer. */
@@ -146,6 +149,9 @@
 "AltTab+ needs accessibility permission to read the menus of other apps." = "AltTab+ needs accessibility permission to read the menus of other apps.";
 
 /* No comment provided by engineer. */
+"AltTab+ restarts afterwards." = "AltTab+ restarts afterwards.";
+
+/* No comment provided by engineer. */
 "Always" = "Always";
 
 /* No comment provided by engineer. */
@@ -195,6 +201,9 @@
 
 /* No comment provided by engineer. */
 "Apply the creator's settings?" = "Apply the creator's settings?";
+
+/* No comment provided by engineer. */
+"Apply…" = "Apply…";
 
 /* No comment provided by engineer. */
 "Apps" = "Apps";
@@ -362,7 +371,7 @@
 "Copy Translation" = "Copy Translation";
 
 /* No comment provided by engineer. */
-"Creator's settings…" = "Creator's settings…";
+"Creator's settings" = "Creator's settings";
 
 /* No comment provided by engineer. */
 "Cursor follows focus" = "Cursor follows focus";
@@ -402,6 +411,9 @@
 
 /* No comment provided by engineer. */
 "Delay" = "Delay";
+
+/* No comment provided by engineer. */
+"Devices" = "Devices";
 
 /* No comment provided by engineer. */
 "Disable input extensions (safe mode)" = "Disable input extensions (safe mode)";
@@ -449,7 +461,10 @@
 "Exceptions" = "Exceptions";
 
 /* No comment provided by engineer. */
-"Export settings…" = "Export settings…";
+"Export or import your settings" = "Export or import your settings";
+
+/* No comment provided by engineer. */
+"Export…" = "Export…";
 
 /* No comment provided by engineer. */
 "Extend by 1 Hour" = "Extend by 1 Hour";
@@ -557,7 +572,7 @@
 "Ignore shortcuts when active" = "Ignore shortcuts when active";
 
 /* No comment provided by engineer. */
-"Import settings…" = "Import settings…";
+"Import…" = "Import…";
 
 /* No comment provided by engineer. */
 "Indefinitely" = "Indefinitely";
@@ -931,8 +946,7 @@
 /* No comment provided by engineer. */
 "Quit" = "Quit";
 
-/* %@ is AltTab
-   Menubar option. %@ is AltTab */
+/* Menubar option. %@ is AltTab */
 "Quit %@" = "Quit %@";
 
 /* No comment provided by engineer. */
@@ -959,6 +973,9 @@
 /* No comment provided by engineer. */
 "Recently Focused First" = "Recently Focused First";
 
+/* Placeholder of an empty shortcut recorder */
+"Record" = "Record";
+
 /* No comment provided by engineer. */
 "Rectangle-style layout shortcuts" = "Rectangle-style layout shortcuts";
 
@@ -975,6 +992,9 @@
 "Requires macOS 26 or later." = "Requires macOS 26 or later.";
 
 /* No comment provided by engineer. */
+"Reset all settings" = "Reset all settings";
+
+/* No comment provided by engineer. */
 "Reset AltTab+ permissions?" = "Reset AltTab+ permissions?";
 
 /* No comment provided by engineer. */
@@ -987,7 +1007,7 @@
 "Reset settings and restart" = "Reset settings and restart";
 
 /* No comment provided by engineer. */
-"Reset settings and restart…" = "Reset settings and restart…";
+"Reset…" = "Reset…";
 
 /* No comment provided by engineer. */
 "Resize the window under the cursor while holding" = "Resize the window under the cursor while holding";
@@ -1078,6 +1098,9 @@
 
 /* No comment provided by engineer. */
 "Set how you open and navigate the window switcher." = "Set how you open and navigate the window switcher.";
+
+/* No comment provided by engineer. */
+"Settings file" = "Settings file";
 
 /* No comment provided by engineer. */
 "Settings imported" = "Settings imported";
@@ -1372,6 +1395,9 @@
 
 /* No comment provided by engineer. */
 "Trigger key" = "Trigger key";
+
+/* No comment provided by engineer. */
+"Triggers" = "Triggers";
 
 /* No comment provided by engineer. */
 "Turn Off" = "Turn Off";
