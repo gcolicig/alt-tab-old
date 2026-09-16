@@ -438,6 +438,9 @@
 		C0DE100000000000000000D9 /* SettingsSidebarTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000CF /* SettingsSidebarTestable.swift */; };
 		C0DE100000000000000000DA /* SettingsSidebarTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000CF /* SettingsSidebarTestable.swift */; };
 		C0DE100000000000000000DB /* SettingsSidebarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000D0 /* SettingsSidebarTests.swift */; };
+		C0DE100000000000000000DC /* SlotListTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000D1 /* SlotListTestable.swift */; };
+		C0DE100000000000000000DD /* SlotListTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000D1 /* SlotListTestable.swift */; };
+		C0DE100000000000000000DE /* SlotListTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000D2 /* SlotListTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -993,6 +996,8 @@
 		C0DE200000000000000000CE /* MicMuteIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicMuteIndicator.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000CF /* SettingsSidebarTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSidebarTestable.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000D0 /* SettingsSidebarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSidebarTests.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000D1 /* SlotListTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlotListTestable.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000D2 /* SlotListTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlotListTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1393,6 +1398,7 @@
 		BF0C8719351B41D268CE8B70 /* unit-tests */ = {
 			isa = PBXGroup;
 			children = (
+				C0DE200000000000000000D2 /* SlotListTests.swift */,
 				C0DE200000000000000000D0 /* SettingsSidebarTests.swift */,
 				C0DE200000000000000000CA /* DebugToolsTests.swift */,
 				C0DE200000000000000000C3 /* KeepAwakeTests.swift */,
@@ -2334,6 +2340,7 @@
 		D04BABCD12CA72B06290C248 /* settings-window */ = {
 			isa = PBXGroup;
 			children = (
+				C0DE200000000000000000D1 /* SlotListTestable.swift */,
 				C0DE200000000000000000CF /* SettingsSidebarTestable.swift */,
 				D04BA2526DC6726E0F7ACF7C /* LabelAndControl.swift */,
 				D04BA3FA52AA40B827A72F10 /* tabs */,
@@ -2978,6 +2985,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C0DE100000000000000000DE /* SlotListTests.swift in Sources */,
+				C0DE100000000000000000DD /* SlotListTestable.swift in Sources */,
 				C0DE100000000000000000DB /* SettingsSidebarTests.swift in Sources */,
 				C0DE100000000000000000DA /* SettingsSidebarTestable.swift in Sources */,
 				C0DE100000000000000000D4 /* DebugToolsTests.swift in Sources */,
@@ -3047,6 +3056,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C0DE100000000000000000DC /* SlotListTestable.swift in Sources */,
 				C0DE100000000000000000D9 /* SettingsSidebarTestable.swift in Sources */,
 				C0DE100000000000000000D8 /* MicMuteIndicator.swift in Sources */,
 				C0DE100000000000000000D7 /* SystemActionsSettings.swift in Sources */,

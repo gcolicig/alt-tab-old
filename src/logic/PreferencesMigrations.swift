@@ -14,6 +14,7 @@ class PreferencesMigrations {
         migrateDragModifierIndexes()
         migrateScrollReverseMouseKey()
         removeMenuVisibilityPreferences()
+        cleanUpBlankSlots()
         let preferencesKey = "preferencesVersion"
         if let versionInPlist = UserDefaults.standard.string(forKey: preferencesKey) {
             if versionInPlist != "#VERSION#" && versionInPlist.compare(App.version, options: .numeric) != .orderedDescending {
@@ -76,6 +77,21 @@ class PreferencesMigrations {
         UserDefaults.standard.dictionaryRepresentation().keys.filter(MenuLayout.isRetiredPreference).forEach {
             UserDefaults.standard.removeObject(forKey: $0)
         }
+    }
+
+    /// Story 16, stage 2: slots holding only whitespace looked filled in the old editor. The list editor
+    /// shows filled slots only, so they are emptied once. Shortcuts and bindings are left alone.
+    private static func cleanUpBlankSlots() {
+        let key = "altTabPlusBlankSlotsCleaned"
+        guard UserDefaults.standard.string(forKey: key) == nil else { return }
+        var keys = (0..<Preferences.maxLaunchAppCount).map { Preferences.indexToName("launchAppBundleIdentifier", $0) }
+        keys += (0..<Preferences.maxOpenUrlCount).map { Preferences.indexToName("openUrlValue", $0) }
+        keys += (0..<Preferences.maxProfileCount).flatMap { [ProfileStore.nameKey($0), ProfileStore.appsKey($0)] }
+        keys.forEach { key in
+            guard let value = UserDefaults.standard.string(forKey: key), SlotList.needsCleanup(value) else { return }
+            UserDefaults.standard.set("", forKey: key)
+        }
+        UserDefaults.standard.set("true", forKey: key)
     }
 
     private static func updateToNewPreferences(_ versionInPlist: String) {
