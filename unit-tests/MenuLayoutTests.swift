@@ -27,9 +27,17 @@ class MenuLayoutTests: XCTestCase {
     }
 
     func testAnEmptyGroupLeavesNoHeaderOrSeparator() {
-        let items = MenuLayout.build(entries.filter { $0.group != .windows }, headersSupported: true)
+        let remaining: [MenuEntrySpec] = entries.filter { $0.group != .windows }
+        let items: [MenuLayoutItem] = MenuLayout.build(remaining, headersSupported: true)
         XCTAssertFalse(items.contains(.header(.windows)))
-        XCTAssertFalse(zip(items, items.dropFirst()).contains { $0 == .separator && $1 == .separator })
+        XCTAssertFalse(hasDoubleSeparator(items))
+    }
+
+    private func hasDoubleSeparator(_ items: [MenuLayoutItem]) -> Bool {
+        for index in items.indices.dropFirst() where items[index] == .separator && items[index - 1] == .separator {
+            return true
+        }
+        return false
     }
 
     func testOtherDisappearsWhenAllItsGroupsAreEmpty() {
