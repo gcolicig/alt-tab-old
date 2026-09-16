@@ -549,8 +549,14 @@ class KeyboardEvents {
         inputTapCircuitBreakerLock.unlock()
     }
 
+    /// The emergency shortcut as seen by a tap that swallows the key before the Carbon hot key could.
+    static func triggerEmergencyStop() {
+        disableInputModulesForSafety(NSLocalizedString("The emergency shortcut disabled all AltTab+ input extensions.", comment: ""))
+    }
+
     private static func disableInputModulesForSafety(_ message: String?) {
         Preferences.set("inputModulesSafeMode", "true", false)
+        CatMode.stop(reason: nil)
         Preferences.set("hyperKeyEnabled", "false", false)
         Preferences.set("hyperKeyArmingMarker", "false", false)
         Preferences.set("nextWindowGesture", GesturePreference.disabled.indexAsString, false)

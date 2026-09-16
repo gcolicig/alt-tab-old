@@ -9,19 +9,26 @@ enum Actions {
             SpaceAction.all.map(spaceRegistration) +
             (0..<Preferences.maxLaunchAppCount).map(launchAppRegistration) +
             (0..<Preferences.maxOpenUrlCount).map(openUrlRegistration) +
-            (0..<Preferences.maxProfileCount).map(profileRegistration)
+            (0..<Preferences.maxProfileCount).map(profileRegistration) +
+            SystemActions.all.map(systemRegistration) +
+            DefaultBrowser.installed().compactMap(DefaultBrowser.bundleId).map(defaultBrowserRegistration)
     )
 
+    /// A browser installed after launch has no registration; its binding still works.
     @discardableResult
     static func perform(_ id: ActionIdentifier) -> Bool {
-        registry.perform(id)
+        if case .defaultBrowser(let bundleId) = id, registry.action(id) == nil {
+            DefaultBrowser.set(bundleId: bundleId)
+            return true
+        }
+        return registry.perform(id)
     }
 
     /// Resolves the string in `ActionIdentifier.stableId` back to an identifier. Leader and FlickRing store
     /// their bindings by this string, so a binding to an action that no longer exists resolves to nil and is
     /// dropped instead of crashing.
     static func identifier(forStableId stableId: String) -> ActionIdentifier? {
-        byStableId[stableId]
+        byStableId[stableId] ?? DefaultBrowserActionId.bundleId(fromStableId: stableId).map(ActionIdentifier.defaultBrowser)
     }
 
     private static let byStableId: [String: ActionIdentifier] = {
@@ -70,6 +77,18 @@ enum Actions {
     private static func profileRegistration(_ index: Int) -> RegisteredAction {
         RegisteredAction(id: .activateProfile(index), title: { ProfileController.title(index) }, availability: { ProfileController.availability(index) }) {
             ProfileController.activate(index)
+        }
+    }
+
+    private static func systemRegistration(_ spec: SystemActionSpec) -> RegisteredAction {
+        RegisteredAction(id: .system(spec.action), title: { spec.title }, availability: spec.availability, execute: spec.perform)
+    }
+
+    private static func defaultBrowserRegistration(_ bundleId: String) -> RegisteredAction {
+        RegisteredAction(id: .defaultBrowser(bundleId),
+            title: { String(format: NSLocalizedString("Set Default Browser: %@", comment: ""), DefaultBrowser.url(forBundleId: bundleId).map(DefaultBrowser.displayName) ?? bundleId) },
+            availability: { DefaultBrowser.url(forBundleId: bundleId) == nil ? .unavailable(NSLocalizedString("The browser is not installed.", comment: "")) : .available }) {
+            DefaultBrowser.set(bundleId: bundleId)
         }
     }
 

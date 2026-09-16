@@ -401,6 +401,39 @@
 		F00DCAFE0000000000001002 /* Search.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00DCAFE0000000000000002 /* Search.swift */; };
 		F00DCAFE0000000000001003 /* SearchTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00DCAFE0000000000000003 /* SearchTestable.swift */; };
 		F00DCAFE0000000000001103 /* SearchTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00DCAFE0000000000000003 /* SearchTestable.swift */; };
+		C0DE100000000000000000B7 /* SystemActionTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000B3 /* SystemActionTestable.swift */; };
+		C0DE100000000000000000B8 /* SystemActionTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000B3 /* SystemActionTestable.swift */; };
+		C0DE100000000000000000B9 /* MenuLayoutTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000B4 /* MenuLayoutTestable.swift */; };
+		C0DE100000000000000000BA /* MenuLayoutTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000B4 /* MenuLayoutTestable.swift */; };
+		C0DE100000000000000000BB /* MenuLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000B5 /* MenuLayoutTests.swift */; };
+		C0DE100000000000000000BC /* WindowFocusTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000B6 /* WindowFocusTestable.swift */; };
+		C0DE100000000000000000BD /* WindowFocusTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000B6 /* WindowFocusTestable.swift */; };
+		C0DE100000000000000000BE /* WindowFocusActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000B7 /* WindowFocusActions.swift */; };
+		C0DE100000000000000000BF /* WindowFocusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000B8 /* WindowFocusTests.swift */; };
+		C0DE100000000000000000C0 /* SystemUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000B9 /* SystemUtilities.swift */; };
+		C0DE100000000000000000C1 /* AudioMute.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000BA /* AudioMute.swift */; };
+		C0DE100000000000000000C2 /* DefaultBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000BB /* DefaultBrowser.swift */; };
+		C0DE100000000000000000C3 /* FunctionKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000BC /* FunctionKeys.swift */; };
+		C0DE100000000000000000C4 /* AppQuit.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000BD /* AppQuit.swift */; };
+		C0DE100000000000000000C5 /* SystemActionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000BE /* SystemActionTests.swift */; };
+		C0DE100000000000000000C6 /* AutoQuit.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000BF /* AutoQuit.swift */; };
+		C0DE100000000000000000C7 /* CatMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000C0 /* CatMode.swift */; };
+		C0DE100000000000000000C8 /* KeepAwakeTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000C1 /* KeepAwakeTestable.swift */; };
+		C0DE100000000000000000C9 /* KeepAwakeTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000C1 /* KeepAwakeTestable.swift */; };
+		C0DE100000000000000000CA /* KeepAwake.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000C2 /* KeepAwake.swift */; };
+		C0DE100000000000000000CB /* KeepAwakeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000C3 /* KeepAwakeTests.swift */; };
+		C0DE100000000000000000CC /* ScreenToolsTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000C4 /* ScreenToolsTestable.swift */; };
+		C0DE100000000000000000CD /* ScreenToolsTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000C4 /* ScreenToolsTestable.swift */; };
+		C0DE100000000000000000CE /* RegionSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000C5 /* RegionSelection.swift */; };
+		C0DE100000000000000000CF /* ScreenTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000C6 /* ScreenTools.swift */; };
+		C0DE100000000000000000D0 /* NotificationActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000C7 /* NotificationActions.swift */; };
+		C0DE100000000000000000D1 /* DebugToolsTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000C8 /* DebugToolsTestable.swift */; };
+		C0DE100000000000000000D2 /* DebugToolsTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000C8 /* DebugToolsTestable.swift */; };
+		C0DE100000000000000000D3 /* DebugTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000C9 /* DebugTools.swift */; };
+		C0DE100000000000000000D4 /* DebugToolsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000CA /* DebugToolsTests.swift */; };
+		C0DE100000000000000000D5 /* SystemActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000CB /* SystemActions.swift */; };
+		C0DE100000000000000000D6 /* MenubarMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000CC /* MenubarMenu.swift */; };
+		C0DE100000000000000000D7 /* SystemActionsSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000CD /* SystemActionsSettings.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -926,6 +959,33 @@
 		E20104DD2C3DE10E7CCC5B5A /* Pods-unit-tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-unit-tests.release.xcconfig"; path = "Target Support Files/Pods-unit-tests/Pods-unit-tests.release.xcconfig"; sourceTree = "<group>"; };
 		F00DCAFE0000000000000002 /* Search.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Search.swift; sourceTree = "<group>"; };
 		F00DCAFE0000000000000003 /* SearchTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchTestable.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000B3 /* SystemActionTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemActionTestable.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000B4 /* MenuLayoutTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuLayoutTestable.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000B5 /* MenuLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuLayoutTests.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000B6 /* WindowFocusTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowFocusTestable.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000B7 /* WindowFocusActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowFocusActions.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000B8 /* WindowFocusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowFocusTests.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000B9 /* SystemUtilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemUtilities.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000BA /* AudioMute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioMute.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000BB /* DefaultBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowser.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000BC /* FunctionKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunctionKeys.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000BD /* AppQuit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppQuit.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000BE /* SystemActionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemActionTests.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000BF /* AutoQuit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoQuit.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000C0 /* CatMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatMode.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000C1 /* KeepAwakeTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeepAwakeTestable.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000C2 /* KeepAwake.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeepAwake.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000C3 /* KeepAwakeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeepAwakeTests.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000C4 /* ScreenToolsTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenToolsTestable.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000C5 /* RegionSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionSelection.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000C6 /* ScreenTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTools.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000C7 /* NotificationActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationActions.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000C8 /* DebugToolsTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugToolsTestable.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000C9 /* DebugTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugTools.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000CA /* DebugToolsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugToolsTests.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000CB /* SystemActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemActions.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000CC /* MenubarMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenubarMenu.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000CD /* SystemActionsSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemActionsSettings.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1326,6 +1386,11 @@
 		BF0C8719351B41D268CE8B70 /* unit-tests */ = {
 			isa = PBXGroup;
 			children = (
+				C0DE200000000000000000CA /* DebugToolsTests.swift */,
+				C0DE200000000000000000C3 /* KeepAwakeTests.swift */,
+				C0DE200000000000000000BE /* SystemActionTests.swift */,
+				C0DE200000000000000000B8 /* WindowFocusTests.swift */,
+				C0DE200000000000000000B5 /* MenuLayoutTests.swift */,
 				C0DE200000000000000000B2 /* ScrollTransformTests.swift */,
 				C0DE200000000000000000AD /* ProfileTests.swift */,
 				C0DE200000000000000000AB /* SpaceIdentityTests.swift */,
@@ -1588,6 +1653,10 @@
 		D04BA0D80B24E72B9B981A1D /* logic */ = {
 			isa = PBXGroup;
 			children = (
+				C0DE3000000000000000000F /* debug-tools */,
+				C0DE3000000000000000000E /* screen-tools */,
+				C0DE3000000000000000000D /* keep-awake */,
+				C0DE3000000000000000000B /* system-actions */,
 				C0DE30000000000000000002 /* actions */,
 				C0DE30000000000000000004 /* pointer */,
 				C0DE30000000000000000005 /* window-cursor */,
@@ -1718,6 +1787,7 @@
 		D04BA229883E5D540D00232D /* ui */ = {
 			isa = PBXGroup;
 			children = (
+				C0DE3000000000000000000C /* menubar-menu */,
 				C0DE200000000000000000A7 /* FlickRingPanel.swift */,
 				C0DE200000000000000000A4 /* LeaderPanel.swift */,
 				D04BAAB92261FC04854FDDE9 /* App.swift */,
@@ -1804,6 +1874,7 @@
 		D04BA3FA52AA40B827A72F10 /* tabs */ = {
 			isa = PBXGroup;
 			children = (
+				C0DE200000000000000000CD /* SystemActionsSettings.swift */,
 				C0DE200000000000000000B0 /* ProfilesTab.swift */,
 				C0DE200000000000000000A9 /* FlickRingTab.swift */,
 				C0DE200000000000000000A8 /* LeaderTab.swift */,
@@ -2405,6 +2476,62 @@
 			path = search;
 			sourceTree = "<group>";
 		};
+		C0DE3000000000000000000B /* system-actions */ = {
+			isa = PBXGroup;
+			children = (
+				C0DE200000000000000000CB /* SystemActions.swift */,
+				C0DE200000000000000000C7 /* NotificationActions.swift */,
+				C0DE200000000000000000C0 /* CatMode.swift */,
+				C0DE200000000000000000BF /* AutoQuit.swift */,
+				C0DE200000000000000000BD /* AppQuit.swift */,
+				C0DE200000000000000000BC /* FunctionKeys.swift */,
+				C0DE200000000000000000BB /* DefaultBrowser.swift */,
+				C0DE200000000000000000BA /* AudioMute.swift */,
+				C0DE200000000000000000B9 /* SystemUtilities.swift */,
+				C0DE200000000000000000B7 /* WindowFocusActions.swift */,
+				C0DE200000000000000000B6 /* WindowFocusTestable.swift */,
+				C0DE200000000000000000B3 /* SystemActionTestable.swift */,
+			);
+			path = system-actions;
+			sourceTree = "<group>";
+		};
+		C0DE3000000000000000000C /* menubar-menu */ = {
+			isa = PBXGroup;
+			children = (
+				C0DE200000000000000000CC /* MenubarMenu.swift */,
+				C0DE200000000000000000B4 /* MenuLayoutTestable.swift */,
+			);
+			path = menubar-menu;
+			sourceTree = "<group>";
+		};
+		C0DE3000000000000000000D /* keep-awake */ = {
+			isa = PBXGroup;
+			children = (
+				C0DE200000000000000000C2 /* KeepAwake.swift */,
+				C0DE200000000000000000C1 /* KeepAwakeTestable.swift */,
+			);
+			path = keep-awake;
+			sourceTree = "<group>";
+		};
+		C0DE3000000000000000000E /* screen-tools */ = {
+			isa = PBXGroup;
+			children = (
+				C0DE200000000000000000C6 /* ScreenTools.swift */,
+				C0DE200000000000000000C5 /* RegionSelection.swift */,
+				C0DE200000000000000000C4 /* ScreenToolsTestable.swift */,
+			);
+			path = screen-tools;
+			sourceTree = "<group>";
+		};
+		C0DE3000000000000000000F /* debug-tools */ = {
+			isa = PBXGroup;
+			children = (
+				C0DE200000000000000000C9 /* DebugTools.swift */,
+				C0DE200000000000000000C8 /* DebugToolsTestable.swift */,
+			);
+			path = debug-tools;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -2841,6 +2968,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C0DE100000000000000000D4 /* DebugToolsTests.swift in Sources */,
+				C0DE100000000000000000D2 /* DebugToolsTestable.swift in Sources */,
+				C0DE100000000000000000CD /* ScreenToolsTestable.swift in Sources */,
+				C0DE100000000000000000CB /* KeepAwakeTests.swift in Sources */,
+				C0DE100000000000000000C9 /* KeepAwakeTestable.swift in Sources */,
+				C0DE100000000000000000C5 /* SystemActionTests.swift in Sources */,
+				C0DE100000000000000000BF /* WindowFocusTests.swift in Sources */,
+				C0DE100000000000000000BD /* WindowFocusTestable.swift in Sources */,
+				C0DE100000000000000000BB /* MenuLayoutTests.swift in Sources */,
+				C0DE100000000000000000BA /* MenuLayoutTestable.swift in Sources */,
+				C0DE100000000000000000B8 /* SystemActionTestable.swift in Sources */,
 				C0DE10000000000000000008 /* ActionRegistry.swift in Sources */,
 				C0DE1000000000000000000C /* InstantSpacesTestable.swift in Sources */,
 				C0DE1000000000000000000D /* InstantSpacesTests.swift in Sources */,
@@ -2897,6 +3035,28 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C0DE100000000000000000D7 /* SystemActionsSettings.swift in Sources */,
+				C0DE100000000000000000D6 /* MenubarMenu.swift in Sources */,
+				C0DE100000000000000000D5 /* SystemActions.swift in Sources */,
+				C0DE100000000000000000D3 /* DebugTools.swift in Sources */,
+				C0DE100000000000000000D1 /* DebugToolsTestable.swift in Sources */,
+				C0DE100000000000000000D0 /* NotificationActions.swift in Sources */,
+				C0DE100000000000000000CF /* ScreenTools.swift in Sources */,
+				C0DE100000000000000000CE /* RegionSelection.swift in Sources */,
+				C0DE100000000000000000CC /* ScreenToolsTestable.swift in Sources */,
+				C0DE100000000000000000CA /* KeepAwake.swift in Sources */,
+				C0DE100000000000000000C8 /* KeepAwakeTestable.swift in Sources */,
+				C0DE100000000000000000C7 /* CatMode.swift in Sources */,
+				C0DE100000000000000000C6 /* AutoQuit.swift in Sources */,
+				C0DE100000000000000000C4 /* AppQuit.swift in Sources */,
+				C0DE100000000000000000C3 /* FunctionKeys.swift in Sources */,
+				C0DE100000000000000000C2 /* DefaultBrowser.swift in Sources */,
+				C0DE100000000000000000C1 /* AudioMute.swift in Sources */,
+				C0DE100000000000000000C0 /* SystemUtilities.swift in Sources */,
+				C0DE100000000000000000BE /* WindowFocusActions.swift in Sources */,
+				C0DE100000000000000000BC /* WindowFocusTestable.swift in Sources */,
+				C0DE100000000000000000B9 /* MenuLayoutTestable.swift in Sources */,
+				C0DE100000000000000000B7 /* SystemActionTestable.swift in Sources */,
 				C0DE10000000000000000006 /* ActionRegistry.swift in Sources */,
 				C0DE10000000000000000007 /* Actions.swift in Sources */,
 				C0DE10000000000000000018 /* LaunchAppOpenUrlAction.swift in Sources */,

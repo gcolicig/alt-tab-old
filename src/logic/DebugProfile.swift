@@ -33,7 +33,7 @@ class DebugProfile {
             ("Current CPU frequency", Sysctl.run("hw.cpufrequency", Int.self).map { (frequency: Int) -> String in String(format: "%.1f", Double(frequency) / Double(1_000_000_000)) + " Ghz" } ?? "nil"),
             ("Resource utilization", resourcesUtilization()),
             ("Window drag AX deviations", windowDragDeviations()),
-        ]
+        ] + DebugTools.extraProfileEntries()
         return listLevel1(tuples)
     }
 
@@ -66,7 +66,7 @@ class DebugProfile {
     }
 
     private static func appPreference(_ key: String) -> String {
-        UserDefaults.standard.object(forKey: key).map { String(describing: $0) } ?? "nil"
+        DebugRedaction.preferenceValue(key: key, value: UserDefaults.standard.object(forKey: key).map { String(describing: $0) })
     }
 
     private static func screen(_ screen: NSScreen) -> String {

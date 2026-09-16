@@ -15,6 +15,8 @@ class ScrollwheelEvents {
     /// to avoid does not arise here. The measurement that confirms it is V-17.
     private static var tapEnabled = false
 
+    static var isTapEnabled: Bool { tapEnabled }
+
     static func observe() {
         observe_()
         // the user's settings apply from launch, not from the first visit to the settings tab

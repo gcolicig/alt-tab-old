@@ -162,6 +162,9 @@ class ControlsTab {
         (0..<Preferences.maxProfileCount).forEach { index in
             actions[ProfileStore.shortcutPreferenceKey(index)] = { Actions.perform(.activateProfile(index)) }
         }
+        SystemAction.allCases.forEach { action in
+            actions[action.shortcutPreferenceKey] = { Actions.perform(.system(action)) }
+        }
         return actions
     }()
     static var arrowKeysCheckbox: Switch!
@@ -194,6 +197,7 @@ class ControlsTab {
         keys += (0..<Preferences.maxLaunchAppCount).map(LaunchAppAction.shortcutPreferenceKey)
         keys += (0..<Preferences.maxOpenUrlCount).map(OpenUrlAction.shortcutPreferenceKey)
         keys += (0..<Preferences.maxProfileCount).map(ProfileStore.shortcutPreferenceKey)
+        keys += SystemAction.allCases.map(\.shortcutPreferenceKey)
         return keys
     }()
     private static let globalActionShortcutPreferences = Set(

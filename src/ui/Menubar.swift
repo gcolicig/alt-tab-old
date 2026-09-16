@@ -30,37 +30,26 @@ class Menubar {
         let activeSpaceId: CGSSpaceID?
     }
 
-    static func addMenuItem(_ title: String, _ action: Selector, _ keyEquivalent: String, _ symbolName: String?, _ color: NSColor? = nil, _ target: AnyObject? = nil) {
-        let item = menu.addItem(withTitle: title, action: action, keyEquivalent: keyEquivalent)
-        item.target = target
-        if #available(macOS 26.0, *), let symbolName {
-            item.image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)
-            if let color {
-                item.image = item.image?.withSymbolConfiguration(.init(paletteColors: [color]))
-            }
-        }
-    }
-
     static func initialize() {
-        menu = NSMenu()
-        menu.title = App.name // perf: prevent going through expensive code-path within appkit
         let permissionCalloutMenuItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
         permissionCalloutMenuItem.view = PermissionCallout()
         let calloutSeparator = NSMenuItem.separator()
         permissionCalloutMenuItems = [permissionCalloutMenuItem, calloutSeparator]
-        addMenuItem(NSLocalizedString("Show", comment: "Menubar option"), #selector(App.showUiFromShortcut0), "", "eye", nil, App.self)
-        menu.addItem(NSMenuItem.separator())
-        addMenuItem(NSLocalizedString("Settings…", comment: "Menubar option"), #selector(App.showSettingsWindow), ",", "gear", nil, App.self)
-        addMenuItem(NSLocalizedString("Check permissions…", comment: "Menubar option"), #selector(App.checkPermissions), "", "hand.raised", nil, App.self)
-        menu.addItem(NSMenuItem.separator())
-        addMenuItem(String(format: NSLocalizedString("About %@", comment: "Menubar option. %@ is AltTab"), App.name), #selector(App.showAboutWindow), "", "info.circle", nil, App.self)
-        addMenuItem(NSLocalizedString("Debug tools", comment: "Menubar option"), #selector(App.showDebugWindow), "", "scope", nil, App.self)
-        menu.addItem(NSMenuItem.separator())
-        addMenuItem(String(format: NSLocalizedString("Quit %@", comment: "Menubar option. %@ is AltTab"), App.name), #selector(NSApplication.terminate(_:)), "q", nil) // "xmark.rectangle" is not necessary; macos automatically recognizes Quit
+        menu = MenubarMenu.shared.build()
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         statusItem.button!.target = self // NSStatusItem.target was deprecated in 10.14
         statusItem.button!.action = #selector(statusItemOnClick)
         statusItem.button!.sendAction(on: [.leftMouseDown, .rightMouseDown])
+    }
+
+    /// Visibility settings changed the structure. The callout items can only belong to one menu at a time,
+    /// so they move over from the old one.
+    static func rebuildMenu() {
+        guard menu != nil else { return }
+        let calloutShown = permissionCalloutMenuItems?.first.map { menu.items.contains($0) } ?? false
+        togglePermissionCallout(false)
+        menu = MenubarMenu.shared.build()
+        togglePermissionCallout(calloutShown)
     }
 
     // NSMenuItem.isHidden isn't reliable with custom views. We add/remove to hide/show these items

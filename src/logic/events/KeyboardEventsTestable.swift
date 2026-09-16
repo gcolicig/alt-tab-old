@@ -34,6 +34,10 @@ class KeyboardEventsTestable {
         (0..<Preferences.maxProfileCount).forEach {
             ids[ProfileStore.shortcutPreferenceKey($0)] = afterOpenUrls + $0
         }
+        let afterProfiles: Int = afterOpenUrls + Preferences.maxProfileCount
+        SystemAction.allCases.enumerated().forEach {
+            ids[$0.element.shortcutPreferenceKey] = afterProfiles + $0.offset
+        }
         return ids
     }
 }

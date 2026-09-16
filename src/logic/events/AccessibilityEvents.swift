@@ -142,6 +142,7 @@ class AccessibilityEvents {
             pendingDestroyedWindows.removeAll()
             guard !batch.isEmpty else { return }
             Windows.removeWindows(batch, true)
+            AutoQuit.windowsClosed(batch)
         }
     }
 

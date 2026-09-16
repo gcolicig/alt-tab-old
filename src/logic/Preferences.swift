@@ -111,6 +111,19 @@ class Preferences {
             values[ProfileStore.shortcutPreferenceKey(index)] = defaultShortcut("")
         }
         SpaceAction.all.forEach { values[$0.shortcutPreferenceKey] = defaultShortcut("") }
+        SystemAction.allCases.forEach {
+            values[$0.shortcutPreferenceKey] = defaultShortcut("")
+            values[MenuLayout.entryPreferenceKey($0.rawValue)] = String($0.visibleInMenuByDefault)
+        }
+        MenuGroup.allCases.forEach { values[MenuLayout.groupPreferenceKey($0)] = String($0.visibleByDefault) }
+        values["autoQuitEnabled"] = "false"
+        values["autoQuitDelaySeconds"] = "10"
+        values["autoQuitMode"] = String(AutoQuitMode.onlyListed.rawValue)
+        values["autoQuitBundleIds"] = "[]"
+        values["catModeMinutes"] = "60"
+        values["keepAwakeLastDuration"] = String(KeepAwakeDuration.hour1.rawValue)
+        values["keepAwakeDisplay"] = "false"
+        values["keepAwakeBatteryThreshold"] = "20"
         (0..<maxLaunchAppCount).forEach { index in
             values[indexToName("launchAppBundleIdentifier", index)] = ""
             values[LaunchAppAction.shortcutPreferenceKey(index)] = defaultShortcut("")
@@ -176,6 +189,22 @@ class Preferences {
     static var reverseScrollTrackpad: Bool { CachedUserDefaults.bool("reverseScrollTrackpad") }
     static var scrollSpeedMouse: ScrollSpeedPreference { CachedUserDefaults.macroPref("scrollSpeedMouse", ScrollSpeedPreference.allCases) }
     static var scrollSpeedTrackpad: ScrollSpeedPreference { CachedUserDefaults.macroPref("scrollSpeedTrackpad", ScrollSpeedPreference.allCases) }
+    static var autoQuitEnabled: Bool { CachedUserDefaults.bool("autoQuitEnabled") }
+    static var autoQuitDelaySeconds: Int { CachedUserDefaults.int("autoQuitDelaySeconds") }
+    static var autoQuitMode: Int { CachedUserDefaults.int("autoQuitMode") }
+    static var autoQuitBundleIds: String { CachedUserDefaults.string("autoQuitBundleIds") }
+    static var catModeMinutes: Int { CachedUserDefaults.int("catModeMinutes") }
+    static var keepAwakeLastDuration: Int { CachedUserDefaults.int("keepAwakeLastDuration") }
+    static var keepAwakeDisplay: Bool { CachedUserDefaults.bool("keepAwakeDisplay") }
+    static var keepAwakeBatteryThreshold: Int { CachedUserDefaults.int("keepAwakeBatteryThreshold") }
+
+    static func menuGroupVisible(_ group: MenuGroup) -> Bool {
+        !group.canBeHidden || CachedUserDefaults.bool(MenuLayout.groupPreferenceKey(group))
+    }
+
+    static func menuEntryVisible(_ id: String) -> Bool {
+        UserDefaults.standard.object(forKey: MenuLayout.entryPreferenceKey(id)) == nil || CachedUserDefaults.bool(MenuLayout.entryPreferenceKey(id))
+    }
     static var pointerMouseAcceleration: PointerAccelerationPreference { CachedUserDefaults.macroPref("pointerMouseAcceleration", PointerAccelerationPreference.allCases) }
     static var pointerTrackpadAcceleration: PointerAccelerationPreference { CachedUserDefaults.macroPref("pointerTrackpadAcceleration", PointerAccelerationPreference.allCases) }
     static var pointerMouseSpeed: Double { PointerSpeedSteps.value(CachedUserDefaults.int("pointerMouseSpeed")) }

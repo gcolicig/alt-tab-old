@@ -423,6 +423,9 @@ extension App: NSApplicationDelegate {
         // who uninstalls AltTab+ or turns off its autostart keeps a value they never chose. `release` runs
         // the same ownership check as every other write, so a value somebody else took over is left alone.
         PointerCategory.allCases.forEach { PointerOwnership.release($0) }
+        KeepAwake.releaseOnQuit()
+        AudioMute.restoreOnQuit()
+        CatMode.stop(reason: nil)
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
