@@ -11,7 +11,7 @@ Emergency shortcut: `Command+Control+Option+Shift+Escape`.
 
 | # | Action | Expectation |
 |---|---|---|
-| 1 | Open the menubar menu | Main menu: Switcher, Windows (all six actions), `Other… >`, the AltTab+ block; headings on macOS 14+; no double or trailing separator |
+| 1 | Open the menubar menu | Main menu: `Settings…` on top, Switcher, Windows (five actions), `Other… >`, then About, Check permissions, Debug, Quit; headings on macOS 14+; no double or trailing separator |
 | 2 | Open `Other…` | Headed sections in order: Apps, Tools, Notifications, System, Toggles, Defaults; no further submenus except Keep Awake and Default Browser |
 | 3 | `Settings > Menu Actions` | Every action with a shortcut recorder, grouped like the menu; no visibility switches |
 | 4 | Assign a shortcut to `Isolate Window` in `Menu Actions` | The shortcut works outside the menu |

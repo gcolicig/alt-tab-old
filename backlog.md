@@ -1554,7 +1554,7 @@ Stufe 12b, Verwandte (je einzeln auf `BEHALTEN`/`OPTIONAL`/`ENTFERNEN`/`SPAETER`
 - [BEHALTEN] `Minimize App Windows Except Frontmost`: nur B2. `windowFocus.minimizeAppOthers`.
 - [BEHALTEN] `Hide Other Apps`: nur B1. Entspricht dem nativen `Cmd+Option+H`, aber ueber jeden Trigger erreichbar. `windowFocus.hideOthers`.
 - [OPTIONAL] `Minimize All Windows Except Frontmost`: B2 ueber alle Apps. Langsamer als B1 und mit Dock-Animation je Fenster; nur behalten, wenn Minimieren statt Ausblenden gewollt ist.
-- [OPTIONAL] `Minimize All Windows`: wie oben, ohne Ausnahme.
+- [ENTFERNEN] `Minimize All Windows`: gebaut und am 2026-09-16 wieder gestrichen. Gleiches Ergebnis wie `Hide All Windows`, aber langsamer (Animation je Fenster) und fuellt das Dock.
 - [OPTIONAL] `Hide All Windows`: B1 ohne Ausnahme, dazu Finder aktivieren, damit keine App den Fokus behaelt.
 - [SPAETER] `Show Desktop`: macOS hat dafuer eine eigene Geste und Mission-Control-Funktion, die sich nicht oeffentlich ausloesen laesst. Nachbau ueber B1 waere nicht umkehrbar wie das Original. Erst aufnehmen, wenn ein sauberer Weg belegt ist.
 - [SPAETER] `Undo`: den Zustand vor der letzten Fokus-Aktion wiederherstellen (ausgeblendete Apps einblenden, minimierte Fenster zurueckholen). Braucht einen Schnappschuss mit Lebensdauer und passt zu Story 11, Block 3.
@@ -1920,6 +1920,7 @@ Aufbau:
 
 Sichtbarkeit (ersetzt am 2026-09-16):
 
+- **Entschieden 2026-09-16**: `Settings…` steht als eigener Eintrag ganz oben, vor `Switcher`. Im AltTab+-Block steht `About AltTab+` vor `Check permissions…`.
 - **Entschieden 2026-09-16**: Es gibt kein Ein- und Ausblenden mehr. Alle Eintraege sind immer sichtbar. Im Hauptmenue stehen nur `Switcher`, `Fenster` und der AltTab+-Block; alle anderen Gruppen (`Apps`, `Werkzeuge`, `Mitteilungen`, `System`, `Schalter`, `Standards`) sind Abschnitte mit Ueberschrift im Untermenue `Other… >`.
 - Die frueheren Schalter-Praeferenzen (`menuGroupVisible.*`, `menuEntryVisible.*`) entfernt eine Migration beim Start.
 - Der Settings-Tab heisst jetzt `Menu Actions` und vergibt nur noch globale Shortcuts fuer die Aktionen, gruppiert wie im Menue. Keep-Awake-Shortcuts bleiben im Tab `Keep Awake`, damit je Praeferenz genau ein Recorder existiert.

@@ -3,6 +3,7 @@ import Foundation
 /// Groups of the menubar menu, in display order. The groups follow what the entries do (story 15); a new
 /// entry joins an existing group unless none fits.
 enum MenuGroup: String, CaseIterable {
+    case settings
     case switcher
     case windows
     case apps
@@ -13,12 +14,13 @@ enum MenuGroup: String, CaseIterable {
     case defaults
     case app
 
-    /// The app group closes the menu without a heading, like every macOS app menu.
-    var hasHeader: Bool { self != .app }
+    /// `Settings…` opens the menu on its own (decided 2026-09-16); the app group closes it. Neither needs a
+    /// heading.
+    var hasHeader: Bool { ![.settings, .app].contains(self) }
 
     /// Decided 2026-09-16: every group except the switcher, the window actions and the app block becomes a
     /// headed section of one `Other…` submenu. Nothing is hidden any more, so nothing needs switching.
-    var isInOther: Bool { ![.switcher, .windows, .app].contains(self) }
+    var isInOther: Bool { ![.settings, .switcher, .windows, .app].contains(self) }
 }
 
 struct MenuEntrySpec: Equatable {

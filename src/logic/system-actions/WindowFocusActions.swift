@@ -9,7 +9,6 @@ enum WindowFocusActions {
         switch action {
             case .hideOtherApps: hideApps(keeping: pid)
             case .hideAll: NSWorkspace.shared.hideOtherApplications()
-            case .minimizeAll: minimize(scope: .allApps, targetPid: nil, keeping: nil)
             default: performWithFocusedWindow(action, pid)
         }
     }

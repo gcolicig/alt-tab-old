@@ -105,14 +105,14 @@ final class MenubarMenu: NSObject, NSMenuDelegate {
             case .system: return NSLocalizedString("System", comment: "")
             case .toggles: return NSLocalizedString("Toggles", comment: "")
             case .defaults: return NSLocalizedString("Defaults", comment: "")
-            case .app: return App.name
+            case .settings, .app: return App.name
         }
     }
 
     // MARK: entries
 
     static func allEntries() -> [MenubarEntry] {
-        [showEntry] + SystemActions.all.filter { !keepAwakeActions.contains($0.action) }.map(MenubarEntry.init)
+        [settingsEntry, showEntry] + SystemActions.all.filter { !keepAwakeActions.contains($0.action) }.map(MenubarEntry.init)
             + [keepAwakeEntry, defaultBrowserEntry] + appEntries
     }
 
@@ -128,13 +128,14 @@ final class MenubarMenu: NSObject, NSMenuDelegate {
     private static let defaultBrowserEntry = MenubarEntry(id: MenuLayout.defaultBrowserEntryId, group: .defaults, title: { NSLocalizedString("Default Browser", comment: "") },
         symbol: "globe", submenu: { SubmenuBuilder.defaultBrowser() }) {}
 
+    private static let settingsEntry = MenubarEntry(id: "app.settings", group: .settings, title: { NSLocalizedString("Settings…", comment: "Menubar option") },
+        symbol: "gear", keyEquivalent: ",") { App.showSettingsWindow() }
+
     private static let appEntries: [MenubarEntry] = [
-        MenubarEntry(id: "app.settings", group: .app, title: { NSLocalizedString("Settings…", comment: "Menubar option") }, symbol: "gear",
-            keyEquivalent: ",") { App.showSettingsWindow() },
-        MenubarEntry(id: "app.permissions", group: .app, title: { NSLocalizedString("Check permissions…", comment: "Menubar option") },
-            symbol: "hand.raised") { App.showPermissionsWindow() },
         MenubarEntry(id: "app.about", group: .app, title: { String(format: NSLocalizedString("About %@", comment: "Menubar option. %@ is AltTab"), App.name) },
             symbol: "info.circle") { App.showAboutWindow() },
+        MenubarEntry(id: "app.permissions", group: .app, title: { NSLocalizedString("Check permissions…", comment: "Menubar option") },
+            symbol: "hand.raised") { App.showPermissionsWindow() },
         MenubarEntry(id: "app.debug", group: .app, title: { NSLocalizedString("Debug", comment: "Menubar option") }, symbol: "wrench.and.screwdriver",
             submenu: { SubmenuBuilder.debug() }) {},
         MenubarEntry(id: "app.quit", group: .app, title: { String(format: NSLocalizedString("Quit %@", comment: "Menubar option. %@ is AltTab"), App.name) },
