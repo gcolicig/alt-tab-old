@@ -16,11 +16,17 @@ enum ScreenTools {
         return .available
     }
 
+    /// The initializer used below exists only in the macOS 26 SDK (Swift 6.2 toolchains); CI still builds
+    /// with Xcode 16, where the action is compiled out and reported as unavailable.
     static func translateAvailability() -> ActionAvailability {
+        #if compiler(>=6.2)
         guard #available(macOS 26.0, *) else {
             return .unavailable(NSLocalizedString("Requires macOS 26 or later.", comment: ""))
         }
         return captureAvailability()
+        #else
+        return .unavailable(NSLocalizedString("This build does not include translation.", comment: ""))
+        #endif
     }
 
     static func clipboardImageAvailability() -> ActionAvailability {
@@ -114,13 +120,16 @@ enum ScreenTools {
 
     private static func translate(_ text: String) {
         guard !text.isEmpty else { return TransientNotice.show(NSLocalizedString("No text was found.", comment: "")) }
+        #if compiler(>=6.2)
         guard #available(macOS 26.0, *) else { return }
         guard let source = NLLanguageRecognizer.dominantLanguage(for: text).map({ Locale.Language(identifier: $0.rawValue) }) else {
             return TransientNotice.show(NSLocalizedString("The language of the text could not be detected.", comment: ""))
         }
         Task { await translate(text, from: source) }
+        #endif
     }
 
+    #if compiler(>=6.2)
     @available(macOS 26.0, *)
     private static func translate(_ text: String, from source: Locale.Language) async {
         do {
@@ -132,6 +141,7 @@ enum ScreenTools {
             await MainActor.run { offerLanguageDownload() }
         }
     }
+    #endif
 
     private static func offerLanguageDownload() {
         let alert = NSAlert()

@@ -1320,6 +1320,9 @@
 "Theme" = "Theme";
 
 /* No comment provided by engineer. */
+"This build does not include translation." = "This build does not include translation.";
+
+/* No comment provided by engineer. */
 "This permission is needed to focus windows after you release the shortcut" = "This permission is needed to focus windows after you release the shortcut";
 
 /* No comment provided by engineer. */
