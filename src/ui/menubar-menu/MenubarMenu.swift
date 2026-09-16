@@ -1,8 +1,7 @@
 import Cocoa
 
-/// Story 15. Builds the menubar menu from `MenuLayout`; the structure changes only when visibility
-/// settings change, while `menuNeedsUpdate` refreshes checkmarks, titles and availability on open without
-/// any AX work or process start (MG-04).
+/// Story 15. Builds the menubar menu once from `MenuLayout`; `menuNeedsUpdate` refreshes checkmarks,
+/// titles and availability on open without any AX work or process start (MG-04).
 final class MenubarMenu: NSObject, NSMenuDelegate {
     static let shared = MenubarMenu()
     private var entries = [String: MenubarEntry]()
@@ -22,13 +21,8 @@ final class MenubarMenu: NSObject, NSMenuDelegate {
     }
 
     private func layout(_ specs: [MenuEntrySpec]) -> [MenuLayoutItem] {
-        guard #available(macOS 14.0, *) else { return MenuLayout.build(specs, headersSupported: false, isVisible: isVisible) }
-        return MenuLayout.build(specs, headersSupported: true, isVisible: isVisible)
-    }
-
-    private func isVisible(_ spec: MenuEntrySpec) -> Bool {
-        guard let entry = entries[spec.id] else { return false }
-        return entry.alwaysVisible || (Preferences.menuGroupVisible(spec.group) && Preferences.menuEntryVisible(spec.id))
+        guard #available(macOS 14.0, *) else { return MenuLayout.build(specs, headersSupported: false) }
+        return MenuLayout.build(specs, headersSupported: true)
     }
 
     private func makeItem(_ layoutItem: MenuLayoutItem) -> NSMenuItem {
@@ -36,14 +30,14 @@ final class MenubarMenu: NSObject, NSMenuDelegate {
             case .separator: return .separator()
             case .header(let group): return header(group)
             case .entry(let id): return entryItem(entries[id]!)
-            case .otherTools(let groups): return otherToolsItem(groups)
+            case .other(let groups): return otherItem(groups)
         }
     }
 
-    /// Decided 2026-09-16: inside `Other Tools` each group is a headed section, like the groups of the
-    /// main menu, not a further submenu. Its items stay in `items`, so the same refresh keeps checkmarks
+    /// Decided 2026-09-16: inside `Other…` each group is a headed section, like the groups of the main
+    /// menu, not a further submenu. Its items stay in `items`, so the same refresh keeps checkmarks
     /// and availability current when the submenu opens.
-    private func otherToolsItem(_ groups: [MenuGroupEntries]) -> NSMenuItem {
+    private func otherItem(_ groups: [MenuGroupEntries]) -> NSMenuItem {
         let item = NSMenuItem(title: NSLocalizedString("Other…", comment: ""), action: nil, keyEquivalent: "")
         if #available(macOS 26.0, *) {
             item.image = NSImage(systemSymbolName: "square.grid.2x2", accessibilityDescription: nil)
@@ -118,24 +112,12 @@ final class MenubarMenu: NSObject, NSMenuDelegate {
     // MARK: entries
 
     static func allEntries() -> [MenubarEntry] {
-        [showEntry] + SystemActions.all.filter { !keepAwakeActions.contains($0.action) }.map(entry)
+        [showEntry] + SystemActions.all.filter { !keepAwakeActions.contains($0.action) }.map(MenubarEntry.init)
             + [keepAwakeEntry, defaultBrowserEntry] + appEntries
-    }
-
-    /// Entries users can show or hide, grouped for the settings tab.
-    static func configurableEntries() -> [MenubarEntry] {
-        allEntries().filter { !$0.alwaysVisible }
     }
 
     private static let keepAwakeActions: Set<SystemAction> = [.keepAwakeToggle, .keepAwakeStop, .keepAwakeIndefinitely, .keepAwake15Minutes,
                                                               .keepAwake1Hour, .keepAwake2Hours, .keepAwake5Hours]
-
-    /// Tools are always shown (decided 2026-09-16), so they have no visibility switch.
-    private static func entry(_ spec: SystemActionSpec) -> MenubarEntry {
-        var entry = MenubarEntry(spec)
-        entry.alwaysVisible = !spec.group.canBeHidden
-        return entry
-    }
 
     private static let showEntry = MenubarEntry(id: MenuLayout.showEntryId, group: .switcher, title: { NSLocalizedString("Show", comment: "Menubar option") },
         symbol: "eye") { App.showUiFromShortcut0() }
@@ -148,15 +130,15 @@ final class MenubarMenu: NSObject, NSMenuDelegate {
 
     private static let appEntries: [MenubarEntry] = [
         MenubarEntry(id: "app.settings", group: .app, title: { NSLocalizedString("Settings…", comment: "Menubar option") }, symbol: "gear",
-            keyEquivalent: ",", alwaysVisible: true) { App.showSettingsWindow() },
+            keyEquivalent: ",") { App.showSettingsWindow() },
         MenubarEntry(id: "app.permissions", group: .app, title: { NSLocalizedString("Check permissions…", comment: "Menubar option") },
-            symbol: "hand.raised", alwaysVisible: true) { App.showPermissionsWindow() },
+            symbol: "hand.raised") { App.showPermissionsWindow() },
         MenubarEntry(id: "app.about", group: .app, title: { String(format: NSLocalizedString("About %@", comment: "Menubar option. %@ is AltTab"), App.name) },
-            symbol: "info.circle", alwaysVisible: true) { App.showAboutWindow() },
+            symbol: "info.circle") { App.showAboutWindow() },
         MenubarEntry(id: "app.debug", group: .app, title: { NSLocalizedString("Debug", comment: "Menubar option") }, symbol: "wrench.and.screwdriver",
-            alwaysVisible: true, submenu: { SubmenuBuilder.debug() }) {},
+            submenu: { SubmenuBuilder.debug() }) {},
         MenubarEntry(id: "app.quit", group: .app, title: { String(format: NSLocalizedString("Quit %@", comment: "Menubar option. %@ is AltTab"), App.name) },
-            symbol: nil, keyEquivalent: "q", alwaysVisible: true) { NSApp.terminate(nil) },
+            symbol: nil, keyEquivalent: "q") { NSApp.terminate(nil) },
     ]
 }
 
@@ -166,20 +148,18 @@ struct MenubarEntry {
     let title: () -> String
     let symbol: String?
     var keyEquivalent = ""
-    var alwaysVisible = false
     var isOn: (() -> Bool)?
     var availability: () -> ActionAvailability = { .available }
     var submenu: (() -> NSMenu)?
     let run: () -> Void
 
-    init(id: String, group: MenuGroup, title: @escaping () -> String, symbol: String?, keyEquivalent: String = "", alwaysVisible: Bool = false,
+    init(id: String, group: MenuGroup, title: @escaping () -> String, symbol: String?, keyEquivalent: String = "",
          isOn: (() -> Bool)? = nil, submenu: (() -> NSMenu)? = nil, run: @escaping () -> Void) {
         self.id = id
         self.group = group
         self.title = title
         self.symbol = symbol
         self.keyEquivalent = keyEquivalent
-        self.alwaysVisible = alwaysVisible
         self.isOn = isOn
         self.submenu = submenu
         self.run = run

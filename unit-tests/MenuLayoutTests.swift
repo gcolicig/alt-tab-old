@@ -4,58 +4,59 @@ class MenuLayoutTests: XCTestCase {
     private let entries = [
         MenuEntrySpec(id: "show", group: .switcher),
         MenuEntrySpec(id: "isolate", group: .windows),
+        MenuEntrySpec(id: "quitAll", group: .apps),
         MenuEntrySpec(id: "pick", group: .tools),
         MenuEntrySpec(id: "cat", group: .toggles),
         MenuEntrySpec(id: "settings", group: .app),
         MenuEntrySpec(id: "quit", group: .app),
     ]
 
-    func testGroupsAreSeparatedAndHeadedInOrder() {
-        let items = MenuLayout.build(entries, headersSupported: true) { _ in true }
+    func testOtherGroupsAppearOnceAsSectionsOfOther() {
+        let items = MenuLayout.build(entries, headersSupported: true)
         XCTAssertEqual(items, [
             .header(.switcher), .entry("show"), .separator,
             .header(.windows), .entry("isolate"), .separator,
-            .otherTools([MenuGroupEntries(group: .tools, ids: ["pick"]), MenuGroupEntries(group: .toggles, ids: ["cat"])]), .separator,
+            .other([MenuGroupEntries(group: .apps, ids: ["quitAll"]), MenuGroupEntries(group: .tools, ids: ["pick"]),
+                    MenuGroupEntries(group: .toggles, ids: ["cat"])]), .separator,
             .entry("settings"), .entry("quit"),
         ])
     }
 
     func testAnEmptyGroupLeavesNoHeaderOrSeparator() {
-        let items = MenuLayout.build(entries, headersSupported: true) { $0.group != .windows }
+        let items = MenuLayout.build(entries.filter { $0.group != .windows }, headersSupported: true)
         XCTAssertFalse(items.contains(.header(.windows)))
         XCTAssertFalse(zip(items, items.dropFirst()).contains { $0 == .separator && $1 == .separator })
     }
 
-    func testOtherToolsKeepsOnlyNonEmptyGroupsAndVanishesWhenAllAreEmpty() {
-        let onlyTools = MenuLayout.build(entries, headersSupported: true) { $0.group != .toggles }
-        XCTAssertTrue(onlyTools.contains(.otherTools([MenuGroupEntries(group: .tools, ids: ["pick"])])))
-        let hidden: Set<MenuGroup> = [.tools, .toggles]
-        let none = MenuLayout.build(entries, headersSupported: true) { !hidden.contains($0.group) }
-        let hasOtherTools = none.contains { item -> Bool in
-            guard case .otherTools = item else { return false }
+    func testOtherDisappearsWhenAllItsGroupsAreEmpty() {
+        let items = MenuLayout.build(entries.filter { !$0.group.isInOther }, headersSupported: true)
+        let hasOther = items.contains { item -> Bool in
+            guard case .other = item else { return false }
             return true
         }
-        XCTAssertFalse(hasOtherTools)
+        XCTAssertFalse(hasOther)
     }
 
     func testWithoutHeaderSupportOnlySeparatorsRemain() {
-        let items = MenuLayout.build(entries, headersSupported: false) { _ in true }
+        let items = MenuLayout.build(entries, headersSupported: false)
         XCTAssertFalse(items.contains { if case .header = $0 { return true } else { return false } })
         XCTAssertEqual(items.first, .entry("show"))
     }
 
     func testNoLeadingOrTrailingSeparator() {
-        let items = MenuLayout.build(entries, headersSupported: true) { $0.group == .app }
+        let items = MenuLayout.build(entries.filter { $0.group == .app }, headersSupported: true)
         XCTAssertEqual(items, [.entry("settings"), .entry("quit")])
     }
 
-    func testDefaultVisibilityKeepsTheMenuShort() {
-        let visible = MenuGroup.allCases.filter(\.visibleByDefault)
-        XCTAssertEqual(visible, [.switcher, .windows, .app])
-        XCTAssertFalse(MenuGroup.app.canBeHidden)
-        XCTAssertFalse(MenuGroup.tools.canBeHidden)
-        XCTAssertFalse(MenuGroup.tools.hasHeader)
-        XCTAssertEqual(MenuGroup.allCases.filter(\.isInOther), [.tools, .toggles, .defaults])
+    func testOnlySwitcherWindowsAndTheAppBlockStayInTheMainMenu() {
+        XCTAssertEqual(MenuGroup.allCases.filter { !$0.isInOther }, [.switcher, .windows, .app])
+        XCTAssertFalse(MenuGroup.app.hasHeader)
+    }
+
+    func testRetiredVisibilityPreferencesAreRecognised() {
+        XCTAssertTrue(MenuLayout.isRetiredPreference("menuGroupVisible.tools"))
+        XCTAssertTrue(MenuLayout.isRetiredPreference("menuEntryVisible.system.clearClipboard"))
+        XCTAssertFalse(MenuLayout.isRetiredPreference("menubarIcon"))
     }
 
     func testBrowserActionIdsRoundTrip() {

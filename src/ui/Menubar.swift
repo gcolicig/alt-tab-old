@@ -42,16 +42,6 @@ class Menubar {
         statusItem.button!.sendAction(on: [.leftMouseDown, .rightMouseDown])
     }
 
-    /// Visibility settings changed the structure. The callout items can only belong to one menu at a time,
-    /// so they move over from the old one.
-    static func rebuildMenu() {
-        guard menu != nil else { return }
-        let calloutShown = permissionCalloutMenuItems?.first.map { menu.items.contains($0) } ?? false
-        togglePermissionCallout(false)
-        menu = MenubarMenu.shared.build()
-        togglePermissionCallout(calloutShown)
-    }
-
     // NSMenuItem.isHidden isn't reliable with custom views. We add/remove to hide/show these items
     static func togglePermissionCallout(_ show: Bool) {
         permissionCalloutMenuItems?.enumerated().forEach { offset, element in

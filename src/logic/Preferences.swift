@@ -113,10 +113,7 @@ class Preferences {
         SpaceAction.all.forEach { values[$0.shortcutPreferenceKey] = defaultShortcut("") }
         SystemAction.allCases.forEach {
             values[$0.shortcutPreferenceKey] = defaultShortcut("")
-            values[MenuLayout.entryPreferenceKey($0.rawValue)] = String($0.visibleInMenuByDefault)
         }
-        MenuLayout.nonActionEntryIds.forEach { values[MenuLayout.entryPreferenceKey($0)] = "true" }
-        MenuGroup.allCases.forEach { values[MenuLayout.groupPreferenceKey($0)] = String($0.visibleByDefault) }
         values["micMuteIndicator"] = "true"
         values["autoQuitEnabled"] = "false"
         values["autoQuitDelaySeconds"] = "10"
@@ -200,14 +197,6 @@ class Preferences {
     static var keepAwakeLastDuration: Int { CachedUserDefaults.int("keepAwakeLastDuration") }
     static var keepAwakeDisplay: Bool { CachedUserDefaults.bool("keepAwakeDisplay") }
     static var keepAwakeBatteryThreshold: Int { CachedUserDefaults.int("keepAwakeBatteryThreshold") }
-
-    static func menuGroupVisible(_ group: MenuGroup) -> Bool {
-        !group.canBeHidden || CachedUserDefaults.bool(MenuLayout.groupPreferenceKey(group))
-    }
-
-    static func menuEntryVisible(_ id: String) -> Bool {
-        UserDefaults.standard.object(forKey: MenuLayout.entryPreferenceKey(id)) == nil || CachedUserDefaults.bool(MenuLayout.entryPreferenceKey(id))
-    }
     static var pointerMouseAcceleration: PointerAccelerationPreference { CachedUserDefaults.macroPref("pointerMouseAcceleration", PointerAccelerationPreference.allCases) }
     static var pointerTrackpadAcceleration: PointerAccelerationPreference { CachedUserDefaults.macroPref("pointerTrackpadAcceleration", PointerAccelerationPreference.allCases) }
     static var pointerMouseSpeed: Double { PointerSpeedSteps.value(CachedUserDefaults.int("pointerMouseSpeed")) }

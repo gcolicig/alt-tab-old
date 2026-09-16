@@ -21,29 +21,20 @@ enum SettingsControls {
     }
 }
 
+/// Every menu action with its global shortcut, in the order and groups of the menu. The menu shows all
+/// entries since 2026-09-16, so there is nothing to switch on or off here.
 class MenuBarMenuTab {
     static func initTab() -> NSView {
-        let tables = MenuGroup.allCases.filter(\.canBeHidden).compactMap(groupTable)
+        let tables = MenuGroup.allCases.compactMap(groupTable)
         return TableGroupSetView(originalViews: tables, bottomPadding: 0)
     }
 
-    /// One table per group: the group switch first, then each entry with its visibility and its shortcut.
     private static func groupTable(_ group: MenuGroup) -> TableGroupView? {
-        let entries = MenubarMenu.configurableEntries().filter { $0.group == group }
-        guard !entries.isEmpty else { return nil }
+        let specs = SystemActions.all.filter { $0.group == group && !KeepAwakeTab.actions.contains($0.action) }
+        guard !specs.isEmpty else { return nil }
         let table = TableGroupView(title: MenubarMenu.groupTitle(group), width: SettingsWindow.contentWidth)
-        table.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Show this group in the menu", comment: ""),
-            rightViews: [LabelAndControl.makeSwitch(MenuLayout.groupPreferenceKey(group))]))
-        entries.forEach { table.addRow(entryRow($0)) }
+        specs.forEach { table.addRow(TableGroupView.Row(leftTitle: $0.title, rightViews: [SettingsControls.recorder($0.action, $0.title)])) }
         return table
-    }
-
-    private static func entryRow(_ entry: MenubarEntry) -> TableGroupView.Row {
-        var views: [NSView] = [LabelAndControl.makeSwitch(MenuLayout.entryPreferenceKey(entry.id))]
-        if let action = SystemAction(rawValue: entry.id), entry.submenu == nil {
-            views.insert(SettingsControls.recorder(action, entry.title()), at: 0)
-        }
-        return TableGroupView.Row(leftTitle: entry.title(), rightViews: views)
     }
 }
 
@@ -130,12 +121,15 @@ class KeepAwakeTab {
         table.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("End on battery at", comment: ""),
             rightViews: [SettingsControls.valuePopup("keepAwakeBatteryThreshold", batteryOptions)]))
         table.addNewTable()
-        [SystemAction.keepAwakeToggle, .keepAwakeIndefinitely, .keepAwake15Minutes, .keepAwake1Hour, .keepAwake2Hours, .keepAwake5Hours, .keepAwakeStop].forEach { action in
+        actions.forEach { action in
             guard let spec = SystemActions.spec(action) else { return }
             table.addRow(TableGroupView.Row(leftTitle: spec.title, rightViews: [SettingsControls.recorder(action, spec.title)]))
         }
         return TableGroupSetView(originalViews: [table], bottomPadding: 0)
     }
+
+    /// Their shortcuts are assigned here only; one recorder per preference keeps the two tabs from fighting.
+    static let actions: [SystemAction] = [.keepAwakeToggle, .keepAwakeIndefinitely, .keepAwake15Minutes, .keepAwake1Hour, .keepAwake2Hours, .keepAwake5Hours, .keepAwakeStop]
 
     private static let batteryOptions: [(String, Int)] = [(NSLocalizedString("Never", comment: ""), 0)] + [10, 20, 30, 50].map { ("\($0) %", $0) }
 }

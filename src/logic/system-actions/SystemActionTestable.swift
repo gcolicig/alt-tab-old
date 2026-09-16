@@ -85,13 +85,6 @@ extension SystemAction {
     var shortcutPreferenceKey: String {
         "systemAction_" + rawValue.replacingOccurrences(of: ".", with: "_") + "_Shortcut"
     }
-
-    /// Story 12b marks the extra window actions as optional; they exist but stay out of the menu until the user
-    /// shows them. The single Keep Awake actions live in its submenu, whose entry is `keepAwakeToggle`.
-    var visibleInMenuByDefault: Bool {
-        ![.minimizeAllOthers, .minimizeAll, .hideAll, .keepAwakeStop, .keepAwakeIndefinitely, .keepAwake15Minutes,
-          .keepAwake1Hour, .keepAwake2Hours, .keepAwake5Hours].contains(self)
-    }
 }
 
 // MARK: auto-quit (story 14C)

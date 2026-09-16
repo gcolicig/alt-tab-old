@@ -13,20 +13,12 @@ enum MenuGroup: String, CaseIterable {
     case defaults
     case app
 
-    /// The app group closes the menu without a heading, like every macOS app menu. A group shown as a
-    /// submenu is named by its own entry instead.
-    var hasHeader: Bool { self != .app && !isInOther }
+    /// The app group closes the menu without a heading, like every macOS app menu.
+    var hasHeader: Bool { self != .app }
 
-    /// Decided 2026-09-16: these groups leave the main menu and become headed sections of one `Other…`
-    /// submenu.
-    var isInOther: Bool { [.tools, .toggles, .defaults].contains(self) }
-
-    /// Groups visible after the update; everything else waits until the user turns it on.
-    var visibleByDefault: Bool { [.switcher, .windows, .app].contains(self) }
-
-    /// `Settings…` and `Quit` live in the app group, so hiding it would leave no way back. Tools is always
-    /// shown, as decided on 2026-09-16.
-    var canBeHidden: Bool { ![.app, .tools].contains(self) }
+    /// Decided 2026-09-16: every group except the switcher, the window actions and the app block becomes a
+    /// headed section of one `Other…` submenu. Nothing is hidden any more, so nothing needs switching.
+    var isInOther: Bool { ![.switcher, .windows, .app].contains(self) }
 }
 
 struct MenuEntrySpec: Equatable {
@@ -38,7 +30,7 @@ enum MenuLayoutItem: Equatable {
     case header(MenuGroup)
     case separator
     case entry(String)
-    case otherTools([MenuGroupEntries])
+    case other([MenuGroupEntries])
 }
 
 struct MenuGroupEntries: Equatable {
@@ -47,50 +39,49 @@ struct MenuGroupEntries: Equatable {
 }
 
 enum MenuLayout {
-    /// Visible groups in order, a separator between them, a heading on top of each where supported. An
-    /// empty group leaves no heading and no separator behind.
-    static func build(_ entries: [MenuEntrySpec], headersSupported: Bool, isVisible: (MenuEntrySpec) -> Bool) -> [MenuLayoutItem] {
+    static let showEntryId = "app.show"
+    static let defaultBrowserEntryId = "defaults.browser"
+    /// Written by the visibility switches that existed until 2026-09-16; removed once at launch.
+    static let retiredPreferencePrefixes = ["menuGroupVisible.", "menuEntryVisible."]
+
+    /// Groups in order, a separator between them, a heading on top of each where supported. The groups
+    /// that belong to `Other…` appear once, together, where the first of them would have been. An empty
+    /// group leaves no heading and no separator behind.
+    static func build(_ entries: [MenuEntrySpec], headersSupported: Bool) -> [MenuLayoutItem] {
         var items = [MenuLayoutItem]()
-        let nested = MenuGroup.allCases.filter(\.isInOther).compactMap { group -> MenuGroupEntries? in
-            let ids = entries.filter { $0.group == group && isVisible($0) }.map(\.id)
-            return ids.isEmpty ? nil : MenuGroupEntries(group: group, ids: ids)
-        }
+        let other = otherGroups(entries)
         for group in MenuGroup.allCases {
             if group.isInOther {
-                appendOtherTools(group, nested, &items)
+                appendOther(group, other, &items)
                 continue
             }
-            let visible = entries.filter { $0.group == group && isVisible($0) }
-            guard !visible.isEmpty else { continue }
-            appendGroup(group, visible, headersSupported, &items)
+            let ids = entries.filter { $0.group == group }.map(\.id)
+            guard !ids.isEmpty else { continue }
+            appendGroup(group, ids, headersSupported, &items)
         }
         return items
     }
 
-    /// Placed where the first nested group would have been, once.
-    private static func appendOtherTools(_ group: MenuGroup, _ nested: [MenuGroupEntries], _ items: inout [MenuLayoutItem]) {
-        guard group == nested.first?.group else { return }
-        if !items.isEmpty { items.append(.separator) }
-        items.append(.otherTools(nested))
+    private static func otherGroups(_ entries: [MenuEntrySpec]) -> [MenuGroupEntries] {
+        MenuGroup.allCases.filter(\.isInOther).compactMap { group in
+            let ids = entries.filter { $0.group == group }.map(\.id)
+            return ids.isEmpty ? nil : MenuGroupEntries(group: group, ids: ids)
+        }
     }
 
-    private static func appendGroup(_ group: MenuGroup, _ entries: [MenuEntrySpec], _ headersSupported: Bool, _ items: inout [MenuLayoutItem]) {
+    private static func appendOther(_ group: MenuGroup, _ other: [MenuGroupEntries], _ items: inout [MenuLayoutItem]) {
+        guard group == other.first?.group else { return }
+        if !items.isEmpty { items.append(.separator) }
+        items.append(.other(other))
+    }
+
+    private static func appendGroup(_ group: MenuGroup, _ ids: [String], _ headersSupported: Bool, _ items: inout [MenuLayoutItem]) {
         if !items.isEmpty { items.append(.separator) }
         if headersSupported && group.hasHeader { items.append(.header(group)) }
-        items.append(contentsOf: entries.map { .entry($0.id) })
+        items.append(contentsOf: ids.map { .entry($0) })
     }
 
-    /// Configurable menu entries that are not `SystemAction`s. Each needs a registered default, because
-    /// the settings switches read their preference unconditionally.
-    static let showEntryId = "app.show"
-    static let defaultBrowserEntryId = "defaults.browser"
-    static let nonActionEntryIds = [showEntryId, defaultBrowserEntryId]
-
-    static func groupPreferenceKey(_ group: MenuGroup) -> String {
-        "menuGroupVisible." + group.rawValue
-    }
-
-    static func entryPreferenceKey(_ id: String) -> String {
-        "menuEntryVisible." + id
+    static func isRetiredPreference(_ key: String) -> Bool {
+        retiredPreferencePrefixes.contains { key.hasPrefix($0) }
     }
 }

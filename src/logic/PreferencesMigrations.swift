@@ -13,6 +13,7 @@ class PreferencesMigrations {
         removeActionSlotNames()
         migrateDragModifierIndexes()
         migrateScrollReverseMouseKey()
+        removeMenuVisibilityPreferences()
         let preferencesKey = "preferencesVersion"
         if let versionInPlist = UserDefaults.standard.string(forKey: preferencesKey) {
             if versionInPlist != "#VERSION#" && versionInPlist.compare(App.version, options: .numeric) != .orderedDescending {
@@ -68,6 +69,13 @@ class PreferencesMigrations {
             UserDefaults.standard.set(old, forKey: "reverseScrollMouse")
         }
         UserDefaults.standard.removeObject(forKey: oldKey)
+    }
+
+    /// The menubar menu shows every entry since 2026-09-16; the per-group and per-entry switches are gone.
+    private static func removeMenuVisibilityPreferences() {
+        UserDefaults.standard.dictionaryRepresentation().keys.filter(MenuLayout.isRetiredPreference).forEach {
+            UserDefaults.standard.removeObject(forKey: $0)
+        }
     }
 
     private static func updateToNewPreferences(_ versionInPlist: String) {
