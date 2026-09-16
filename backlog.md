@@ -125,7 +125,7 @@ Vor Scope-Entscheidungen zu Snapping und Layouts am Zielgeraet klaeren:
 
 ### 0. Gemeinsamer Aktions- und Triggerkern
 
-Status: Geplant; Dual-Role-Hyper und Apps/URLs-Register umgesetzt
+Status: Teilweise umgesetzt; Dual-Role-Hyper und Apps/URLs-Register stehen, Leader und FlickRing sind offen
 Prioritaet: Sehr hoch
 
 Beschreibung:
@@ -206,7 +206,7 @@ Umsetzungsstand 2026-07-26:
 - Fuer Keyboard Layouts umgesetzt: Frontmost-App, fokussiertes AX-Fenster, eigene AX-Queue, globaler AX-Timeout, Rollen-/Zustands-/Settable-Filter und sichtbare Display-Geometrie.
 - Umgesetzt 2026-07-31 fuer kontinuierliche Cursor-Module: Element-at-position-Kette mit begrenztem Ancestor-Walk bis `AXWindow`, CGWindowID-Korrelation, Fokus-Fallback und eindeutiger Bounds-Match als letzte Stufe; Mehrdeutigkeit fuehrt zu keiner Aktion. Dazu das Q-06-Coalescing (hoechstens ein offener Set, nur der neueste Zielrahmen, Zielrate 60 Hz, Flush bei Mouseup) und der Q-07-Ringpuffer mit Fenster-ID, Bundle-ID, Display, vorgeschlagenem und tatsaechlichem Rahmen.
 - Die Reihenfolge der Stufen, das Coalescing und der Ringpuffer sind reine Logik und mit 12 Tests abgedeckt. Die Kette selbst ist nur so gut wie die manuelle Pruefung: S-01 (20 von 20 ueber die Kompatibilitaetsmatrix) und S-02 (Drag-Latenz) sind unveraendert offen.
-- Noch nicht angebunden: es gibt bisher keinen Aufrufer. Die Drag-Sitzung, die diesen Kern benutzt, gehoert zu Phase 3B.
+- Angebunden: die Drag-Sitzung aus Phase 3B ruft diesen Kern auf und ist am Zielgeraet bedient (siehe Story 3). Die frueher hier notierte Aussage "es gibt bisher keinen Aufrufer" galt bis zum 2026-08-03 und ist seither falsch.
 - Offen bleibt die vollstaendige App-Klassen-Matrix.
 
 Ausschlussfilter:
@@ -734,7 +734,7 @@ Akzeptanzideen:
 
 ### 4. Pointer Acceleration und Speed
 
-Status: Schreibpfad am 2026-08-07 auf IOKit umgestellt; V-10 am 2026-08-10/13 am Geraet gefahren, Schritte 1-10 und 12 bestanden (zwei Defekte dabei gefunden und behoben), Schritt 8 faellt, Schritt 11 halb und 13 teilweise offen
+Status: Schreibpfad am 2026-08-07 auf IOKit umgestellt; V-10 am 2026-08-10/13 am Geraet gefahren, Schritte 1-7, 9, 10 und 12 bestanden (drei Defekte dabei gefunden und behoben), Schritt 8 fiel und ist mit `14e8321c` behoben, die Neumessung steht aus, Schritt 11 halb und 13 teilweise offen
 Prioritaet: Mittel bis hoch
 
 Beschreibung:
@@ -1387,7 +1387,7 @@ Default-Settings, Reset-Verhalten und Migration werden nach jedem neuen Modul ge
 | V-07 | Distribution | Signing, Notarisierung, Vertriebskanal und Update-Strategie vor erster oeffentlicher Version abschliessen; Sparkle bleibt optional |
 | V-08 | Safe Start und Circuit Breaker | Vor dem ersten ausgelieferten Input-Modul mit Login-Start, verbliebenem Arming-Marker und wiederholtem Tap-Timeout pruefen |
 | V-09 | Berechtigungsentzug | Accessibility und Input Monitoring getrennt bei Start, Aktivierung, Wake und Laufzeit pruefen |
-| V-10 | Pointer State Ownership | **Gefahren am 2026-08-10 und 2026-08-13**, Ergebnistabelle in `docs/pointer-ownership-checklist.md`. Schritte 1-7, 9, 10 und 12 bestanden; 9 und 10 sind das Paar, das ueber destruktives Restore entscheidet. Zwei Defekte dabei gefunden und behoben: der `Disabled`-Sentinel `-1` wird vom HID-System auf `0` geklemmt und liess Schritt 2 die Basislinie verwerfen, und der Geschwindigkeitsregler erwarb den Besitz waehrend eines Zuges neu und uebernahm dabei den Wert eines fremden Besitzers. **Schritt 8 faellt**: beim Beenden wird nichts wiederhergestellt, erst der naechste Start holt es nach. **Offen**: die negative Haelfte von Schritt 11 (der Testlauf schlief nicht ein, `pmset sleepnow` meldete Erfolg ohne Uebergang im Power-Log — Ruhezustand aus dem Apple-Menue ausloesen), und der aktive Teil von Schritt 13 (LinearMouse wendet ein untergeschobenes Konfigurationsschema nicht an, seine Menueleisten-Oberflaeche ist nicht fernsteuerbar) |
+| V-10 | Pointer State Ownership | **Gefahren am 2026-08-10 und 2026-08-13**, Ergebnistabelle in `docs/pointer-ownership-checklist.md`. Schritte 1-7, 9, 10 und 12 bestanden; 9 und 10 sind das Paar, das ueber destruktives Restore entscheidet. Drei Defekte dabei gefunden und behoben: der `Disabled`-Sentinel `-1` wird vom HID-System auf `0` geklemmt und liess Schritt 2 die Basislinie verwerfen, der Geschwindigkeitsregler erwarb den Besitz waehrend eines Zuges neu und uebernahm dabei den Wert eines fremden Besitzers, und das Beenden gab den Wert nicht zurueck. **Schritt 8 fiel und ist behoben, aber nicht neu gemessen**: `applicationWillTerminate` gibt seit `14e8321c` (PR #21, 2026-08-14) beide Kategorien frei; der Commit misst "quit while managed -> 0.6875 restored". Die Ergebnistabelle stammt vom Stand davor. **Offen: Schritt 8 erneut fahren.** **Offen**: die negative Haelfte von Schritt 11 (der Testlauf schlief nicht ein, `pmset sleepnow` meldete Erfolg ohne Uebergang im Power-Log — Ruhezustand aus dem Apple-Menue ausloesen), und der aktive Teil von Schritt 13 (LinearMouse wendet ein untergeschobenes Konfigurationsschema nicht an, seine Menueleisten-Oberflaeche ist nicht fernsteuerbar) |
 | V-11 | Display-Topologien | Snapping-Checkliste ueber definierte Topologien, Separate-Spaces-Zustaende und dynamische Reconfiguration ausfuehren |
 | V-12 | Instant Spaces | Tahoe-Build, Separate Spaces ein/aus, Cursor-Display, Fullscreen-Space, Stage Manager, Mission Control/App Expose, Randwechsel und schnelle direkte Mehrfachwechsel pruefen |
 | V-13 | `Command+Control`-Move | `NSWindowShouldDragOnGesture` vor Aktivierung lesen, auf `false` setzen und verifizieren; Disable, externe Aenderung, Crash und Recovery ohne destruktives Restore pruefen |

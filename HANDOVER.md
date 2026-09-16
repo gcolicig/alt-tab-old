@@ -28,7 +28,8 @@ The unit-test suite passes. Build with `./build.sh --test`; `SCHEME=Release ./bu
 
 ## What happened between 2026-08-10 and 2026-08-14
 
-- **V-10 ran, at last.** Steps 1–10 and 12 pass. Three defects were found by operating, none by tests:
+- **V-10 ran, at last.** Steps 1–7, 9, 10 and 12 pass. Step 8 failed and is fixed by #21, but has not been
+  measured again. Three defects were found by operating, none by tests:
   a disabled sentinel the HID system silently clamped to 0 while reporting success (#16), a speed slider
   that could re-acquire mid-drag and adopt a foreign value as its own baseline (#18), and a quit path
   that kept the value instead of handing it back (#21). Step 11's negative half (sleep) is still open —
@@ -165,9 +166,12 @@ In rough priority. Everything here needs a human at the keyboard; none of it can
   2026-08-07 and all failed: the gesture carries no target display, a cursor warp does not move the active
   menubar display, the setter meant for it is accepted and ignored, and moving the Space layers changes the
   reported value without changing the picture. The menubar row therefore refuses such a click and says so
-  rather than doing nothing. See S-10, S-10b and S-10c in `backlog.md`. One route was never measured,
-  though: the synthetic gesture is posted without ever setting `event.location`. Whether a location on
-  the target display addresses it is the first spike of the current Spaces plan.
+  rather than doing nothing. See S-10, S-10b and S-10c in `backlog.md`. The `event.location` route,
+  which this section used to call unmeasured, was in fact measured on 2026-08-06: setting the location to
+  the centre of the target display had no effect, and a control run without it behaved identically
+  (`backlog.md`, S-10). The branch `spike/spaces-remote-gesture` (2026-08-14) was built to repeat that
+  measurement; no result of it is recorded anywhere. Repeat it with two displays, write the result here
+  and in `backlog.md`, then delete the branch.
 - Dropping a window on a switcher tile to send it to that tile's Space (story 2H) has no system path. Every
   known call for moving a window between Spaces is either a stub or silently refused. The story is
   specified and resting.

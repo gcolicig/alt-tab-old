@@ -87,7 +87,8 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 - Umgesetzt: Fenster unter dem Cursor wird zu Beginn einer Operation ueber die Element-at-position-Kette bestimmt; bei Mehrdeutigkeit erfolgt keine Aktion.
 - Umgesetzt: Coalescing der AX-Schreibvorgaenge und der Diagnose-Ringpuffer als reine, getestete Logik.
-- Offen: S-01 und S-02 am Zielgeraet sowie das App-Klassen-Pruefraster; der Kern hat bisher keinen Aufrufer, die Drag-Sitzung folgt in Phase 3B.
+- Angebunden: die Drag-Sitzung aus Phase 3B ruft den Kern auf und ist am Zielgeraet bedient.
+- Offen: S-01 und S-02 am Zielgeraet sowie das App-Klassen-Pruefraster.
 
 ## Phase 3B: Move und Modifier-Snapping
 
@@ -107,7 +108,7 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 ## Paralleler Spike: Pointer
 
-- Umgesetzt: Pointer Acceleration und Speed fuer Maus und Trackpad ueber `NSGlobalDomain`; der vermutete IOKit-Pfad war nicht noetig.
+- Umgesetzt: Pointer Acceleration und Speed fuer Maus und Trackpad ueber IOKit (`IOHIDGetAccelerationWithKey` / `IOHIDSetAccelerationWithKey`). Der Weg ueber `NSGlobalDomain` wurde am 2026-08-07 widerlegt: die Praeferenz liess sich setzen, der effektive Wert blieb unveraendert. Siehe Story 4 im Backlog.
 - Offen: V-10 am Zielgeraet; der schreibende Pfad ist bisher nur durch Entscheidungslogik abgedeckt, nicht ausgefuehrt.
 - Persistiertes State Ownership mit `unmanaged`, `managed` und `relinquished`.
 - Kein Release ohne konfliktfreies Restore sowie Crash-/Kill-Recovery.
