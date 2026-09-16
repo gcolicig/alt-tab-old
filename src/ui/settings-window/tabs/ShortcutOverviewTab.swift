@@ -96,10 +96,17 @@ class ShortcutOverviewTab {
     }
 
     private static func shortcutLabel(_ key: String) -> NSTextField {
-        let text = ControlsTab.shortcuts[key]?.shortcut.readableStringRepresentation(isASCII: false) ?? ""
+        let text = ControlsTab.shortcuts[key].map { symbolic($0.shortcut) } ?? ""
         let label = NSTextField(labelWithString: text.isEmpty ? NSLocalizedString("None", comment: "") : text)
         label.textColor = text.isEmpty ? .tertiaryLabelColor : .labelColor
         return label
+    }
+
+    /// The same `⌃⌥⇧⌘D` notation the recorders use; spelled-out names widened the window.
+    private static func symbolic(_ shortcut: Shortcut) -> String {
+        let modifiers = SymbolicModifierFlagsTransformer.shared.transformedValue(NSNumber(value: shortcut.modifierFlags.rawValue)) ?? ""
+        let key = shortcut.keyCode == .none ? "" : (SymbolicKeyCodeTransformer.shared.transformedValue(NSNumber(value: shortcut.keyCode.rawValue)) ?? "").uppercased()
+        return modifiers + key
     }
 
     private static func statusText(_ status: ShortcutStatus) -> String? {

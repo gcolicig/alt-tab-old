@@ -527,6 +527,8 @@ class SettingsWindow: NSWindow {
         setupWindow()
         setupView()
         setFrameAutosaveName("SettingsWindow")
+        // a frame saved by a build whose content was wider must not keep the window stretched
+        if frame.width != windowWidth { setFrame(NSRect(x: frame.minX, y: frame.minY, width: windowWidth, height: frame.height), display: false) }
         Self.shared = self
     }
 
@@ -716,6 +718,8 @@ class SettingsWindow: NSWindow {
         sectionDescription.textColor = .secondaryLabelColor
         sectionDescription.lineBreakMode = .byWordWrapping
         sectionDescription.maximumNumberOfLines = 0
+        // without a wrapping width a long description asks for its one-line width and stretches the window
+        sectionDescription.preferredMaxLayoutWidth = Self.contentWidth
         let container = NSView()
         let spacer = NSView()
         container.addSubview(sectionTitle)

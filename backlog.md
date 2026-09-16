@@ -1943,7 +1943,7 @@ Regeln:
 
 ### 16. Einstellungsfenster umbauen
 
-Status: Spezifiziert 2026-09-16; Umsetzung in drei aufeinander aufbauenden Branches
+Status: Alle drei Stufen umgesetzt 2026-09-16 auf den gestapelten Branches; am Geraet angesehen (Seiten, Suche, Listen, Profil anlegen und loeschen, Uebersicht, `Show`). Offen: Konfliktanzeige mit einem absichtlich doppelten Shortcut
 Prioritaet: Mittel. Folgt aus der kritischen Pruefung des Einstellungsfensters vom 2026-09-16 und dem Mockup dazu
 
 Ausgangslage (gelesen 2026-09-16):
@@ -2010,6 +2010,13 @@ Exit: keine leeren Slots sichtbar; Hinzufuegen, Entfernen und Shortcuts funktion
 - **Reine Logik** (`ShortcutOverviewTestable`): Zeilen aus Schluessel, Titel, Ort und Shortcut bilden, Konflikte paaren, sortieren (Konflikte zuerst, dann Gruppe, dann Titel). Unit-getestet.
 
 Exit: jeder Aktions-Shortcut erscheint genau einmal in der Uebersicht und genau einmal als Recorder; `Show` springt richtig; ein absichtlich doppelt vergebener Shortcut erscheint als Konflikt; alle Tests gruen.
+
+Umsetzungsstand 2026-09-16:
+
+- Stufe 1: Seitenmodus mit `chosenSectionId`, damit das Leeren der Suche zur gewaehlten Seite zurueckfuehrt; der Loesch-Knopf des Suchfelds loest jetzt ebenfalls eine Aktualisierung aus (er sendet keine Textaenderung). Der Recorder-Platzhalter kommt aus einer eigenen `RecorderControlStyle`-Unterklasse. Beschreibungen erhalten eine feste Umbruchbreite; ohne sie zog die lange Beschreibung der Shortcut-Seite das Fenster auf 1141 pt. Eine gespeicherte breitere Fensterposition wird beim Oeffnen auf die feste Breite zurueckgesetzt.
+- Stufe 2: `RebuildableSettingsView` baut die Listen bei jeder Aenderung neu. Profile werden ueber eine Auswahl oben gewechselt statt ueber eine Liste links; `New` gibt dem Profil sofort einen Namen, damit der Slot als belegt gilt. Links heissen in der Oberflaeche `Links` statt `URLs`.
+- Stufe 3: Der Bereich heisst `Shortcuts` (id `shortcuts`) und steht in der Gruppe App. Shortcuts werden in derselben Symbolschreibweise wie die Recorder angezeigt. Ein gleichlautender macOS-Shortcut gilt nicht als Konflikt, weil AltTab+ ihn waehrend der Zuweisung uebernimmt und danach zurueckgibt (`NativeSystemShortcuts`); die Zeile nennt das als Hinweis.
+- **Fund dabei**: Die Shortcuts der System-Aktionen aus Story 12 und 14 fehlten in `ControlsTab.globalActionShortcutPreferences` und wirkten deshalb nur bei offenem Switcher. Behoben in `fix/system-action-shortcuts` (PR #57), das unter den drei Stufen liegt.
 
 Nicht im Scope aller Stufen:
 
