@@ -36,6 +36,41 @@ final class MenubarMenu: NSObject, NSMenuDelegate {
             case .separator: return .separator()
             case .header(let group): return header(group)
             case .entry(let id): return entryItem(entries[id]!)
+            case .otherTools(let groups): return otherToolsItem(groups)
+        }
+    }
+
+    private func otherToolsItem(_ groups: [MenuGroupEntries]) -> NSMenuItem {
+        let item = NSMenuItem(title: NSLocalizedString("Other Tools", comment: ""), action: nil, keyEquivalent: "")
+        if #available(macOS 26.0, *) {
+            item.image = NSImage(systemSymbolName: "square.grid.2x2", accessibilityDescription: nil)
+        }
+        let submenu = NSMenu(title: item.title)
+        submenu.autoenablesItems = false
+        groups.forEach { submenu.addItem(groupSubmenuItem($0.group, $0.ids)) }
+        item.submenu = submenu
+        return item
+    }
+
+    /// A whole group behind one entry. Its items stay in `items`, so the same refresh keeps their
+    /// checkmarks and availability current when the submenu opens.
+    private func groupSubmenuItem(_ group: MenuGroup, _ ids: [String]) -> NSMenuItem {
+        let item = NSMenuItem(title: Self.groupTitle(group), action: nil, keyEquivalent: "")
+        if #available(macOS 26.0, *) {
+            item.image = NSImage(systemSymbolName: Self.groupSymbol(group), accessibilityDescription: nil)
+        }
+        let submenu = NSMenu(title: Self.groupTitle(group))
+        submenu.autoenablesItems = false
+        submenu.delegate = self
+        ids.compactMap { entries[$0] }.forEach { submenu.addItem(entryItem($0)) }
+        item.submenu = submenu
+        return item
+    }
+
+    private static func groupSymbol(_ group: MenuGroup) -> String {
+        switch group {
+            case .tools: return "wrench.adjustable"
+            default: return "switch.2"
         }
     }
 
@@ -91,7 +126,7 @@ final class MenubarMenu: NSObject, NSMenuDelegate {
     // MARK: entries
 
     static func allEntries() -> [MenubarEntry] {
-        [showEntry, toolsEntry] + SystemActions.all.filter { !submenuActions.contains($0.action) }.map(MenubarEntry.init)
+        [showEntry] + SystemActions.all.filter { !keepAwakeActions.contains($0.action) }.map(entry)
             + [keepAwakeEntry, defaultBrowserEntry] + appEntries
     }
 
@@ -100,13 +135,15 @@ final class MenubarMenu: NSObject, NSMenuDelegate {
         allEntries().filter { !$0.alwaysVisible }
     }
 
-    static let toolActions: [SystemAction] = [.pickColor, .captureText, .captureTranslate, .scanQr, .scanQrClipboard]
+    private static let keepAwakeActions: Set<SystemAction> = [.keepAwakeToggle, .keepAwakeStop, .keepAwakeIndefinitely, .keepAwake15Minutes,
+                                                              .keepAwake1Hour, .keepAwake2Hours, .keepAwake5Hours]
 
-    private static let submenuActions = Set<SystemAction>([.keepAwakeToggle, .keepAwakeStop, .keepAwakeIndefinitely, .keepAwake15Minutes,
-                                                           .keepAwake1Hour, .keepAwake2Hours, .keepAwake5Hours] + toolActions)
-
-    private static let toolsEntry = MenubarEntry(id: MenuLayout.toolsEntryId, group: .tools, title: { NSLocalizedString("Tools", comment: "") },
-        symbol: "wrench.adjustable", alwaysVisible: true, submenu: { SubmenuBuilder.tools() }) {}
+    /// Tools are always shown (decided 2026-09-16), so they have no visibility switch.
+    private static func entry(_ spec: SystemActionSpec) -> MenubarEntry {
+        var entry = MenubarEntry(spec)
+        entry.alwaysVisible = !spec.group.canBeHidden
+        return entry
+    }
 
     private static let showEntry = MenubarEntry(id: MenuLayout.showEntryId, group: .switcher, title: { NSLocalizedString("Show", comment: "Menubar option") },
         symbol: "eye") { App.showUiFromShortcut0() }
@@ -254,20 +291,6 @@ final class SubmenuBuilder: NSObject, NSMenuDelegate {
         let image = NSWorkspace.shared.icon(forFile: url.path)
         image.size = NSSize(width: 16, height: 16)
         return image
-    }
-
-    /// Every entry is always listed; one that cannot run right now is disabled and says why.
-    static func tools() -> NSMenu {
-        make { menu, target in
-            MenubarMenu.toolActions.compactMap(SystemActions.spec).forEach { spec in
-                let item = target.item(spec.title, symbol: spec.symbol) { Actions.perform(.system(spec.action)) }
-                if case .unavailable(let reason) = spec.availability() {
-                    item.isEnabled = false
-                    item.toolTip = reason
-                }
-                menu.addItem(item)
-            }
-        }
     }
 
     static func debug() -> NSMenu {

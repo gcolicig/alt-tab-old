@@ -1898,7 +1898,7 @@ Gruppen und Reihenfolge:
 | 1 | Switcher | `Show` | vorhanden |
 | 2 | Fenster | `Isolate Window`, `Minimize App Windows Except Frontmost`, `Hide Other Apps`, dazu die in 12b gewaehlten | Story 12 |
 | 3 | Apps | `Quit All Apps…`, `Quit All Apps Except Frontmost…` | Story 14B |
-| 4 | Werkzeuge | Ein Eintrag `Tools >` mit Untermenue: `Pick Color`, `Capture Text`, `Capture & Translate`, `Scan QR Code`, `Scan QR Code from Clipboard`. Immer sichtbar, ohne Schalter, ohne Ueberschrift (entschieden 2026-09-16) | Story 14I |
+| 4 | Werkzeuge | `Pick Color`, `Capture Text`, `Capture & Translate`, `Scan QR Code`, `Scan QR Code from Clipboard`. Immer sichtbar, ohne Schalter | Story 14I |
 | 5 | Mitteilungen | `Clear Visible Notifications`, `Clear All Notifications` | Story 14H |
 | 6 | System | `Clear Clipboard`, `Eject All Disks`, `Sleep Displays` | Story 14D, 14F, 14G |
 | 7 | Schalter | `Keep Awake >`, `Mute Sound`, `Mute Microphone`, `Function Keys`, `Auto-Quit Apps`, `Cat Mode` | Story 10, 14C, 14E, 14J, 14K |
@@ -1907,6 +1907,7 @@ Gruppen und Reihenfolge:
 
 Aufbau:
 
+- **Entschieden 2026-09-16**: Die Gruppen `Werkzeuge` und `Schalter` erscheinen nicht flach, sondern als Untermenues `Tools >` und `Toggles >` unter einem gemeinsamen Eintrag `Other Tools >`, an der Stelle der ersten dieser Gruppen. Keep Awake ist damit ein Untermenue dritter Ebene. `Fenster` bleibt flach. Eine leere Untergruppe faellt weg; sind beide leer, faellt `Other Tools` weg.
 - Ueberschriften ueber `NSMenuItem.sectionHeader(title:)` ab macOS 14; darunter nur Trenner ohne Ueberschrift (SA-05).
 - Die Gruppe `Schalter` zeigt Zustaende mit Haekchen (`state = .on`), wie im Supercharge-Menue. Eintraege mit Rueckfrage oder Fenster tragen Auslassungspunkte.
 - Die Gruppe `AltTab+` steht immer zuletzt, ohne Ueberschrift, nur durch einen Trenner abgesetzt.

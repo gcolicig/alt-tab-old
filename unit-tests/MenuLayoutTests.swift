@@ -5,6 +5,7 @@ class MenuLayoutTests: XCTestCase {
         MenuEntrySpec(id: "show", group: .switcher),
         MenuEntrySpec(id: "isolate", group: .windows),
         MenuEntrySpec(id: "pick", group: .tools),
+        MenuEntrySpec(id: "cat", group: .toggles),
         MenuEntrySpec(id: "settings", group: .app),
         MenuEntrySpec(id: "quit", group: .app),
     ]
@@ -14,7 +15,7 @@ class MenuLayoutTests: XCTestCase {
         XCTAssertEqual(items, [
             .header(.switcher), .entry("show"), .separator,
             .header(.windows), .entry("isolate"), .separator,
-            .entry("pick"), .separator,
+            .otherTools([MenuGroupEntries(group: .tools, ids: ["pick"]), MenuGroupEntries(group: .toggles, ids: ["cat"])]), .separator,
             .entry("settings"), .entry("quit"),
         ])
     }
@@ -23,6 +24,18 @@ class MenuLayoutTests: XCTestCase {
         let items = MenuLayout.build(entries, headersSupported: true) { $0.group != .windows }
         XCTAssertFalse(items.contains(.header(.windows)))
         XCTAssertFalse(zip(items, items.dropFirst()).contains { $0 == .separator && $1 == .separator })
+    }
+
+    func testOtherToolsKeepsOnlyNonEmptyGroupsAndVanishesWhenAllAreEmpty() {
+        let onlyTools = MenuLayout.build(entries, headersSupported: true) { $0.group != .toggles }
+        XCTAssertTrue(onlyTools.contains(.otherTools([MenuGroupEntries(group: .tools, ids: ["pick"])])))
+        let hidden: Set<MenuGroup> = [.tools, .toggles]
+        let none = MenuLayout.build(entries, headersSupported: true) { !hidden.contains($0.group) }
+        let hasOtherTools = none.contains { item -> Bool in
+            guard case .otherTools = item else { return false }
+            return true
+        }
+        XCTAssertFalse(hasOtherTools)
     }
 
     func testWithoutHeaderSupportOnlySeparatorsRemain() {
@@ -42,6 +55,7 @@ class MenuLayoutTests: XCTestCase {
         XCTAssertFalse(MenuGroup.app.canBeHidden)
         XCTAssertFalse(MenuGroup.tools.canBeHidden)
         XCTAssertFalse(MenuGroup.tools.hasHeader)
+        XCTAssertEqual(MenuGroup.allCases.filter(\.isSubmenu), [.tools, .toggles])
     }
 
     func testBrowserActionIdsRoundTrip() {
