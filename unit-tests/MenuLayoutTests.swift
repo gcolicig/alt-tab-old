@@ -48,6 +48,23 @@ class MenuLayoutTests: XCTestCase {
         XCTAssertNil(DefaultBrowserActionId.bundleId(fromStableId: "windowFocus.isolate"))
     }
 
+    func testDuplicateBrowserCopiesCollapseToThePreferredOne() {
+        let apps: [(bundleId: String?, path: String)] = [
+            ("com.microsoft.edgemac", "/Users/x/Library/EdgeUpdater/148/Microsoft Edge.app"),
+            ("com.microsoft.edgemac", "/Applications/Microsoft Edge.app"),
+            ("org.mozilla.firefox", "/Applications/Firefox.app"),
+            (nil, "/Applications/Broken.app"),
+        ]
+        let unique = DefaultBrowserActionId.uniqueApps(apps) { $0 == "com.microsoft.edgemac" ? "/Applications/Microsoft Edge.app" : nil }
+        XCTAssertEqual(unique.map(\.bundleId), ["com.microsoft.edgemac", "org.mozilla.firefox"])
+        XCTAssertEqual(unique.map(\.path), ["/Applications/Microsoft Edge.app", "/Applications/Firefox.app"])
+    }
+
+    func testAPreferredPathOutsideTheListIsIgnored() {
+        let unique = DefaultBrowserActionId.uniqueApps([("a", "/one.app"), ("a", "/two.app")]) { _ in "/elsewhere.app" }
+        XCTAssertEqual(unique.map(\.path), ["/one.app"])
+    }
+
     func testSystemActionIdsAreUnique() {
         XCTAssertEqual(Set(SystemAction.allCases.map(\.rawValue)).count, SystemAction.allCases.count)
     }

@@ -48,6 +48,19 @@ enum DefaultBrowserActionId {
         prefix + bundleId
     }
 
+    /// One entry per bundle id, keeping the copy macOS itself would open. Updaters such as Edge's keep
+    /// older copies of the same app, and a duplicate id would register the same action twice.
+    static func uniqueApps(_ apps: [(bundleId: String?, path: String)], preferredPath: (String) -> String?) -> [(bundleId: String, path: String)] {
+        var seen = Set<String>()
+        return apps.compactMap { app -> (bundleId: String, path: String)? in
+            guard let bundleId = app.bundleId, !seen.contains(bundleId) else { return nil }
+            let copies = apps.filter { $0.bundleId == bundleId }.map(\.path)
+            seen.insert(bundleId)
+            let preferred = preferredPath(bundleId).flatMap { copies.contains($0) ? $0 : nil }
+            return (bundleId, preferred ?? copies[0])
+        }
+    }
+
     static func bundleId(fromStableId stableId: String) -> String? {
         guard stableId.hasPrefix(prefix) else { return nil }
         let bundleId = String(stableId.dropFirst(prefix.count))

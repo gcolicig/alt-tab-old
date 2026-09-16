@@ -11,7 +11,7 @@ enum Actions {
             (0..<Preferences.maxOpenUrlCount).map(openUrlRegistration) +
             (0..<Preferences.maxProfileCount).map(profileRegistration) +
             SystemActions.all.map(systemRegistration) +
-            DefaultBrowser.installed().compactMap(DefaultBrowser.bundleId).map(defaultBrowserRegistration)
+            Array(Set(DefaultBrowser.installed().compactMap(DefaultBrowser.bundleId))).sorted().map(defaultBrowserRegistration)
     )
 
     /// A browser installed after launch has no registration; its binding still works.

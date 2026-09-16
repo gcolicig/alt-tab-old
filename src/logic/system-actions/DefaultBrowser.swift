@@ -6,7 +6,9 @@ enum DefaultBrowser {
 
     static func installed() -> [URL] {
         guard #available(macOS 12.0, *) else { return [] }
-        return NSWorkspace.shared.urlsForApplications(toOpen: probeUrl)
+        let candidates = NSWorkspace.shared.urlsForApplications(toOpen: probeUrl).map { (bundleId: bundleId($0), path: $0.path) }
+        return DefaultBrowserActionId.uniqueApps(candidates) { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0)?.path }
+            .map { URL(fileURLWithPath: $0.path) }
             .sorted { displayName($0).localizedCaseInsensitiveCompare(displayName($1)) == .orderedAscending }
     }
 
