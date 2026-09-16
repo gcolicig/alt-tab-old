@@ -1508,6 +1508,83 @@ Stand 2026-08-14, Vermessung per Probe-Merge auf einem Wegwerf-Branch (danach ab
 - Zu `e20c3277` (space indicators off by default): **keine konkurrierende Spaces-Umsetzung**, wie zunaechst vermutet. Am Quelltext geprueft 2026-08-14: gemeint ist das Nummern-Abzeichen pro Kachel im Switcher (`setSpaceNumber`, Stern bei "auf allen Spaces"), das nur ausweist, auf welchem Space ein Fenster liegt. Unser Fork hat exakt dasselbe Feature aus der Zeit vor der Abspaltung, samt identischer Praeferenz `hideSpaceNumberLabels`; der Upstream-Commit dreht lediglich deren Vorgabe auf "verstecken". Fuer die Spaces-Arbeit dieses Forks (Menueleisten-Reihe, Instant Spaces) folgt daraus nichts.
 - `alt-tab pro` ist als `BREAKING CHANGE` mit eigener Ankuendigung markiert. Entschieden 2026-08-18: Der Fork bleibt bewusst eigenstaendig; Upstream wird weiterhin nur selektiv (einzelne Fixes lesen und gezielt nachbauen) verwertet, solange die Lizenz der Quelle das erlaubt. Das ist eine bewusste Produktentscheidung mit Ablaufdatum statt einer stillschweigenden Gewohnheit: je mehr der Pro-Umbau die Upstream-Architektur von diesem Fork entfernt (Beispiel `SpacesEvents.swift`, das dort geloescht wurde), desto teurer wird das Nachbauen. Die Strategie wird neu bewertet, sobald ein gewuenschter Upstream-Fix ohne den Pro-Umbau nicht mehr sinnvoll isolierbar ist oder die Lizenz sich aendert. Kein Handlungsbedarf jetzt.
 
+### 12. Fenster-Fokus-Aktionen: Isolate Window und Verwandte
+
+Status: Spezifiziert 2026-09-16; nicht begonnen
+Prioritaet: Mittel. Klein, ohne Event-Tap, sofort ueber alle Trigger nutzbar
+
+Referenz: Supercharge (Sindre Sorhus), Menue-Aktionen `Isolate Window`, `Hide All Windows`, `Minimize All Windows`, `Minimize All Windows Except Frontmost`, `Minimize App Windows Except Frontmost`, `Show Desktop`. Verhalten nur aus Namen und Menue abgeleitet (Art A); Supercharge ist nicht quelloffen. Abgleich des ganzen Menues unter `Supercharge-Abgleich`.
+
+Beschreibung:
+
+- `Isolate Window` laesst genau das fokussierte Fenster sichtbar: alle anderen Apps werden ausgeblendet, die uebrigen Fenster derselben App minimiert.
+- Die Aktion wird ein Eintrag im gemeinsamen Aktionsregister (`ActionIdentifier`). Damit ist sie ohne weitere Arbeit ueber Shortcut, Hyper, Leader und FlickRing ausloesbar.
+- Sie besteht aus zwei Bausteinen, die fuer sich ebenfalls sinnvoll sind. Die verwandten Supercharge-Aktionen sind nur andere Kombinationen derselben Bausteine und kommen deshalb in derselben Story, aber als eigene Stufe.
+
+Bausteine:
+
+| Baustein | Wirkung | Mittel |
+|---|---|---|
+| B1 `hideOtherApps(except:)` | Blendet alle regulaeren Apps ausser der Ziel-App aus | `NSRunningApplication.hide()` je App, oeffentliche API, kein AX |
+| B2 `minimizeWindows(of:except:)` | Minimiert Fenster einer App ausser dem Zielfenster | AX `kAXMinimizedAttribute` ueber die bestehende `accessibilityCommandsQueue`, wie `Window.minDemin()` |
+
+Stufe 12a, Isolate Window:
+
+- Ziel ist das fokussierte Fenster der frontmost App, ermittelt ueber denselben Weg wie die Window-Layout-Aktionen.
+- Ablauf: B1 mit der Ziel-App, dann B2 mit Ziel-App und Zielfenster.
+- `stableId`: `windowFocus.isolate`.
+
+Stufe 12b, Verwandte (je einzeln auf `BEHALTEN`/`OPTIONAL`/`ENTFERNEN`/`SPAETER` setzbar):
+
+- [BEHALTEN] `Minimize App Windows Except Frontmost`: nur B2. `windowFocus.minimizeAppOthers`.
+- [BEHALTEN] `Hide Other Apps`: nur B1. Entspricht dem nativen `Cmd+Option+H`, aber ueber jeden Trigger erreichbar. `windowFocus.hideOthers`.
+- [OPTIONAL] `Minimize All Windows Except Frontmost`: B2 ueber alle Apps. Langsamer als B1 und mit Dock-Animation je Fenster; nur behalten, wenn Minimieren statt Ausblenden gewollt ist.
+- [OPTIONAL] `Minimize All Windows`: wie oben, ohne Ausnahme.
+- [OPTIONAL] `Hide All Windows`: B1 ohne Ausnahme, dazu Finder aktivieren, damit keine App den Fokus behaelt.
+- [SPAETER] `Show Desktop`: macOS hat dafuer eine eigene Geste und Mission-Control-Funktion, die sich nicht oeffentlich ausloesen laesst. Nachbau ueber B1 waere nicht umkehrbar wie das Original. Erst aufnehmen, wenn ein sauberer Weg belegt ist.
+- [SPAETER] `Undo`: den Zustand vor der letzten Fokus-Aktion wiederherstellen (ausgeblendete Apps einblenden, minimierte Fenster zurueckholen). Braucht einen Schnappschuss mit Lebensdauer und passt zu Story 11, Block 3.
+
+Regeln:
+
+| ID | Anforderung | Begruendung |
+|---|---|---|
+| WF-01 | Keine Aktion ohne fokussiertes Fenster; Verfuegbarkeit meldet `unavailable` mit Grund, der Trigger quittiert mit `NSSound.beep()` wie `minDemin` | Kein Raten, welches Fenster gemeint ist |
+| WF-02 | AX-Arbeit nur auf `accessibilityCommandsQueue` mit gesetztem Messaging-Timeout; nichts im Trigger-Pfad | Q-02, Q-03, Q-16 |
+| WF-03 | B1 betrifft nur Apps mit `activationPolicy == .regular`; AltTab+ selbst, Agenten und Hintergrundprozesse bleiben unberuehrt | Menueleisten-Apps und Helfer haben kein sinnvolles Ausblenden |
+| WF-04 | B2 ueberspringt Vollbild-Fenster, Tabs und fensterlose Apps. Anders als `minDemin` wird Vollbild **nicht** verlassen | Eine Fokus-Aktion darf keinen Space aufloesen |
+| WF-05 | B2 betrifft nur Fenster auf dem aktuellen Space des jeweiligen Displays | Unsichtbare Fenster zu minimieren aendert Zustand, den der Nutzer nicht sieht |
+| WF-06 | Die Ziel-App wird nie ausgeblendet, auch wenn sie waehrend der Ausfuehrung den Fokus verliert | Sonst verschwindet genau das Fenster, das isoliert werden sollte |
+| WF-07 | Fehler einzelner Apps oder Fenster brechen die Aktion nicht ab und landen im Q-07-Ringbuffer | Eine haengende App darf den Rest nicht aufhalten |
+| WF-08 | Kein Event-Tap, kein Timer, kein Posting synthetischer Ereignisse | Q-10: keine Laufzeitkosten ausserhalb der Ausfuehrung |
+| WF-09 | Standard: keine Tastenkombination belegt | Q-08 sinngemaess; der Nutzer weist selbst zu |
+
+Mehrere Displays:
+
+- `NSRunningApplication.hide()` wirkt je App auf allen Displays. Isolate blendet also auch Apps auf anderen Displays aus. Das ist im MVP gewollt und wird im Titel-Hinweis nicht verschwiegen.
+- [SPAETER] Variante `nur aktuelles Display`: ueber B2 statt B1 fuer Apps auf anderen Displays nicht moeglich ohne Minimieren; erst bei konkretem Bedarf.
+
+Settings:
+
+- Kein eigener Sidebar-Eintrag. Die Aktionen erscheinen dort, wo Aktionen heute zugewiesen werden (Shortcut-Liste, Leader, FlickRing).
+
+Pruefraster (Checkliste folgt mit der Umsetzung):
+
+| Pruefung | Erwartung |
+|---|---|
+| Isolate mit Finder, Safari, Terminal und zwei Safari-Fenstern | Nur das fokussierte Safari-Fenster bleibt sichtbar; das zweite ist minimiert; Finder und Terminal ausgeblendet |
+| Fokussiertes Fenster im Vollbild | Nur B1 wirkt; kein Space wechselt |
+| Andere App-Fenster im Vollbild | Bleiben im Vollbild, werden nicht minimiert |
+| Kein fokussiertes Fenster (nur Desktop) | Beep, keine Aenderung |
+| Haengende App (z.B. im Debugger angehalten) | Aktion endet fuer die uebrigen Apps normal; Eintrag im Ringbuffer |
+| Zwei Displays | Apps auf dem zweiten Display sind ausgeblendet; minimiert wird nur auf dem aktuellen Space |
+| Aufruf ueber Shortcut, Leader und FlickRing | Gleiches Ergebnis |
+
+Nicht im Scope:
+
+- Dock-Klick-Logik und Aktionen in Mission Control (siehe `Nicht-Ziele`).
+- Automatisches Isolieren beim Fokuswechsel.
+- Per-App-Ausnahmen.
+
 ## Distribution und Migration
 
 - Produktname und Bundle-ID bleiben fork-spezifisch: AltTab+ und `com.gcolicig.alttab-plus`.
@@ -1697,6 +1774,67 @@ Regeln:
 - `royalbhati/HopTab` ist MIT-lizenziert; vorerst Typ A fuer Profile, Space-Binding und Session-Ablauf. Keine direkte Uebernahme des sitzungslokalen Space-ID- oder titelbasierten Fenster-Matchings.
 - PR-Template spaeter um Checkbox ergaenzen: Provenienz-Register aktualisiert oder n/a.
 
+## Supercharge-Abgleich (2026-09-16)
+
+Quelle: Menue von Supercharge (Sindre Sorhus, https://sindresorhus.com/supercharge), Stand 2026-09-16, per Screenshot. Nicht quelloffen; alles hier ist Art A. Die Gruppen ergeben sich aus den Menueeintraegen selbst. Die technische Einschaetzung ist nicht am Geraet geprueft; Punkte mit **unverifiziert** vor einer Aufnahme belegen.
+
+Entschieden 2026-09-16:
+
+- **Nicht vorsehen**: Dock-Klick-Logik (minimieren, durch Fenster wechseln, Mittelklick-Aktionen) und Aktionen in Mission Control. Beide stehen unter `Nicht-Ziele`.
+- **Spezifiziert**: `Isolate Window` samt Verwandten als Story 12.
+
+Legende: `STORY 12` = dort spezifiziert; `VORHANDEN` = im Fork schon abgedeckt; `OPTIONAL` = passt, aber kein Bedarf festgestellt; `SPAETER` = passt, aber offene technische Frage; `ENTFERNEN` = passt nicht zum Produkt.
+
+| Gruppe | Supercharge-Eintrag | Einstufung | Begruendung |
+|---|---|---|---|
+| Fenster und Apps | Isolate Window | STORY 12 | Kern der Story |
+| Fenster und Apps | Minimize App Windows Except Frontmost | STORY 12 | Baustein B2 |
+| Fenster und Apps | Hide All Windows | STORY 12 | Stufe 12b, optional |
+| Fenster und Apps | Minimize All Windows | STORY 12 | Stufe 12b, optional |
+| Fenster und Apps | Minimize All Windows Except Frontmost | STORY 12 | Stufe 12b, optional |
+| Fenster und Apps | Show Desktop | STORY 12 | Stufe 12b, spaeter |
+| Fenster und Apps | Quit All Apps | OPTIONAL | Passt ins Aktionsregister (`Application.quit()` existiert). Nur mit Bestaetigung, weil es viele Apps auf einmal trifft |
+| Fenster und Apps | Quit All Apps Except Frontmost | OPTIONAL | Wie oben |
+| Fenster und Apps | Auto-Quit Apps | SPAETER | Apps nach Inaktivitaet beenden; braucht einen dauerhaften Beobachter und Regeln je App. Beruehrt Story 11 (Per-App-Policies) |
+| Energie und Anzeige | Keep Awake | VORHANDEN | Story 10 |
+| Energie und Anzeige | Sleep Displays | OPTIONAL | Billig ueber `pmset displaysleepnow`, **unverifiziert** ohne Admin-Rechte |
+| Energie und Anzeige | Low Power Mode | ENTFERNEN | Umschalten braucht nach Kenntnisstand Admin-Rechte (**unverifiziert**); globale Regel: kein `sudo` |
+| Energie und Anzeige | Dark Mode | ENTFERNEN | Nur ueber AppleScript an System Events, also neue Automation-Berechtigung; kein Bezug zu Fenstern |
+| Energie und Anzeige | Night Shift | ENTFERNEN | Nur ueber private API (**unverifiziert**); kein Bezug zum Produkt |
+| Energie und Anzeige | Grayscale Mode | ENTFERNEN | Wie Night Shift |
+| Desktop und Dock | Desktop Icons | ENTFERNEN | Schreibt Finder-Einstellungen und startet Finder neu; widerspricht dem Besitz-Modell fuer Systemwerte (Story 4) |
+| Desktop und Dock | Desktop Widgets | ENTFERNEN | Wie oben, fuer WindowManager |
+| Desktop und Dock | Desktop Icons & Widgets | ENTFERNEN | Kombination der beiden |
+| Desktop und Dock | Hot Corners | ENTFERNEN | Schreibt Dock-Einstellungen und startet das Dock neu; stoert Instant Spaces |
+| Eingabe und Ton | Function Keys | SPAETER | Passt thematisch zu Hyperkey. Wirksames Umschalten ohne Neuanmeldung ist **unverifiziert** |
+| Eingabe und Ton | Mute Sound | OPTIONAL | Oeffentliche CoreAudio-API; kein Fensterbezug, aber als Leader-/FlickRing-Aktion praktisch |
+| Eingabe und Ton | Mute Microphone | OPTIONAL | Wie oben; nuetzlich in Videocalls |
+| Eingabe und Ton | Cleaning Mode | ENTFERNEN | Sperrt alle Eingaben ueber einen umfassenden Tap; kollidiert mit Q-01 (Panic-Kill-Switch muss immer wirken) |
+| Eingabe und Ton | Cat Mode | ENTFERNEN | Wie Cleaning Mode |
+| Bildschirm-Werkzeuge | Pick Color | ENTFERNEN | Eigenes Produktfeld; macOS hat den Farbwaehler |
+| Bildschirm-Werkzeuge | Capture Text | ENTFERNEN | OCR-Werkzeug, kein Fensterbezug |
+| Bildschirm-Werkzeuge | Capture & Translate | ENTFERNEN | Wie oben, mit Uebersetzung |
+| Bildschirm-Werkzeuge | Scan QR Code | ENTFERNEN | Wie oben |
+| Bildschirm-Werkzeuge | Scan QR Code from Clipboard | ENTFERNEN | Wie oben |
+| Mitteilungen | Clear Visible Notifications | ENTFERNEN | Nur ueber AX-Fernsteuerung des Notification Center; bricht bei jedem macOS-Update |
+| Mitteilungen | Clear All Notifications | ENTFERNEN | Wie oben |
+| Mitteilungen | iOS Notifications | ENTFERNEN | Betrifft iPhone-Mirroring, kein Bezug |
+| Aufraeumen | Clear Clipboard | OPTIONAL | Trivial; nur als Aktion im Register, falls gewuenscht |
+| Aufraeumen | Eject All Disks | OPTIONAL | Oeffentliche API (`NSWorkspace.unmountAndEjectDevice`); kein Fensterbezug |
+| Aufraeumen | Empty Trash | ENTFERNEN | Endgueltiges Loeschen per Tastendruck ist zu riskant fuer eine Aktion ohne Rueckfrage |
+| Systemeinstellungen | Default Browser (Untermenue) | OPTIONAL | Oeffentliche API, macOS zeigt eine Bestaetigung; passt neben die Open-URL-Slots |
+| Systemeinstellungen | VPN & Filters | VORHANDEN | Ist nur ein Sprung in die Systemeinstellungen; geht heute ueber einen Open-URL-Slot mit `x-apple.systempreferences:` |
+| Systemeinstellungen | Hide My Email | VORHANDEN | Wie oben |
+| Systemeinstellungen | Private Relay | VORHANDEN | Wie oben |
+| App-Menue | Settings, About, Release Notes, Website, Quit | VORHANDEN | Standard jeder App |
+| App-Menue | Support & Feedback, Tips, FAQ, Share App, More Apps | ENTFERNEN | Vertriebsfunktionen, fuer einen Fork ohne Nutzen |
+| App-Menue | Troubleshooting | OPTIONAL | Ein Einstieg zu `docs/high-cpu-troubleshooting.md` und den Checklisten |
+| Debug | Copy Debug Info | OPTIONAL, hoher Nutzen | Kopiert macOS-Build, App-Version, Berechtigungen, aktive Module und den Q-07-Ringbuffer. Spart bei jedem Geraetebericht Rueckfragen |
+| Debug | Copy Accessibility Tree | OPTIONAL, hoher Nutzen | AX-Baum des fokussierten Fensters kopieren. Genau das fehlt bei App-Kompatibilitaetsfehlern |
+| Debug | Reset Permissions | OPTIONAL, hoher Nutzen | `tccutil reset` fuer die eigene Bundle-ID. Ersetzt den Handschritt aus dem Skill `install-local-build`, Schritt 4 |
+
+Empfehlung aus dem Abgleich: Die drei Debug-Eintraege sind fuer die Entwicklung dieses Forks wertvoller als alle uebrigen optionalen Punkte und sollten als naechste eigene Story aufgenommen werden.
+
 ## Gelesene Inspirationsquellen
 
 - Apple Tile windows: https://support.apple.com/guide/mac-help/tile-windows-mchlef287e5d/mac
@@ -1722,6 +1860,8 @@ Regeln:
 - jurplel/InstantSpaceSwitcher: https://github.com/jurplel/InstantSpaceSwitcher
 - xiamaz/YabaiIndicator: https://github.com/xiamaz/YabaiIndicator
 - royalbhati/HopTab: https://github.com/royalbhati/HopTab
+- Supercharge: https://sindresorhus.com/supercharge
+- LinearMouse Smoothed Scrolling: https://github.com/linearmouse/linearmouse/tree/d82e98fba7f2/LinearMouse/EventTransformer
 
 ## Nicht-Ziele fuer die erste Iteration
 
@@ -1732,5 +1872,7 @@ Regeln:
 - App-, Display- oder Device-ID-spezifische Pointer-/Scroll-Regeln.
 - Ueberschreiben oder Unterdruecken nativer Apple-Snap-Zonen ausserhalb einer expliziten AltTab+-Modifier-Drag-Sitzung.
 - Abfangen oder Ersetzen nativer Space-Trackpad-Swipes im Instant-Spaces-MVP.
+- Dock-Klick-Logik nach Supercharge-Vorbild (Klick minimiert, wechselt durch Fenster oder holt minimierte zurueck; Mittelklick-Aktionen). Entschieden 2026-09-16: braucht einen Maus-Tap mit Dock-Trefferpruefung, das Durchwechseln leistet der Switcher, und V-16 ist ungeklaert.
+- Aktionen direkt in Mission Control (Schliessen, Ausblenden, Beenden, Minimieren). Entschieden 2026-09-16: keine oeffentliche Schnittstelle; der Switcher bietet dieselben Aktionen je Kachel.
 - Intel-Support.
 - Support fuer macOS-Versionen vor Tahoe.

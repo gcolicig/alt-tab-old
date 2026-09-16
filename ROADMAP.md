@@ -172,6 +172,12 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 - Benannte Default-Profile: Konservativ, Power-User, Windows-like.
 - Vollstaendige Spezifikation in `backlog.md` unter Story 11.
 
+## Phase 12: Fenster-Fokus-Aktionen
+
+- `Isolate Window` als Aktion im gemeinsamen Register: andere Apps ausblenden, uebrige Fenster der Ziel-App minimieren. Kein Tap, kein Timer.
+- Danach die verwandten Aktionen aus denselben zwei Bausteinen, einzeln waehlbar.
+- Vollstaendige Spezifikation und der ganze Supercharge-Abgleich in `backlog.md` unter Story 12 und `Supercharge-Abgleich`.
+
 ## Release-Gates
 
 Vor jeder oeffentlichen Version:
