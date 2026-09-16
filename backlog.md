@@ -1907,7 +1907,7 @@ Gruppen und Reihenfolge:
 
 Aufbau:
 
-- **Entschieden 2026-09-16**: Die Gruppen `Werkzeuge` und `Schalter` erscheinen nicht flach, sondern als Untermenues `Tools >` und `Toggles >` unter einem gemeinsamen Eintrag `Other Tools >`, an der Stelle der ersten dieser Gruppen. Keep Awake ist damit ein Untermenue dritter Ebene. `Fenster` bleibt flach. Eine leere Untergruppe faellt weg; sind beide leer, faellt `Other Tools` weg.
+- **Entschieden 2026-09-16**: Die Gruppen `Werkzeuge` und `Schalter` stehen gemeinsam unter einem Eintrag `Other Tools >`, an der Stelle der ersten dieser Gruppen. Darin sind sie Abschnitte mit Ueberschrift `Tools` und `Toggles`, wie die Gruppen im Hauptmenue, keine weiteren Untermenues. Nur Keep Awake behaelt sein eigenes Untermenue mit den Dauern. `Fenster` bleibt flach. Eine leere Untergruppe faellt weg; sind beide leer, faellt `Other Tools` weg.
 - Ueberschriften ueber `NSMenuItem.sectionHeader(title:)` ab macOS 14; darunter nur Trenner ohne Ueberschrift (SA-05).
 - Die Gruppe `Schalter` zeigt Zustaende mit Haekchen (`state = .on`), wie im Supercharge-Menue. Eintraege mit Rueckfrage oder Fenster tragen Auslassungspunkte.
 - Die Gruppe `AltTab+` steht immer zuletzt, ohne Ueberschrift, nur durch einen Trenner abgesetzt.

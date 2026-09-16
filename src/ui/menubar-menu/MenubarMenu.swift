@@ -40,6 +40,9 @@ final class MenubarMenu: NSObject, NSMenuDelegate {
         }
     }
 
+    /// Decided 2026-09-16: inside `Other Tools` each group is a headed section, like the groups of the
+    /// main menu, not a further submenu. Its items stay in `items`, so the same refresh keeps checkmarks
+    /// and availability current when the submenu opens.
     private func otherToolsItem(_ groups: [MenuGroupEntries]) -> NSMenuItem {
         let item = NSMenuItem(title: NSLocalizedString("Other Tools", comment: ""), action: nil, keyEquivalent: "")
         if #available(macOS 26.0, *) {
@@ -47,31 +50,20 @@ final class MenubarMenu: NSObject, NSMenuDelegate {
         }
         let submenu = NSMenu(title: item.title)
         submenu.autoenablesItems = false
-        groups.forEach { submenu.addItem(groupSubmenuItem($0.group, $0.ids)) }
-        item.submenu = submenu
-        return item
-    }
-
-    /// A whole group behind one entry. Its items stay in `items`, so the same refresh keeps their
-    /// checkmarks and availability current when the submenu opens.
-    private func groupSubmenuItem(_ group: MenuGroup, _ ids: [String]) -> NSMenuItem {
-        let item = NSMenuItem(title: Self.groupTitle(group), action: nil, keyEquivalent: "")
-        if #available(macOS 26.0, *) {
-            item.image = NSImage(systemSymbolName: Self.groupSymbol(group), accessibilityDescription: nil)
-        }
-        let submenu = NSMenu(title: Self.groupTitle(group))
-        submenu.autoenablesItems = false
         submenu.delegate = self
-        ids.compactMap { entries[$0] }.forEach { submenu.addItem(entryItem($0)) }
+        groups.enumerated().forEach { index, group in
+            if index > 0 { submenu.addItem(.separator()) }
+            addSection(group, to: submenu)
+        }
         item.submenu = submenu
         return item
     }
 
-    private static func groupSymbol(_ group: MenuGroup) -> String {
-        switch group {
-            case .tools: return "wrench.adjustable"
-            default: return "switch.2"
+    private func addSection(_ group: MenuGroupEntries, to menu: NSMenu) {
+        if #available(macOS 14.0, *) {
+            menu.addItem(NSMenuItem.sectionHeader(title: Self.groupTitle(group.group)))
         }
+        group.ids.compactMap { entries[$0] }.forEach { menu.addItem(entryItem($0)) }
     }
 
     private func header(_ group: MenuGroup) -> NSMenuItem {
