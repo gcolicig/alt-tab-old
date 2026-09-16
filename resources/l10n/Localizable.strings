@@ -47,10 +47,16 @@
 "A lost binding is shown, never repointed." = "A lost binding is shown, never repointed.";
 
 /* No comment provided by engineer. */
+"A profile shows only its apps in the switcher and can switch to its space." = "A profile shows only its apps in the switcher and can switch to its space.";
+
+/* No comment provided by engineer. */
 "A row is missing either its keys or its action." = "A row is missing either its keys or its action.";
 
 /* No comment provided by engineer. */
 "A sequence uses keys other than letters and digits." = "A sequence uses keys other than letters and digits.";
+
+/* No comment provided by engineer. */
+"A web address, or a link of another app such as mailto: or raycast://" = "A web address, or a link of another app such as mailto: or raycast://";
 
 /* Menubar option. %@ is AltTab */
 "About %@" = "About %@";
@@ -80,6 +86,9 @@
 "Active screen" = "Active screen";
 
 /* No comment provided by engineer. */
+"Add" = "Add";
+
+/* No comment provided by engineer. */
 "Add a running app" = "Add a running app";
 
 /* No comment provided by engineer. */
@@ -87,6 +96,12 @@
 
 /* No comment provided by engineer. */
 "Add App…" = "Add App…";
+
+/* No comment provided by engineer. */
+"Add link" = "Add link";
+
+/* No comment provided by engineer. */
+"Add Link…" = "Add Link…";
 
 /* No comment provided by engineer. */
 "Additional controls" = "Additional controls";
@@ -105,6 +120,12 @@
 
 /* No comment provided by engineer. */
 "Align windows" = "Align windows";
+
+/* No comment provided by engineer. */
+"All %d profiles are in use. Delete one first." = "All %d profiles are in use. Delete one first.";
+
+/* No comment provided by engineer. */
+"All 9 places are in use. Remove an entry first." = "All 9 places are in use. Remove an entry first.";
 
 /* No comment provided by engineer. */
 "All apps" = "All apps";
@@ -165,9 +186,6 @@
 
 /* No comment provided by engineer. */
 "Animations…" = "Animations…";
-
-/* No comment provided by engineer. */
-"App %d" = "App %d";
 
 /* No comment provided by engineer. */
 "App (BundleID starting with)" = "App (BundleID starting with)";
@@ -254,12 +272,6 @@
 "Bound space is gone" = "Bound space is gone";
 
 /* No comment provided by engineer. */
-"Bundle ID or name" = "Bundle ID or name";
-
-/* No comment provided by engineer. */
-"Bundle IDs, one per line" = "Bundle IDs, one per line";
-
-/* No comment provided by engineer. */
 "Cancel" = "Cancel";
 
 /* No comment provided by engineer. */
@@ -303,6 +315,9 @@
 
 /* No comment provided by engineer. */
 "Choose how the window switcher looks and where it appears." = "Choose how the window switcher looks and where it appears.";
+
+/* No comment provided by engineer. */
+"Choose…" = "Choose…";
 
 /* No comment provided by engineer. */
 "Clear" = "Clear";
@@ -411,6 +426,15 @@
 
 /* No comment provided by engineer. */
 "Delay" = "Delay";
+
+/* No comment provided by engineer. */
+"Delete" = "Delete";
+
+/* No comment provided by engineer. */
+"Delete %@?" = "Delete %@?";
+
+/* No comment provided by engineer. */
+"Delete…" = "Delete…";
 
 /* No comment provided by engineer. */
 "Devices" = "Devices";
@@ -599,6 +623,9 @@
 "Isolate Window" = "Isolate Window";
 
 /* No comment provided by engineer. */
+"Its apps, layout, bound space, and shortcut are removed too." = "Its apps, layout, bound space, and shortcut are removed too.";
+
+/* No comment provided by engineer. */
 "Keep Awake" = "Keep Awake";
 
 /* No comment provided by engineer. */
@@ -701,6 +728,9 @@
 "Light" = "Light";
 
 /* No comment provided by engineer. */
+"Links" = "Links";
+
+/* No comment provided by engineer. */
 "Lock search" = "Lock search";
 
 /* No comment provided by engineer. */
@@ -800,7 +830,13 @@
 "Never" = "Never";
 
 /* No comment provided by engineer. */
+"New" = "New";
+
+/* No comment provided by engineer. */
 "No application is configured." = "No application is configured.";
+
+/* No comment provided by engineer. */
+"No apps yet. Add one to open it with a shortcut." = "No apps yet. Add one to open it with a shortcut.";
 
 /* No comment provided by engineer. */
 "No browsers found" = "No browsers found";
@@ -815,16 +851,25 @@
 "No eligible foreground application." = "No eligible foreground application.";
 
 /* No comment provided by engineer. */
+"No installed app matches this entry." = "No installed app matches this entry.";
+
+/* No comment provided by engineer. */
 "No installed application matches this bundle identifier or name." = "No installed application matches this bundle identifier or name.";
 
 /* No comment provided by engineer. */
 "No Leader bindings configured." = "No Leader bindings configured.";
 
 /* No comment provided by engineer. */
+"No links yet. Add one to open it with a shortcut." = "No links yet. Add one to open it with a shortcut.";
+
+/* No comment provided by engineer. */
 "No notifications to clear." = "No notifications to clear.";
 
 /* No comment provided by engineer. */
 "No other app is in front." = "No other app is in front.";
+
+/* No comment provided by engineer. */
+"No profiles yet." = "No profiles yet.";
 
 /* No comment provided by engineer. */
 "No text was found." = "No text was found.";
@@ -849,6 +894,9 @@
 
 /* No comment provided by engineer. */
 "Not bound" = "Not bound";
+
+/* No comment provided by engineer. */
+"Not installed on this Mac." = "Not installed on this Mac.";
 
 /* No comment provided by engineer. */
 "Not managed by AltTab+" = "Not managed by AltTab+";
@@ -936,6 +984,9 @@
 
 /* No comment provided by engineer. */
 "Preview selected window" = "Preview selected window";
+
+/* No comment provided by engineer. */
+"Profile" = "Profile";
 
 /* No comment provided by engineer. */
 "Profile %d" = "Profile %d";
@@ -1271,6 +1322,9 @@
 "Text copied." = "Text copied.";
 
 /* No comment provided by engineer. */
+"That is not a valid link. Try a web address such as github.com." = "That is not a valid link. Try a web address such as github.com.";
+
+/* No comment provided by engineer. */
 "The app in front has no focused window." = "The app in front has no focused window.";
 
 /* No comment provided by engineer. */
@@ -1419,12 +1473,6 @@
 
 /* No comment provided by engineer. */
 "Until…" = "Until…";
-
-/* No comment provided by engineer. */
-"URL" = "URL";
-
-/* No comment provided by engineer. */
-"URL %d" = "URL %d";
 
 /* No comment provided by engineer. */
 "Usage" = "Usage";
