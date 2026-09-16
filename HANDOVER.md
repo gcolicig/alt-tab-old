@@ -28,7 +28,8 @@ The unit-test suite passes. Build with `./build.sh --test`; `SCHEME=Release ./bu
 
 ## What happened between 2026-08-10 and 2026-08-14
 
-- **V-10 ran, at last.** Steps 1–10 and 12 pass. Three defects were found by operating, none by tests:
+- **V-10 ran, at last.** Steps 1–10 and 12 pass. Step 8 failed, was fixed by #21, and passed when run again
+  on 2026-09-16. Three defects were found by operating, none by tests:
   a disabled sentinel the HID system silently clamped to 0 while reporting success (#16), a speed slider
   that could re-acquire mid-drag and adopt a foreign value as its own baseline (#18), and a quit path
   that kept the value instead of handing it back (#21). Step 11's negative half (sleep) is still open —
@@ -161,13 +162,21 @@ In rough priority. Everything here needs a human at the keyboard; none of it can
   matrix.
 - Claude briefly exposed a second, untitled, off-screen window that passed every window check. Not
   reproducible; neither visibility nor Space membership separates it from a legitimately minimized window.
-- Switching the Space of a display the cursor is not on is not possible. Four routes were measured on
+- **Corrected 2026-09-16 (S-10d in `backlog.md`):** a synthetic swipe whose `event.location` lies on
+  another display switches *that* display, with the cursor left where it is. Measured with a control run
+  on macOS 26.7: without a location the display under the cursor switched, with the location the target
+  switched, both independent of the active menubar display. The paragraph below is the state of
+  2026-08-07 and is wrong about the event route. Remote switching is therefore reachable but not built.
+- (State of 2026-08-07.) Switching the Space of a display the cursor is not on is not possible. Four routes were measured on
   2026-08-07 and all failed: the gesture carries no target display, a cursor warp does not move the active
   menubar display, the setter meant for it is accepted and ignored, and moving the Space layers changes the
   reported value without changing the picture. The menubar row therefore refuses such a click and says so
-  rather than doing nothing. See S-10, S-10b and S-10c in `backlog.md`. One route was never measured,
-  though: the synthetic gesture is posted without ever setting `event.location`. Whether a location on
-  the target display addresses it is the first spike of the current Spaces plan.
+  rather than doing nothing. See S-10, S-10b and S-10c in `backlog.md`. The `event.location` route,
+  which this section used to call unmeasured, was in fact measured on 2026-08-06: setting the location to
+  the centre of the target display had no effect, and a control run without it behaved identically
+  (`backlog.md`, S-10). The branch `spike/spaces-remote-gesture` (2026-08-14) repeated that
+  measurement on 2026-09-16 with a control run and found the opposite; see the correction above. The
+  branch is deleted.
 - Dropping a window on a switcher tile to send it to that tile's Space (story 2H) has no system path. Every
   known call for moving a window between Spaces is either a stub or silently refused. The story is
   specified and resting.

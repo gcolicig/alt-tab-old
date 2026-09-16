@@ -17,7 +17,9 @@ enum LaunchAppAction {
             running.activate(options: .activateAllWindows)
             return
         }
-        _ = try? NSWorkspace.shared.launchApplication(at: appUrl, configuration: [:])
+        // launchApplication(at:configuration:) was deprecated in 11.0. The replacement launches
+        // asynchronously; this call stays fire-and-forget, so it needs no completion handler.
+        NSWorkspace.shared.openApplication(at: appUrl, configuration: NSWorkspace.OpenConfiguration())
     }
 
     private static func runningApplication(at appUrl: URL) -> NSRunningApplication? {

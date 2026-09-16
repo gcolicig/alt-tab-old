@@ -2,7 +2,7 @@
 
 AltTab+ is a fork-friendly snapshot of AltTab `v10.12.0`, the last known release before AltTab Pro was introduced upstream.
 
-The goal of this repository is simple: clone it, build it, run it, read it, change it, and keep it understandable. This fork intentionally avoids requiring access to the original project's Apple certificates, AppCenter project, GitHub bot token, Sparkle private key, or release infrastructure.
+The goal of this repository is simple: clone it, build it, run it, read it, change it, and keep it understandable. This fork intentionally avoids requiring access to the original project's Apple certificates, GitHub bot token, Sparkle private key, or release infrastructure.
 
 Upstream project: https://github.com/lwouis/alt-tab-macos
 
@@ -171,7 +171,6 @@ AltTab+ running locally
 
 Optional, disabled unless configured:
         +--> Sparkle update feed
-        +--> AppCenter crash reports
         +--> GitHub Issues feedback
 ```
 
@@ -179,7 +178,7 @@ Optional, disabled unless configured:
 
 - Bundle identifier is fork-specific: `com.gcolicig.alttab-plus`.
 - Sparkle automatic update checks are disabled by default.
-- Crash reporting starts only when an AppCenter secret is configured.
+- AltTab+ contains no crash reporting SDK and sends no crash reports.
 - The in-app feedback form falls back to opening this repository's Issues page unless a token is configured.
 - The original upstream remote is kept as `upstream`; pushes should go to this fork's `origin`.
 

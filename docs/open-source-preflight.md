@@ -4,7 +4,7 @@ Run this checklist before publishing releases from this fork.
 
 - [ ] Confirm the bundle identifier is fork-specific.
 - [ ] Confirm Sparkle does not point at the original AltTab appcast.
-- [ ] Confirm AppCenter and Feedback tokens are empty or owned by this fork.
+- [ ] Confirm the Feedback token is empty or owned by this fork.
 - [ ] Search for accidental credentials: `rg -n "token|secret|password|private|BEGIN .*KEY" .`
 - [ ] Review GitHub Actions secrets and permissions.
 - [ ] Decide whether release builds should be self-signed, Developer ID signed, or notarized.

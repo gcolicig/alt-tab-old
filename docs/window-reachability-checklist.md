@@ -17,11 +17,37 @@ size, and no `kCGWindowIsOnscreen` on its own. It drops a window only when all o
 - `kAXMinimized` is false,
 - it is not a background tab of a window tab group,
 - its application is not hidden,
+- it carries no title of its own, from accessibility or from the window server,
 - `CGSCopySpacesForWindows` returns no Space for it,
 - `kCGWindowIsOnscreen` is not true.
 
+The title condition exists because of a measurement, not because of a guess. See below.
+
 A window that is added from a window-created notification is never refused; the application has not been
 asked about it yet. Such a window is only hidden later, if it stays orphaned.
+
+## Measured on macOS 26.6, 2026-08-18
+
+A live comparison of the same session, once with the previous build and once with the fix:
+
+| Window | In `kAXWindowsAttribute` | Space | On screen | Own title | Verdict |
+|---|---|---|---|---|---|
+| Claude 1799, main | yes | 3 | yes | `Claude` | kept |
+| Claude 1803, 1804, OAuth helpers | no | none | no | none | dropped |
+| Finder 762, background tab `_notizen` | no | none | no | `_notizen` | kept |
+| Markdown Viewer 833, `Claude-Masterclass.md` | no | none | no | title | kept |
+| Bitwarden 41, minimized | no | 3 | no | title | kept |
+
+Two findings came out of it:
+
+- A **minimized window keeps its Space**. Bitwarden 41 was minimized and still reported Space 3. So the
+  Space condition alone already protects minimized windows; `kAXMinimized` is the second guard, not the first.
+- A **background tab is indistinguishable from a hidden window in the window server**. Finder 762 reported
+  no Space and no `kCGWindowIsOnscreen`, exactly like the Claude helper windows. Worse, AltTab+ does not
+  always know that a window is a tab: it reads the tab titles from an `AXTabGroup` child, and an application
+  that draws its own tab bar exposes none. Without the title condition, the fix dropped a Finder tab and a
+  Markdown Viewer window. The title is what still separates the two: a tab names its document, a forgotten
+  helper window names nothing.
 
 ## Automated coverage
 

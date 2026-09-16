@@ -109,26 +109,35 @@ final class Search {
         let n = qArr.count
         let m = tArr.count
         if n == 0 || m == 0 { return [] }
-        var H = Array(repeating: Array(repeating: 0, count: m + 1), count: n + 1)
-        var bt = Array(repeating: Array(repeating: Character("\0"), count: m + 1), count: n + 1)
+        // The score matrix H and the backtrack matrix bt are stored as flat 1D buffers, indexed by
+        // `i * width + j`. Nested `[[Int]]` allocated n + 2 arrays per call and `Character` is a grapheme
+        // cluster; this path runs for every window on every search keystroke, so a single allocation per
+        // buffer and a one-byte pointer code (0 stop, 1 diagonal, 2 up, 3 left) cut allocation and per-cell
+        // cost without changing the result.
+        let width = m + 1
+        var H = [Int](repeating: 0, count: (n + 1) * width)
+        var bt = [UInt8](repeating: 0, count: (n + 1) * width)
         for i in 1...n {
+            let rowBase = i * width
+            let prevBase = (i - 1) * width
             for j in 1...m {
-                let sDiag = H[i - 1][j - 1] + (qArr[i - 1] == tArr[j - 1] ? match : mismatch)
-                let sUp = H[i - 1][j] + gap
-                let sLeft = H[i][j - 1] + gap
+                let sDiag = H[prevBase + j - 1] + (qArr[i - 1] == tArr[j - 1] ? match : mismatch)
+                let sUp = H[prevBase + j] + gap
+                let sLeft = H[rowBase + j - 1] + gap
                 var val = sDiag
-                var ptr: Character = "D"
-                if sUp > val { val = sUp; ptr = "U" }
-                if sLeft > val { val = sLeft; ptr = "L" }
-                if val < 0 { val = 0; ptr = "\0" }
-                H[i][j] = val
-                bt[i][j] = ptr
+                var ptr: UInt8 = 1
+                if sUp > val { val = sUp; ptr = 2 }
+                if sLeft > val { val = sLeft; ptr = 3 }
+                if val < 0 { val = 0; ptr = 0 }
+                H[rowBase + j] = val
+                bt[rowBase + j] = ptr
             }
         }
         var candidates: [(score: Int, i: Int, j: Int)] = []
         for i in 1...n {
+            let rowBase = i * width
             for j in 1...m {
-                let s = H[i][j]
+                let s = H[rowBase + j]
                 if s > 0 { candidates.append((s, i, j)) }
             }
         }
@@ -142,17 +151,17 @@ final class Search {
             var consumedJ: [Int] = []
             var i = iStart
             var j = jStart
-            while i > 0 && j > 0 && H[i][j] > 0 {
-                let p = bt[i][j]
-                if p == "D" {
+            while i > 0 && j > 0 && H[i * width + j] > 0 {
+                let p = bt[i * width + j]
+                if p == 1 { // diagonal
                     opsRev.append(SWOp(op: qArr[i - 1] == tArr[j - 1] ? "M" : "S", qi: i - 1, tj: j - 1))
                     consumedJ.append(j - 1)
                     i -= 1
                     j -= 1
-                } else if p == "U" {
+                } else if p == 2 { // up
                     opsRev.append(SWOp(op: "D", qi: i - 1, tj: j))
                     i -= 1
-                } else if p == "L" {
+                } else if p == 3 { // left
                     opsRev.append(SWOp(op: "I", qi: i, tj: j - 1))
                     consumedJ.append(j - 1)
                     j -= 1
@@ -188,7 +197,7 @@ final class Search {
                 }
             }
             if let runStart { subspans.append(runStart..<jCursor) }
-            return (ops, span, subspans, H[iStart][jStart])
+            return (ops, span, subspans, H[iStart * width + jStart])
         }
         for (score, i, j) in candidates {
             if results.count >= topK || score < minScore { break }

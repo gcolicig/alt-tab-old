@@ -11,8 +11,5 @@ These third-party libraries are used:
 **LetsMove**
 [Website](https://github.com/potionfactory/LetsMove) - [Public domain](https://github.com/potionfactory/LetsMove#license)
 
-**AppCenter**
-[Website](https://github.com/microsoft/appcenter-sdk-apple) - [Custom](https://github.com/microsoft/appcenter-sdk-apple/blob/develop/LICENSE)
-
 **SwiftyBeaver**
 [Website](https://github.com/SwiftyBeaver/SwiftyBeaver) - [MIT License](https://github.com/SwiftyBeaver/SwiftyBeaver/blob/master/LICENSE)

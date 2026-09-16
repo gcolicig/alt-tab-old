@@ -58,7 +58,6 @@ class Preferences {
             "language": LanguagePreference.systemDefault.indexAsString,
             "exceptions": defaultExceptions(),
             "updatePolicy": UpdatePolicyPreference.manual.indexAsString,
-            "crashPolicy": CrashPolicyPreference.never.indexAsString,
             "hideAppBadges": "false",
             "hideThumbnails": "false",
             "hideSpaceNumberLabels": "false",
@@ -66,6 +65,7 @@ class Preferences {
             "previewFocusedWindow": "true",
             "captureWindowsInBackground": "true",
             "screenRecordingPermissionSkipped": "false",
+            "screenRecordingAccessRequested": "false",
             "trackpadHapticFeedbackEnabled": "true",
             "settingsWindowShownOnFirstLaunch": "false",
             "pointerMouseAcceleration": PointerAccelerationPreference.systemDefault.indexAsString,
@@ -224,6 +224,7 @@ class Preferences {
             previewSelectedWindow)
     }
     static var screenRecordingPermissionSkipped: Bool { CachedUserDefaults.bool("screenRecordingPermissionSkipped") }
+    static var screenRecordingAccessRequested: Bool { CachedUserDefaults.bool("screenRecordingAccessRequested") }
     static var settingsWindowShownOnFirstLaunch: Bool { CachedUserDefaults.bool("settingsWindowShownOnFirstLaunch") }
 
     // macro values
@@ -238,7 +239,6 @@ class Preferences {
     static var showAppsOrWindows: ShowAppsOrWindowsPreference { CachedUserDefaults.macroPref("showAppsOrWindows", ShowAppsOrWindowsPreference.allCases) }
     static var showTitles: ShowTitlesPreference { CachedUserDefaults.macroPref("showTitles", ShowTitlesPreference.allCases) }
     static var updatePolicy: UpdatePolicyPreference { CachedUserDefaults.macroPref("updatePolicy", UpdatePolicyPreference.allCases) }
-    static var crashPolicy: CrashPolicyPreference { CachedUserDefaults.macroPref("crashPolicy", CrashPolicyPreference.allCases) }
     static var appsToShow: [AppsToShowPreference] { (0...maxShortcutCount).map { CachedUserDefaults.macroPref(indexToName("appsToShow", $0), AppsToShowPreference.allCases) } }
     static var spacesToShow: [SpacesToShowPreference] { (0...maxShortcutCount).map { CachedUserDefaults.macroPref(indexToName("spacesToShow", $0), SpacesToShowPreference.allCases) } }
     static var screensToShow: [ScreensToShowPreference] { (0...maxShortcutCount).map { CachedUserDefaults.macroPref(indexToName("screensToShow", $0), ScreensToShowPreference.allCases) } }
@@ -284,7 +284,6 @@ class Preferences {
 
     private static func enforceForkPolicies() {
         set("updatePolicy", UpdatePolicyPreference.manual.indexAsString, false)
-        set("crashPolicy", CrashPolicyPreference.never.indexAsString, false)
     }
 
     private static func applyInputSafetyOverrides() {
@@ -388,10 +387,7 @@ class Preferences {
     }
 
     static func archiveShortcut(_ shortcut: Shortcut?) -> Data {
-        if #available(macOS 10.13, *) {
-            return try! NSKeyedArchiver.archivedData(withRootObject: shortcut ?? emptyShortcut, requiringSecureCoding: true)
-        }
-        return NSKeyedArchiver.archivedData(withRootObject: shortcut ?? emptyShortcut)
+        return try! NSKeyedArchiver.archivedData(withRootObject: shortcut ?? emptyShortcut, requiringSecureCoding: true)
     }
 
     static func shortcutStorage(_ shortcut: Shortcut?, _ stringRepresentation: String?) -> [String: Any] {

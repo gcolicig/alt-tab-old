@@ -1,16 +1,24 @@
 import Cocoa
 
 class ScrollwheelEvents {
-    static var shouldBeEnabled: Bool!
     private static var eventTap: CFMachPort!
-    /// Set by the switcher: while it is up, continuous (trackpad) scrolling is blocked so it cannot scroll
-    /// the app underneath. Separate from the scroll-modifying settings, which run the tap even when the
-    /// switcher is closed.
+    /// The switcher gesture wants continuous (trackpad) scrolling swallowed, so it cannot scroll the app
+    /// underneath. Set for the duration of a gesture. Separate from the scroll-modifying settings, which
+    /// keep the tap in the stream even when the switcher is closed.
     private static var switcherWantsTap = false
+    /// Mirrors what was last handed to `CGEvent.tapEnable`, so a repeated toggle costs nothing. Written on
+    /// main, read on the tap thread: same latitude as the flag above, whose worst case is one event treated
+    /// by the previous setting at the moment it changes.
+    ///
+    /// A `scrollWheel` tap sees no gesture and no `mouseMoved` events, so it only makes the WindowServer
+    /// wait for this process while the user is actually scrolling — the cost the trackpad tap split exists
+    /// to avoid does not arise here. The measurement that confirms it is V-17.
+    private static var tapEnabled = false
 
     static func observe() {
         observe_()
-        toggle(false)
+        // the user's settings apply from launch, not from the first visit to the settings tab
+        scrollSettingsChanged()
     }
 
     /// Called by the switcher to demand (or release) continuous-scroll blocking.
@@ -19,7 +27,10 @@ class ScrollwheelEvents {
         updateEnabled()
     }
 
-    /// Called when a Reverse/Speed setting changes, so the tap starts or stops without the switcher.
+    /// Called when a Reverse/Speed setting or safe mode changes, so the tap starts or stops without the
+    /// switcher. Safe mode wins over the settings without clearing them: the preference is the user's
+    /// intent, safe mode is a temporary state. Leaving safe mode calls this again and the effect is back
+    /// without a restart.
     static func scrollSettingsChanged() {
         updateEnabled()
     }
@@ -31,7 +42,7 @@ class ScrollwheelEvents {
     }
 
     static func reEnableTapIfNeeded() {
-        guard let eventTap, shouldBeEnabled, !CGEvent.tapIsEnabled(tap: eventTap) else { return }
+        guard let eventTap, tapEnabled, !CGEvent.tapIsEnabled(tap: eventTap) else { return }
         CGEvent.tapEnable(tap: eventTap, enable: true)
         Logger.warning { "" }
     }
@@ -43,8 +54,8 @@ class ScrollwheelEvents {
     }
 
     private static func setEnabled(_ enabled: Bool) {
-        guard enabled != shouldBeEnabled else { return }
-        shouldBeEnabled = enabled
+        guard enabled != tapEnabled else { return }
+        tapEnabled = enabled
         if let eventTap {
             CGEvent.tapEnable(tap: eventTap, enable: enabled)
         }
@@ -75,30 +86,37 @@ class ScrollwheelEvents {
         if let eventTap {
             let runLoopSource = CFMachPortCreateRunLoopSource(nil, eventTap, 0)
             CFRunLoopAddSource(BackgroundWork.keyboardAndMouseAndTrackpadEventsThread.runLoop, runLoopSource, .commonModes)
+            CGEvent.tapEnable(tap: eventTap, enable: false)
         } else {
             App.restart()
         }
     }
 
     private static let handleEvent: CGEventTapCallBack = { _, type, cgEvent, _ in
-        if type.rawValue == NSEvent.EventType.scrollWheel.rawValue {
-            let isContinuous = cgEvent.getIntegerValueField(.scrollWheelEventIsContinuous) != 0
-            if switcherWantsTap {
-                // block continuous (trackpad) scrolling in the switcher; let discrete (mouse) through
-                // unchanged so it can move the selection
-                return isContinuous ? nil : Unmanaged.passUnretained(cgEvent)
+        guard type.rawValue == NSEvent.EventType.scrollWheel.rawValue else {
+            if (type == .tapDisabledByUserInput || type == .tapDisabledByTimeout) && tapEnabled {
+                CGEvent.tapEnable(tap: eventTap!, enable: true)
             }
-            if scrollModifyActive() {
-                applyTransform(cgEvent, isContinuous: isContinuous)
-            }
-        } else if (type == .tapDisabledByUserInput || type == .tapDisabledByTimeout) && shouldBeEnabled {
-            CGEvent.tapEnable(tap: eventTap!, enable: true)
+            return Unmanaged.passUnretained(cgEvent)
+        }
+        // macOS marks trackpad and Magic Mouse scrolling as continuous and a notched wheel as discrete,
+        // which is the only device distinction available without enumerating devices
+        let isContinuous = cgEvent.getIntegerValueField(.scrollWheelEventIsContinuous) != 0
+        if switcherWantsTap {
+            // block continuous (trackpad) scrolling in the switcher; let discrete (mouse) through
+            // unchanged so it can move the selection
+            return isContinuous ? nil : Unmanaged.passUnretained(cgEvent)
+        }
+        if scrollModifyActive() {
+            applyTransform(cgEvent, isContinuous: isContinuous)
         }
         return Unmanaged.passUnretained(cgEvent) // focused app will receive the (possibly modified) event
     }
 
-    /// Rewrites the event's scroll deltas in place. Every axis-1 (vertical) and axis-2 (horizontal) field is
-    /// scaled so the line, pixel, and fixed-point views of the same scroll stay consistent.
+    /// Rewrites the event's scroll deltas in place. Axis 1 is vertical, axis 2 horizontal. The line, pixel,
+    /// and fixed-point fields carry the same movement at different resolutions and each app reads the one
+    /// it trusts, so they have to be rewritten together: flipping the line delta alone leaves pixel-precise
+    /// views scrolling the old way, in the same app as everything else scrolls the new way.
     private static func applyTransform(_ cgEvent: CGEvent, isContinuous: Bool) {
         let settings = ScrollTransform.settings(isContinuous: isContinuous, mouse: mouseSettings(), trackpad: trackpadSettings())
         let vertical = ScrollTransform.verticalFactor(settings)

@@ -25,9 +25,10 @@ final class WindowReachabilityTests: XCTestCase {
     }
 
     // 3. Claude after the sign-in: the main window stays, the two hidden OAuth windows go
+    // the helper windows carry an empty accessibility title and no window-server title
     func testHiddenOauthHelperWindowsAreUnreachable() {
         let mainWindow = WindowReachabilityFacts(membership: .listed, isOnAnySpace: true)
-        let helperWindow = WindowReachabilityFacts(membership: .notListed, isOnAnySpace: false)
+        let helperWindow = WindowReachabilityFacts(membership: .notListed, hasOwnTitle: false, isOnAnySpace: false)
         XCTAssertFalse(isUnreachable(mainWindow, onScreen: true))
         XCTAssertTrue(isUnreachable(helperWindow))
         XCTAssertTrue(rejectsNewWindow(helperWindow))
@@ -35,7 +36,7 @@ final class WindowReachabilityTests: XCTestCase {
 
     // 4. a minimized window reports no Space and no kCGWindowIsOnscreen; the Dock still reaches it
     func testMinimizedWindowStays() {
-        let facts = WindowReachabilityFacts(membership: .notListed, isMinimized: true, isOnAnySpace: false)
+        let facts = WindowReachabilityFacts(membership: .notListed, isMinimized: true, hasOwnTitle: false, isOnAnySpace: false)
         XCTAssertFalse(isUnreachable(facts))
         XCTAssertFalse(rejectsNewWindow(facts))
     }
@@ -47,16 +48,32 @@ final class WindowReachabilityTests: XCTestCase {
         XCTAssertFalse(rejectsNewWindow(facts))
     }
 
-    // 6. a regular Electron window without a title: the policy reads no title and no size at all
-    func testTitlelessListedWindowStays() {
-        XCTAssertFalse(isUnreachable(WindowReachabilityFacts(membership: .listed, isOnAnySpace: false)))
+    // 6. a regular Electron window without a title of its own is kept as long as anything else reaches it
+    func testTitlelessWindowStaysWhenAnythingElseReachesIt() {
+        // the application still lists it
+        XCTAssertFalse(isUnreachable(WindowReachabilityFacts(membership: .listed, hasOwnTitle: false, isOnAnySpace: false)))
+        // a Space holds it
+        XCTAssertFalse(isUnreachable(WindowReachabilityFacts(membership: .notListed, hasOwnTitle: false, isOnAnySpace: true)))
+        // it is on screen
+        XCTAssertFalse(isUnreachable(WindowReachabilityFacts(membership: .notListed, hasOwnTitle: false, isOnAnySpace: false), onScreen: true))
+    }
+
+    /// Observed on macOS 26: a Finder background tab reports no Space, no kCGWindowIsOnscreen, and it is
+    /// absent from kAXWindowsAttribute. It keeps the title of its document, and AltTab+ does not always
+    /// know that it is a tab: an application that draws its own tab bar exposes no AXTabGroup.
+    func testBackgroundTabWithATitleStaysEvenWhenItIsNotKnownAsATab() {
+        let knownTab = WindowReachabilityFacts(membership: .notListed, isTabbed: true, hasOwnTitle: true, isOnAnySpace: false)
+        let unknownTab = WindowReachabilityFacts(membership: .notListed, isTabbed: false, hasOwnTitle: true, isOnAnySpace: false)
+        XCTAssertFalse(isUnreachable(knownTab))
+        XCTAssertFalse(isUnreachable(unknownTab))
+        XCTAssertFalse(rejectsNewWindow(unknownTab))
     }
 
     // 7. an application without a usable accessibility window list keeps the previous behaviour
     func testApplicationWithoutAccessibilityListKeepsItsWindows() {
         XCTAssertFalse(isUnreachable(WindowReachabilityFacts(membership: .unknown, isOnAnySpace: true)))
         // we never refuse to add a window we cannot check against a list
-        XCTAssertFalse(rejectsNewWindow(WindowReachabilityFacts(membership: .unknown, isOnAnySpace: false)))
+        XCTAssertFalse(rejectsNewWindow(WindowReachabilityFacts(membership: .unknown, hasOwnTitle: false, isOnAnySpace: false)))
     }
 
     // 8. a dialog or a sheet the user works in sits on a Space and is on screen
@@ -65,19 +82,13 @@ final class WindowReachabilityTests: XCTestCase {
         XCTAssertFalse(isUnreachable(WindowReachabilityFacts(membership: .notListed, isOnAnySpace: true), onScreen: true))
     }
 
-    func testBackgroundTabStays() {
-        // CGSCopySpacesForWindows returns no Space for an inactive tab
-        let facts = WindowReachabilityFacts(membership: .notListed, isTabbed: true, isOnAnySpace: false)
-        XCTAssertFalse(isUnreachable(facts))
-    }
-
     func testWindowsOfAHiddenApplicationStay() {
-        let facts = WindowReachabilityFacts(membership: .notListed, applicationIsHidden: true, isOnAnySpace: false)
+        let facts = WindowReachabilityFacts(membership: .notListed, applicationIsHidden: true, hasOwnTitle: false, isOnAnySpace: false)
         XCTAssertFalse(isUnreachable(facts))
     }
 
     func testWindowOnScreenWithoutASpaceStays() {
-        let facts = WindowReachabilityFacts(membership: .notListed, isOnAnySpace: false)
+        let facts = WindowReachabilityFacts(membership: .notListed, hasOwnTitle: false, isOnAnySpace: false)
         XCTAssertFalse(isUnreachable(facts, onScreen: true))
     }
 
@@ -90,9 +101,10 @@ final class WindowReachabilityTests: XCTestCase {
         }
         _ = WindowReachabilityPolicy.isUnreachable(WindowReachabilityFacts(membership: .listed), onScreen)
         _ = WindowReachabilityPolicy.isUnreachable(WindowReachabilityFacts(membership: .notListed, isMinimized: true), onScreen)
-        _ = WindowReachabilityPolicy.isUnreachable(WindowReachabilityFacts(membership: .notListed, isOnAnySpace: true), onScreen)
+        _ = WindowReachabilityPolicy.isUnreachable(WindowReachabilityFacts(membership: .notListed, hasOwnTitle: true), onScreen)
+        _ = WindowReachabilityPolicy.isUnreachable(WindowReachabilityFacts(membership: .notListed, hasOwnTitle: false, isOnAnySpace: true), onScreen)
         XCTAssertEqual(reads, 0)
-        _ = WindowReachabilityPolicy.isUnreachable(WindowReachabilityFacts(membership: .notListed, isOnAnySpace: false), onScreen)
+        _ = WindowReachabilityPolicy.isUnreachable(WindowReachabilityFacts(membership: .notListed, hasOwnTitle: false, isOnAnySpace: false), onScreen)
         XCTAssertEqual(reads, 1)
     }
 }

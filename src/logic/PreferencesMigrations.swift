@@ -12,6 +12,7 @@ class PreferencesMigrations {
         migrateAltTabPlusForkDefaults()
         removeActionSlotNames()
         migrateDragModifierIndexes()
+        migrateScrollReverseMouseKey()
         let preferencesKey = "preferencesVersion"
         if let versionInPlist = UserDefaults.standard.string(forKey: preferencesKey) {
             if versionInPlist != "#VERSION#" && versionInPlist.compare(App.version, options: .numeric) != .orderedDescending {
@@ -56,6 +57,17 @@ class PreferencesMigrations {
             }
         }
         UserDefaults.standard.set("true", forKey: key)
+    }
+
+    /// The mouse-only scroll direction shipped briefly under `scrollReverseMouse` before the per-device
+    /// settings replaced it. Carry the value over once, then drop the old key so it cannot resurface.
+    private static func migrateScrollReverseMouseKey() {
+        let oldKey = "scrollReverseMouse"
+        guard let old = UserDefaults.standard.object(forKey: oldKey) else { return }
+        if UserDefaults.standard.object(forKey: "reverseScrollMouse") == nil {
+            UserDefaults.standard.set(old, forKey: "reverseScrollMouse")
+        }
+        UserDefaults.standard.removeObject(forKey: oldKey)
     }
 
     private static func updateToNewPreferences(_ versionInPlist: String) {

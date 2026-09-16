@@ -42,6 +42,13 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 - Die Menueleiste enthaelt keine eigene Fenster- oder Space-Aktionslogik.
 - Keine beliebigen Makros oder Shell-Kommandos im ersten Umfang.
 
+## Phase 1C: Thumbnail-Drop
+
+- Thumbnails nehmen waehrend einer laufenden Drag-Sitzung Datei- und Web-URLs entgegen.
+- Spring-Loading fokussiert das Zielfenster und laesst den Drag weiterlaufen; ein Drop uebergibt die Nutzlast an die App des Zielfensters.
+- Reine AppKit-Dragging-Destination-Logik: kein Event-Tap, kein Event-Posting, keine zusaetzliche Berechtigung; damit unabhaengig von der Input-Laufzeit einplanbar.
+- Zustellung an ein bestimmtes Fenster ist nicht Teil des Scopes; Fenstergenauigkeit entsteht ueber Spring-Loading.
+
 ## Phase 2A: Instant Spaces
 
 - Umgesetzt: Space links/rechts, direkter Wechsel zu Space 1 bis 9 und `Last Space` ueber das gemeinsame Aktionsregister.
@@ -80,7 +87,8 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 - Umgesetzt: Fenster unter dem Cursor wird zu Beginn einer Operation ueber die Element-at-position-Kette bestimmt; bei Mehrdeutigkeit erfolgt keine Aktion.
 - Umgesetzt: Coalescing der AX-Schreibvorgaenge und der Diagnose-Ringpuffer als reine, getestete Logik.
-- Offen: S-01 und S-02 am Zielgeraet sowie das App-Klassen-Pruefraster; der Kern hat bisher keinen Aufrufer, die Drag-Sitzung folgt in Phase 3B.
+- Angebunden: die Drag-Sitzung aus Phase 3B ruft den Kern auf und ist am Zielgeraet bedient.
+- Offen: S-01 und S-02 am Zielgeraet sowie das App-Klassen-Pruefraster.
 
 ## Phase 3B: Move und Modifier-Snapping
 
@@ -100,7 +108,7 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 ## Paralleler Spike: Pointer
 
-- Umgesetzt: Pointer Acceleration und Speed fuer Maus und Trackpad ueber `NSGlobalDomain`; der vermutete IOKit-Pfad war nicht noetig.
+- Umgesetzt: Pointer Acceleration und Speed fuer Maus und Trackpad ueber IOKit (`IOHIDGetAccelerationWithKey` / `IOHIDSetAccelerationWithKey`). Der Weg ueber `NSGlobalDomain` wurde am 2026-08-07 widerlegt: die Praeferenz liess sich setzen, der effektive Wert blieb unveraendert. Siehe Story 4 im Backlog.
 - Offen: V-10 am Zielgeraet; der schreibende Pfad ist bisher nur durch Entscheidungslogik abgedeckt, nicht ausgefuehrt.
 - Persistiertes State Ownership mit `unmanaged`, `managed` und `relinquished`.
 - Kein Release ohne konfliktfreies Restore sowie Crash-/Kill-Recovery.
@@ -132,9 +140,10 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 ## Phase 7: Scroll
 
-- Umgesetzt: getrenntes Reverse-Scrolling und Scroll-Speed fuer Maus und Trackpad ueber den bestehenden `scrollWheel`-Tap. Der Tap laeuft nur, wenn der Switcher blockieren will oder eine Scroll-Einstellung aktiv ist; das Blockieren kontinuierlichen Scrollens bleibt strikt auf den aktiven Switcher beschraenkt, damit Trackpad-Scrollen ausserhalb nie blockiert wird. Kategorie ueber `kCGScrollWheelEventIsContinuous` (kontinuierlich = Trackpad/Magic Mouse, diskret = Rasterrad). Die reine `ScrollTransform`-Logik ist unit-getestet; sie schreibt Linien-, Pixel- und Fixed-Point-Deltas konsistent um. Safe Mode schaltet die Scroll-Modifikation ab.
+- **Vorgezogen am 2026-08-13, in der Roadmap nachgetragen am 2026-09-10.** Die getrennte Scrollrichtung ist die einzige LinearMouse-Funktion, die im taeglichen Gebrauch fehlt. Sie lief damit parallel zu den Phasen 4 bis 6 und wartete nicht auf sie.
+- Umgesetzt (MVP 2026-08-18, beim Zusammenfuehren der beiden Arbeitsstaende am 2026-09-16 auf eine Implementierung vereinheitlicht): getrenntes Reverse-Scrolling und Scroll-Speed fuer Maus und Trackpad ueber den bestehenden `scrollWheel`-Tap. Der Tap laeuft nur, wenn der Switcher blockieren will oder eine Scroll-Einstellung aktiv ist; das Blockieren kontinuierlichen Scrollens bleibt strikt auf den aktiven Switcher beschraenkt, damit Trackpad-Scrollen ausserhalb nie blockiert wird. Kategorie ueber `kCGScrollWheelEventIsContinuous` (kontinuierlich = Trackpad/Magic Mouse, diskret = Rasterrad). Die reine `ScrollTransform`-Logik ist unit-getestet; sie schreibt Linien-, Pixel- und Fixed-Point-Deltas konsistent um. Safe Mode schaltet die Modifikation ab, ohne die Einstellung zu loeschen.
 - Reverse betrifft im MVP nur die vertikale Achse; Speed skaliert beide. Keine App- oder geraetespezifischen Regeln, kein Smoothing, keine eigenen Kurven.
-- Offen (Geraete-Gate): Tap-, Berechtigungs- und Energiepruefung am Zielgeraet (`docs/scroll-checklist.md`), inkl. Momentum-/Phase-Verhalten.
+- Offen (Geraete-Gate): Tap-, Berechtigungs- und Energiepruefung am Zielgeraet (`docs/scroll-direction-checklist.md`), inkl. Momentum-/Phase-Verhalten. Die Energie- und Latenzmessung fuer den dauerhaft aktiven Tap ist V-17 und noch offen.
 
 ## Phase 8: Gesten
 
@@ -142,7 +151,16 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 - Private Multitouch-API strikt nach macOS-Version gaten.
 - Default-Aktivierung erst mit Helper-Prozess; unbekannte Version deaktiviert das Modul.
 
-## Phase 10: Switcher-Verhalten (minimierte Fenster, Per-App-Policies, Cmd+Tab)
+## Phase 10: Keep Awake (Sleep Override)
+
+- Eigenstaendiges Modul, per Default aus: Caffeine als Minimal-Referenz (Menubar-Toggle), Amphetamine als Funktionsreferenz (Sessions, Trigger, Energie-Policies). Kein Event-Tap und keine private API — nur oeffentliche `IOPMAssertion` plus System-Observer; damit ausserhalb der Q-01..Q-16-Input-Sicherung.
+- MVP: Menubar-Toggle, Sessions (unbegrenzt / feste Dauer / bis Uhrzeit / verlaengern), System- vs. Display-wach, Restlaufzeit, globale Shortcuts ueber das Aktionsregister, Batterie-Auto-Ende, striktes Fail-safe gegen Assertion-Leak.
+- Ausbaustufe: Trigger (App laeuft, Stromversorgung, Batterie-Schwelle, Volume gemountet, externe Anzeige), Notifications, Auto-Start, Trennung manuell/triggerbasiert mit Prioritaetsregeln.
+- Spaeter: WLAN/SSID (Standort-Berechtigung), USB/Bluetooth, Idle, CPU, Netzwerkumgebung, Automation.
+- Bewusst nicht: Download-Trigger (kein verlaesslicher oeffentlicher Pfad), Maus-Jiggle (Assertions machen es ueberfluessig), Umgehung der Sperr-Policy.
+- Vollstaendige Spezifikation und die editierbare Feature-Checkliste in `backlog.md` unter Story 10 "Keep Awake / Sleep Override".
+
+## Phase 11: Switcher-Verhalten (minimierte Fenster, Per-App-Policies, Cmd+Tab)
 
 - Betrifft den Switcher-Kern, kein Add-on-Modul. Alt-Tab+ ist ein AltTab-Fork, darum nur das bewusst abweichende Verhalten bauen; vieles ist schon da (minimierte/versteckte Fenster konfigurierbar, Auswahl deminiaturisiert, Per-App-`ExceptionEntry`, `Cmd+Tab` als Default-Trigger).
 - Delta 1: Policy fuer minimierte Fenster erweitern um `ShowButDoNotRestore` und `RestoreOnlyOnExplicitAction` (heute nur Sichtbarkeit plus Auto-Restore). Default bleibt AlwaysRestore.
@@ -150,16 +168,7 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 - Delta 3: neue Aktion `Restore most recent minimized window of selected app` im gemeinsamen Register.
 - Delta 4: `Cmd+Tab`-Remap ist bereits Realitaet; offen nur Onboarding-Hinweis und Reset-Pfad.
 - Benannte Default-Profile: Konservativ, Power-User, Windows-like.
-- Vollstaendige Spezifikation in `backlog.md` unter Story 10.
-
-## Phase 9: Keep Awake (Sleep Override)
-
-- Eigenstaendiges Modul, per Default aus: Caffeine als Minimal-Referenz (Menubar-Toggle), Amphetamine als Funktionsreferenz (Sessions, Trigger, Energie-Policies). Kein Event-Tap und keine private API — nur oeffentliche `IOPMAssertion` plus System-Observer; damit ausserhalb der Q-01..Q-16-Input-Sicherung.
-- MVP: Menubar-Toggle, Sessions (unbegrenzt / feste Dauer / bis Uhrzeit / verlaengern), System- vs. Display-wach, Restlaufzeit, globale Shortcuts ueber das Aktionsregister, Batterie-Auto-Ende, striktes Fail-safe gegen Assertion-Leak.
-- Ausbaustufe: Trigger (App laeuft, Stromversorgung, Batterie-Schwelle, Volume gemountet, externe Anzeige), Notifications, Auto-Start, Trennung manuell/triggerbasiert mit Prioritaetsregeln.
-- Spaeter: WLAN/SSID (Standort-Berechtigung), USB/Bluetooth, Idle, CPU, Netzwerkumgebung, Automation.
-- Bewusst nicht: Download-Trigger (kein verlaesslicher oeffentlicher Pfad), Maus-Jiggle (Assertions machen es ueberfluessig), Umgehung der Sperr-Policy.
-- Vollstaendige Spezifikation und die editierbare Feature-Checkliste in `backlog.md` unter Story 9 "Keep Awake / Sleep Override".
+- Vollstaendige Spezifikation in `backlog.md` unter Story 11.
 
 ## Release-Gates
 

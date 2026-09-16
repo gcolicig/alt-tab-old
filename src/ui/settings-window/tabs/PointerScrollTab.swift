@@ -31,10 +31,26 @@ class PointerScrollTab {
     private static func addScroll(_ table: TableGroupView, _ device: String, _ reverseKey: String, _ speedKey: String) {
         table.addRow(TableGroupView.Row(
             leftTitle: String(format: NSLocalizedString("Reverse %@ vertical scrolling", comment: ""), device),
-            rightViews: [LabelAndControl.makeSwitch(reverseKey) { _ in ScrollwheelEvents.scrollSettingsChanged() }]))
+            rightViews: [LabelAndControl.makeSwitch(reverseKey) { _ in scrollSettingsChanged() }]))
         table.addRow(TableGroupView.Row(
             leftTitle: String(format: NSLocalizedString("%@ scroll speed", comment: ""), device),
-            rightViews: [LabelAndControl.makeDropdown(speedKey, ScrollSpeedPreference.allCases) { _ in ScrollwheelEvents.scrollSettingsChanged() }]))
+            rightViews: [LabelAndControl.makeDropdown(speedKey, ScrollSpeedPreference.allCases) { _ in scrollSettingsChanged() }]))
+    }
+
+    /// Scrolling owns no system value, so it has no ownership row: it rewrites events on their way to the
+    /// focused app and leaves the system's own Natural Scrolling preference alone. Safe mode keeps the
+    /// setting but not its effect. Saying so is the difference between a switch that is suppressed and a
+    /// switch that looks broken.
+    private static func scrollSettingsChanged() {
+        ScrollwheelEvents.scrollSettingsChanged()
+        guard Preferences.inputModulesSafeMode, scrollSettingsModify() else { return }
+        TransientNotice.show(NSLocalizedString("Input extensions are in safe mode, so scrolling stays unchanged. Turn safe mode off to use it.", comment: ""))
+    }
+
+    private static func scrollSettingsModify() -> Bool {
+        ScrollTransform.anyModifies(
+            mouse: ScrollAxisSettings(reverseVertical: Preferences.reverseScrollMouse, speed: Preferences.scrollSpeedMouse.factor),
+            trackpad: ScrollAxisSettings(reverseVertical: Preferences.reverseScrollTrackpad, speed: Preferences.scrollSpeedTrackpad.factor))
     }
 
     private static func addCategory(_ table: TableGroupView, _ category: PointerCategory, _ accelerationTitle: String, _ speedTitle: String) {

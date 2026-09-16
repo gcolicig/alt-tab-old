@@ -115,13 +115,19 @@ class ScreenRecordingPermission {
         guard #available(macOS 10.15, *), !isRequestingAccess else { return }
         isRequestingAccess = true
         PermissionsWindow.updatePermissionViews()
+        // The first request shows the system prompt, which has its own "Open System Settings" button. The call
+        // returns false at once, so opening the settings here as well left that prompt behind with nothing to
+        // do. Only later requests, which macOS answers without a prompt, open the settings directly. The call
+        // stays on every click because it is what adds the app to the Screen Recording list.
+        let promptExpected = !Preferences.screenRecordingAccessRequested
         BackgroundWork.permissionsSystemCallsQueue.addOperation {
             let granted = CGRequestScreenCaptureAccess()
             DispatchQueue.main.async {
                 isRequestingAccess = false
+                Preferences.set("screenRecordingAccessRequested", "true", false)
                 if granted {
                     status = .granted
-                } else {
+                } else if !promptExpected {
                     NSWorkspace.shared.open(settingsUrl)
                 }
                 PermissionsWindow.updatePermissionViews()

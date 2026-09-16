@@ -199,16 +199,17 @@ class Applications {
     static func refreshBadges_(_ items: [(URL?, String?)]) {
         Windows.list.enumerated().forEach { (i, window) in
             let view = TilesView.recycledViews[i]
-            if let app = findOrCreate(window.application.pid, false) {
-                if app.runningApplication.activationPolicy == .regular,
-                   let matchingItem = (items.first { $0.0 == app.bundleURL }),
-                   let label = matchingItem.1 {
-                    app.dockLabel = label
-                    view.updateDockLabelIcon(label)
-                } else {
-                    app.dockLabel = nil
-                    assignIfDifferent(&view.dockLabelIcon.isHidden, true)
-                }
+            // the window already references its application, so use it directly instead of scanning the
+            // application list by pid for every window (that was O(windows * applications))
+            let app = window.application
+            if app.runningApplication.activationPolicy == .regular,
+               let matchingItem = (items.first { $0.0 == app.bundleURL }),
+               let label = matchingItem.1 {
+                app.dockLabel = label
+                view.updateDockLabelIcon(label)
+            } else {
+                app.dockLabel = nil
+                assignIfDifferent(&view.dockLabelIcon.isHidden, true)
             }
         }
     }

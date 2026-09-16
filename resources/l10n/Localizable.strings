@@ -47,7 +47,7 @@
 "Additional controls…" = "Additional controls…";
 
 /* No comment provided by engineer. */
-"Adjust pointer acceleration and speed for mouse and trackpad." = "Adjust pointer acceleration and speed for mouse and trackpad.";
+"Adjust pointer acceleration and speed, and the direction of the mouse wheel." = "Adjust pointer acceleration and speed, and the direction of the mouse wheel.";
 
 /* No comment provided by engineer. */
 "Advanced" = "Advanced";
@@ -77,9 +77,6 @@
 "Alphabetical Order" = "Alphabetical Order";
 
 /* No comment provided by engineer. */
-"AltTab crashed last time you used it. Sending a crash report will help get the issue fixed" = "AltTab crashed last time you used it. Sending a crash report will help get the issue fixed";
-
-/* No comment provided by engineer. */
 "AltTab is currently set to show Applications. This setting is only available when AltTab is set to show Windows." = "AltTab is currently set to show Applications. This setting is only available when AltTab is set to show Windows.";
 
 /* Menubar callout */
@@ -102,9 +99,6 @@
 
 /* No comment provided by engineer. */
 "Always" = "Always";
-
-/* No comment provided by engineer. */
-"Always send crash reports" = "Always send crash reports";
 
 /* No comment provided by engineer. */
 "and press" = "and press";
@@ -143,6 +137,9 @@
 "Applications" = "Applications";
 
 /* No comment provided by engineer. */
+"Applies to vertical scrolling with a mouse wheel. The trackpad keeps following the system setting." = "Applies to vertical scrolling with a mouse wheel. The trackpad keeps following the system setting.";
+
+/* No comment provided by engineer. */
 "Apply" = "Apply";
 
 /* No comment provided by engineer. */
@@ -153,9 +150,6 @@
 
 /* No comment provided by engineer. */
 "Arrow keys" = "Arrow keys";
-
-/* No comment provided by engineer. */
-"Ask whether to send crash reports" = "Ask whether to send crash reports";
 
 /* No comment provided by engineer. */
 "Assign" = "Assign";
@@ -262,14 +256,14 @@
 /* No comment provided by engineer. */
 "Discard your changes to this set?" = "Discard your changes to this set?";
 
+/* Menubar VoiceOver label */
+"Display %d: %@" = "Display %1$d: %2$@";
+
 /* No comment provided by engineer. */
 "Done" = "Done";
 
 /* No comment provided by engineer. */
 "Don’t check for updates periodically" = "Don’t check for updates periodically";
-
-/* No comment provided by engineer. */
-"Don’t send" = "Don’t send";
 
 /* No comment provided by engineer. */
 "End" = "End";
@@ -357,6 +351,9 @@
 
 /* No comment provided by engineer. */
 "Input extensions are in safe mode, so moving windows stays off. Turn safe mode off to use it." = "Input extensions are in safe mode, so moving windows stays off. Turn safe mode off to use it.";
+
+/* No comment provided by engineer. */
+"Input extensions are in safe mode, so the mouse wheel stays unchanged. Turn safe mode off to use it." = "Input extensions are in safe mode, so the mouse wheel stays unchanged. Turn safe mode off to use it.";
 
 /* No comment provided by engineer. */
 "Input extensions are in safe mode." = "Input extensions are in safe mode.";
@@ -482,9 +479,6 @@
 "Never" = "Never";
 
 /* No comment provided by engineer. */
-"Never send crash reports" = "Never send crash reports";
-
-/* No comment provided by engineer. */
 "No application is configured." = "No application is configured.";
 
 /* No comment provided by engineer. */
@@ -579,9 +573,6 @@
 "Rectangle-style layout shortcuts" = "Rectangle-style layout shortcuts";
 
 /* No comment provided by engineer. */
-"Remember my choice" = "Remember my choice";
-
-/* No comment provided by engineer. */
 "Remove" = "Remove";
 
 /* No comment provided by engineer. */
@@ -601,6 +592,9 @@
 
 /* No comment provided by engineer. */
 "Restore" = "Restore";
+
+/* No comment provided by engineer. */
+"Reverse the mouse wheel" = "Reverse the mouse wheel";
 
 /* No comment provided by engineer. */
 "Right focus" = "Right focus";
@@ -646,9 +640,6 @@
 
 /* No comment provided by engineer. */
 "Send" = "Send";
-
-/* No comment provided by engineer. */
-"Send a crash report?" = "Send a crash report?";
 
 /* No comment provided by engineer. */
 "Send debug profile (CPU, memory, etc)" = "Send debug profile (CPU, memory, etc)";
@@ -760,6 +751,9 @@
 
 /* No comment provided by engineer. */
 "Space %d" = "Space %d";
+
+/* Menubar VoiceOver label */
+"Space %d of %d" = "Space %1$d of %2$d";
 
 /* No comment provided by engineer. */
 "Space left" = "Space left";

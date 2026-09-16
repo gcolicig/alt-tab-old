@@ -22,6 +22,9 @@ struct WindowReachabilityFacts: Equatable {
     var isTabbed = false
     /// the user reaches the windows of a hidden application by showing the application again
     var applicationIsHidden = false
+    /// the window names itself, through accessibility or through the window server
+    /// a background tab names itself; a helper window the application hid and forgot does not
+    var hasOwnTitle = true
     /// `CGSCopySpacesForWindows` returned at least one Space for this window
     var isOnAnySpace = true
 }
@@ -31,7 +34,8 @@ struct WindowReachabilityFacts: Equatable {
 /// check in `WindowDiscriminator`. The user cannot reach it: no Space holds it, it is not on screen, it is
 /// not minimized, it is not a tab, and its application is not hidden.
 ///
-/// This policy uses that combination instead of a title, a size, or `kCGWindowIsOnscreen` alone.
+/// This policy uses that combination instead of a title, a size, or `kCGWindowIsOnscreen` alone. It reads a
+/// title only as one condition among several, and never a window size.
 enum WindowReachabilityPolicy {
     /// True when the user has no way to bring this window up.
     ///
@@ -41,6 +45,9 @@ enum WindowReachabilityPolicy {
         // the application curates this list; a listed window is a window the application still offers
         guard facts.membership != .listed else { return false }
         guard !facts.isMinimized && !facts.isTabbed && !facts.applicationIsHidden else { return false }
+        // a background tab reports no Space either, and AltTab+ cannot always detect a tab group
+        // (an application can draw its own tab bar). A title of its own is what such a window still has.
+        guard !facts.hasOwnTitle else { return false }
         // a window on another Space, or on another display, is reachable; it reports that Space
         guard !facts.isOnAnySpace else { return false }
         return !isOnScreen()

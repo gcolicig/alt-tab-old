@@ -505,7 +505,7 @@ class Windows {
             return (window, false)
         }
         guard WindowDiscriminator.isActualWindow(app, wid, level, title, subrole, role, size) else { return (nil, false) }
-        guard !isNewWindowUnreachable(wid, app, membership, isMinimized) else { return (nil, false) }
+        guard !isNewWindowUnreachable(wid, app, membership, isMinimized, title) else { return (nil, false) }
         let window = Window(windowAxUiElement, app, wid, title, isFullscreen, isMinimized, position, size, membership)
         appendWindow(window)
         return (window, true)
@@ -513,11 +513,14 @@ class Windows {
 
     /// The application answered with its window list, and this window was not in it. Such a window is added
     /// only when the user can still reach it: minimized, on a Space, or on screen.
-    private static func isNewWindowUnreachable(_ wid: CGWindowID, _ app: Application, _ membership: AxWindowListMembership, _ isMinimized: Bool?) -> Bool {
+    private static func isNewWindowUnreachable(_ wid: CGWindowID, _ app: Application, _ membership: AxWindowListMembership, _ isMinimized: Bool?, _ title: String?) -> Bool {
+        // the facts below cost window-server calls; only a window the application did not list can be refused
+        guard membership == .notListed else { return false }
         let facts = WindowReachabilityFacts(
             membership: membership,
             isMinimized: isMinimized ?? false,
             applicationIsHidden: app.isHidden,
+            hasOwnTitle: Window.ownTitle(title, wid) != nil,
             isOnAnySpace: !wid.spaces().isEmpty)
         guard WindowReachabilityPolicy.rejectsNewWindow(facts, { CGWindow.isOnScreen(wid) }) else { return false }
         Logger.debug { "Window rejected \(app.debugId) because it is unreachable \((wid, facts))" }
@@ -555,13 +558,16 @@ class Windows {
                 w.application.focusedWindow = nil
             }
         }
-        let toRemove = windows.map { $0.lastFocusOrder }
+        // A destroy storm can call this once per window. A Set for membership and a sorted list for the
+        // shift count turn the per-remaining-window work from O(removed) into O(log removed), so a batch of
+        // K removals over N windows costs O(N log K) instead of O(N * K).
+        let removedSet = Set(windows.map { $0.lastFocusOrder })
+        let sortedRemoved = removedSet.sorted() // distinct, so a duplicated window in the batch cannot over-shift
         list.removeAll { w in
-            if toRemove.contains(w.lastFocusOrder) {
+            if removedSet.contains(w.lastFocusOrder) {
                 return true
             }
-            let howManyToShift = toRemove.reduce(0) { $1 < w.lastFocusOrder ? $0 + 1 : $0 }
-            w.lastFocusOrder -= howManyToShift
+            w.lastFocusOrder -= countLess(sortedRemoved, than: w.lastFocusOrder)
             return false
         }
         for w in windows {
@@ -579,6 +585,21 @@ class Windows {
         }
         lastFocusedWindowTarget = getLastFocusedOrderWindowIndex().map { list[$0].id }
         App.refreshOpenUiAfterExternalEvent([], windowRemoved: true)
+    }
+
+    /// Number of entries in the ascending-sorted array that are strictly less than `value`.
+    private static func countLess(_ sorted: [Int], than value: Int) -> Int {
+        var low = 0
+        var high = sorted.count
+        while low < high {
+            let mid = (low + high) / 2
+            if sorted[mid] < value {
+                low = mid + 1
+            } else {
+                high = mid
+            }
+        }
+        return low
     }
 }
 

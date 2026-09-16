@@ -125,7 +125,7 @@ Vor Scope-Entscheidungen zu Snapping und Layouts am Zielgeraet klaeren:
 
 ### 0. Gemeinsamer Aktions- und Triggerkern
 
-Status: Geplant; Dual-Role-Hyper und Apps/URLs-Register umgesetzt
+Status: Teilweise umgesetzt; Dual-Role-Hyper und Apps/URLs-Register stehen, Leader und FlickRing sind offen
 Prioritaet: Sehr hoch
 
 Beschreibung:
@@ -206,7 +206,7 @@ Umsetzungsstand 2026-07-26:
 - Fuer Keyboard Layouts umgesetzt: Frontmost-App, fokussiertes AX-Fenster, eigene AX-Queue, globaler AX-Timeout, Rollen-/Zustands-/Settable-Filter und sichtbare Display-Geometrie.
 - Umgesetzt 2026-07-31 fuer kontinuierliche Cursor-Module: Element-at-position-Kette mit begrenztem Ancestor-Walk bis `AXWindow`, CGWindowID-Korrelation, Fokus-Fallback und eindeutiger Bounds-Match als letzte Stufe; Mehrdeutigkeit fuehrt zu keiner Aktion. Dazu das Q-06-Coalescing (hoechstens ein offener Set, nur der neueste Zielrahmen, Zielrate 60 Hz, Flush bei Mouseup) und der Q-07-Ringpuffer mit Fenster-ID, Bundle-ID, Display, vorgeschlagenem und tatsaechlichem Rahmen.
 - Die Reihenfolge der Stufen, das Coalescing und der Ringpuffer sind reine Logik und mit 12 Tests abgedeckt. Die Kette selbst ist nur so gut wie die manuelle Pruefung: S-01 (20 von 20 ueber die Kompatibilitaetsmatrix) und S-02 (Drag-Latenz) sind unveraendert offen.
-- Noch nicht angebunden: es gibt bisher keinen Aufrufer. Die Drag-Sitzung, die diesen Kern benutzt, gehoert zu Phase 3B.
+- Angebunden: die Drag-Sitzung aus Phase 3B ruft diesen Kern auf und ist am Zielgeraet bedient (siehe Story 3). Die frueher hier notierte Aussage "es gibt bisher keinen Aufrufer" galt bis zum 2026-08-03 und ist seither falsch.
 - Offen bleibt die vollstaendige App-Klassen-Matrix.
 
 Ausschlussfilter:
@@ -553,7 +553,15 @@ Technische Huerden im Emulationsfall:
   - Der Code ist zurueckgerollt (Revert von `dcc4f702`), die Bindungen sind wieder entfernt.
 - **Zur Pruefmethode, teurer gelernt als noetig**: Der Spike schien zu bestehen, weil er an einem Screenshot des Zielschirms beurteilt wurde, der einen *leeren* Schreibtisch zeigte — und ein leerer Schreibtisch sieht identisch aus, ob gewechselt wurde oder nicht. Die Bestaetigung am Geraet stuetzte sich auf dieselbe nicht unterscheidbare Ansicht. Ein Zustandswert und ein inhaltsloses Bild beweisen zusammen nichts. Wer das erneut prueft, braucht auf dem Zielschirm **unterscheidbare Fenster in beiden Spaces**.
 - Nicht gemessen und damit offen, falls es jemand erneut versucht: `CGSWillSwitchSpaces` vor dem Wechsel, die Transaktions-Varianten `SLSTransactionShowSpace`/`SLSTransactionHideSpace` mit anschliessendem Commit, sowie `SLSReassociateWindowsSpacesByGeometry`. Alle drei sind exportiert, keiner ist ausprobiert.
-- Damit ist die Frage praktisch erledigt: **weder ueber das Ereignis, noch ueber den Cursor, noch ueber den dafuer vorgesehenen Setter, noch ueber die Space-Ebenen laesst sich ein fremdes Display ansteuern.** Offen bliebe allein, das Zieldisplay durch Aktivieren eines Fensters dorthin zu bringen — mit Fokuswechsel, sichtbarem Fenster im Vordergrund und fehlgeleiteten Tastatureingaben fuer die Dauer des Wechsels. Das hat der Nutzer ausgeschlossen.
+- **S-10d, 2026-09-16: `event.location` adressiert das Zieldisplay doch. Der Befund vom 2026-08-06 zu diesem Weg ist widerlegt.** Gemessen auf macOS 26.7 (25G229) mit zwei Displays und getrennten Spaces: GF005 als Hauptdisplay, LS27A600U darueber, beide mit 2 Spaces, Mauszeiger die ganze Zeit auf GF005. Pro Klick wurden aktives Menueleisten-Display, Cursor-Display und der Space-Index jedes Displays vor und 1 s nach der Geste protokolliert.
+  - Kontrolle ohne Position und ohne Warp (die Geste wie im Produktivcode), dreimal: **es wechselte immer GF005**, das Display unter dem Cursor. Das galt auch im dritten Durchgang, als LS27A600U das aktive Menueleisten-Display war.
+  - `event.location` auf die Mitte von LS27A600U, viermal (zweimal hin, zweimal zurueck): **es wechselte immer LS27A600U**, GF005 blieb stehen. Der erste Klick lief mit GF005 als aktivem Menueleisten-Display *und* als Cursor-Display.
+  - Die Warp-Varianten V0, V1 (20/50/100 ms) und V2 wechselten in einem Vorlauf ebenfalls das Zieldisplay. Dieser Vorlauf ist nicht beweiskraeftig, weil GF005 dort nur einen Space hatte und LS27A600U nach dem ersten Wechsel das aktive Menueleisten-Display war. Der Warp ist ohnehin unnoetig.
+  - Folgerung: Das Dock richtet die synthetische Geste nach ihrer **Position**, nicht nach dem aktiven Menueleisten-Display. Ohne gesetzte Position ist das die aktuelle Cursorposition, was die fruehere Deutung erklaert. Der Satz "das Dock richtet den Swipe nach dem aktiven Menueleisten-Display" oben ist damit falsch.
+  - Warum die Messung vom 2026-08-06 anders ausfiel, ist ungeklaert. Moeglich sind die damalige macOS-Version 26.5.1 oder ein Aufbau, in dem das Zieldisplay nur einen Space hatte — genau das liess den ersten Lauf dieser Messung faelschlich wirkungslos aussehen. Lehre: Vor jedem Space-Spike pruefen, dass **jedes** beteiligte Display mindestens zwei Spaces hat.
+  - Konsequenz, noch nicht umgesetzt: Fernumschaltung ist ohne Cursor-Warp erreichbar. Das betrifft S-10 (synchroner Mehrdisplay-Wechsel), den Nutzerwunsch aus 2C, Segmente eines anderen Displays anklickbar zu machen, sowie den Kommentar in `InstantSpaces.post` und die Ablehnung fremder Klicks in `Menubar`. Vor einer Umsetzung sind Fullscreen-Spaces, Mission Control und schnelle Mehrfachwechsel auf dem Zieldisplay zu pruefen (V-12).
+  - Der Spike-Branch `spike/spaces-remote-gesture` ist nach dieser Messung geloescht.
+- **Durch S-10d (2026-09-16) fuer den Ereignis-Weg widerlegt.** Der folgende Satz bleibt als Stand vom 2026-08-07 stehen: Damit ist die Frage praktisch erledigt: **weder ueber das Ereignis, noch ueber den Cursor, noch ueber den dafuer vorgesehenen Setter, noch ueber die Space-Ebenen laesst sich ein fremdes Display ansteuern.** Offen bliebe allein, das Zieldisplay durch Aktivieren eines Fensters dorthin zu bringen — mit Fokuswechsel, sichtbarem Fenster im Vordergrund und fehlgeleiteten Tastatureingaben fuer die Dauer des Wechsels. Das hat der Nutzer ausgeschlossen.
 - Anzahl-Synchronisation: Spaces programmatisch anlegen und loeschen erfordert `CGSSpaceCreate`/`CGSSpaceDestroy`, die erste schreibende private Space-API des Forks. Nur als eigener Spike (S-11), optional gebunden und fail-closed; der `CGSManagedDisplaySetCurrentSpace`-Befund mit dem entkoppelten Dock ist die Referenz dafuer, wie so ein Symbol scheitern kann.
 - Resynchronisation nach Sleep/Wake, Display-Hotplug und manuellen Aenderungen in Mission Control; bei Abweichung sichtbar degradieren statt still anzugleichen.
 
@@ -743,7 +751,7 @@ Akzeptanzideen:
 
 ### 4. Pointer Acceleration und Speed
 
-Status: Schreibpfad am 2026-08-07 auf IOKit umgestellt; V-10 am 2026-08-10/13 am Geraet gefahren, Schritte 1-10 und 12 bestanden (zwei Defekte dabei gefunden und behoben), Schritt 8 faellt, Schritt 11 halb und 13 teilweise offen
+Status: Schreibpfad am 2026-08-07 auf IOKit umgestellt; V-10 am 2026-08-10/13 am Geraet gefahren, Schritte 1-10 und 12 bestanden (drei Defekte dabei gefunden und behoben), Schritt 8 fiel, ist mit `14e8321c` behoben und am 2026-09-16 bestanden, Schritt 11 halb und 13 teilweise offen
 Prioritaet: Mittel bis hoch
 
 Beschreibung:
@@ -913,17 +921,17 @@ Repo-Learnings:
 
 ### 6. Reverse Scrolling und Scroll Speed
 
-Status: MVP umgesetzt 2026-08-18; manuelle Tap-/Berechtigungs-/Energiepruefung am Zielgeraet offen (`docs/scroll-checklist.md`)
+Status: MVP umgesetzt 2026-08-18 (Maus und Trackpad, Richtung und Geschwindigkeit). Parallel dazu entstand am 2026-09-10 auf dem zweiten Arbeitsstand Schritt 6a (nur Mausrichtung, `scrollReverseMouse`, `ScrollWheelPolicy`); beim Zusammenfuehren am 2026-09-16 wurde auf die vollstaendige Implementierung vereinheitlicht und der alte Schluessel einmalig migriert. V-17 und die manuelle Tap-/Berechtigungs-/Energiepruefung am Zielgeraet offen (`docs/scroll-direction-checklist.md`)
 
 Umsetzungsstand 2026-08-18:
 
-- `ScrollwheelEvents` veraendert jetzt statt nur durchzulassen. Die reine `ScrollTransform`-Logik whlt je Kategorie (kontinuierlich = Trackpad, diskret = Maus) die Einstellungen und liefert einen Vertikal-Faktor (Reverse = Vorzeichen, Speed = Betrag) und Horizontal-Faktor (nur Speed). Der Runtime skaliert damit Linien-, Pixel- und Fixed-Point-Deltas konsistent.
-- Der Tap laeuft nur bei Bedarf: Switcher-Blockieren oder aktive Scroll-Einstellung. Das Blockieren kontinuierlichen Scrollens ist strikt an den aktiven Switcher gebunden (`switcherWantsTap`), sodass Trackpad-Scrollen ausserhalb nie blockiert wird. Safe Mode deaktiviert die Modifikation.
-- Settings im Tab `Pointer & Scroll`: `Reverse … vertical scrolling` je Maus/Trackpad und `… scroll speed` (0.5×/1×/2×/3×). Aenderungen rufen `scrollSettingsChanged`, das den Tap an-/abschaltet.
+- `ScrollwheelEvents` veraendert jetzt statt nur durchzulassen. Die reine `ScrollTransform`-Logik waehlt je Kategorie (kontinuierlich = Trackpad, diskret = Maus) die Einstellungen und liefert einen Vertikal-Faktor (Reverse = Vorzeichen, Speed = Betrag) und Horizontal-Faktor (nur Speed). Der Runtime skaliert damit Linien-, Pixel- und Fixed-Point-Deltas konsistent.
+- Der Tap laeuft nur bei Bedarf: Switcher-Blockieren oder aktive Scroll-Einstellung. Das Blockieren kontinuierlichen Scrollens ist strikt an den aktiven Switcher gebunden (`switcherWantsTap`), sodass Trackpad-Scrollen ausserhalb nie blockiert wird. Safe Mode deaktiviert die Modifikation, behaelt aber die Einstellung; der Tab meldet das per Hinweis.
+- Settings im Tab `Pointer & Scroll`: `Reverse … vertical scrolling` je Maus/Trackpad und `… scroll speed` (0.5×/1×/2×/3×). Aenderungen rufen `scrollSettingsChanged`, das den Tap an-/abschaltet. Die Einstellungen gelten ab App-Start, nicht erst nach dem ersten Besuch im Tab.
 - Unit-getestet: Kategorieauswahl, Faktoren, No-op bei Default. Nicht geprueft: reales Momentum-/Phase-Verhalten und Energie am Geraet.
 
 Ursprungsstand (Tap-basierter Folge-Spike):
-Prioritaet: **2026-08-13 hochgestuft.** Der Nutzer nennt die getrennte Scrollrichtung als einzige Funktion aus LinearMouse, die im taeglichen Gebrauch wirklich fehlt. Damit steht sie ueber Pointer Accel/Speed, nicht darunter
+Prioritaet: **2026-08-13 hochgestuft.** Der Nutzer nennt die getrennte Scrollrichtung als einzige Funktion aus LinearMouse, die im taeglichen Gebrauch wirklich fehlt. Damit steht sie ueber Pointer Accel/Speed, nicht darunter. **2026-09-10 nachgetragen**: Die Hochstufung war nie in `ROADMAP.md` gelaufen, wo Scroll als Phase 7 hinter Leader/FlickRing, Snapping und Profilen stand. Genau deshalb blieb die Funktion liegen
 
 Beschreibung:
 
@@ -959,6 +967,38 @@ Korrigierte Akzeptanzidee:
 
 - Kein Event-Tap, solange keine tap-abhaengige Einstellung aktiv ist.
 - Sobald Reverse Scrolling oder Scroll Speed aktiv ist, darf ein permanenter, enger `scrollWheel`-Tap laufen.
+
+#### Schnitt in zwei Schritte, festgelegt 2026-09-10
+
+Der MVP-Scope oben bleibt das Ziel. Er wird in zwei Schritten gebaut, weil nur der erste ohne offene Frage umsetzbar ist.
+
+**Schritt 6a: Scrollrichtung der Maus, vertikal.** Umgesetzt 2026-09-10.
+
+- Eine Praeferenz `scrollReverseMouse`, Vorgabe `false`.
+- Betrifft ausschliesslich diskrete Ereignisse, also das Rasterrad. Kontinuierliche Ereignisse von Trackpad und Magic Mouse bleiben unangetastet und folgen weiter der System-Praeferenz.
+- Betrifft ausschliesslich Achse 1, also vertikal. Horizontal ist bewusst ausgelassen, nicht vergessen: ein Rasterrad hat keine horizontale Achse, und ein Kipprad meldet Achse 2 diskret — die Umkehr dort ist ein eigener Fall mit eigenem Schalter.
+- Alle drei Delta-Felder derselben Achse werden gemeinsam gespiegelt: `scrollWheelEventDeltaAxis1`, `scrollWheelEventPointDeltaAxis1` und `scrollWheelEventFixedPtDeltaAxis1`. Sie tragen dieselbe Bewegung in verschiedenen Aufloesungen, und jede App liest das Feld, dem sie traut. Nur eines zu spiegeln ergibt eine App-Klasse, die weiter in die alte Richtung scrollt.
+
+**Schritt 6b: Trackpad-Richtung und Scroll-Geschwindigkeit.** Offen.
+
+- Erst hier wird die Behandlung von Momentum und Phase konkret: ein diskretes Rasterrad hat kein Momentum, ein Trackpad-Schwung besteht aus einer Ereigniskette mit `scrollWheelEventScrollPhase` und `scrollWheelEventMomentumPhase`. Eine Kette darf nicht mitten im Schwung die Richtung wechseln.
+- Die Scroll-Geschwindigkeit ist ein Faktor auf dieselben Delta-Felder. Zu klaeren ist das Runden: ein Faktor unter 1 auf einem ganzzahligen Feld darf eine Zeile nicht auf null kuerzen, sonst haelt Scrollen ganz an.
+
+#### Wie sich das zu den geltenden Regeln verhaelt
+
+- **Q-08, Vorgabe aus.** `scrollReverseMouse` ist mit `false` vorgegeben. Import und Migration aktivieren das Modul nicht.
+- **Q-01, Panic-Kill-Switch.** Der Sicherheitspfad `disableInputModulesForSafety` ruft `ScrollwheelEvents.disableForSafety()` bereits heute auf. Festgelegt: Safe Mode schaltet das Umschreiben ab, **loescht die Praeferenz aber nicht**. Der Schalter bleibt gesetzt und wirkt wieder, sobald der Nutzer Safe Mode verlaesst. Damit der Schalter nicht behauptet, was er nicht tut, meldet die Oberflaeche die Unterdrueckung beim Einschalten in Safe Mode — dasselbe Muster wie `WindowDragEvents.modifierPreferenceChanged(announceSuppression:)`.
+- **Der Tap existiert schon.** `ScrollwheelEvents` haelt einen aktiven Tap auf `scrollWheel`. Neu ist nur, dass er zwei unabhaengige Gruende hat, zu laufen: Absorbieren fuer den Switcher und Umschreiben fuer die Richtung. Er laeuft, wenn einer der beiden gilt. Bei ausgeschalteter Richtung ist das Verhalten Ereignis fuer Ereignis identisch mit vorher.
+- **Latenz, und warum `1a85669b` hier nicht dieselbe Wucht hat.** Die Tap-Teilung in `TrackpadEvents` war noetig, weil Gestenereignisse ununterbrochen fliessen, solange ein Finger aufliegt, und der WindowServer dabei bei jedem Ereignis auf unseren Callback wartete — die Cursorlatenz haengt daran. Ein Tap auf `scrollWheel` bekommt keine Gesten- und keine `mouseMoved`-Ereignisse; er sieht nur Scroll-Ereignisse, und die fliessen nur waehrend des Scrollens. Die Loesung von dort — passiv erkennen, aktiv nur bewaffnet — traegt hier ohnehin nicht, weil Umschreiben einen aktiven Tap verlangt. **Unverifiziert bis V-17**: dass ein dauerhaft aktiver `scrollWheel`-Tap die Scroll-Latenz und den Leerlaufverbrauch nicht messbar verschlechtert. Der Punkt aus `ROADMAP.md` Phase 7 bleibt damit bestehen, er ist nur eingegrenzt.
+
+#### Exit-Kriterium fuer Schritt 6a
+
+- Bei ausgeschalteter Einstellung ist der Tap genau dann aktiv, wenn er es vor der Aenderung war: waehrend einer Switcher-Geste.
+- Bei eingeschalteter Einstellung scrollt das Mausrad in beide Richtungen gespiegelt, in einer AppKit-App, in einem Browser und in einem Terminal.
+- Das Trackpad scrollt unveraendert weiter, mit derselben Einstellung aktiv.
+- Safe Mode schaltet die Umkehr ab und sagt es; das Verlassen von Safe Mode stellt sie ohne Neustart wieder her.
+- Nach `tapDisabledByTimeout` kommt die Umkehr von selbst zurueck.
+- Die reine Entscheidungslogik ist durch Unit-Tests abgedeckt; der Tap selbst durch V-17.
 
 ### 6b. Kleinkram mit klarem Nutzen
 
@@ -1000,6 +1040,22 @@ Prioritaet: Niedrig, aber billig
 - Argument dafuer: Das Anwenden der Creator's Settings ist selbst eine bewusste Handlung, und der Dialog zeigt vorher eine Zusammenfassung. Wer sie liest und bestaetigt, hat entschieden.
 - Argument dagegen: Q-08 ist absolut formuliert und deckt genau diesen Fall ab. Hyperkey belegt Caps Lock systemweit ueber einen Event-Tap; das ist der eingriffsstaerkste Schalter der App. Eine Ausnahme fuer den einen Schalter hoehlt die Regel fuer alle aus.
 - Falls dafuer entschieden wird: Q-08 ist zu aendern, nicht zu umgehen, und die Zusammenfassung im Dialog muss den Eingriff ausdruecklich benennen statt ihn unter `Assigns the Hyper presets` mitlaufen zu lassen — das klingt heute nach Tastenkuerzeln, nicht nach einer Caps-Lock-Umbelegung.
+
+**Der SwiftFormat-Check beim Commit ist wirkungslos. Aufgenommen 2026-09-11.** Der pre-commit-Hook laeuft, meldet Erfolg und prueft nichts. Drei Ursachen, alle am 2026-09-11 nachgemessen:
+
+- `.swiftformatignore` endet mit der Zeile `**/*`. Damit ignoriert der Glob in `scripts/swiftformat.js` jede Datei; das Skript findet null Swift-Dateien und gibt `No Swift files to format.` aus. Die Zeile ist absichtlich gesetzt und traegt den Kommentar "We will open a new branch to deal with code format issues at the next release" — sie stammt aus dem Original, nicht aus diesem Fork.
+- Selbst mit Treffern koennte der Hook nicht fehlschlagen. `scripts/swiftformat.js` faengt einen fehlgeschlagenen `execFileSync` ab und schreibt nur eine Warnung; das Skript endet mit Code 0. Ein Formatfehler kommt damit nie beim Hook an.
+- Das Binary `swiftformat` ist auf dem Arbeitsgeraet ZO-18298 gar nicht installiert. `scripts/install_swiftformat.js` existiert, wird aber von keinem Hook und keiner CI-Stufe aufgerufen. Auf einem Rechner ohne Binary waere der Lauf ohnehin nur die abgefangene Ausnahme von oben.
+
+Nebenbefund: Das Skript haengt die von `lint-staged` uebergebenen Dateinamen vorne an und ergaenzt dahinter **alle** Swift-Dateien des Repos (`process.argv.slice(2).concat(files)`). Es formatiert also nie nur das Gestagte. Mit der Ignore-Zeile faellt das heute nicht auf.
+
+Zu entscheiden, nicht nebenbei zu erledigen:
+
+- **Einschalten** heisst, die Zeile `**/*` zu entfernen und vorher einen einzelnen Formatierungs-Commit ueber 176 Swift-Dateien zu fahren. Danach ist jeder spaetere Diff sauber, aber `git blame` zeigt fuer jede Zeile diesen Commit. Der Nachbau von Upstream-Fixes wird dadurch schwerer, und genau das ist im Abschnitt `Upstream-Abgleich` die laufende Arbeitsweise dieses Forks.
+- **Abschalten** heisst, den Hook und `scripts/swiftformat.js` zu entfernen und im Beitragstext zu sagen, dass dieses Repo Formatierung nicht prueft. Ehrlich, aber der Fork verliert eine Zusage, die das Original macht.
+- **Liegenlassen** ist die dritte Moeglichkeit und die schlechteste: Der Hook sagt weiter bei jedem Commit `[COMPLETED] node scripts/swiftformat.js --lint` und meint damit nichts.
+
+Der Aufwand liegt in der Entscheidung, nicht im Handgriff. Alle drei Wege sind an einem Nachmittag umsetzbar.
 
 ### 7. Trackpad-Gesten fuer Middle Click
 
@@ -1080,7 +1136,100 @@ Exit-Kriterium:
 - Bei ausgeschaltetem Modul existiert kein Tap.
 - Ein Druck loest hoechstens eine Aktion aus; Loslassen ausserhalb des Rings bricht folgenlos ab.
 
-### 9. Keep Awake / Sleep Override (Caffeine + Amphetamine)
+### 9. Thumbnail-Drop
+
+Status: Spezifiziert 2026-08-06, am 2026-09-11 aus einem liegengebliebenen Branch in den Backlog uebernommen
+Dabei berichtigt: Der URL-basierte Vorlaeufer sitzt nicht in `TilesDocumentView`, das es nicht mehr gibt, sondern in `src/ui/main-window/TilesView.swift` — `registerForDraggedTypes` auf `kUTTypeURL`, `draggingEntered`, `draggingUpdated`, `performDragOperation`
+Prioritaet: Mittel; unabhaengig von AX-Kern und Input-Laufzeit einplanbar
+
+Beschreibung:
+
+- Waehrend einer laufenden System-Drag-Sitzung wird der Switcher zum Ziel: Thumbnails nehmen den Drag entgegen.
+- Zwei Ergebnisse sind moeglich: Spring-Loading fokussiert das Zielfenster und laesst die Drag-Sitzung weiterlaufen; ein Drop auf dem Thumbnail uebergibt die Nutzlast an die App des Zielfensters.
+- Das Modul ist reine AppKit-Dragging-Destination-Logik im eigenen Panel. Es braucht keinen Event-Tap, kein Event-Posting und keine zusaetzliche TCC-Berechtigung ueber den bestehenden AltTab+-Bedarf hinaus.
+- Der Switcher bleibt waehrend des Drags in seinem normalen Zustand: gleiche Auswahl-, Hover- und Navigationslogik, keine zweite Bedienoberflaeche.
+
+Abgrenzung zu Story 2H:
+
+- Beide Stories machen die Switcher-Kachel zum Ziel eines Drags, und sie schliessen einander nicht aus.
+- 2H zieht ein **Fenster** und liefert es an den Space der Kachel. Diese Story zieht eine **Datei- oder Web-URL** und liefert sie an die App des Kachelfensters.
+- Die Wege trennen sich an der Herkunft des Drags: 2H laeuft in einer AltTab+-eigenen Modifier-Drag-Sitzung und braucht dafuer ein Abschlussergebnis, das kein Rahmen ist. Diese Story laeuft in einer System-Drag-Sitzung und ist reine `NSDraggingDestination`-Logik im Panel.
+- Gemeinsam ist ihnen nur die Trefferpruefung auf der Kachel. Wer zuerst gebaut wird, liefert sie fuer die andere mit.
+
+Zustandsmaschine:
+
+1. `idle -> entered -> targeting -> springLoading -> handedOff` fuer den Spring-Loading-Pfad.
+2. `idle -> entered -> targeting -> dropping -> finished/failed` fuer den Drop-Pfad.
+3. `targeting -> idle` bei Verlassen des Panels, leerem oder nicht unterstuetztem Pasteboard und bei jedem Abbruchgrund aus TD-08.
+4. Jeder Uebergang nach `idle` verwirft Ziel, Dwell-Timer und Hover-Hervorhebung in einem Schritt.
+
+Zielaufloesung:
+
+- Das Ziel ist genau der Tile unter der Drag-Position, ermittelt ueber dieselbe Trefferpruefung wie Hover; es gibt keine eigene Geometrie fuer den Drag.
+- Der Tile referenziert ein `Window`; daraus folgen PID, `CGWindowID` und Bundle-URL.
+- Ohne aufloesbare Bundle-URL ist das Fenster kein gueltiges Ziel; der Tile lehnt den Drag ab, statt auf die Frontmost-App auszuweichen.
+- Grenze, die dokumentiert bleibt: Die Zustellung erfolgt prozessweit an die App, nicht an ein bestimmtes Fenster. Fenstergenauigkeit entsteht nur ueber Spring-Loading plus manuellen Drop in der Ziel-App.
+
+Nutzlast-Modell:
+
+| Pasteboard-Inhalt | Verhalten |
+|---|---|
+| Datei-URLs | Werden mit der App des Zielfensters geoeffnet |
+| Web-URLs | Werden mit der App des Zielfensters geoeffnet |
+| Gemischt Datei- und Web-URLs | Gemeinsam in einem Aufruf, gleiche Reihenfolge wie im Pasteboard |
+| Text, Bilder, App-eigene Typen | Kein Drop-Ziel; nur Spring-Loading bleibt zulaessig |
+| Leeres oder unlesbares Pasteboard | Kein Ziel, keine Hervorhebung, keine Aktion |
+
+Anforderungen:
+
+| ID | Anforderung | Begruendung |
+|---|---|---|
+| TD-01 | Spring-Loading loest nach einer Dwell-Zeit ueber demselben Tile aus, fokussiert dessen Fenster, blendet den Switcher aus und laesst die Drag-Sitzung unangetastet | Der haeufigste Fall ist "Fenster nach vorne holen und dort selbst ablegen" |
+| TD-02 | Die Dwell-Zeit wird erst zurueckgesetzt, wenn der Zeiger den Tile wechselt oder sich um mehr als eine definierte Distanz bewegt | Zittern waehrend eines Drags darf den Timer nicht endlos verlaengern |
+| TD-03 | Ein Drop auf dem Tile beendet den Drag sofort und uebergibt die Nutzlast an die App des Zielfensters | Zweiter Pfad ohne Wartezeit fuer entschlossene Nutzer |
+| TD-04 | Nach erfolgreicher Uebergabe wird der Switcher ausgeblendet und das Zielfenster fokussiert | Ohne Fokus bleibt unklar, wohin die Nutzlast gegangen ist |
+| TD-05 | Schlaegt die Uebergabe fehl, bleibt der Switcher offen, es wird keine Auswahl geaendert und der Fehlschlag wird im Q-07-Ringbuffer erfasst | Stilles Schliessen sieht wie ein Erfolg aus |
+| TD-06 | Die zurueckgegebene Drag-Operation ist nur dann `.link`, wenn Ziel und Nutzlast gueltig sind, sonst leer | Der Cursor ist die einzige Vorabrueckmeldung der Drag-Sitzung |
+| TD-07 | Das Ziel wird waehrend des Drags sichtbar hervorgehoben, mit demselben Zustand wie Hover per Maus | Kein zweites, abweichendes Auswahlbild |
+| TD-08 | Escape, Loslassen ausserhalb des Panels, Tastaturnavigation, Ausblenden des Switchers, Space-/Display-Wechsel und Mission Control brechen Ziel und Dwell-Timer ab | Q-15: keine ueber die Sitzung hinaus haengenden Trigger |
+| TD-09 | Bei deaktiviertem Modul registriert das Panel keine Dragging-Typen und legt keinen Timer an | Q-10: ausgeschaltete Module hinterlassen keine Laufzeitkosten |
+| TD-10 | Der Drop oeffnet ausschliesslich die Nutzlast der Drag-Sitzung; es werden keine Pfade aus anderen Quellen ergaenzt oder aufgeloest | Ein Drop darf nicht mehr oeffnen als der Nutzer gezogen hat |
+
+Settings:
+
+- Ein Schalter `Drop auf Thumbnails`, Default an, im bestehenden Switcher-Abschnitt; kein eigener Sidebar-Eintrag.
+- Eine Dwell-Zeit fuer Spring-Loading, Default 1.5 s, Bereich 0.5 bis 3.0 s.
+- Keine App- oder typspezifischen Regeln, keine getrennten Schalter fuer Spring-Loading und Drop.
+
+Nicht im Scope:
+
+- Thumbnail als Drag-Quelle, also Fenster oder Fenstertitel aus dem Switcher herausziehen.
+- Zustellung an ein bestimmtes Fenster einer App.
+- Drop auf Tabs, Icons, Titel oder andere Teilbereiche eines Tiles.
+- Simulierte Drops per Event-Posting in die Ziel-App.
+- Drop auf App-Gruppen, leere Bereiche des Panels oder das Panel selbst.
+- Neue Berechtigungen oder private API.
+
+Pruefraster:
+
+| Pruefung | Erwartung |
+|---|---|
+| Trigger waehrend Drag | Der Switcher laesst sich waehrend einer laufenden Drag-Sitzung oeffnen; sonst faellt das Modul auf reines Maus-Hover-Verhalten zurueck |
+| Zielwechsel | Wechsel zwischen benachbarten Tiles setzt Hervorhebung und Dwell-Timer sofort neu |
+| Spring-Loading | Zielfenster ist fokussiert, Switcher ist weg, die Drag-Sitzung laeuft unveraendert weiter |
+| Drop | Nutzlast wird von der Ziel-App geoeffnet, Zielfenster ist danach fokussiert |
+| Ablehnung | App ohne Bundle-URL, nicht unterstuetzte Typen und leeres Pasteboard erzeugen keinen `.link`-Cursor und keine Aktion |
+| Fehlschlag | Nicht unterstuetzter Dateityp in der Ziel-App laesst den Switcher offen und wird protokolliert |
+| Abbruch | Nach jedem Grund aus TD-08 bleiben kein Timer, keine Hervorhebung und kein Zielverweis zurueck |
+| Aus-Zustand | Bei deaktiviertem Modul ignoriert das Panel Drags vollstaendig |
+
+Offene Punkte:
+
+- Verhalten des Aktivierungs-Shortcuts waehrend einer laufenden Drag-Sitzung am Zielgeraet verifizieren, inklusive Tastaturnavigation zwischen Tiles.
+- Klaeren, ob minimierte Fenster und Fenster in anderen Spaces als Ziel zugelassen werden oder nur Spring-Loading erhalten.
+- Pruefen, ob `NSWorkspace` beim Oeffnen mit einer bestimmten App unterscheidbare Fehler fuer "App unterstuetzt Typ nicht" liefert; sonst bleibt TD-05 auf einen generischen Fehlschlag beschraenkt.
+
+### 10. Keep Awake / Sleep Override (Caffeine + Amphetamine)
 
 Status: Spezifiziert 2026-08-19; nicht begonnen
 Prioritaet: Mittel. Eigenstaendiges Modul, unabhaengig von Switcher- und Input-Kern
@@ -1178,7 +1327,7 @@ Nicht im MVP:
 - Automation-Schnittstelle.
 - Per-App- oder Regel-Engine.
 
-### 10. Erweitertes Window-Switching-Verhalten (minimierte Fenster, Per-App-Policies, Cmd+Tab)
+### 11. Erweitertes Window-Switching-Verhalten (minimierte Fenster, Per-App-Policies, Cmd+Tab)
 
 Status: Spezifiziert 2026-08-19; nicht begonnen. Betrifft den Switcher-Kern, kein Add-on-Modul
 Prioritaet: Mittel
@@ -1356,7 +1505,7 @@ Energiepruefung:
 | S-07 | Spaces-Menueleiste | Space-Anzahl und aktiver Zustand konvergieren ereignisbasiert ohne Polling; Klick aktiviert den erwarteten Space; Ueberlauf, Separate-Spaces-Modi und deaktiviertes Instant Spaces degradieren bedienbar |
 | S-09 | HID-Remapping unterhalb des Event-Taps | `hidutil UserKeyMapping` laesst sich auf Tahoe aus dem Agent-Prozess setzen und nach Keyboard-Hotplug erneuern, ohne Root und ohne LaunchAgent; die Zuordnung wirkt nachweislich auch bei aktivem Secure Input; Entzug und Absturz hinterlassen keine dauerhafte Umbelegung |
 | S-08 | Stabile Space-Identitaet | **Bestanden 2026-08-03** auf macOS 26.5.1 (Build 25F80). Drei Spaces ueberlebten einen Neustart mit unveraenderter UUID, waehrend zwei ihre `id64` wechselten (31→7, 33→6). Reorder, Create, Delete, Fullscreen und natives Wechseln liessen die UUIDs ebenfalls unveraendert. Aliase und Profil-Bindings duerfen auf die UUID zeigen, niemals auf `id64` oder den Index. Nicht geprueft: Umschalten von `Displays haben separate Spaces` und Display-Wechsel, beides mangels zweitem Display |
-| S-10 | Synchroner Mehrdisplay-Space-Wechsel | Cursor-Warp plus Swipe schaltet alle Displays in einer Aktion auf denselben Index, ohne haengenden Cursor und ohne Mission-Control-Stoerung; andernfalls bleibt das a-Modell aus 2F deaktiviert |
+| S-10 | Synchroner Mehrdisplay-Space-Wechsel | Cursor-Warp plus Swipe schaltet alle Displays in einer Aktion auf denselben Index, ohne haengenden Cursor und ohne Mission-Control-Stoerung; andernfalls bleibt das a-Modell aus 2F deaktiviert. **2026-09-16 (S-10d)**: ein Swipe mit `event.location` auf dem Zieldisplay schaltet dieses ohne Warp; der synchrone Wechsel selbst ist nicht gebaut |
 | S-11 | Programmatisches Anlegen/Loeschen von Spaces | `CGSSpaceCreate`/`CGSSpaceDestroy` optional gebunden; Anlegen und Loeschen wirkt korrekt, Dock und Mission Control bleiben konsistent, Symbolwegfall degradiert nur dieses Feature |
 | S-12 | Zeigerwerte ueber die Anmeldung hinaus | **Fehlgeschlagen, 2026-08-10 und 2026-08-13.** Der Wert ueberlebt weder Neustart noch Sitzung. Nach dem Neustart standen Maus und Trackpad wieder auf 0.6875, gelesen ueber ein rein lesendes Werkzeug (`IOHIDGetAccelerationWithKey`). Entscheidend ist der zweite Teil: der Wert fiel schon **vor** dem Neustart zurueck, nach rund 19 Stunden mit mehreren Sleep/Wake-Zyklen — ein Ab- und Anmelden ist also nicht einmal noetig, um die Wirkung zu verlieren, und die Anmeldung allein erklaert den Verlust nicht. Der Unterschied zu den Systemeinstellungen ist gemessen und nicht erschlossen: die schreiben beim Reglerzug **beides**, `com.apple.mouse.scaling` *und* den HID-Wert, waehrend AltTab+ nur den HID-Wert schreibt — waehrend AltTab+ 3.0 hielt, existierte die Praeferenz gar nicht. Vorbehalt zum Neustart-Teil: dabei hing eine andere Maus am Rechner. Folge: `PointerSystemSettings` muss den Wert nach dem Start und nach dem Aufwachen erneut anlegen, oder die Uebernahme gilt nur fuer die laufende Sitzung und muss das auch so anzeigen. Die Praeferenz zusaetzlich zu schreiben ist **nicht** der Schluss daraus: dass sie fehlt, hat den effektiven Wert nicht daran gehindert, gesetzt zu sein |
 
@@ -1430,13 +1579,14 @@ Default-Settings, Reset-Verhalten und Migration werden nach jedem neuen Modul ge
 | V-07 | Distribution | Signing, Notarisierung, Vertriebskanal und Update-Strategie vor erster oeffentlicher Version abschliessen; Sparkle bleibt optional |
 | V-08 | Safe Start und Circuit Breaker | Vor dem ersten ausgelieferten Input-Modul mit Login-Start, verbliebenem Arming-Marker und wiederholtem Tap-Timeout pruefen |
 | V-09 | Berechtigungsentzug | Accessibility und Input Monitoring getrennt bei Start, Aktivierung, Wake und Laufzeit pruefen |
-| V-10 | Pointer State Ownership | **Gefahren am 2026-08-10 und 2026-08-13**, Ergebnistabelle in `docs/pointer-ownership-checklist.md`. Schritte 1-7, 9, 10 und 12 bestanden; 9 und 10 sind das Paar, das ueber destruktives Restore entscheidet. Zwei Defekte dabei gefunden und behoben: der `Disabled`-Sentinel `-1` wird vom HID-System auf `0` geklemmt und liess Schritt 2 die Basislinie verwerfen, und der Geschwindigkeitsregler erwarb den Besitz waehrend eines Zuges neu und uebernahm dabei den Wert eines fremden Besitzers. **Schritt 8 faellt**: beim Beenden wird nichts wiederhergestellt, erst der naechste Start holt es nach. **Offen**: die negative Haelfte von Schritt 11 (der Testlauf schlief nicht ein, `pmset sleepnow` meldete Erfolg ohne Uebergang im Power-Log — Ruhezustand aus dem Apple-Menue ausloesen), und der aktive Teil von Schritt 13 (LinearMouse wendet ein untergeschobenes Konfigurationsschema nicht an, seine Menueleisten-Oberflaeche ist nicht fernsteuerbar) |
+| V-10 | Pointer State Ownership | **Gefahren am 2026-08-10 und 2026-08-13**, Ergebnistabelle in `docs/pointer-ownership-checklist.md`. Schritte 1-10 und 12 bestanden, Schritt 8 erst nach dem Fix; 9 und 10 sind das Paar, das ueber destruktives Restore entscheidet. Drei Defekte dabei gefunden und behoben: der `Disabled`-Sentinel `-1` wird vom HID-System auf `0` geklemmt und liess Schritt 2 die Basislinie verwerfen, der Geschwindigkeitsregler erwarb den Besitz waehrend eines Zuges neu und uebernahm dabei den Wert eines fremden Besitzers, und das Beenden gab den Wert nicht zurueck. **Schritt 8 fiel und ist behoben**: `applicationWillTerminate` gibt seit `14e8321c` (PR #21, 2026-08-14) beide Kategorien frei. Am 2026-09-16 erneut gefahren und bestanden: Trackpad von 2.5 beim Beenden sofort auf die Basislinie 0.6875, Besitzeintrag `unmanaged`. Force Quit und SIGTERM umgehen den Pfad weiterhin; der naechste Start holt den Wert ueber `recoverAfterUncleanExit` zurueck. **Offen**: die negative Haelfte von Schritt 11 (der Testlauf schlief nicht ein, `pmset sleepnow` meldete Erfolg ohne Uebergang im Power-Log — Ruhezustand aus dem Apple-Menue ausloesen), und der aktive Teil von Schritt 13 (LinearMouse wendet ein untergeschobenes Konfigurationsschema nicht an, seine Menueleisten-Oberflaeche ist nicht fernsteuerbar) |
 | V-11 | Display-Topologien | Snapping-Checkliste ueber definierte Topologien, Separate-Spaces-Zustaende und dynamische Reconfiguration ausfuehren |
 | V-12 | Instant Spaces | Tahoe-Build, Separate Spaces ein/aus, Cursor-Display, Fullscreen-Space, Stage Manager, Mission Control/App Expose, Randwechsel und schnelle direkte Mehrfachwechsel pruefen |
 | V-13 | `Command+Control`-Move | `NSWindowShouldDragOnGesture` vor Aktivierung lesen, auf `false` setzen und verifizieren; Disable, externe Aenderung, Crash und Recovery ohne destruktives Restore pruefen |
 | V-14 | Spaces-Menueleiste | Checkliste `docs/spaces-menubar-checklist.md`. Ein bis 16 Spaces, mehrere Displays, Fullscreen-Spaces, Reorder, Create/Delete, Wake, Mission-Control-Ende, Statusleisten-Ueberlauf und VoiceOver pruefen; mit drei Bildschirmen und deaktivierten separaten Spaces pruefen, dass nur Gruppen mit mehr als einem Space erscheinen und kein Trenner uebrig bleibt |
 | V-15 | Profile und Session-Restore | Fenster-Matching, App-Start, verlorene Space-Bindings, geaenderte Titel, mehrere Fenster derselben App und geaenderte Display-Topologie ohne falsche Mutation pruefen |
 | V-16 | Dock-Aktivierung ueber Space-Grenzen | Beobachtung 2A-1 zuordnen: Klick im Dock auf eine App, deren Fenster auf einem anderen Space liegt, wirkt erst beim zweiten Mal. Mit beendetem AltTab+ wiederholen; tritt es weiter auf, ist es Systemverhalten und die Beobachtung wird geschlossen, sonst beginnt die Suche bei den Maus-Taps |
+| V-17 | Scrollrichtung der Maus | Story 6a am Geraet: Umkehr wirkt in mehreren App-Klassen, das Trackpad bleibt unberuehrt, Safe Mode schaltet ab und gibt frei, der Tap kommt nach einem Timeout zurueck. Dazu die offene Messung: Scroll-Latenz und Leerlaufverbrauch mit dauerhaft aktivem `scrollWheel`-Tap gegen die Baseline. Checkliste in `docs/scroll-direction-checklist.md` |
 
 ## Provenienz-Register
 

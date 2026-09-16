@@ -53,5 +53,6 @@ class WindowLayoutsTab {
     private static func safeModeChanged() {
         KeyboardEvents.inputSafeModeChanged()
         WindowDragEvents.modifierPreferenceChanged()
+        ScrollwheelEvents.scrollSettingsChanged()
     }
 }
