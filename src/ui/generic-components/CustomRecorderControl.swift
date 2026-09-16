@@ -2,6 +2,13 @@ import Cocoa
 import Carbon.HIToolbox.Events
 import ShortcutRecorder
 
+/// Story 16: `Record Shortcut` did not fit and showed as `Recor…rtcut`.
+final class ShortPlaceholderStyle: RecorderControlStyle {
+    override var noValueNormalLabel: String {
+        NSLocalizedString("Record", comment: "Placeholder of an empty shortcut recorder")
+    }
+}
+
 class CustomRecorderControl: RecorderControl {
     static let allowedModifiers = NSEvent.ModifierFlags(arrayLiteral: [.command, .control, .option, .shift])
     var clearable: Bool!
@@ -22,7 +29,8 @@ class CustomRecorderControl: RecorderControl {
         allowsModifierFlagsOnlyShortcut = true
         restrictModifiers([])
         objectValue = shortcut
-        addOrUpdateConstraint(widthAnchor, 100)
+        style = ShortPlaceholderStyle(identifier: nil, components: nil)
+        addOrUpdateConstraint(widthAnchor, 130)
     }
 
     override func drawClearButton(_ aDirtyRect: NSRect) {
