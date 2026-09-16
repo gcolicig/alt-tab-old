@@ -1729,14 +1729,9 @@ Gemeinsame Regeln fuer alle Bloecke:
 | SA-07 | Jede Funktion bestaetigt ihr Ergebnis mit `TransientNotice` oder dem Haekchen im Menue; Fehler nennen den Grund | Keine stillen Aktionen |
 | SA-08 | Punkte mit **unverifiziert** werden vor der Umsetzung in einem kurzen Spike am Geraet belegt; faellt der Beleg negativ aus, wird der Punkt hier nachgetragen statt umgangen | Hallucination-Safety |
 
-#### 14A. Sprung in Systemeinstellungen
+#### 14A. Sprung in Systemeinstellungen (entfernt 2026-09-16)
 
-Eintraege: `VPN & Filters`, `Hide My Email`, `Private Relay`, dazu `iPhone Notifications` (siehe 14H).
-
-- Eine feste, eingebaute Liste von Sprungzielen, jeweils eine `x-apple.systempreferences:`-Adresse, geoeffnet mit `NSWorkspace.shared.open`. Technisch dasselbe wie ein Open-URL-Slot, aber ohne Konfiguration und mit eigenem Titel und Symbol.
-- Aktions-IDs `settingsJump.vpn`, `settingsJump.hideMyEmail`, `settingsJump.privateRelay`, `settingsJump.iphoneNotifications`.
-- **Unverifiziert**: die genauen Adressen je Bereich unter macOS Tahoe. Der Spike oeffnet Kandidaten und haelt die funktionierenden in einer Tabelle hier fest. Faellt eine Adresse auf einen falschen Bereich, wird der Eintrag entfernt statt geraten.
-- Die Liste liegt an einer Stelle im Code und ist erweiterbar; weitere Ziele nur auf Wunsch.
+Vom Nutzer nach dem ersten Test verworfen: Hide My Email und Private Relay haben keinen eigenen Sprungpunkt und oeffneten nur die iCloud-Seite, und auf einem Konto ohne iCloud+ gibt es dort gar keinen Hide-My-Email-Eintrag. Die ganze Gruppe `Systemeinstellungen` samt den vier Aktionen ist entfernt. Gelesene Adressen zur Referenz: VPN `com.apple.NetworkExtensionSettingsUI.NESettingsUIExtension`, iCloud `com.apple.systempreferences.AppleIDSettings:icloud`, Mitteilungen `com.apple.Notifications-Settings.extension`; intern heissen die iCloud-Dienste `com.apple.Dataclass.PrivateEmail` (Hide My Email), `com.apple.Dataclass.PrivateConnect` und `com.apple.Dataclass.Mail`.
 
 #### 14B. Apps beenden
 
@@ -1803,13 +1798,12 @@ Eintrag: `Eject All Disks`.
 
 #### 14H. Mitteilungen
 
-Eintraege: `Clear Visible Notifications`, `Clear All Notifications`, `iPhone Notifications`.
+Eintraege: `Clear Visible Notifications`, `Clear All Notifications`. (`iPhone Notifications` war als Sprung aus 14A geplant und ist mit 14A entfallen.)
 
 - Die ersten beiden steuern die Mitteilungszentrale ueber AX fern: Prozess `NotificationCenter`, Suche nach den Aktionen zum Schliessen bzw. `Clear All` und Ausloesen per `AXPerformAction`. Laeuft auf der AX-Queue mit Timeout (Q-02, Q-03).
 - Unterliegt SA-06: Die Rollen und Aktionsnamen werden je macOS-Major-Version in einer Tabelle gefuehrt; eine unbekannte Version deaktiviert die Eintraege.
 - `Clear Visible` betrifft nur Banner und gestapelte Mitteilungen, die gerade sichtbar sind; `Clear All` oeffnet die Mitteilungszentrale nicht sichtbar, falls das ohne Oeffnen nicht erreichbar ist, wird sie kurz geoeffnet und wieder geschlossen.
 - **Unverifiziert**: ob beides unter Tahoe ohne sichtbares Oeffnen geht. Der Spike entscheidet.
-- `iPhone Notifications` ist ein Systemschalter ohne oeffentliche Schnittstelle. Er wird deshalb nicht umgeschaltet, sondern als Sprung (14A) in den passenden Bereich der Systemeinstellungen umgesetzt. Titel im Menue mit Auslassungspunkten.
 - Aktionen `notifications.clearVisible`, `notifications.clearAll`.
 
 #### 14I. Bildschirm-Werkzeuge
@@ -1857,7 +1851,6 @@ Pruefraster (Checklisten folgen je Block mit der Umsetzung):
 
 | Block | Kernpruefung |
 |---|---|
-| 14A | Jeder Eintrag landet im richtigen Bereich der Systemeinstellungen |
 | 14B | Rueckfrage nennt die richtigen Apps; eine App mit ungesichertem Dokument fragt selbst und bleibt bei Abbruch offen |
 | 14C | Schliessen des letzten Fensters beendet nur gelistete Apps, nach der Wartezeit; neues Fenster in der Wartezeit verhindert es |
 | 14D | Displays gehen aus und wachen bei Tastendruck normal auf |
@@ -1870,16 +1863,7 @@ Pruefraster (Checklisten folgen je Block mit der Umsetzung):
 
 Umsetzungsstand 2026-09-16:
 
-- 14A, Adressen am 2026-09-16 unter macOS 26.6 aus den `Info.plist` der Settings-Erweiterungen gelesen; alle erlauben das Adressschema:
-
-  | Eintrag | Adresse | Bemerkung |
-  |---|---|---|
-  | VPN & Filters | `x-apple.systempreferences:com.apple.NetworkExtensionSettingsUI.NESettingsUIExtension` | eigener Bereich |
-  | Hide My Email | `x-apple.systempreferences:com.apple.systempreferences.AppleIDSettings:icloud` | kein eigener Anker; oeffnet iCloud |
-  | Private Relay | wie Hide My Email | kein eigener Anker; oeffnet iCloud |
-  | iPhone Notifications | `x-apple.systempreferences:com.apple.Notifications-Settings.extension` | oeffnet Mitteilungen |
-
-  Ob die Szene `:icloud` den iCloud-Bereich direkt oeffnet, ist am Geraet zu bestaetigen (Checkliste Schritt 19).
+- 14A: entfernt, siehe oben.
 - 14B: Rueckfrage mit "Cancel" als Standard, danach `terminate()`; nach 5 s Hinweis auf noch laufende Apps.
 - 14C: Einhaengepunkt ist die gebuendelte Zerstoerung in `AccessibilityEvents.windowDestroyed`, nicht `Windows.removeWindows`, damit das Entfernen unerreichbarer Fenster kein Beenden ausloest. **Abweichung**: Die Einstellungen stehen im neuen Tab `System Actions`, nicht in `General`.
 - 14D: zuerst `pmset displaysleepnow`, sonst `IODisplayWrangler`; beides am Geraet offen.
@@ -1919,8 +1903,7 @@ Gruppen und Reihenfolge:
 | 6 | System | `Clear Clipboard`, `Eject All Disks`, `Sleep Displays` | Story 14D, 14F, 14G |
 | 7 | Schalter | `Keep Awake >`, `Mute Sound`, `Mute Microphone`, `Function Keys`, `Auto-Quit Apps`, `Cat Mode` | Story 10, 14C, 14E, 14J, 14K |
 | 8 | Standards | `Default Browser >` | Story 14L |
-| 9 | Systemeinstellungen | `VPN & Filters…`, `Hide My Email…`, `Private Relay…`, `iPhone Notifications…` | Story 14A, 14H |
-| 10 | AltTab+ | `Settings…`, `Check Permissions…`, `About AltTab+`, `Debug >`, `Quit AltTab+` | vorhanden, Story 13 |
+| 9 | AltTab+ | `Settings…`, `Check Permissions…`, `About AltTab+`, `Debug >`, `Quit AltTab+` | vorhanden, Story 13 |
 
 Aufbau:
 
@@ -1935,7 +1918,7 @@ Aufbau:
 Sichtbarkeit:
 
 - Settings, neuer Abschnitt `Menu bar menu` im Tab `General`: je Gruppe ein Schalter, darunter je Eintrag ein Schalter.
-- Standard: `Switcher`, `Fenster`, `Systemeinstellungen` und `AltTab+` sichtbar; alle anderen Gruppen ausgeblendet, bis der Nutzer sie einschaltet. So bleibt das Menue nach dem Update so kurz wie heute plus die Fenster-Aktionen.
+- Standard: `Switcher`, `Fenster` und `AltTab+` sichtbar (`Systemeinstellungen` entfiel am 2026-09-16); alle anderen Gruppen ausgeblendet, bis der Nutzer sie einschaltet. So bleibt das Menue nach dem Update so kurz wie heute plus die Fenster-Aktionen.
 - Die Gruppe `AltTab+` laesst sich nicht ausblenden, damit `Settings…` und `Quit` immer erreichbar sind.
 - Eine ausgeblendete Aktion bleibt im Register und ueber Shortcut, Hyper, Leader und FlickRing ausloesbar. Ausblenden betrifft nur das Menue.
 
@@ -2156,7 +2139,7 @@ Entschieden 2026-09-16:
 
 - **Nicht vorsehen**: Dock-Klick-Logik (minimieren, durch Fenster wechseln, Mittelklick-Aktionen) und Aktionen in Mission Control. Beide stehen unter `Nicht-Ziele`.
 - **Spezifiziert**: `Isolate Window` samt Verwandten als Story 12, die Debug-Eintraege als Story 13.
-- **Zur Uebernahme bestimmt, 2026-09-16**: Keep Awake (Story 10, Menue-Nachtrag), die Systemeinstellungs-Spruenge, Apps beenden, Auto-Quit, Displays schlafen, Ton und Mikrofon, Zwischenablage, Laufwerke, Standardbrowser, Funktionstasten, Bildschirm-Werkzeuge, Mitteilungen und Cat Mode als Story 14; die Gruppierung des Menues als Story 15. Bleiben `ENTFERNEN`: Empty Trash, Cleaning Mode, Dark Mode, Night Shift, Grayscale, Low Power Mode, die Desktop- und Dock-Schalter sowie die Vertriebs-Eintraege.
+- **Zur Uebernahme bestimmt, 2026-09-16**: Keep Awake (Story 10, Menue-Nachtrag), Apps beenden, Auto-Quit, Displays schlafen, Ton und Mikrofon, Zwischenablage, Laufwerke, Standardbrowser, Funktionstasten, Bildschirm-Werkzeuge, Mitteilungen und Cat Mode als Story 14; die Gruppierung des Menues als Story 15. Bleiben `ENTFERNEN`: Empty Trash, Cleaning Mode, Dark Mode, Night Shift, Grayscale, Low Power Mode, die Desktop- und Dock-Schalter sowie die Vertriebs-Eintraege.
 
 Legende: `STORY n` = in dieser Story spezifiziert; `VORHANDEN` = im Fork schon abgedeckt; `OPTIONAL` = passt, aber kein Bedarf festgestellt; `SPAETER` = passt, aber offene technische Frage; `ENTFERNEN` = passt nicht zum Produkt.
 
@@ -2195,12 +2178,12 @@ Legende: `STORY n` = in dieser Story spezifiziert; `VORHANDEN` = im Fork schon a
 | 31 | Eingabe und Ton | Function Keys | STORY 14 | 14J; sofortige Wirkung **unverifiziert** |
 | 32 | Eingabe und Ton | Mute Sound | STORY 14 | 14E |
 | 33 | Eingabe und Ton | Mute Microphone | STORY 14 | 14E |
-| 34 | Mitteilungen | iOS Notifications | STORY 14 | 14H; als Sprung in die Systemeinstellungen |
+| 34 | Mitteilungen | iOS Notifications | ENTFERNEN | Zur Uebernahme bestimmt, nach dem Test am 2026-09-16 wieder verworfen (14A) |
 | 35 | Fenster und Apps | Auto-Quit Apps | STORY 14 | 14C |
 | 36 | Systemeinstellungen | Default Browser (Untermenue) | STORY 14 | 14L, Untermenue mit App-Symbolen |
-| 37 | Systemeinstellungen | VPN & Filters | STORY 14 | 14A; Adresse **unverifiziert** |
-| 38 | Systemeinstellungen | Hide My Email | STORY 14 | 14A; wie oben |
-| 39 | Systemeinstellungen | Private Relay | STORY 14 | 14A; wie oben |
+| 37 | Systemeinstellungen | VPN & Filters | ENTFERNEN | Zur Uebernahme bestimmt, nach dem Test am 2026-09-16 wieder verworfen (14A) |
+| 38 | Systemeinstellungen | Hide My Email | ENTFERNEN | Zur Uebernahme bestimmt, nach dem Test am 2026-09-16 wieder verworfen (14A) |
+| 39 | Systemeinstellungen | Private Relay | ENTFERNEN | Zur Uebernahme bestimmt, nach dem Test am 2026-09-16 wieder verworfen (14A) |
 | 40 | App-Menue | Settings… | VORHANDEN | Standard |
 | 41 | App-Menue | About | VORHANDEN | Standard |
 | 42 | App-Menue | Support & Feedback | VORHANDEN | Das Feedback-Fenster des Forks existiert (`FeedbackWindow`) |
@@ -2248,6 +2231,8 @@ Die drei Debug-Eintraege sind fuer die Entwicklung dieses Forks wertvoller als a
 - LinearMouse Smoothed Scrolling: https://github.com/linearmouse/linearmouse/tree/d82e98fba7f2/LinearMouse/EventTransformer
 
 ## Nicht-Ziele fuer die erste Iteration
+
+- Spruenge in die Systemeinstellungen als Menueeintraege (VPN, Hide My Email, Private Relay, iPhone-Mitteilungen). Entschieden 2026-09-16; einzelne Bereiche lassen sich weiter ueber Open-URL-Slots oeffnen.
 
 - Vollstaendige BetterTouchTool-Kompatibilitaet.
 - Beliebig skriptbare Automationen.

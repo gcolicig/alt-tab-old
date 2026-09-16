@@ -11,8 +11,8 @@ Emergency shortcut: `Command+Control+Option+Shift+Escape`.
 
 | # | Action | Expectation |
 |---|---|---|
-| 1 | Open the menubar menu after the update | Groups Switcher, Windows, System Settings and the AltTab+ block; headings on macOS 14+; no double or trailing separator |
-| 2 | `Settings > Menu Bar Menu`: turn every group on | All groups appear in order: Switcher, Windows, Apps, Tools, Notifications, System, Toggles, Defaults, System Settings, AltTab+ |
+| 1 | Open the menubar menu after the update | Groups Switcher, Windows and the AltTab+ block; headings on macOS 14+; no double or trailing separator |
+| 2 | `Settings > Menu Bar Menu`: turn every group on | All groups appear in order: Switcher, Windows, Apps, Tools, Notifications, System, Toggles, Defaults, AltTab+ |
 | 3 | Turn one entry off, then its whole group | The entry disappears, then the heading and separator of the group |
 | 4 | Assign a shortcut to `Isolate Window` in the same tab | The shortcut works outside the menu |
 | 5 | Bind `Clear Clipboard` to a Leader key and a FlickRing direction | Both run it |
@@ -39,7 +39,7 @@ Emergency shortcut: `Command+Control+Option+Shift+Escape`.
 | 16 | `Eject All Disks` with a USB stick, a disk image and a busy disk | First two ejected; the busy one named in the notice |
 | 17 | `Default Browser >` | Installed browsers with icons, current one checked; choosing one shows macOS' own confirmation |
 | 18 | `Function Keys` toggle (V-20) | F1–F12 switch between media and function keys at once; `Settings > System Actions > Restore Original Mode` gives back the earlier mode |
-| 19 | Settings jumps | VPN & Filters opens VPN; Hide My Email and Private Relay open the iCloud page; iPhone Notifications opens Notifications |
+| 19 | Open `Settings`, then every sidebar entry | No crash; `Menu Bar Menu` lists every group with its switches |
 
 ## Tools (story 14I)
 

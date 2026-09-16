@@ -194,17 +194,17 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 - Umgesetzt 2026-09-16, alle Bloecke; Geraetepruefung offen, dazu V-19 (Cat Mode), V-20 (Funktionstasten), V-21 (Mitteilungen).
 
-- Aus dem Supercharge-Abgleich uebernommen, in unabhaengigen Bloecken: Systemeinstellungs-Spruenge, Apps beenden (mit Rueckfrage), Auto-Quit, Displays schlafen, Ton und Mikrofon stummschalten, Zwischenablage leeren, Laufwerke auswerfen, Standardbrowser mit Untermenue, Funktionstasten, Bildschirm-Werkzeuge (Farbe, Texterkennung, Uebersetzung, QR), Mitteilungen leeren, Cat Mode.
+- Aus dem Supercharge-Abgleich uebernommen, in unabhaengigen Bloecken: Apps beenden (mit Rueckfrage), Auto-Quit, Displays schlafen, Ton und Mikrofon stummschalten, Zwischenablage leeren, Laufwerke auswerfen, Standardbrowser mit Untermenue, Funktionstasten, Bildschirm-Werkzeuge (Farbe, Texterkennung, Uebersetzung, QR), Mitteilungen leeren, Cat Mode.
 - Jede Funktion ist eine Aktion im gemeinsamen Register; keine Tastenkombination ab Werk; nichts laeuft im Hintergrund, solange es nicht benutzt wird.
-- Unverifizierte Wege (Systemeinstellungs-Adressen, Displays ohne Admin, Funktionstasten, Mitteilungen per AX, Uebersetzung) zuerst per Spike belegen. Cat Mode nur nach V-19.
+- Unverifizierte Wege (Displays ohne Admin, Funktionstasten, Mitteilungen per AX, Uebersetzung) zuerst per Spike belegen. Cat Mode nur nach V-19.
 - Vollstaendige Spezifikation in `backlog.md` unter Story 14.
 
 ## Phase 15: Menueleisten-Menue gruppiert
 
 - Umgesetzt 2026-09-16; Sichtbarkeit im eigenen Tab `Menu Bar Menu`.
 
-- Alle Eintraege in inhaltlichen Gruppen mit Ueberschrift: Switcher, Fenster, Apps, Werkzeuge, Mitteilungen, System, Schalter, Standards, Systemeinstellungen, AltTab+.
-- Sichtbarkeit je Gruppe und Eintrag einstellbar; ab Werk nur Switcher, Fenster, Systemeinstellungen und AltTab+ sichtbar.
+- Alle Eintraege in inhaltlichen Gruppen mit Ueberschrift: Switcher, Fenster, Apps, Werkzeuge, Mitteilungen, System, Schalter, Standards, AltTab+. Die Gruppe Systemeinstellungen wurde am 2026-09-16 wieder entfernt.
+- Sichtbarkeit je Gruppe und Eintrag einstellbar; ab Werk nur Switcher, Fenster und AltTab+ sichtbar.
 - Waechst mit Story 10, 12, 13 und 14. Vollstaendige Spezifikation in `backlog.md` unter Story 15.
 
 ## Release-Gates
