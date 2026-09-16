@@ -14,7 +14,11 @@ struct SystemActionSpec {
 }
 
 enum SystemActions {
-    static let all: [SystemActionSpec] = windowActions + appActions + toolActions + notificationActions + systemActions + toggleActions + keepAwakeActions
+    static let all: [SystemActionSpec] = {
+        var specs = [SystemActionSpec]()
+        [windowActions, appActions, toolActions, notificationActions, systemActions, toggleActions, keepAwakeActions].forEach { specs.append(contentsOf: $0) }
+        return specs
+    }()
 
     static func spec(_ action: SystemAction) -> SystemActionSpec? {
         byAction[action]

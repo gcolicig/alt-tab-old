@@ -10,7 +10,7 @@ class WindowFocusTests: XCTestCase {
     }
 
     func testHidesOnlyOtherRegularVisibleApps() {
-        let apps = [app(1), app(2), app(3, regular: false), app(4, isSelf: true), app(5, hidden: true)]
+        let apps: [FocusAppInfo] = [app(1), app(2), app(3, regular: false), app(4, isSelf: true), app(5, hidden: true)]
         XCTAssertEqual(WindowFocusPlan.appsToHide(apps, keeping: 1), [2])
     }
 
@@ -19,7 +19,7 @@ class WindowFocusTests: XCTestCase {
     }
 
     func testMinimizesOnlyOtherVisibleWindowsOfTheTargetApp() {
-        let windows = [
+        let windows: [FocusWindowInfo] = [
             window(10, pid: 1), window(11, pid: 1), window(12, pid: 2),
             window(13, pid: 1, minimized: true), window(14, pid: 1, fullscreen: true),
             window(15, pid: 1, tabbed: true), window(16, pid: 1, spaces: [9]),
@@ -29,7 +29,7 @@ class WindowFocusTests: XCTestCase {
     }
 
     func testWindowsOnAllSpacesCountAsVisible() {
-        let windows = [window(20, pid: 1, spaces: [], allSpaces: true)]
+        let windows: [FocusWindowInfo] = [window(20, pid: 1, spaces: [], allSpaces: true)]
         XCTAssertEqual(WindowFocusPlan.windowsToMinimize(windows, targetPid: 1, keeping: nil, visibleSpaces: [1]), [20])
     }
 }

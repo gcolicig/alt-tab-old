@@ -1,7 +1,7 @@
 import XCTest
 
 class MenuLayoutTests: XCTestCase {
-    private let entries = [
+    private let entries: [MenuEntrySpec] = [
         MenuEntrySpec(id: "settings", group: .settings),
         MenuEntrySpec(id: "show", group: .switcher),
         MenuEntrySpec(id: "isolate", group: .windows),
@@ -14,14 +14,16 @@ class MenuLayoutTests: XCTestCase {
 
     func testOtherGroupsAppearOnceAsSectionsOfOther() {
         let items = MenuLayout.build(entries, headersSupported: true)
-        XCTAssertEqual(items, [
+        let otherGroups: [MenuGroupEntries] = [MenuGroupEntries(group: .apps, ids: ["quitAll"]), MenuGroupEntries(group: .tools, ids: ["pick"]),
+                                               MenuGroupEntries(group: .toggles, ids: ["cat"])]
+        let expected: [MenuLayoutItem] = [
             .entry("settings"), .separator,
             .header(.switcher), .entry("show"), .separator,
             .header(.windows), .entry("isolate"), .separator,
-            .other([MenuGroupEntries(group: .apps, ids: ["quitAll"]), MenuGroupEntries(group: .tools, ids: ["pick"]),
-                    MenuGroupEntries(group: .toggles, ids: ["cat"])]), .separator,
+            .other(otherGroups), .separator,
             .entry("about"), .entry("quit"),
-        ])
+        ]
+        XCTAssertEqual(items, expected)
     }
 
     func testAnEmptyGroupLeavesNoHeaderOrSeparator() {
@@ -47,7 +49,8 @@ class MenuLayoutTests: XCTestCase {
 
     func testNoLeadingOrTrailingSeparator() {
         let items = MenuLayout.build(entries.filter { $0.group == .app }, headersSupported: true)
-        XCTAssertEqual(items, [.entry("about"), .entry("quit")])
+        let expected: [MenuLayoutItem] = [.entry("about"), .entry("quit")]
+        XCTAssertEqual(items, expected)
     }
 
     func testOnlySwitcherWindowsAndTheAppBlockStayInTheMainMenu() {

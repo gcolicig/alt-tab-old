@@ -9,7 +9,7 @@ class DebugProfile {
     static let nestedSeparator = "\n  " + bulletPoint
 
     static func make() -> String {
-        let tuples: [(String, String)] = [
+        var tuples: [(String, String)] = [
             // app
             ("App version", App.version),
             ("App preferences", appPreferences()),
@@ -33,7 +33,9 @@ class DebugProfile {
             ("Current CPU frequency", Sysctl.run("hw.cpufrequency", Int.self).map { (frequency: Int) -> String in String(format: "%.1f", Double(frequency) / Double(1_000_000_000)) + " Ghz" } ?? "nil"),
             ("Resource utilization", resourcesUtilization()),
             ("Window drag AX deviations", windowDragDeviations()),
-        ] + DebugTools.extraProfileEntries()
+        ]
+        // appended separately: a long literal joined with `+` exceeds the type-checking budget on Xcode 16
+        tuples.append(contentsOf: DebugTools.extraProfileEntries())
         return listLevel1(tuples)
     }
 

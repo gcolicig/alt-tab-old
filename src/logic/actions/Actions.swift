@@ -3,16 +3,22 @@ import Cocoa
 enum Actions {
     /// Built once: every entry reads its own mutable state through closures, so the registry itself
     /// never goes stale and must not be rebuilt on the shortcut path.
-    static let registry = ActionRegistry(
-        WindowLayoutAction.allCases.map(windowLayoutRegistration) +
-            DisplayMoveAction.allCases.map(displayMoveRegistration) +
-            SpaceAction.all.map(spaceRegistration) +
-            (0..<Preferences.maxLaunchAppCount).map(launchAppRegistration) +
-            (0..<Preferences.maxOpenUrlCount).map(openUrlRegistration) +
-            (0..<Preferences.maxProfileCount).map(profileRegistration) +
-            SystemActions.all.map(systemRegistration) +
-            Array(Set(DefaultBrowser.installed().compactMap(DefaultBrowser.bundleId))).sorted().map(defaultBrowserRegistration)
-    )
+    static let registry = ActionRegistry(allRegistrations())
+
+    /// Appended step by step: one long `+` chain exceeds the type-checking budget on Xcode 16 (CI).
+    private static func allRegistrations() -> [RegisteredAction] {
+        var registrations = [RegisteredAction]()
+        registrations.append(contentsOf: WindowLayoutAction.allCases.map(windowLayoutRegistration))
+        registrations.append(contentsOf: DisplayMoveAction.allCases.map(displayMoveRegistration))
+        registrations.append(contentsOf: SpaceAction.all.map(spaceRegistration))
+        registrations.append(contentsOf: (0..<Preferences.maxLaunchAppCount).map(launchAppRegistration))
+        registrations.append(contentsOf: (0..<Preferences.maxOpenUrlCount).map(openUrlRegistration))
+        registrations.append(contentsOf: (0..<Preferences.maxProfileCount).map(profileRegistration))
+        registrations.append(contentsOf: SystemActions.all.map(systemRegistration))
+        let browserIds: [String] = Array(Set(DefaultBrowser.installed().compactMap(DefaultBrowser.bundleId))).sorted()
+        registrations.append(contentsOf: browserIds.map(defaultBrowserRegistration))
+        return registrations
+    }
 
     /// A browser installed after launch has no registration; its binding still works.
     @discardableResult

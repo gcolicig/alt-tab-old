@@ -112,8 +112,13 @@ final class MenubarMenu: NSObject, NSMenuDelegate {
     // MARK: entries
 
     static func allEntries() -> [MenubarEntry] {
-        [settingsEntry, showEntry] + SystemActions.all.filter { !keepAwakeActions.contains($0.action) }.map(MenubarEntry.init)
-            + [keepAwakeEntry, defaultBrowserEntry] + appEntries
+        var entries: [MenubarEntry] = [settingsEntry, showEntry]
+        let actions: [SystemActionSpec] = SystemActions.all.filter { !keepAwakeActions.contains($0.action) }
+        entries.append(contentsOf: actions.map(MenubarEntry.init))
+        entries.append(keepAwakeEntry)
+        entries.append(defaultBrowserEntry)
+        entries.append(contentsOf: appEntries)
+        return entries
     }
 
     private static let keepAwakeActions: Set<SystemAction> = [.keepAwakeToggle, .keepAwakeStop, .keepAwakeIndefinitely, .keepAwake15Minutes,
