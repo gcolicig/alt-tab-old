@@ -24,12 +24,12 @@ enum SettingsSidebarLayout {
     /// Section ids per group, in display order. A section missing here is shown under `actions`, so a
     /// new section never disappears from the sidebar.
     static let sectionsByGroup: [(SettingsSidebarGroup, [String])] = [
-        (.app, ["general"]),
+        (.app, ["general", "shortcuts"]),
         (.switcher, ["appearance", "controls", "exceptions"]),
         (.windows, ["window-layouts", "spaces", "profiles"]),
         (.triggers, ["hyperkey", "leader", "flick-ring"]),
         (.devices, ["pointer-scroll"]),
-        (.actions, ["menubar-menu", "system-actions", "keep-awake", "apps-urls"]),
+        (.actions, ["system-actions", "keep-awake", "apps-urls"]),
     ]
 
     static func group(of sectionId: String) -> SettingsSidebarGroup {

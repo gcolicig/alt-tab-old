@@ -687,7 +687,7 @@ class SettingsWindow: NSWindow {
             SettingsSectionDefinition(id: "profiles", title: NSLocalizedString("Profiles", comment: ""), description: NSLocalizedString("Group apps into a profile, optionally bound to a space, and filter the switcher to it.", comment: ""), imageName: "controls", systemSymbolName: "square.stack.3d.up", view: ProfilesTab.initTab()),
             SettingsSectionDefinition(id: "appearance", title: NSLocalizedString("Cmd-Tab", comment: ""), description: NSLocalizedString("Choose how the window switcher looks and where it appears.", comment: ""), imageName: "appearance", systemSymbolName: "paintpalette", view: AppearanceTab.initTab()),
             SettingsSectionDefinition(id: "controls", title: NSLocalizedString("Cmd-Tab Controls", comment: ""), description: NSLocalizedString("Set how you open and navigate the window switcher.", comment: ""), imageName: "controls", systemSymbolName: "command", view: ControlsTab.initTab()),
-            SettingsSectionDefinition(id: "menubar-menu", title: NSLocalizedString("Menu Actions", comment: ""), description: NSLocalizedString("Assign keyboard shortcuts to the actions of the menubar menu.", comment: ""), imageName: "controls", systemSymbolName: "menubar.rectangle", view: MenuBarMenuTab.initTab()),
+            SettingsSectionDefinition(id: ShortcutOverviewTab.sectionId, title: NSLocalizedString("Shortcuts", comment: ""), description: NSLocalizedString("Every action shortcut and its conflicts. Switcher triggers stay in Cmd-Tab Controls, the Leader key in Leader, and the FlickRing button in FlickRing.", comment: ""), imageName: "controls", systemSymbolName: "keyboard", view: ShortcutOverviewTab.initTab()),
             SettingsSectionDefinition(id: "system-actions", title: NSLocalizedString("System Actions", comment: ""), description: NSLocalizedString("Configure Auto-Quit, Cat Mode, and the function key mode.", comment: ""), imageName: "controls", systemSymbolName: "switch.2", view: SystemActionsTab.initTab()),
             SettingsSectionDefinition(id: "keep-awake", title: NSLocalizedString("Keep Awake", comment: ""), description: NSLocalizedString("Keep the Mac awake for a while, with battery protection.", comment: ""), imageName: "controls", systemSymbolName: "cup.and.saucer", view: KeepAwakeTab.initTab()),
             SettingsSectionDefinition(id: "apps-urls", title: NSLocalizedString("Apps & URLs", comment: ""), description: NSLocalizedString("Assign shortcuts to launch apps or open URLs.", comment: ""), imageName: "controls", systemSymbolName: "app.badge", view: AppsUrlsTab.initTab()),
@@ -1285,6 +1285,7 @@ class SettingsWindow: NSWindow {
             sidebarTableView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
         }
         if !isSearching { showDisplayedSections() }
+        if section.id == ShortcutOverviewTab.sectionId { ShortcutOverviewTab.pageShown() }
         guard scroll else { return }
         isSearching ? scrollToSection(section) : scrollToTop()
     }
@@ -1316,6 +1317,42 @@ class SettingsWindow: NSWindow {
             guard let self else { return }
             self.lastContentScrollY = self.rightScrollView.contentView.bounds.minY
             self.ignoresContentScrollSelection = false
+        }
+    }
+
+    func isShowingSection(_ id: String) -> Bool {
+        isVisible && !isSearching && selectedSectionId == id
+    }
+
+    /// Opens a page from elsewhere in the window and briefly marks the row with this title.
+    func reveal(sectionId: String, rowTitle: String) {
+        searchField.stringValue = ""
+        chosenSectionId = sectionId
+        applySearch("")
+        guard let section = sections.first(where: { $0.id == sectionId }),
+              let label = Self.findLabel(rowTitle, in: section.container) else { return }
+        sectionsDocumentView.layoutSubtreeIfNeeded()
+        label.scrollToVisible(label.bounds.insetBy(dx: 0, dy: -80))
+        Self.flash(label)
+    }
+
+    private static func findLabel(_ title: String, in view: NSView) -> NSTextField? {
+        if let field = view as? NSTextField, field.stringValue == title { return field }
+        for subview in view.subviews {
+            if let found = findLabel(title, in: subview) { return found }
+        }
+        return nil
+    }
+
+    private static func flash(_ view: NSView) {
+        view.wantsLayer = true
+        view.layer?.cornerRadius = 4
+        view.layer?.backgroundColor = NSColor.findHighlightColor.withAlphaComponent(0.6).cgColor
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.4
+                view.layer?.backgroundColor = NSColor.clear.cgColor
+            }
         }
     }
 

@@ -59,6 +59,9 @@ class PreferencesEvents {
         // a preset is only assigned as long as all its shortcuts are, so changing one changes its state
         PresetRow.refreshAll()
         ControlsTab.preferenceChanged(key)
+        if ControlsTab.isGlobalActionShortcut(key) || key.hasPrefix("launchAppBundleIdentifier") || key.hasPrefix("openUrlValue") || key.hasPrefix("profileName") {
+            ShortcutOverviewTab.shortcutsChanged()
+        }
         switch key {
         case "menubarIcon", "menubarIconShown", "spacesInMenubarShown": applyMenubarPreferencesIfReady()
         case "nextWindowGesture": applyGesturePreference()

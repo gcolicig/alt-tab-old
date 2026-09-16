@@ -441,6 +441,10 @@
 		C0DE100000000000000000DC /* SlotListTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000D1 /* SlotListTestable.swift */; };
 		C0DE100000000000000000DD /* SlotListTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000D1 /* SlotListTestable.swift */; };
 		C0DE100000000000000000DE /* SlotListTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000D2 /* SlotListTests.swift */; };
+		C0DE100000000000000000DF /* ShortcutOverviewTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000D3 /* ShortcutOverviewTestable.swift */; };
+		C0DE100000000000000000E0 /* ShortcutOverviewTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000D3 /* ShortcutOverviewTestable.swift */; };
+		C0DE100000000000000000E1 /* ShortcutOverviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000D4 /* ShortcutOverviewTests.swift */; };
+		C0DE100000000000000000E2 /* ShortcutOverviewTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000D5 /* ShortcutOverviewTab.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -998,6 +1002,9 @@
 		C0DE200000000000000000D0 /* SettingsSidebarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSidebarTests.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000D1 /* SlotListTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlotListTestable.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000D2 /* SlotListTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlotListTests.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000D3 /* ShortcutOverviewTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutOverviewTestable.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000D4 /* ShortcutOverviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutOverviewTests.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000D5 /* ShortcutOverviewTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutOverviewTab.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1398,6 +1405,7 @@
 		BF0C8719351B41D268CE8B70 /* unit-tests */ = {
 			isa = PBXGroup;
 			children = (
+				C0DE200000000000000000D4 /* ShortcutOverviewTests.swift */,
 				C0DE200000000000000000D2 /* SlotListTests.swift */,
 				C0DE200000000000000000D0 /* SettingsSidebarTests.swift */,
 				C0DE200000000000000000CA /* DebugToolsTests.swift */,
@@ -1888,6 +1896,7 @@
 		D04BA3FA52AA40B827A72F10 /* tabs */ = {
 			isa = PBXGroup;
 			children = (
+				C0DE200000000000000000D5 /* ShortcutOverviewTab.swift */,
 				C0DE200000000000000000CD /* SystemActionsSettings.swift */,
 				C0DE200000000000000000B0 /* ProfilesTab.swift */,
 				C0DE200000000000000000A9 /* FlickRingTab.swift */,
@@ -2340,6 +2349,7 @@
 		D04BABCD12CA72B06290C248 /* settings-window */ = {
 			isa = PBXGroup;
 			children = (
+				C0DE200000000000000000D3 /* ShortcutOverviewTestable.swift */,
 				C0DE200000000000000000D1 /* SlotListTestable.swift */,
 				C0DE200000000000000000CF /* SettingsSidebarTestable.swift */,
 				D04BA2526DC6726E0F7ACF7C /* LabelAndControl.swift */,
@@ -2985,6 +2995,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C0DE100000000000000000E1 /* ShortcutOverviewTests.swift in Sources */,
+				C0DE100000000000000000E0 /* ShortcutOverviewTestable.swift in Sources */,
 				C0DE100000000000000000DE /* SlotListTests.swift in Sources */,
 				C0DE100000000000000000DD /* SlotListTestable.swift in Sources */,
 				C0DE100000000000000000DB /* SettingsSidebarTests.swift in Sources */,
@@ -3056,6 +3068,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C0DE100000000000000000E2 /* ShortcutOverviewTab.swift in Sources */,
+				C0DE100000000000000000DF /* ShortcutOverviewTestable.swift in Sources */,
 				C0DE100000000000000000DC /* SlotListTestable.swift in Sources */,
 				C0DE100000000000000000D9 /* SettingsSidebarTestable.swift in Sources */,
 				C0DE100000000000000000D8 /* MicMuteIndicator.swift in Sources */,

@@ -122,6 +122,9 @@
 "Align windows" = "Align windows";
 
 /* No comment provided by engineer. */
+"All" = "All";
+
+/* No comment provided by engineer. */
 "All %d profiles are in use. Delete one first." = "All %d profiles are in use. Delete one first.";
 
 /* No comment provided by engineer. */
@@ -239,13 +242,13 @@
 "Assign" = "Assign";
 
 /* No comment provided by engineer. */
-"Assign keyboard shortcuts to the actions of the menubar menu." = "Assign keyboard shortcuts to the actions of the menubar menu.";
-
-/* No comment provided by engineer. */
 "Assign shortcuts for arranging the focused window." = "Assign shortcuts for arranging the focused window.";
 
 /* No comment provided by engineer. */
 "Assign shortcuts to launch apps or open URLs." = "Assign shortcuts to launch apps or open URLs.";
+
+/* No comment provided by engineer. */
+"Assigned" = "Assigned";
 
 /* No comment provided by engineer. */
 "Assigns the Hyper presets for Spaces and Window Layouts." = "Assigns the Hyper presets for Spaces and Window Layouts.";
@@ -371,6 +374,9 @@
 "Conflicting shortcut" = "Conflicting shortcut";
 
 /* No comment provided by engineer. */
+"Conflicts (%d)" = "Conflicts (%d)";
+
+/* No comment provided by engineer. */
 "Control and Option with D, G, E, T for thirds and two-thirds, and with Delete for restore, matching Rectangle and Magnet. Conflicts if one of those apps is running." = "Control and Option with D, G, E, T for thirds and two-thirds, and with Delete for restore, matching Rectangle and Magnet. Conflicts if one of those apps is running.";
 
 /* No comment provided by engineer. */
@@ -480,6 +486,9 @@
 
 /* No comment provided by engineer. */
 "End on battery at" = "End on battery at";
+
+/* No comment provided by engineer. */
+"Every action shortcut and its conflicts. Switcher triggers stay in Cmd-Tab Controls, the Leader key in Leader, and the FlickRing button in FlickRing." = "Every action shortcut and its conflicts. Switcher triggers stay in Cmd-Tab Controls, the Leader key in Leader, and the FlickRing button in FlickRing.";
 
 /* No comment provided by engineer. */
 "Exceptions" = "Exceptions";
@@ -752,9 +761,6 @@
 "Medium" = "Medium";
 
 /* No comment provided by engineer. */
-"Menu Actions" = "Menu Actions";
-
-/* No comment provided by engineer. */
 "Menubar icon" = "Menubar icon";
 
 /* No comment provided by engineer. */
@@ -827,6 +833,9 @@
 "Name" = "Name";
 
 /* No comment provided by engineer. */
+"Needs attention" = "Needs attention";
+
+/* No comment provided by engineer. */
 "Never" = "Never";
 
 /* No comment provided by engineer. */
@@ -843,6 +852,9 @@
 
 /* No comment provided by engineer. */
 "No code was found." = "No code was found.";
+
+/* No comment provided by engineer. */
+"No conflicts." = "No conflicts.";
 
 /* No comment provided by engineer. */
 "No ejectable disks." = "No ejectable disks.";
@@ -870,6 +882,9 @@
 
 /* No comment provided by engineer. */
 "No profiles yet." = "No profiles yet.";
+
+/* No comment provided by engineer. */
+"No shortcuts assigned yet." = "No shortcuts assigned yet.";
 
 /* No comment provided by engineer. */
 "No text was found." = "No text was found.";
@@ -1037,6 +1052,9 @@
 "Remove and restore" = "Remove and restore";
 
 /* No comment provided by engineer. */
+"Replaces a macOS shortcut while assigned." = "Replaces a macOS shortcut while assigned.";
+
+/* No comment provided by engineer. */
 "Requires macOS 14 or later." = "Requires macOS 14 or later.";
 
 /* No comment provided by engineer. */
@@ -1167,6 +1185,12 @@
 
 /* No comment provided by engineer. */
 "Shortcut already assigned to another action: %@" = "Shortcut already assigned to another action: %@";
+
+/* No comment provided by engineer. */
+"Shortcut Clues" = "Shortcut Clues";
+
+/* No comment provided by engineer. */
+"Shortcuts" = "Shortcuts";
 
 /* No comment provided by engineer. */
 "Shortcuts in %@" = "Shortcuts in %@";
@@ -1539,6 +1563,15 @@
 
 /* No comment provided by engineer. */
 "You may need to disable some conflicting system gestures" = "You may need to disable some conflicting system gestures";
+
+/* No comment provided by engineer. */
+"⚠︎ Also used by %@." = "⚠︎ Also used by %@.";
+
+/* No comment provided by engineer. */
+"⚠︎ Reserved by macOS; it will not work." = "⚠︎ Reserved by macOS; it will not work.";
+
+/* No comment provided by engineer. */
+"⚠︎ Used by the macOS Game Overlay." = "⚠︎ Used by the macOS Game Overlay.";
 
 /* No comment provided by engineer. */
 "🐈 Cat Mode — the keyboard is locked. Click the menu or type “unlock”." = "🐈 Cat Mode — the keyboard is locked. Click the menu or type “unlock”.";

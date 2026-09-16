@@ -30,6 +30,11 @@ enum NativeSystemShortcuts {
         return hotkeys
     }()
 
+    /// True when assigning this shortcut disables a macOS shortcut (story 16, shortcut overview).
+    static func replacesSystemShortcut(_ shortcut: Shortcut) -> Bool {
+        systemHotkeys.values.contains { matches($0, shortcut) }
+    }
+
     static func apply() {
         let assigned = ControlsTab.shortcuts.values
             .filter { $0.scope == .global && $0.shortcut.keyCode != .none }
