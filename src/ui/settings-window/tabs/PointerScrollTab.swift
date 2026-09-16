@@ -20,27 +20,37 @@ class PointerScrollTab {
         addCategory(table, .mouse, NSLocalizedString("Mouse pointer acceleration", comment: ""), NSLocalizedString("Mouse pointer speed", comment: ""))
         table.addNewTable()
         addCategory(table, .trackpad, NSLocalizedString("Trackpad pointer acceleration", comment: ""), NSLocalizedString("Trackpad pointer speed", comment: ""))
-        table.addNewTable()
-        addScroll(table)
-        return TableGroupSetView(originalViews: [table], bottomPadding: 0)
+        let scroll = TableGroupView(width: SettingsWindow.contentWidth)
+        addScroll(scroll, "Mouse", "reverseScrollMouse", "scrollSpeedMouse")
+        scroll.addNewTable()
+        addScroll(scroll, "Trackpad", "reverseScrollTrackpad", "scrollSpeedTrackpad")
+        return TableGroupSetView(originalViews: [table, scroll], bottomPadding: 0)
+    }
+
+    /// Reverse direction and speed run through a scrollWheel tap, which exists only while one of these is on.
+    private static func addScroll(_ table: TableGroupView, _ device: String, _ reverseKey: String, _ speedKey: String) {
+        table.addRow(TableGroupView.Row(
+            leftTitle: String(format: NSLocalizedString("Reverse %@ vertical scrolling", comment: ""), device),
+            rightViews: [LabelAndControl.makeSwitch(reverseKey) { _ in scrollSettingsChanged() }]))
+        table.addRow(TableGroupView.Row(
+            leftTitle: String(format: NSLocalizedString("%@ scroll speed", comment: ""), device),
+            rightViews: [LabelAndControl.makeDropdown(speedKey, ScrollSpeedPreference.allCases) { _ in scrollSettingsChanged() }]))
     }
 
     /// Scrolling owns no system value, so it has no ownership row: it rewrites events on their way to the
-    /// focused app and leaves the system's own Natural Scrolling preference alone. That is also why it is
-    /// limited to the mouse wheel — the wheel is what macOS cannot separate from the trackpad.
-    private static func addScroll(_ table: TableGroupView) {
-        table.addRow(TableGroupView.Row(
-            leftTitle: NSLocalizedString("Reverse the mouse wheel", comment: ""),
-            subTitle: NSLocalizedString("Applies to vertical scrolling with a mouse wheel. The trackpad keeps following the system setting.", comment: ""),
-            rightViews: [LabelAndControl.makeSwitch("scrollReverseMouse") { _ in scrollDirectionChanged() }]))
+    /// focused app and leaves the system's own Natural Scrolling preference alone. Safe mode keeps the
+    /// setting but not its effect. Saying so is the difference between a switch that is suppressed and a
+    /// switch that looks broken.
+    private static func scrollSettingsChanged() {
+        ScrollwheelEvents.scrollSettingsChanged()
+        guard Preferences.inputModulesSafeMode, scrollSettingsModify() else { return }
+        TransientNotice.show(NSLocalizedString("Input extensions are in safe mode, so scrolling stays unchanged. Turn safe mode off to use it.", comment: ""))
     }
 
-    /// Safe mode keeps the setting but not its effect. Saying so is the difference between a switch that is
-    /// suppressed and a switch that looks broken.
-    private static func scrollDirectionChanged() {
-        ScrollwheelEvents.directionPreferenceChanged()
-        guard Preferences.scrollReverseMouse, Preferences.inputModulesSafeMode else { return }
-        TransientNotice.show(NSLocalizedString("Input extensions are in safe mode, so the mouse wheel stays unchanged. Turn safe mode off to use it.", comment: ""))
+    private static func scrollSettingsModify() -> Bool {
+        ScrollTransform.anyModifies(
+            mouse: ScrollAxisSettings(reverseVertical: Preferences.reverseScrollMouse, speed: Preferences.scrollSpeedMouse.factor),
+            trackpad: ScrollAxisSettings(reverseVertical: Preferences.reverseScrollTrackpad, speed: Preferences.scrollSpeedTrackpad.factor))
     }
 
     private static func addCategory(_ table: TableGroupView, _ category: PointerCategory, _ accelerationTitle: String, _ speedTitle: String) {

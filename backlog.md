@@ -155,7 +155,7 @@ Umsetzungsstand 2026-08-03, Kern:
 - Umgesetzt als reine Logik mit 12 Tests: Trie fuer verschachtelte Sequenzen, Sitzungsautomat, Timeout, Escape.
 - Festgelegt: Ein Knoten fuehrt entweder eine Aktion aus oder fuehrt zu weiteren Tasten, nie beides. Ein Praefix, das zugleich Bindung ist, waere mehrdeutig und der Nutzer koennte nicht erkennen, ob noch Tasten folgen duerfen.
 - Festgelegt: Eine Taste ohne Treffer bricht die Sequenz ab, statt ignoriert zu werden. Tastenanschlaege stillschweigend zu schlucken ist schlechter, als den Nutzer neu ansetzen zu lassen.
-- Noch nicht umgesetzt: Trigger-Anbindung, Interception im Tap-Callback, die kompakte AppKit-Uebersicht und die Settings-Oberflaeche zum Pflegen der Sequenzen. Ohne diese ist das Modul nicht aktivierbar.
+- Umgesetzt 2026-08-18: Trigger-Anbindung, Interception im Tap-Callback, kompakte AppKit-Uebersicht und Settings-Oberflaeche. `LeaderController` reitet auf dem bestehenden Keyboard-Tap (kein zweiter Tap, kein eigener Arming-Marker/Circuit-Breaker): der Trigger scharft eine Sitzung, jede Folgetaste geht an die reine Zustandsmaschine und wird absorbiert, die aufgeloeste Aktion laeuft ausserhalb des Callbacks. `LeaderPanel` ist ein nicht-aktivierendes AppKit-Overlay mit den moeglichen Folgetasten. Timeout, Escape, Sleep/Wake und Safe Mode raeumen jede Sitzung ab. Der `Leader`-Settings-Tab pflegt acht Sequenz-Slots (Buchstaben/Ziffern plus Aktions-Popup) mit Live-Warnung bei Praefix-Konflikt, halb gefuellter Zeile oder unparsbarem Text. Automatisiert getestet sind Trie-Bau, Session, Timeout, `level(after:)` und der Text-Parser; die Tap-/Overlay-Verdrahtung braucht `docs/leader-flickring-checklist.md`.
 
 - Leader erhaelt einen eigenen, noch festzulegenden Trigger; Caps-Lock-Tap bleibt fuer normales Caps Lock reserviert.
 - Verschachtelte, deterministische Sequenzen verwenden einen Trie oder eine gleichwertige Zustandsmaschine.
@@ -474,8 +474,16 @@ Aktionsregister. Vollstaendige Spezifikation in `spec-shortcut-clues.md`.
 
 ### 2D. Projektprofile und Workspace-Restore
 
-Status: Spaeterer Folgeumfang
+Status: Fundament + Stufe 1 umgesetzt 2026-08-18; Menueleisten-Name und Session-Restore zurueckgestellt, manuelle Abnahme offen
 Prioritaet: Mittel
+
+Umsetzungsstand 2026-08-18:
+
+- Fundament: `CGSCopyManagedDisplaySpaces` liefert neben `id64` (sitzungslokal) einen stabilen `uuid`-String je Space; er wird als `Spaces.uuidsById` gelesen und als `currentSpaceUuid` sowie `identitySnapshot()` bereitgestellt. Der reine `SpaceIdentity`-Resolver bildet UUID zu aktuellem Index und zurueck ab und liefert nil, wenn kein Space die UUID traegt. Ein Space ohne UUID (manche Fullscreen-Spaces) bleibt unbindbar. Unit-getestet.
+- Stufe 1: fuenf Profil-Slots (`Profile`: Name, Bundle-IDs, optionales Layout-RawValue, optionale Space-UUID). `ProfileActivation.plan` loest ein Profil gegen die aktuellen Spaces auf; ein gebundener, aber fehlender Space wird als `bindingLost` gemeldet statt umgebogen. `ProfileController.activate` wechselt den Space (nur wenn 1..9 und aufloesbar) und schaltet den Switcher-Filter (`allows`) so, dass nur Profil-Apps sichtbar sind; erneutes Ausloesen deaktiviert. Der per-Profil-Shortcut ist eine globale Aktion (`ActionIdentifier.activateProfile`) im gemeinsamen Register. `ProfilesTab` pflegt Name, Apps, Layout, Space-Binding (mit Status "Bound"/"Bound space is gone"/"Not bound") und Shortcut.
+- Bewusst weggelassen: kein Start/Beenden/Verstecken/Verschieben von Apps (getrennte Opt-in-Aktionen, Stufe 2); das Layout wird gespeichert, aber nicht bei Aktivierung angewendet; der Profilname erscheint noch nicht in der Menueleiste.
+
+Ursprungsstand (spaeterer Folgeumfang):
 
 Produktmodell:
 
@@ -667,6 +675,7 @@ Umsetzungsstand 2026-07-31:
 - Festgelegt und getestet: Loslassen des Modifiers waehrend des Drags beendet ihn nicht. Die Maustaste haelt die Sitzung; ein Fenster fallen zu lassen, sobald ein Finger hochgeht, waere unbedienbar.
 - Festgelegt und getestet: nur der Zustand `finishing` darf einen Rahmen schreiben. Eine abgebrochene Sitzung schreibt nie.
 - Umgesetzt: dauerhafter Maus-Event-Tap mit Arming-Marker, Circuit Breaker und Anbindung an den Not-Aus; Settings-Auswahl ohne Default; Snapping auf `Left half`, `Right half` und `Fill` innerhalb der eigenen Drag-Sitzung.
+- Phase 5 umgesetzt 2026-08-18: `DragSnapPolicy` bietet zusaetzlich vier Eck-Viertel und Kanten-Tiefenbaender. Die Ecken (48x48-Box je Ende) gewinnen gegen Kante und Fill; an der linken/rechten Kante im mittleren Hoehenstreifen liefert die Cursortiefe `Half` am Rand, dann `Third`, dann `Two-thirds` (drei ~16pt-Baender bis 48pt). Die Thirds nutzen `WindowLayoutGeometry`, damit Drag und Tastatur-Layout auf demselben Rahmen landen. Neighbour-/Dwell-Gating gilt fuer alle neuen Ziele; das Overlay zeichnet sie ueber den bestehenden Rahmenpfad. Reine Zonenlogik mit Unit-Tests. Bewusst zurueckgestellt: Snapping ausserhalb des eigenen Drags — der Scope haengt an der offenen Tahoe-Feature-Matrix.
 - Korrigiert vor der ersten Nutzung: Das Randmodell rechnete in AppKit-Koordinaten, waehrend `CGEvent.location` und die AX-Rahmen Quartz-Koordinaten mit y nach unten liefern. Oberer und unterer Rand waren dadurch vertauscht, `Fill` haette am Dock-Rand ausgeloest.
 - Nachgezogen 2026-08-03: Der Q-07-Ringpuffer erscheint im Debug-Profil unter `Window drag AX deviations`, beschraenkt auf die letzten 20 Schreibvorgaenge, die eine App nicht wie vorgeschlagen uebernommen hat. Er wurde zuvor nur befuellt und nie gelesen.
 - Nachgezogen 2026-08-03: Der `AXManualAccessibility`-Cache wird bei App-Beendigung geleert. PIDs werden wiederverwendet, ein veralteter Eintrag haette eine frisch gestartete Electron-App als bereits umgestellt gelten lassen.
@@ -687,7 +696,7 @@ Vorherige Groesse merken (offen):
 - Befund aus der Bedienung 2026-08-05: Wird ein Fenster ueber die Fill-Zone auf Bildschirmgroesse gebracht, behaelt es diese Groesse, wenn es danach wieder weggezogen wird. macOS stellt bei seinem eigenen Tiling die vorherige Groesse wieder her; der AltTab+-Drag kennt bisher kein Gedaechtnis dafuer.
 - Vorgesehen: Der Rahmen vor dem ersten Snap einer Drag-Sitzung wird gesichert. Wird das Fenster in einer spaeteren Sitzung aus einem Snap-Zustand heraus gezogen, ohne dass ein neues Snap-Ziel aktiv wird, erhaelt es diesen Rahmen zurueck, waehrend die Position dem Cursor folgt.
 - Abzugrenzen vom Ein-Schritt-Restore der Window Layouts: dort ist Restore eine eigene Aktion mit eigenem Shortcut. Hier geschieht es implizit beim Wegziehen, und die beiden Gedaechtnisse duerfen sich nicht gegenseitig ueberschreiben.
-- Offene Fragen: Wie lange gilt der gesicherte Rahmen — nur bis zum naechsten Snap, ueber die Sitzung hinaus, oder bis das Fenster von aussen veraendert wird? Und was geschieht, wenn eine App die Groesse waehrend des Snaps selbst aendert; dann ist der gesicherte Rahmen nicht mehr das, was der Nutzer erwartet.
+- Entschieden 2026-08-18: Der gesicherte Rahmen gilt **bis zum naechsten Snap oder bis eine externe Groessenaenderung erkannt wird**, nicht ueber die Sitzung hinaus. Das deckt sich mit dem nativen Tiling-Verhalten von macOS und loest zugleich den Fall "App aendert die Groesse waehrend des Snaps": eine erkannte Fremdaenderung invalidiert den gesicherten Rahmen, sodass beim Wegziehen nie eine veraltete Groesse aufgezwungen wird. Ein Schritt zurueck, kein mehrstufiger Verlauf.
 - Nicht im ersten Umfang: ein mehrstufiger Verlauf. Ein Schritt zurueck reicht, wie beim Layout-Restore auch.
 
 Resize, umgesetzt 2026-08-03:
@@ -912,7 +921,16 @@ Repo-Learnings:
 
 ### 6. Reverse Scrolling und Scroll Speed
 
-Status: Schritt 6a (Scrollrichtung der Maus, vertikal) am 2026-09-10 umgesetzt, V-17 offen. Schritt 6b (Trackpad-Richtung, Scroll-Geschwindigkeit) offen
+Status: MVP umgesetzt 2026-08-18 (Maus und Trackpad, Richtung und Geschwindigkeit). Parallel dazu entstand am 2026-09-10 auf dem zweiten Arbeitsstand Schritt 6a (nur Mausrichtung, `scrollReverseMouse`, `ScrollWheelPolicy`); beim Zusammenfuehren am 2026-09-16 wurde auf die vollstaendige Implementierung vereinheitlicht und der alte Schluessel einmalig migriert. V-17 und die manuelle Tap-/Berechtigungs-/Energiepruefung am Zielgeraet offen (`docs/scroll-direction-checklist.md`)
+
+Umsetzungsstand 2026-08-18:
+
+- `ScrollwheelEvents` veraendert jetzt statt nur durchzulassen. Die reine `ScrollTransform`-Logik waehlt je Kategorie (kontinuierlich = Trackpad, diskret = Maus) die Einstellungen und liefert einen Vertikal-Faktor (Reverse = Vorzeichen, Speed = Betrag) und Horizontal-Faktor (nur Speed). Der Runtime skaliert damit Linien-, Pixel- und Fixed-Point-Deltas konsistent.
+- Der Tap laeuft nur bei Bedarf: Switcher-Blockieren oder aktive Scroll-Einstellung. Das Blockieren kontinuierlichen Scrollens ist strikt an den aktiven Switcher gebunden (`switcherWantsTap`), sodass Trackpad-Scrollen ausserhalb nie blockiert wird. Safe Mode deaktiviert die Modifikation, behaelt aber die Einstellung; der Tab meldet das per Hinweis.
+- Settings im Tab `Pointer & Scroll`: `Reverse … vertical scrolling` je Maus/Trackpad und `… scroll speed` (0.5×/1×/2×/3×). Aenderungen rufen `scrollSettingsChanged`, das den Tap an-/abschaltet. Die Einstellungen gelten ab App-Start, nicht erst nach dem ersten Besuch im Tab.
+- Unit-getestet: Kategorieauswahl, Faktoren, No-op bei Default. Nicht geprueft: reales Momentum-/Phase-Verhalten und Energie am Geraet.
+
+Ursprungsstand (Tap-basierter Folge-Spike):
 Prioritaet: **2026-08-13 hochgestuft.** Der Nutzer nennt die getrennte Scrollrichtung als einzige Funktion aus LinearMouse, die im taeglichen Gebrauch wirklich fehlt. Damit steht sie ueber Pointer Accel/Speed, nicht darunter. **2026-09-10 nachgetragen**: Die Hochstufung war nie in `ROADMAP.md` gelaufen, wo Scroll als Phase 7 hinter Leader/FlickRing, Snapping und Profilen stand. Genau deshalb blieb die Funktion liegen
 
 Beschreibung:
@@ -938,7 +956,7 @@ MVP-Scope:
 
 Nicht im MVP:
 
-- Smoothed Scrolling.
+- Smoothed Scrolling. Ausgeloest als Story 6c.
 - Eigene Scroll-Kurven.
 - Button-Remapping.
 - Per-Device-Regeln.
@@ -982,6 +1000,91 @@ Der MVP-Scope oben bleibt das Ziel. Er wird in zwei Schritten gebaut, weil nur d
 - Nach `tapDisabledByTimeout` kommt die Umkehr von selbst zurueck.
 - Die reine Entscheidungslogik ist durch Unit-Tests abgedeckt; der Tap selbst durch V-17.
 
+### 6c. Smoothed Scrolling fuer das Mausrad
+
+Status: Spezifiziert 2026-09-16; nicht begonnen. Wartet auf V-17 (Story 6 am Geraet)
+Prioritaet: Mittel. Folgestufe von Story 6, aus deren `Nicht im MVP` herausgeloest
+
+Referenz: LinearMouse, Scrolling-Modus `Smoothed (beta)`, Stand `d82e98fba7f2` vom 2026-09-14 (Release `v0.12.0-beta.5`), MIT. Gelesen: `SmoothedScrollingEngine.swift`, `SmoothedScrollingTransformer.swift`, `Scheme/Scrolling/Smoothed.swift`, `GestureKit/GestureEvent+Scroll.swift`. Das Feature ist dort Beta und wird aktiv umgebaut.
+
+Beschreibung:
+
+- Ein klassisches Rasterrad springt pro Raste um eine Zeile. Smoothed Scrolling macht daraus eine fluessige Bewegung mit weichem Anlauf und Auslauf, wie beim Trackpad.
+- Das ist kein Faktor auf ein Ereignis mehr, sondern eine eigene Bewegung ueber Zeit: Jede Raste wird verschluckt und speist eine Physik-Engine. Ein Timer erzeugt daraus eine Folge synthetischer Scroll-Ereignisse mit Scroll- und Momentum-Phasen.
+
+Wie LinearMouse es loest (gelesen, nicht gemessen):
+
+- **Engine**: reine Logik ohne Systemzugriff. `feed(deltaX:deltaY:timestamp:)` nimmt Eingaben an, `advance(to:)` liefert je Takt ein Delta und eine Phase (`touchBegan` … `momentumEnded`). Pro Achse ein Profil aus `response`, `inputExponent`, `accelerationGain`, `decay` und `velocityScale`; dazu ein Geschwindigkeitsschaetzer fuer schnell folgende Rasten und das Abbrechen von Momentum bei Gegenrichtung. Eigene Unit-Tests.
+- **Transformer**: verschluckt die Raste (oder nullt nur die geglaettete Achse), startet einen Timer mit 120 Hz und postet die Ausgabe als neue `scrollWheel`-Ereignisse auf `cgSessionEventTap`. Eigene Ereignisse markiert er und laesst sie beim Wiederkommen durch.
+- **Gesten-Begleiter**: Zu jeder synthetischen Scroll-Phase postet er zusaetzlich ein Ereignis vom Typ `NSEvent.EventType.gesture` mit undokumentierten Feldern (`gestureHIDType`, `gesturePhase`, `gestureScrollX/Y`, Start/Ende einer Gesten-Serie). Das laesst Apps die Folge wie eine echte Trackpad-Geste behandeln, etwa fuer Gummiband-Effekt am Rand. Das ist kein privates Symbol, aber ein undokumentiertes Ereignisformat und faellt damit unter dieselbe Vorsicht.
+- **Konfiguration**: 13 Presets (Vorgabe `easeInOut`) plus `custom`; Regler `response`, `speed`, `acceleration`, `inertia`; Schalter `bouncing`; je Achse getrennt.
+
+Zentrale Entscheidung:
+
+- **Engine uebernehmen, Anbindung neu bauen.** Die Engine ist Art C (Code uebernommen) mit MIT-Kopf in der Zieldatei und Eintrag in `THIRD-PARTY.md`. Transformer, Timer, Posting und Abbruchpfade werden fuer `ScrollwheelEvents` neu geschrieben, weil LinearMouse eine eigene Event-Thread- und Transformer-Kette hat, die hier nicht existiert.
+- Die Engine kommt als eigene Datei nach `src/logic/events/` mit ihren Tests nach `unit-tests/`; beide von Hand in `project.pbxproj` eintragen.
+
+Reihenfolge im Tap:
+
+1. Switcher absorbiert: kontinuierlich blockieren wie heute; diskret geht unveraendert durch und bewegt die Auswahl. **Keine Glaettung waehrend des Switchers.**
+2. Eigenes synthetisches Ereignis (Markierung ueber `eventSourceUserData`, eigener Wert, gleiches Muster wie `syntheticCapsLockMarker`): unveraendert durchlassen.
+3. Kontinuierliches Ereignis: wie Story 6, nie glaetten.
+4. Diskretes Ereignis bei aktivem Smoothed: Richtung und Geschwindigkeit aus Story 6 zuerst anwenden, dann das Ergebnis an die Engine geben und das Original verschlucken.
+5. Sonst: Story 6 wie heute.
+
+**Zu verifizieren**: Der Tap sitzt auf `cghidEventTap`, gepostet wird auf `cgSessionEventTap`. Ob die eigenen Ereignisse den HID-Tap dann ueberhaupt noch passieren, ist offen. Die Markierung bleibt trotzdem Pflicht, weil sie auch andere Taps und die Diagnose betrifft.
+
+Schnitt in Schritte:
+
+**Schritt 6c-1: Engine und minimale Anbindung.**
+
+- Nur diskrete Ereignisse, nur vertikal (Achse 1). Horizontal und Kipprad bleiben unveraendert.
+- Ein fester Preset (`easeInOut`), keine Regler.
+- Eine Praeferenz `smoothScrollMouse`, Vorgabe `false`. Ein Schalter im Tab `Pointer & Scroll` im Maus-Block, Titel mit `(beta)`.
+- **Ohne Gesten-Begleiter.** Nur `scrollWheel`-Ereignisse mit gesetzter `scrollWheelEventScrollPhase` und `scrollWheelEventMomentumPhase`, sowie `scrollWheelEventIsContinuous = 1`, damit Apps pixelgenau scrollen.
+- Timer laeuft nur, solange die Engine eine Bewegung hat, und stoppt bei Ruhe selbst.
+
+**Schritt 6c-2: Messung am Geraet, dann Entscheidung ueber die Gesten-Begleiter.**
+
+- Checkliste in AppKit (Finder, Settings-Listen), Safari, Chromium/Electron und Terminal.
+- Nur wenn dort sichtbare Fehler bleiben (kein Momentum, Spruenge, kein Randverhalten, Browser ignoriert die Phasen), werden die Gesten-Begleiter nachgezogen. Dann nach Q-09: bei unbekannter macOS-Major-Version fallen nur die Begleiter weg, nicht das Glaetten.
+
+**Schritt 6c-3: Presets und Regler.**
+
+- Auswahl aus den Presets, danach `speed`, `inertia` und die uebrigen Regler. Nur, was sich im Alltag als noetig zeigt; nicht alle 13 Presets ungeprueft uebernehmen.
+- Horizontal und Trackpad bleiben ausserhalb, bis es einen konkreten Wunsch gibt.
+
+Anforderungen:
+
+| ID | Anforderung | Begruendung |
+|---|---|---|
+| SS-01 | Vorgabe aus; Import und Migration schalten es nie ein | Q-08 |
+| SS-02 | Einstellung aus: Tap-Verhalten Ereignis fuer Ereignis wie Story 6, kein Timer existiert | Q-10 |
+| SS-03 | Timer laeuft nur waehrend einer Bewegung, stoppt bei Ruhe, und maximal eine Instanz existiert | Q-10, Energie |
+| SS-04 | Die Engine rechnet nicht im Tap-Callback nach; der Callback fuettert nur und verschluckt | Q-02, Q-16: der Callback bleibt kurz |
+| SS-05 | Safe Mode, Panic-Kill-Switch, Ausschalten, Tap-Ausfall, Sleep, Berechtigungsverlust und Beenden stoppen den Timer sofort, verwerfen die Restbewegung und senden hoechstens ein abschliessendes `ended`, nie weiteres Momentum | Q-01, Q-15: nichts scrollt nach dem Abbruch weiter |
+| SS-06 | Oeffnen des Switchers verwirft eine laufende Bewegung | Sonst scrollt die App unter dem Switcher weiter |
+| SS-07 | Synthetische Ereignisse sind markiert und werden nie erneut geglaettet | Q-13 sinngemaess; verhindert Rueckkopplung |
+| SS-08 | Eine Raste in Gegenrichtung bricht laufendes Momentum ab | Erwartetes Verhalten, von der Engine bereits geleistet |
+| SS-09 | Kontinuierliche Ereignisse (Trackpad, Magic Mouse) bleiben unberuehrt | Die Geraeteunterscheidung aus Story 6 |
+| SS-10 | Modifier des letzten echten Ereignisses werden auf die synthetischen uebertragen | Shift-Scroll und Zoom mit Cmd duerfen sich nicht aendern |
+| SS-11 | Gesten-Begleiter nur nach Schritt 6c-2 und dann versionsgegatet | Q-09 |
+
+Nicht im Scope:
+
+- Glaetten von Trackpad oder Magic Mouse.
+- App- oder geraetespezifische Regeln.
+- Uebernahme der LinearMouse-Konfiguration.
+- Eigene Kurven jenseits der uebernommenen Presets.
+
+Exit-Kriterium fuer Schritt 6c-1:
+
+- Mit ausgeschalteter Einstellung ist kein Unterschied zu Story 6 messbar, und kein Timer existiert.
+- Mit eingeschalteter Einstellung scrollt das Rad in Finder, Safari und Terminal fluessig mit Auslauf, in beiden Richtungen, auch zusammen mit Reverse und Speed.
+- Safe Mode und das Oeffnen des Switchers beenden jede Bewegung sofort.
+- Die Engine ist durch die mitgebrachten Unit-Tests abgedeckt; der Rest durch V-18.
+- Leerlauf ohne Scrollen: kein messbarer Mehrverbrauch. Waehrend des Scrollens wird der Verbrauch dokumentiert.
+
 ### 6b. Kleinkram mit klarem Nutzen
 
 Status: Aufgenommen 2026-08-13
@@ -1000,7 +1103,7 @@ Prioritaet: Niedrig, aber billig
 - Daraus folgt: Umsortieren nur zusammen mit einer Migration. `PreferencesMigrations` hat dafuer das Muster, unter anderem `migrateShortcutIndexes` und `migrateGestures`. Ohne Migration ist die Umsortierung ein Datenfehler, kein Darstellungsdetail.
 - Zu bedenken bei `Command+Control` an erster Stelle: Diese Kombination ist die einzige mit `requiresWindowDragOnGestureDisabled`. Sie verschluckt den primaeren Mausklick, den macOS sonst als Sekundaerklick ausliefert, und funktioniert erst, wenn die systemweite Drag-on-Gesture-Einstellung aus ist — die AltTab+ ueber `WindowDragGestureOwnership` besitzen und zurueckgeben muss. Als erster Eintrag der Liste wirkt sie wie die naheliegende Wahl, hat aber die groessten Nebenbedingungen.
 - `matches` prueft exakt gegen `[.command, .shift, .control, .option, .function]`, damit ein versehentlich gehaltener Modifier keine Aktion ausloest. Neue Kombinationen brauchen nur einen Fall in `requiredFlags`; die Pruefung selbst bleibt unveraendert.
-- **Offen und vor der Umsetzung zu klaeren**: Die Anforderung nennt `Control+Option` als hinzuzufuegende Kombination, die gewuenschte Reihenfolge listet sie aber nicht auf, dafuer `Command+Option` und `Option+Shift`. Entweder fehlt `Control+Option` in der Reihenfolge, oder es war `Command+Option` gemeint. Die Endmenge ist damit fuenf oder sechs Eintraege — zu entscheiden, bevor die Migration geschrieben wird, weil sie die Zielindexe festlegt.
+- **Entschieden 2026-08-18 und umgesetzt**: `Control+Option` war ein Tippfehler fuer `Command+Option`. Belegt durch die eigenen Modifier-Regeln: alle Control-Kombinationen ausser dem expliziten `cmd+ctrl`-Pfad sind ausgeschlossen, weil Control-click systemweit Secondary Click ist. Die Endmenge sind damit fuenf selektierbare Eintraege plus `disabled`. Umgesetzt in `DragModifierPreference.selectable = [.disabled, .commandControl, .commandOption, .fn, .commandShift, .optionShift]`; `requiredFlags` fuer `⌘⌥` und `⌥⇧` ergaenzt; `requiresWindowDragOnGestureDisabled` bleibt allein bei `⌘⌃`. Die Index-Migration `PreferencesMigrations.migrateDragModifierIndexes` bildet fuer beide Keys `windowDragModifier` und `windowResizeModifier` ab (`0→0, 1→4, 2→3, 3→1`). `DragSessionTests` sichert die Reihenfolge gegen die Migration ab (`testThePickerOrderMatchesTheStoredIndexContract`) und prueft `matches`/`requiredFlags` fuer alle Kombis.
 
 **Ausnahmeliste fuer Move und Resize.** Beide Module sollen je App abschaltbar sein, ausgewaehlt aus den installierten oder laufenden Apps, fuer den Fall dass die Funktion mit der App kollidiert — etwa weil diese die Modifier-Kombination selbst belegt oder eigenes Fenster-Handling mitbringt.
 
@@ -1071,8 +1174,19 @@ Nicht im MVP:
 
 ### 8. FlickRing: Aktionsring an der Maus
 
-Status: Aufgenommen 2026-08-13. Der Trigger war bisher nur als Stichwort im Aktionskern und in Q-16 vermerkt; hier steht erstmals der Umfang
+Status: MVP umgesetzt 2026-08-18; manuelle Abnahme am Zielgeraet offen (`docs/leader-flickring-checklist.md`)
 Prioritaet: Nach Aktionskern und Move/Resize
+
+Umsetzungsstand 2026-08-18:
+
+- `FlickRingEvents` oeffnet einen eigenen Maus-Tap nur bei aktivem Modul, reserviert die konfigurierte Taste vollstaendig (Down und Up werden absorbiert), oeffnet den Ring beim Druck, verfolgt den Sektor beim Ziehen und fuehrt die gebundene Aktion beim Loslassen ausserhalb des Callbacks aus (Q-16).
+- Reine Richtungslogik `FlickRing.direction`: vier Sektoren per `atan2`, 5pt-Totbereich (darunter keine Wahl), `+y`-oben-Vertrag fuer den Aufrufer. Automatisiert getestet.
+- `FlickRingPanel` zeichnet vier Sektoren mit einer Totbereichs-Nabe in reinem AppKit; die gewaehlte Richtung ist hervorgehoben.
+- Aktionen kommen aus dem gemeinsamen Register; Default-Taste ist eine Seitentaste (die Mitte kollidiert mit der Drei-Finger-Mittelklick-Geste aus Story 7). Mittelklick-Passthrough bleibt Folgeumfang.
+- Q-01/Q-12: der Not-Aus und Safe Mode schliessen den Ring und geben die Taste frei; ein Circuit Breaker deaktiviert das Modul nach wiederholtem Tap-Ausfall. Ein eigener Arming-Marker entfaellt, weil der Tap nur einen Button liest und mutiert nichts Riskantes beim Scharfschalten.
+- `Send Key`, `Open URL` und die Scroll-Aktionen der Vorlage sind im MVP bewusst weg.
+
+Ursprungsstand (aufgenommen 2026-08-13, Umfang):
 
 Vorlage: `mikker/FlickRing`, MIT-Lizenz. Gelesen wurde die Quelle, nicht nur die Beschreibung; die Angaben unten stammen aus `MouseListener.swift`, `Controller.swift` und `Defaults.swift`.
 
@@ -1200,6 +1314,176 @@ Offene Punkte:
 - Klaeren, ob minimierte Fenster und Fenster in anderen Spaces als Ziel zugelassen werden oder nur Spring-Loading erhalten.
 - Pruefen, ob `NSWorkspace` beim Oeffnen mit einer bestimmten App unterscheidbare Fehler fuer "App unterstuetzt Typ nicht" liefert; sonst bleibt TD-05 auf einen generischen Fehlschlag beschraenkt.
 
+### 10. Keep Awake / Sleep Override (Caffeine + Amphetamine)
+
+Status: MVP umgesetzt 2026-09-16 (Must-have ohne Disk-Assertion); Should-have und spaeter offen; Geraetepruefung offen (`docs/system-actions-checklist.md`, Schritte 33-37)
+Prioritaet: Mittel. Eigenstaendiges Modul, unabhaengig von Switcher- und Input-Kern
+
+Referenzen:
+
+- Caffeine (`caffeine-app.net`): Minimal-Referenz — ein Menubar-Toggle, das System-, Display- und Bildschirmschoner-Schlaf verhindert, optional mit fester Dauer.
+- Amphetamine (App Store `id937984704`): Funktions-Referenz — Sessions, Trigger, Energie-Policies, Automation. Kein 1:1-Nachbau von UI oder Branding, sondern eine eigenstaendige, modulare macOS-Umsetzung.
+
+Produktziel:
+
+- Ein eigenstaendiges "Keep Awake"-Modul in Alt-Tab+, modular aktivierbar, per Default aus. Es verhindert kontrolliert den Ruhezustand ueber oeffentliche macOS-Power-Assertions, mit manuellen Sessions und optionalen Triggern.
+
+Architektur-Einordnung (wichtig):
+
+- **Kein Event-Tap, keine private API.** Anders als Leader/FlickRing/Gesten braucht dieses Modul die Q-01..Q-16-Input-Sicherung nicht. Es nutzt ausschliesslich oeffentliche `IOPMAssertionCreateWithName`-Assertions plus System-Observer (NSWorkspace, IOKit Power Source, Netzwerk). Das groesste Risiko ist eine geleakte Assertion (Mac schlaeft nie mehr) — also strikte Assertion-Lebenszyklus-Verwaltung und Fail-safe.
+- Die Keep-Awake-Aktionen (Start/Stop/Toggle, Dauer-Presets) werden **Aktionen im gemeinsamen Register** (`ActionIdentifier`), sodass globale Shortcuts, Hyper, Leader, FlickRing und die Menueleiste sie ausloesen koennen — starke Wiederverwendung.
+- Eigener Settings-Sidebar-Eintrag "Keep Awake", getrennt vom Switcher.
+
+Technischer Kern:
+
+- System wach: `kIOPMAssertPreventUserIdleSystemSleep`.
+- Display wach: zusaetzlich `kIOPMAssertPreventUserIdleDisplaySleep`.
+- Nur-System-wach (Display darf schlafen / Bildschirmschoner erlaubt): nur die System-Assertion, nicht die Display-Assertion.
+- Laufwerke wach: die passende Disk-Idle-Assertion.
+- Genau eine aktive Assertion pro Kategorie; beim Wechsel alt freigeben, neu setzen. Assertion-IDs werden nicht persistiert — nach Crash/Neustart ist der Zustand sauber inaktiv (Fail-safe).
+- Session-Timer auf Wall-Clock, robust gegen Sleep/Wake-Drift.
+
+Feature-Kandidaten (Checkliste; Empfehlung pro Punkt, frei auf `BEHALTEN`/`OPTIONAL`/`ENTFERNEN`/`SPAETER` setzbar):
+
+MVP / Must-have (Caffeine-Niveau und etwas mehr):
+
+- [BEHALTEN] Menubar-Toggle "Mac wach halten".
+- [BEHALTEN] Session Start/Stop per Klick.
+- [BEHALTEN] Unbegrenzte Session.
+- [BEHALTEN] Feste Dauer (Minuten/Stunden, Presets plus frei).
+- [BEHALTEN] Bis konkrete Uhrzeit.
+- [BEHALTEN] Laufende Session verlaengern.
+- [BEHALTEN] Nur System wach halten, Display darf schlafen.
+- [BEHALTEN] Optional Display aktiv halten.
+- [BEHALTEN] Menubar zeigt Restlaufzeit (12h/24h-Format).
+- [BEHALTEN] Globale Shortcuts fuer Start/Stop/Toggle ueber das Aktionsregister.
+- [BEHALTEN] Auto-Ende bei niedrigem Batteriestand (Schwelle konfigurierbar).
+- [BEHALTEN] Klares State-Modell: `inactive`, `active`, `displayAllowedToSleep`, `triggerActive`, `batteryProtected`, `error`.
+- [BEHALTEN] Fail-safe: nach Crash/Logout/Neustart inaktiv; Assertion nie geleakt; `applicationWillTerminate` und Wake geben frei bzw. synchronisieren.
+- [BEHALTEN] Lokal, ohne Account, ohne Tracking.
+
+Should-have (Ausbaustufe):
+
+- [OPTIONAL] Auto-Start bei Login (bestehende Login-Item-Infra).
+- [OPTIONAL] Optional Auto-Aktivierung direkt nach App-Start.
+- [OPTIONAL] Anpassbare Menubar-Icons.
+- [OPTIONAL] Lokale Notifications bei Start/Ende/Auto-Deaktivierung/Fehler.
+- [OPTIONAL] Trigger: aktiv solange bestimmte App laeuft (NSWorkspace launch/terminate).
+- [OPTIONAL] Trigger: aktiv bei externer Stromversorgung; Ende auf Batterie (IOKit Power Source).
+- [OPTIONAL] Trigger: aktiv bei Batterie-Schwellwert.
+- [OPTIONAL] Trigger: aktiv bei gemountetem Volume; optional Laufwerke wach halten (NSWorkspace didMount plus Disk-Assertion).
+- [OPTIONAL] Trigger: aktiv bei externer Anzeige oder Screen Mirroring (NSScreen / CGDisplay-Reconfiguration-Callback).
+- [OPTIONAL] Saubere Trennung manuelle vs. triggerbasierte Session und Prioritaetsregeln bei konkurrierenden Triggern.
+- [OPTIONAL] Debug/Log-Ansicht der Trigger-Entscheidungen.
+
+Nice-to-have / spaeter:
+
+- [SPAETER] Trigger: WLAN/SSID (CoreWLAN — braucht Standort-Berechtigung zum SSID-Lesen; explizit einholen und melden).
+- [SPAETER] Trigger: USB- oder Bluetooth-Geraet verbunden (IOKit-Matching / IOBluetooth).
+- [SPAETER] Trigger: Idle-Time/Inaktivitaet (IOHIDSystem `HIDIdleTime`).
+- [SPAETER] Trigger: CPU-Schwellwert (Polling; Energiekosten beachten).
+- [SPAETER] Trigger: IP-/VPN-/DNS-Umgebung (NWPathMonitor / SystemConfiguration).
+- [SPAETER] AppleScript- oder URL-Scheme-Automation.
+- [SPAETER] Anpassbare Benachrichtigungssounds.
+
+Bewusst nicht uebernehmen (mit Begruendung):
+
+- [ENTFERNEN] Trigger "Download laeuft / Ende nach Download": kein verlaesslicher oeffentlicher, systemweiter Weg, "ein Download laeuft" zu erkennen; nur app-spezifische Heuristik. Faellt raus, bis es einen belastbaren Pfad gibt.
+- [ENTFERNEN] Periodische Mausbewegung simulieren ("Jiggle"): Power-Assertions sind der saubere Weg und machen das Jiggeln ueberfluessig; ein synthetischer Input-Pfad waere unnoetiges Risiko und widerspricht dem Assertion-Modell.
+- [ENTFERNEN] "Screen nach Inaktivitaet sperren trotz aktiver Session": Sperr-Policy gehoert zu macOS; keine App-Umgehung.
+
+UX:
+
+- Menubar: Klick toggelt; Untermenue mit Dauer-Presets, "Bis Uhrzeit", "Display aktiv halten", Restlaufzeit und "Beenden". Icon zeigt aktiv/inaktiv, optional Restzeit.
+- Settings-Tab "Keep Awake": Default-Dauer, Display-Policy, Batterie-Schutz-Schwelle, Auto-Start, Notifications, Trigger-Editor (Liste von Triggern mit Bedingung und Modus).
+- Session-Picker und Trigger-Editor kompakt in AppKit, konsistent mit dem Rest.
+
+Edge Cases, Sicherheit, Energie:
+
+- Assertion-Leak verhindern: genau ein Owner pro Kategorie; Terminierung und Crash-Recovery geben frei; nach Wake Zustand konsistent halten.
+- Batterie: Auto-Ende bei Schwelle mit klarer Meldung.
+- Sleep/Wake, Logout/Login, Netzwerkwechsel: Trigger neu auswerten, Timer gegen Wall-Clock.
+- Konkurrierende Trigger: definierte Prioritaet (z.B. Batterie-Schutz sticht Aktiv-Trigger).
+- Datenschutz: keine Netzwerkuebertragung, lokale Konfiguration; SSID-/Netzwerk-Trigger nur mit erteilter Berechtigung.
+
+Nicht im MVP:
+
+- Trigger jenseits App-laeuft / Stromversorgung / Batterie / Volume / externe Anzeige.
+- Automation-Schnittstelle.
+- Per-App- oder Regel-Engine.
+
+Nachtrag 2026-09-16, Einbindung ins Menueleisten-Menue (aus dem Supercharge-Abgleich):
+
+- Keep Awake erscheint in der Gruppe `Schalter` (Story 15) als Eintrag mit Haekchen und Untermenue: `Keep Awake` > `Indefinitely`, `15 Minutes`, `1 Hour`, `2 Hours`, `5 Hours`, `Until…`, Trenner, `Keep Display Awake` (Haekchen), Trenner, `Stop`.
+- Ein Klick auf den Haupteintrag selbst schaltet mit der zuletzt gewaehlten Dauer um; waehrend einer Session steht die Restzeit rechts im Eintrag (`Keep Awake  1:24`).
+- Die Aktionen `keepAwake.toggle`, `keepAwake.start.<preset>` und `keepAwake.stop` kommen ins gemeinsame Register und sind damit auch ueber Shortcut, Hyper, Leader und FlickRing ausloesbar.
+- Das eigene Menueleisten-Symbol aus dem MVP-Umfang bleibt optional; Standard ist der Eintrag im bestehenden Menue, damit AltTab+ nicht zwei Symbole belegt.
+
+Umsetzungsstand 2026-09-16:
+
+- `KeepAwake` haelt hoechstens je eine System- und Display-Assertion (`IOPMAssertionCreateWithName`), nie persistiert, beim Beenden freigegeben. Sessions laufen gegen die Wanduhr; ein Timer alle 30 s (Toleranz 10 s) und das Aufwachen pruefen Ablauf und Batterie. Er existiert nur waehrend einer Session.
+- **Abweichung**: Ein Menueeintrag mit Untermenue loest in AppKit selbst keine Aktion aus. Der Schalter steht deshalb als erster Eintrag im Untermenue (`Turn On`/`Turn Off`); der Haupteintrag zeigt Haekchen und Restzeit.
+- Untermenue: `Turn On/Off`, fuenf Dauern, `Until…` (Uhrzeit-Dialog, vergangene Zeit heisst morgen), `Extend by 1 Hour` waehrend einer befristeten Session, `Keep Display Awake`.
+- Settings-Tab `Keep Awake`: Dauer beim Einschalten, Display wach, Batterie-Schwelle (aus, 10, 20, 30, 50 %), Shortcuts fuer alle Keep-Awake-Aktionen.
+- Nicht umgesetzt: Disk-Assertion, 12h/24h-Wahl (die Restzeit ist `h:mm`), alle Should-have-Punkte.
+
+### 11. Erweitertes Window-Switching-Verhalten (minimierte Fenster, Per-App-Policies, Cmd+Tab)
+
+Status: Spezifiziert 2026-08-19; nicht begonnen. Betrifft den Switcher-Kern, kein Add-on-Modul
+Prioritaet: Mittel
+
+Referenzen: natives macOS-`Cmd+Tab` (App-Switch, ueberspringt minimierte/versteckte Fenster) und AltTab (Fenster inkl. minimierter/versteckter, `Cmd+Tab` remapbar). Alt-Tab+ ist ein AltTab-Fork; darum ist nur das **bewusst abweichende** Verhalten zu bauen.
+
+Ausgangslage — was der Fork schon mitbringt (nicht neu bauen):
+
+- Minimierte und versteckte Fenster erscheinen im Switcher, konfigurierbar je Shortcut: `showMinimizedWindows` mit `ShowHowPreference` (`show` / `hide` / `showAtTheEnd`), ebenso `showHiddenWindows`, `showFullscreenWindows`.
+- Auswahl eines minimierten Fensters stellt es wieder her: `Window.focus()` deminiaturisiert.
+- Per-App-Regeln als `ExceptionEntry(bundleIdentifier, hide, ignore)` — `hide` (`always` / `whenNoOpenWindow` / `none`), `ignore` (`whenFullscreen` / `always` / `none`), mit sinnvollen Defaults (z.B. Finder `hide: whenNoOpenWindow`).
+- `Cmd+Tab` ist bereits der Default-Trigger (holdShortcut `⌘`, nextWindow `⇥`) und wird abgefangen — der native App-Switcher ist faktisch ersetzt.
+- `appsToShow` (`all` / `active` / `nonActive`) je Shortcut.
+
+Block 1 — Policy fuer minimierte Fenster (Delta zu "Sichtbarkeit plus immer restoren"):
+
+- [OPTIONAL] `AlwaysRestoreMinimizedWindows`: heutiges Verhalten (Auswahl deminiaturisiert). Schon vorhanden.
+- [OPTIONAL] `ExcludeMinimizedFromSwitcher`: entspricht `showMinimizedWindows = hide`. Schon vorhanden.
+- [NEU] `ShowButDoNotRestore`: minimiertes Fenster erscheint, Auswahl bringt es nach vorn ohne zu deminiaturisieren.
+- [NEU] `RestoreOnlyOnExplicitAction`: minimiertes Fenster erscheint, normale Auswahl restauriert nicht; eine gesonderte Aktion (Block 3) restauriert.
+- Umsetzung: eine Policy-Enum je Shortcut (oder global), die in `Window.focus()` entscheidet, ob deminiaturisiert wird; die visuelle Kennzeichnung minimierter Fenster ist bereits da. Default `AlwaysRestore`, damit kein Bruch fuer Bestandsnutzer.
+
+Block 2 — Per-App-Regeln (Delta: `ExceptionEntry` erweitern):
+
+- [NEU] Pro App eine Minimized-Policy aus Block 1 (Terminal/IDE `AlwaysRestore`, Finder `ExcludeMinimized`).
+- [NEU] Pro App App-Switching vs. Window-Switching unterscheiden.
+- [OPTIONAL] Pro App priorisieren (nach vorne sortieren).
+- [SPAETER] Reichere Match-Kriterien ueber Bundle-ID hinaus: Fenstertitel, Window-Role, Space, Display.
+- Prioritaet: App-Regel sticht globale Policy; leere App-Regel erbt global. Konflikte sichtbar melden. UI: den bestehenden `Exceptions`-Tab um die neuen Spalten erweitern (`ExceptionEntry` ist bereits Codable und per-Bundle).
+
+Block 3 — Separate Aktion `Restore most recent minimized window of selected app` (genuin neu):
+
+- [NEU] Neue Aktion im gemeinsamen Aktionsregister (`ActionIdentifier`), damit Shortcut, Hyper, Leader, FlickRing und Menueleiste sie ausloesen.
+- Verhalten: restauriert das zuletzt minimierte Fenster der gewaehlten bzw. frontmost App; bei mehreren das zuletzt minimierte (ueber `creationOrder`/`lastFocusOrder`); kein minimiertes Fenster: no-op mit dezenter Rueckmeldung. Ersetzt den nativen `Cmd+Tab`+`Option`-Workaround und passt zu `RestoreOnlyOnExplicitAction`.
+
+Block 4 — `Cmd+Tab`-Remap (weitgehend schon Realitaet):
+
+- [BEHALTEN] Ist bereits Default: der Hold-Shortcut steht auf `Cmd+Tab`, AltTab+ faengt ihn ab. Kein neues Hooking noetig.
+- [OPTIONAL] Onboarding-Hinweis fuer Umsteiger vom nativen Verhalten plus klarer Reset-Pfad auf natives `Cmd+Tab`.
+- Fallback: schlaegt die Registrierung fehl (Berechtigung/Konflikt), bleibt natives Verhalten und der Zustand wird gemeldet (bestehende Kollisionslogik). Der Unterschied optionaler Remap vs. paralleler Zweit-Shortcut ist bereits ueber `shortcutCount` (1 oder 2 Shortcuts) abgebildet.
+
+Default-Profile (benannte Voreinstellungen, analog zu den Shortcut-Presets):
+
+- [OPTIONAL] `Konservativ`: heutiges AltTab-Verhalten (AlwaysRestore, keine Sonderregeln).
+- [OPTIONAL] `Power-User`: `RestoreOnlyOnExplicitAction`, Block-3-Aktion mit Shortcut, Per-App-Regeln fuer Terminal/IDE/Finder.
+- [OPTIONAL] `Windows-like`: Fenster statt Apps, minimierte immer sichtbar, AlwaysRestore.
+
+Edge Cases:
+
+- Mehrere minimierte Fenster derselben App; mehrere Monitore und Spaces; Stage Manager; Hidden vs. Minimized getrennt behandeln; Apps ohne klassisches Fenstermodell; Sonderfaelle Electron/JetBrains/Terminal/Finder — teils bereits ueber die App-Kompatibilitaetsregeln des Kerns abgedeckt.
+
+Nicht im MVP:
+
+- Reiche Match-Kriterien jenseits Bundle-ID.
+- Regel-Engine mit Titel/Role/Space/Display-Matching.
+
 ## Settings-Modell
 
 Status: Minimal halten
@@ -1237,7 +1521,425 @@ Stand 2026-08-14, Vermessung per Probe-Merge auf einem Wegwerf-Branch (danach ab
 
 - `c14960bb` (Tabs/Phantom-Fenster, 77 Dateien, +13704) und alles andere aus den 107 Commits: nicht bewertet, zu gross fuer ein Nachbauen. Bei konkreten Symptomen gezielt nachlesen.
 - Zu `e20c3277` (space indicators off by default): **keine konkurrierende Spaces-Umsetzung**, wie zunaechst vermutet. Am Quelltext geprueft 2026-08-14: gemeint ist das Nummern-Abzeichen pro Kachel im Switcher (`setSpaceNumber`, Stern bei "auf allen Spaces"), das nur ausweist, auf welchem Space ein Fenster liegt. Unser Fork hat exakt dasselbe Feature aus der Zeit vor der Abspaltung, samt identischer Praeferenz `hideSpaceNumberLabels`; der Upstream-Commit dreht lediglich deren Vorgabe auf "verstecken". Fuer die Spaces-Arbeit dieses Forks (Menueleisten-Reihe, Instant Spaces) folgt daraus nichts.
-- `alt-tab pro` ist als `BREAKING CHANGE` mit eigener Ankuendigung markiert. Was das fuer den Fork strategisch bedeutet (Lizenz, Anschlussfaehigkeit), ist offen und eine Produktfrage.
+- `alt-tab pro` ist als `BREAKING CHANGE` mit eigener Ankuendigung markiert. Entschieden 2026-08-18: Der Fork bleibt bewusst eigenstaendig; Upstream wird weiterhin nur selektiv (einzelne Fixes lesen und gezielt nachbauen) verwertet, solange die Lizenz der Quelle das erlaubt. Das ist eine bewusste Produktentscheidung mit Ablaufdatum statt einer stillschweigenden Gewohnheit: je mehr der Pro-Umbau die Upstream-Architektur von diesem Fork entfernt (Beispiel `SpacesEvents.swift`, das dort geloescht wurde), desto teurer wird das Nachbauen. Die Strategie wird neu bewertet, sobald ein gewuenschter Upstream-Fix ohne den Pro-Umbau nicht mehr sinnvoll isolierbar ist oder die Lizenz sich aendert. Kein Handlungsbedarf jetzt.
+
+### 12. Fenster-Fokus-Aktionen: Isolate Window und Verwandte
+
+Status: Umgesetzt 2026-09-16 (12a und 12b ohne `Show Desktop` und `Undo`); Geraetepruefung offen (`docs/system-actions-checklist.md`, Schritte 7-11)
+Prioritaet: Mittel. Klein, ohne Event-Tap, sofort ueber alle Trigger nutzbar
+
+Referenz: Supercharge (Sindre Sorhus), Menue-Aktionen `Isolate Window`, `Hide All Windows`, `Minimize All Windows`, `Minimize All Windows Except Frontmost`, `Minimize App Windows Except Frontmost`, `Show Desktop`. Verhalten nur aus Namen und Menue abgeleitet (Art A); Supercharge ist nicht quelloffen. Abgleich des ganzen Menues unter `Supercharge-Abgleich`.
+
+Beschreibung:
+
+- `Isolate Window` laesst genau das fokussierte Fenster sichtbar: alle anderen Apps werden ausgeblendet, die uebrigen Fenster derselben App minimiert.
+- Die Aktion wird ein Eintrag im gemeinsamen Aktionsregister (`ActionIdentifier`). Damit ist sie ohne weitere Arbeit ueber Shortcut, Hyper, Leader und FlickRing ausloesbar.
+- Sie besteht aus zwei Bausteinen, die fuer sich ebenfalls sinnvoll sind. Die verwandten Supercharge-Aktionen sind nur andere Kombinationen derselben Bausteine und kommen deshalb in derselben Story, aber als eigene Stufe.
+
+Bausteine:
+
+| Baustein | Wirkung | Mittel |
+|---|---|---|
+| B1 `hideOtherApps(except:)` | Blendet alle regulaeren Apps ausser der Ziel-App aus | `NSRunningApplication.hide()` je App, oeffentliche API, kein AX |
+| B2 `minimizeWindows(of:except:)` | Minimiert Fenster einer App ausser dem Zielfenster | AX `kAXMinimizedAttribute` ueber die bestehende `accessibilityCommandsQueue`, wie `Window.minDemin()` |
+
+Stufe 12a, Isolate Window:
+
+- Ziel ist das fokussierte Fenster der frontmost App, ermittelt ueber denselben Weg wie die Window-Layout-Aktionen.
+- Ablauf: B1 mit der Ziel-App, dann B2 mit Ziel-App und Zielfenster.
+- `stableId`: `windowFocus.isolate`.
+
+Stufe 12b, Verwandte (je einzeln auf `BEHALTEN`/`OPTIONAL`/`ENTFERNEN`/`SPAETER` setzbar):
+
+- [BEHALTEN] `Minimize App Windows Except Frontmost`: nur B2. `windowFocus.minimizeAppOthers`.
+- [BEHALTEN] `Hide Other Apps`: nur B1. Entspricht dem nativen `Cmd+Option+H`, aber ueber jeden Trigger erreichbar. `windowFocus.hideOthers`.
+- [ENTFERNEN] `Minimize All Windows Except Frontmost`: gebaut und am 2026-09-16 wieder gestrichen; gleiches Ergebnis wie `Isolate Window`, nur langsamer und mit vollem Dock. Frueher: B2 ueber alle Apps. Langsamer als B1 und mit Dock-Animation je Fenster; nur behalten, wenn Minimieren statt Ausblenden gewollt ist.
+- [ENTFERNEN] `Minimize All Windows`: gebaut und am 2026-09-16 wieder gestrichen. Gleiches Ergebnis wie `Hide All Windows`, aber langsamer (Animation je Fenster) und fuellt das Dock.
+- [OPTIONAL] `Hide All Windows`: B1 ohne Ausnahme, dazu Finder aktivieren, damit keine App den Fokus behaelt.
+- [SPAETER] `Show Desktop`: macOS hat dafuer eine eigene Geste und Mission-Control-Funktion, die sich nicht oeffentlich ausloesen laesst. Nachbau ueber B1 waere nicht umkehrbar wie das Original. Erst aufnehmen, wenn ein sauberer Weg belegt ist.
+- [SPAETER] `Undo`: den Zustand vor der letzten Fokus-Aktion wiederherstellen (ausgeblendete Apps einblenden, minimierte Fenster zurueckholen). Braucht einen Schnappschuss mit Lebensdauer und passt zu Story 11, Block 3.
+
+Regeln:
+
+| ID | Anforderung | Begruendung |
+|---|---|---|
+| WF-01 | Keine Aktion ohne fokussiertes Fenster; Verfuegbarkeit meldet `unavailable` mit Grund, der Trigger quittiert mit `NSSound.beep()` wie `minDemin` | Kein Raten, welches Fenster gemeint ist |
+| WF-02 | AX-Arbeit nur auf `accessibilityCommandsQueue` mit gesetztem Messaging-Timeout; nichts im Trigger-Pfad | Q-02, Q-03, Q-16 |
+| WF-03 | B1 betrifft nur Apps mit `activationPolicy == .regular`; AltTab+ selbst, Agenten und Hintergrundprozesse bleiben unberuehrt | Menueleisten-Apps und Helfer haben kein sinnvolles Ausblenden |
+| WF-04 | B2 ueberspringt Vollbild-Fenster, Tabs und fensterlose Apps. Anders als `minDemin` wird Vollbild **nicht** verlassen | Eine Fokus-Aktion darf keinen Space aufloesen |
+| WF-05 | B2 betrifft nur Fenster auf dem aktuellen Space des jeweiligen Displays | Unsichtbare Fenster zu minimieren aendert Zustand, den der Nutzer nicht sieht |
+| WF-06 | Die Ziel-App wird nie ausgeblendet, auch wenn sie waehrend der Ausfuehrung den Fokus verliert | Sonst verschwindet genau das Fenster, das isoliert werden sollte |
+| WF-07 | Fehler einzelner Apps oder Fenster brechen die Aktion nicht ab und landen im Q-07-Ringbuffer | Eine haengende App darf den Rest nicht aufhalten |
+| WF-08 | Kein Event-Tap, kein Timer, kein Posting synthetischer Ereignisse | Q-10: keine Laufzeitkosten ausserhalb der Ausfuehrung |
+| WF-09 | Standard: keine Tastenkombination belegt | Q-08 sinngemaess; der Nutzer weist selbst zu |
+
+Mehrere Displays:
+
+- `NSRunningApplication.hide()` wirkt je App auf allen Displays. Isolate blendet also auch Apps auf anderen Displays aus. Das ist im MVP gewollt und wird im Titel-Hinweis nicht verschwiegen.
+- [SPAETER] Variante `nur aktuelles Display`: ueber B2 statt B1 fuer Apps auf anderen Displays nicht moeglich ohne Minimieren; erst bei konkretem Bedarf.
+
+Settings:
+
+- Kein eigener Sidebar-Eintrag. Die Aktionen erscheinen dort, wo Aktionen heute zugewiesen werden (Shortcut-Liste, Leader, FlickRing).
+
+Pruefraster (Checkliste folgt mit der Umsetzung):
+
+| Pruefung | Erwartung |
+|---|---|
+| Isolate mit Finder, Safari, Terminal und zwei Safari-Fenstern | Nur das fokussierte Safari-Fenster bleibt sichtbar; das zweite ist minimiert; Finder und Terminal ausgeblendet |
+| Fokussiertes Fenster im Vollbild | Nur B1 wirkt; kein Space wechselt |
+| Andere App-Fenster im Vollbild | Bleiben im Vollbild, werden nicht minimiert |
+| Kein fokussiertes Fenster (nur Desktop) | Beep, keine Aenderung |
+| Haengende App (z.B. im Debugger angehalten) | Aktion endet fuer die uebrigen Apps normal; Eintrag im Ringbuffer |
+| Zwei Displays | Apps auf dem zweiten Display sind ausgeblendet; minimiert wird nur auf dem aktuellen Space |
+| Aufruf ueber Shortcut, Leader und FlickRing | Gleiches Ergebnis |
+
+Umsetzungsstand 2026-09-16:
+
+- `WindowFocusPlan` (rein, unit-getestet) waehlt Apps und Fenster; `WindowFocusActions` fuehrt aus. Das fokussierte Fenster wird auf der AX-Queue gelesen, Minimieren laeuft je Fenster auf derselben Queue.
+- `Hide All Windows` nutzt `NSWorkspace.hideOtherApplications()`; das blendet alle Apps ausser AltTab+ aus und kommt ohne Finder-Aktivierung aus.
+- Im Safe Mode und ohne Accessibility-Berechtigung sind die Aktionen nicht verfuegbar.
+- Die optionalen Aktionen aus 12b sind gebaut, aber ab Werk im Menue ausgeblendet.
+
+Nicht im Scope:
+
+- Dock-Klick-Logik und Aktionen in Mission Control (siehe `Nicht-Ziele`).
+- Automatisches Isolieren beim Fokuswechsel.
+- Per-App-Ausnahmen.
+
+### 13. Debug-Untermenue in der Menueleiste
+
+Status: Umgesetzt 2026-09-16; Geraetepruefung offen (`docs/system-actions-checklist.md`, Schritte 38-41)
+Prioritaet: Hoch fuer die Entwicklung. Spart bei jedem Geraetebericht Rueckfragen und Handschritte
+
+Referenz: Supercharge, Menue `… > Debug` mit `Copy Debug Info`, `Copy Accessibility Tree` und `Reset Permissions` (Art A, siehe `Supercharge-Abgleich`).
+
+Ausgangslage im Fork (nicht neu bauen):
+
+- Das Menueleisten-Menue (`Menubar.initialize()`) hat heute einen Eintrag `Debug tools`, der das `DebugWindow` oeffnet (Logs, `Inspect window`, `Dump frontmost app's menu shortcuts`).
+- `DebugProfile.make()` erzeugt bereits einen Textbericht: App-Version, alle Praeferenzen, Fensterzustaende, macOS, Hardware, Ressourcen und den Q-07-Ringpuffer `Window drag AX deviations`. Er wird heute nur im Feedback-Fenster verwendet.
+- `SystemPermissions` kennt den Zustand von Accessibility und Screen Recording.
+
+Menue-Gestaltung:
+
+Der Eintrag `Debug tools` wird zu einem Eintrag `Debug` mit Untermenue, an derselben Stelle (nach `About`, vor `Quit`):
+
+```
+About AltTab+
+Debug                         >   Copy Debug Info
+                                  Copy Accessibility Tree
+                                  Reset Permissions…
+                                  ─────────────
+                                  Debug Tools…
+─────────────
+Quit AltTab+                  ⌘Q
+```
+
+- Symbole wie die uebrigen Eintraege ueber `Menubar.addMenuItem` (nur ab macOS 26): `Debug` = `wrench.and.screwdriver`, beide Kopier-Eintraege = `doc.on.doc`, `Reset Permissions…` = `arrow.uturn.backward`, `Debug Tools…` = `scope` (das heutige Symbol).
+- `Debug Tools…` oeffnet das bestehende Fenster; die Auslassungspunkte folgen der macOS-Regel fuer Eintraege, die ein Fenster oder eine Rueckfrage oeffnen.
+- Keine Tastenkombinationen im Untermenue.
+- `addMenuItem` fuegt heute nur ins Hauptmenue ein; fuer das Untermenue bekommt es einen Parameter fuer das Zielmenue statt einer zweiten Hilfsfunktion.
+
+#### D1. Copy Debug Info
+
+- Kopiert einen Textbericht in die Zwischenablage und bestaetigt mit `TransientNotice` ("Debug info copied").
+- Inhalt: `DebugProfile.make()`, erweitert um:
+  - Berechtigungen: Accessibility und Screen Recording, je `granted`/`notGranted`.
+  - Signatur: Signing-Identitaet oder `adhoc` (entscheidet ueber TCC-Verlust, siehe Skill `install-local-build`).
+  - Safe Mode und Safe-Start-Gate: an/aus.
+  - Aktive Input-Module: welche Taps gerade laufen (Keyboard/Hyper, Window-Drag, Scroll mit Grund Switcher/Einstellung, Trackpad, FlickRing, Leader).
+  - Pointer-Besitz je Kategorie (`PointerOwnership.state`).
+  - Startzeit und Laufzeit des Prozesses.
+- Kopfzeile mit Datum, App-Version und Build-Commit, damit ein eingefuegter Bericht eindeutig zuzuordnen ist.
+
+Datenschutz (Pflicht, weil der Bericht geteilt wird):
+
+- Fenstertitel sind heute nicht enthalten und bleiben es.
+- Praeferenzwerte mit Nutzerinhalt werden ersetzt durch `<set>`/`<empty>`: Open-URL-Slots, App-Pfade der Launch-Slots, Profilnamen, Ausnahmeliste (`exceptions`: nur Anzahl), Leader- und FlickRing-Bindungen bleiben lesbar (sie enthalten nur Aktions-IDs).
+- Keine Benutzernamen in Pfaden: `/Users/<name>` wird zu `~`.
+- Eine Liste der geschwaerzten Schluessel steht in `DebugProfile` an einer Stelle und ist unit-getestet.
+
+#### D2. Copy Accessibility Tree
+
+- Kopiert den AX-Baum des fokussierten Fensters der frontmost App. Das Oeffnen des Menueleisten-Menues aendert die frontmost App nicht, das Ziel ist also das Fenster, mit dem der Nutzer zuletzt gearbeitet hat.
+- Kopfzeile: App-Name, Bundle-ID, App-Version, PID, `CGWindowID`, Fensterrahmen, Display, Space.
+- Pro Element eine eingerueckte Zeile mit `AXRole`, `AXSubrole`, `AXRoleDescription`, `AXTitle` (gekuerzt auf 60 Zeichen), `AXIdentifier`, `AXFrame`, `AXEnabled`, `AXFocused` sowie der Liste der einstellbaren Attribute (`AXUIElementIsAttributeSettable` fuer Position, Size, Minimized, Fullscreen). Genau die entscheiden ueber Fensterkompatibilitaet.
+- Grenzen: Tiefe hoechstens 8, hoechstens 500 Elemente; wird eine Grenze erreicht, steht das in der letzten Zeile.
+- Laeuft auf `accessibilityCommandsQueue` mit Messaging-Timeout (Q-02, Q-03). Antwortet die App nicht, wird der bis dahin gelesene Teil kopiert und der Timeout vermerkt.
+- Datenschutz: `AXValue` wird nie gelesen. Elemente mit Rolle `AXSecureTextField` werden nur mit Rolle ausgegeben. Titel von Textfeldern und Dokumenten werden auf ihre Laenge reduziert (`<title 23 chars>`); Titel von Knoepfen, Menues und Fenstertyp-Elementen bleiben lesbar.
+- Ohne fokussiertes Fenster oder ohne Accessibility-Berechtigung: kein Kopieren, `TransientNotice` mit dem Grund.
+- Bestaetigung wie D1 ("Accessibility tree of <App> copied").
+
+#### D3. Reset Permissions…
+
+- Setzt die TCC-Eintraege der eigenen Bundle-ID zurueck, damit macOS sauber neu fragt. Anwendungsfall: Die Signatur hat sich geaendert und alte Freigaben passen nicht mehr (Skill `install-local-build`, Schritt 4).
+- Vor der Ausfuehrung ein `NSAlert` mit Erklaerung und den Knoepfen `Reset and Restart` / `Cancel`. Standard ist `Cancel`.
+- Ausfuehrung: `/usr/bin/tccutil reset Accessibility <bundle-id>` und `/usr/bin/tccutil reset ScreenCapture <bundle-id>` ueber `Process`, Bundle-ID aus `Bundle.main`, nie aus einer Eingabe. Kein `sudo`.
+- Danach Input-Module ueber den bestehenden Sicherheitspfad abschalten (`disableInputModulesForSafety`) und die App ueber `App.restart()` neu starten; beim Start greift der normale Berechtigungsablauf.
+- Schlaegt `tccutil` fehl (Exit-Code ungleich 0), kein Neustart; `NSAlert` mit der Ausgabe des Befehls.
+- **Unverifiziert**: dass `tccutil reset` fuer die eigene Bundle-ID ohne Admin-Rechte aus der App heraus funktioniert. Im Terminal ist es belegt (Skill `install-local-build`); aus einem Prozess mit Hardened Runtime vor der Umsetzung pruefen.
+
+Regeln:
+
+| ID | Anforderung | Begruendung |
+|---|---|---|
+| DB-01 | Das Untermenue ist immer sichtbar, auch in Release-Builds | Genau dort werden Geraeteberichte gebraucht |
+| DB-02 | Kopieren ueberschreibt die Zwischenablage nur nach vollstaendigem Aufbau des Textes | Kein halber Bericht bei Fehlern |
+| DB-03 | Keine Fenstertitel, URL-Slots, Pfade mit Benutzernamen, Textfeldinhalte oder sicheren Felder im kopierten Text | Globale Regel: keine PII in geteilten Diagnosen |
+| DB-04 | AX-Arbeit nie auf dem Main-Thread; das Menue schliesst sofort | Q-02; eine haengende App darf die Menueleiste nicht blockieren |
+| DB-05 | Reset nur nach ausdruecklicher Bestaetigung, nur fuer die eigene Bundle-ID, nie mit erhoehten Rechten | Zurueckgesetzte Freigaben muss der Nutzer von Hand neu erteilen |
+| DB-06 | Kein neuer Tap, Timer oder Hintergrundprozess | Q-10 |
+
+Tests:
+
+- Unit: Schwaerzung (`DebugProfile`), Ausgabeformat und Grenzen des AX-Baums ueber eine abstrahierte Elementquelle, Aufbau der `tccutil`-Argumente.
+- Geraet: Checkliste folgt mit der Umsetzung, mindestens: Bericht in einem Texteditor pruefen (keine URLs, keine Titel, kein Benutzername), AX-Baum fuer Finder, Safari, eine Electron-App und eine haengende App, Reset mit anschliessendem Neustart und erneuter Freigabe.
+
+Umsetzungsstand 2026-09-16:
+
+- Untermenue wie oben, gebaut von `SubmenuBuilder.debug()`.
+- Die Schwaerzung (`DebugRedaction`) gilt fuer den ganzen `DebugProfile`, also auch fuer das Feedback-Fenster.
+- **Abweichung D2**: Auch Fenstertitel werden auf ihre Laenge reduziert. Die Regel "Fenstertyp-Elemente bleiben lesbar" widersprach DB-03; die strengere Regel gilt. Lesbar bleiben nur Titel von Bedienelementen (Knoepfe, Menues, Tabs und aehnliche).
+- **Abweichung D3**: Vor dem Neustart wird der Sicherheitspfad nicht aufgerufen, weil er Safe Mode dauerhaft setzt und der neu gestartete Prozess dann alle Module unterdrueckt. Der Neustart folgt unmittelbar; die Taps enden mit dem Prozess.
+- `tccutil` aus der App heraus ist weiterhin unverifiziert (Checkliste Schritt 41).
+
+Nicht im Scope:
+
+- Automatisches Hochladen oder Versenden von Berichten.
+- Datei-Export (die Zwischenablage reicht; ein Export kann spaeter aus demselben Text entstehen).
+- Aenderungen am `DebugWindow` selbst.
+
+### 14. System-Aktionen und Werkzeuge aus dem Supercharge-Abgleich
+
+Status: Umgesetzt 2026-09-16, alle Bloecke; Geraetepruefung offen (`docs/system-actions-checklist.md`), dazu V-19, V-20 und V-21
+Prioritaet: Niedrig bis mittel je Block; die Bloecke sind unabhaengig und einzeln umsetzbar
+
+Referenz: Supercharge-Menue, Einordnung unter `Supercharge-Abgleich`. Verhalten nur aus Namen und Menue abgeleitet (Art A). Am 2026-09-16 vom Nutzer zur Uebernahme bestimmt, auch fuer Eintraege, die der Abgleich zuerst als `ENTFERNEN` gefuehrt hatte (Bildschirm-Werkzeuge, Mitteilungen, Cat Mode). Die dort genannten Risiken bleiben und sind unten als Regeln gefasst.
+
+Gemeinsame Regeln fuer alle Bloecke:
+
+| ID | Anforderung | Begruendung |
+|---|---|---|
+| SA-01 | Jede Funktion ist eine Aktion im gemeinsamen Register (`ActionIdentifier`) und erscheint im Menueleisten-Menue in ihrer Gruppe (Story 15) | Ein Weg fuer Menue, Shortcut, Hyper, Leader und FlickRing |
+| SA-02 | Keine Tastenkombination ab Werk | Q-08 sinngemaess |
+| SA-03 | Kein Tap, Timer oder Beobachter, solange die Funktion nicht aktiv genutzt wird. Ausnahmen sind benannt (Auto-Quit, Cat Mode) und laufen nur, solange ihr Schalter an ist | Q-10 |
+| SA-04 | Keine erhoehten Rechte, kein `sudo`, kein Aufruf mit Admin-Abfrage | Globale Regel |
+| SA-05 | Schnittstellen jenseits des Deployment-Ziels macOS 13.1 werden mit `#available` geprueft; nicht verfuegbare Eintraege sind im Menue deaktiviert und nennen den Grund im Tooltip | Kein Absturz, keine stille Funktionslosigkeit |
+| SA-06 | Nicht-oeffentliche Wege (AX-Fernsteuerung fremder System-UI, undokumentierte Praeferenzen) unterliegen Q-09: bei unbekannter macOS-Major-Version deaktiviert und sichtbar gemeldet | Diese Wege brechen bei Updates |
+| SA-07 | Jede Funktion bestaetigt ihr Ergebnis mit `TransientNotice` oder dem Haekchen im Menue; Fehler nennen den Grund | Keine stillen Aktionen |
+| SA-08 | Punkte mit **unverifiziert** werden vor der Umsetzung in einem kurzen Spike am Geraet belegt; faellt der Beleg negativ aus, wird der Punkt hier nachgetragen statt umgangen | Hallucination-Safety |
+
+#### 14A. Sprung in Systemeinstellungen (entfernt 2026-09-16)
+
+Vom Nutzer nach dem ersten Test verworfen: Hide My Email und Private Relay haben keinen eigenen Sprungpunkt und oeffneten nur die iCloud-Seite, und auf einem Konto ohne iCloud+ gibt es dort gar keinen Hide-My-Email-Eintrag. Die ganze Gruppe `Systemeinstellungen` samt den vier Aktionen ist entfernt. Gelesene Adressen zur Referenz: VPN `com.apple.NetworkExtensionSettingsUI.NESettingsUIExtension`, iCloud `com.apple.systempreferences.AppleIDSettings:icloud`, Mitteilungen `com.apple.Notifications-Settings.extension`; intern heissen die iCloud-Dienste `com.apple.Dataclass.PrivateEmail` (Hide My Email), `com.apple.Dataclass.PrivateConnect` und `com.apple.Dataclass.Mail`.
+
+#### 14B. Apps beenden
+
+Eintraege: `Quit All Apps`, `Quit All Apps Except Frontmost`.
+
+- Betrifft alle laufenden Apps mit `activationPolicy == .regular`, ausser AltTab+ selbst und Finder. Finder folgt der bestehenden Regel `Application.canBeQuit()`.
+- Beenden ueber `NSRunningApplication.terminate()`, nie `forceTerminate()`. Apps mit ungesicherten Dokumenten fragen selbst nach; AltTab+ wartet nicht und wiederholt nicht.
+- Vor der Ausfuehrung ein `NSAlert` mit der Anzahl und den Namen der betroffenen Apps (hoechstens zehn Namen, dann `und n weitere`). Knoepfe `Quit` / `Cancel`, Standard `Cancel`. Ein Schalter `Nicht mehr fragen` ist bewusst nicht vorgesehen.
+- Bei Ausloesung per Shortcut, Leader oder FlickRing erscheint dieselbe Rueckfrage.
+- Nach Ablauf von 5 s meldet `TransientNotice`, welche Apps noch laufen.
+- Aktions-IDs `apps.quitAll`, `apps.quitAllExceptFrontmost`.
+
+#### 14C. Apps automatisch beenden (Auto-Quit)
+
+Eintrag: `Auto-Quit Apps` als Schalter mit Haekchen.
+
+- Verhalten: Schliesst der Nutzer das letzte Fenster einer App, wird die App nach einer Wartezeit beendet, sofern sie in der Zwischenzeit kein neues Fenster geoeffnet hat und nicht frontmost ist.
+- **Unverifiziert**: ob Supercharge genau so vorgeht. Die Definition hier ist die eigene und massgeblich.
+- Quelle des Ereignisses ist der bestehende Fensterbestand (`Windows`), der das Schliessen bereits per AX-Beobachter erfaehrt. Kein neuer Tap, kein Polling.
+- Wartezeit Standard 10 s, einstellbar 0 bis 300 s.
+- Liste der betroffenen Apps: Standard ist eine Positivliste (nur ausdruecklich eingetragene Apps). Eine Umschaltung auf `alle ausser` ist moeglich. Nie betroffen: Finder, AltTab+, Apps ohne regulaere Aktivierung, Apps, die nie ein Fenster hatten (reine Hintergrund- und Menueleisten-Apps).
+- Beenden wie 14B, ohne Rueckfrage, weil die Liste die Zustimmung ist.
+- Settings: eigener Abschnitt im Tab `General` oder neuer Tab `Apps`, Entscheid bei der Umsetzung; Tabelle mit Bundle-IDs wie der `Exceptions`-Tab.
+- Standard aus (Q-08). Solange aus, existiert kein Timer.
+- Aktion `apps.autoQuit.toggle`.
+- Beruehrt Story 11 (Per-App-Policies): Wird dort `ExceptionEntry` erweitert, zieht die Auto-Quit-Liste in dieselbe Tabelle um.
+
+#### 14D. Displays schlafen legen
+
+Eintrag: `Sleep Displays`.
+
+- Weg 1: `/usr/bin/pmset displaysleepnow` ueber `Process`. **Unverifiziert** ohne Admin-Rechte aus einer App mit Hardened Runtime.
+- Weg 2, falls Weg 1 scheitert: den Idle-Zustand ueber IOKit (`IODisplayWrangler`) anfordern. **Unverifiziert**, ob das unter Tahoe noch wirkt.
+- Scheitern beide, entfaellt der Eintrag.
+- Kurze Verzoegerung von 0.5 s vor der Ausfuehrung, damit das Loslassen der ausloesenden Taste den Bildschirm nicht sofort wieder weckt.
+- Aktion `system.sleepDisplays`.
+
+#### 14E. Ton und Mikrofon stummschalten
+
+Eintraege: `Mute Sound`, `Mute Microphone`, beide als Schalter mit Haekchen.
+
+- Oeffentliche CoreAudio-API: Standard-Ausgabe- bzw. Standard-Eingabegeraet ermitteln, `kAudioDevicePropertyMute` im jeweiligen Scope setzen.
+- Unterstuetzt ein Geraet kein Mute, wird fuer das Mikrofon die Eingangslautstaerke auf 0 gesetzt und der vorherige Wert gemerkt; fuer den Ton wird der Eintrag deaktiviert statt die Lautstaerke zu veraendern.
+- Das Haekchen zeigt den tatsaechlichen Zustand des Geraets, gelesen beim Oeffnen des Menues; ein Wechsel des Standardgeraets wird ueber einen CoreAudio-Property-Listener verfolgt, der nur existiert, solange das Mikrofon durch AltTab+ stummgeschaltet ist.
+- Beim Beenden von AltTab+ bleibt der Zustand, wie er ist, mit einer Ausnahme: eine per Lautstaerke 0 simulierte Mikrofon-Stummschaltung wird zurueckgesetzt, weil sie sonst ohne Hinweis bestehen bleibt.
+- Aktionen `audio.muteOutput.toggle`, `audio.muteInput.toggle`.
+
+#### 14F. Zwischenablage leeren
+
+Eintrag: `Clear Clipboard`.
+
+- `NSPasteboard.general.clearContents()`. Keine Rueckfrage.
+- Aktion `system.clearClipboard`.
+
+#### 14G. Alle Laufwerke auswerfen
+
+Eintrag: `Eject All Disks`.
+
+- Kandidaten: `FileManager.mountedVolumeURLs` mit `volumeIsEjectableKey` oder `volumeIsRemovableKey` gesetzt und `volumeIsInternalKey` nicht gesetzt; Netzlaufwerke zaehlen mit, Disk-Images auch.
+- Auswerfen je Laufwerk ueber `NSWorkspace.shared.unmountAndEjectDevice(at:)` auf einer Hintergrund-Queue.
+- Ergebnis per `TransientNotice`: Anzahl ausgeworfen, Namen der Laufwerke, die belegt waren.
+- Ohne Kandidaten ist der Eintrag deaktiviert.
+- Aktion `system.ejectAllDisks`.
+
+#### 14H. Mitteilungen
+
+Eintraege: `Clear Visible Notifications`, `Clear All Notifications`. (`iPhone Notifications` war als Sprung aus 14A geplant und ist mit 14A entfallen.)
+
+- Die ersten beiden steuern die Mitteilungszentrale ueber AX fern: Prozess `NotificationCenter`, Suche nach den Aktionen zum Schliessen bzw. `Clear All` und Ausloesen per `AXPerformAction`. Laeuft auf der AX-Queue mit Timeout (Q-02, Q-03).
+- Unterliegt SA-06: Die Rollen und Aktionsnamen werden je macOS-Major-Version in einer Tabelle gefuehrt; eine unbekannte Version deaktiviert die Eintraege.
+- `Clear Visible` betrifft nur Banner und gestapelte Mitteilungen, die gerade sichtbar sind; `Clear All` oeffnet die Mitteilungszentrale nicht sichtbar, falls das ohne Oeffnen nicht erreichbar ist, wird sie kurz geoeffnet und wieder geschlossen.
+- **Unverifiziert**: ob beides unter Tahoe ohne sichtbares Oeffnen geht. Der Spike entscheidet.
+- Aktionen `notifications.clearVisible`, `notifications.clearAll`.
+
+#### 14I. Bildschirm-Werkzeuge
+
+Eintraege: `Pick Color`, `Capture Text`, `Capture & Translate`, `Scan QR Code`, `Scan QR Code from Clipboard`.
+
+- **Pick Color**: `NSColorSampler` (oeffentlich). Ergebnis als Hex-Wert `#RRGGBB` in die Zwischenablage; `TransientNotice` zeigt den Wert mit Farbfeld. Das Format (Hex, `rgb()`, `NSColor`-Code) ist spaeter einstellbar, Standard Hex.
+- **Bereichsauswahl** fuer die drei Aufnahme-Werkzeuge: eigenes Auswahl-Overlay ueber alle Displays (Fadenkreuz, Escape bricht ab), dann Aufnahme des Bereichs ueber ScreenCaptureKit (`SCScreenshotManager`, ab macOS 14; darunter Eintraege deaktiviert, SA-05). Die Screen-Recording-Berechtigung hat AltTab+ bereits.
+- **Capture Text**: Texterkennung mit Vision (`VNRecognizeTextRequest`, Genauigkeit `accurate`, Sprachkorrektur an, Sprachen automatisch). Ergebnis zeilenweise in die Zwischenablage.
+- **Capture & Translate**: wie Capture Text, danach Uebersetzung in die Systemsprache mit dem Translation-Framework. **Unverifiziert**: ob sich eine Uebersetzung ohne SwiftUI-Ansicht programmatisch anstossen laesst und ab welcher macOS-Version. Ergebnis in einem kleinen Panel mit Original und Uebersetzung und einem Kopier-Knopf. Fehlende Sprachpakete: Hinweis mit Sprung in die Systemeinstellungen.
+- **Scan QR Code**: Bereichsauswahl, dann `VNDetectBarcodesRequest` auf QR (und weitere 2D-Codes). Ergebnis: Inhalt in die Zwischenablage; ist er eine URL, bietet `TransientNotice` `Open` an. Nie automatisch oeffnen.
+- **Scan QR Code from Clipboard**: dieselbe Erkennung auf einem Bild aus `NSPasteboard.general`. Ohne Bild in der Zwischenablage ist der Eintrag deaktiviert (wie im Supercharge-Menue ausgegraut).
+- Alles lokal. Keine Netzwerkaufrufe, keine Speicherung der Aufnahmen; Bilder leben nur im Speicher bis zum Ende der Erkennung.
+- Aktionen `tools.pickColor`, `tools.captureText`, `tools.captureTranslate`, `tools.scanQr`, `tools.scanQrClipboard`.
+
+#### 14J. Funktionstasten umschalten
+
+Eintrag: `Function Keys` als Schalter mit Haekchen (an = F1-F12 als Standard-Funktionstasten).
+
+- Systemwert `com.apple.keyboard.fnState` in der globalen Domain.
+- **Unverifiziert**: ob Schreiben des Werts allein wirkt oder ob das System ihn erst nach Neuanmeldung liest, und welcher oeffentliche oder private Weg ihn sofort anwendet. Der Spike entscheidet; ohne sofortige Wirkung entfaellt der Schalter.
+- Besitzmodell wie Story 4 (Pointer): AltTab+ merkt sich den Ausgangswert, schreibt nur nach ausdruecklicher Aktion und gibt beim Ausschalten des Moduls den Ausgangswert zurueck. Aendert ein anderes Werkzeug den Wert, zeigt das Haekchen den tatsaechlichen Zustand.
+- Beruehrt Hyperkey: Die Belegung der F-Tasten im Hyper-Pfad wird im Spike mitgeprueft.
+- Aktion `keyboard.fnKeys.toggle`.
+
+#### 14K. Cat Mode
+
+Eintrag: `Cat Mode` als Schalter mit Haekchen.
+
+- Sperrt die Tastatur, damit eine Katze (oder ein Kleinkind) nichts ausloest. Maus und Trackpad bleiben aktiv; das Sperren auch von Zeigergeraeten ist nicht vorgesehen, weil dann das Menue als Ausweg fehlt.
+- Umsetzung: ein aktiver Tap auf `keyDown`, `keyUp` und `flagsChanged`, der alle Ereignisse verschluckt. Er existiert nur, solange Cat Mode an ist.
+- **Pflicht-Auswege, alle drei aktiv**:
+  1. Der Panic-Kill-Switch (Q-01) wird vor dem Verschlucken ausgewertet und beendet Cat Mode immer.
+  2. Der Menue-Eintrag (per Maus) beendet Cat Mode.
+  3. Eine feste Tastenfolge beendet Cat Mode: das Wort `unlock` in Folge tippen. Eine Katze trifft das praktisch nie; ein Mensch ohne Maus kommt heraus.
+- Sichtbarer Zustand: ein kleines, nicht aktivierendes Overlay unten auf jedem Display (`Cat Mode — click the menu or type "unlock"`), dazu das Haekchen im Menue.
+- Automatisches Ende nach 60 Minuten (einstellbar 5 bis 240) und bei Sleep, Bildschirmsperre, Benutzerwechsel und Berechtigungsverlust (Q-15).
+- Tap-Recovery und Circuit Breaker wie Q-04 und Q-12. Faellt der Tap aus, endet Cat Mode sichtbar, statt stillschweigend nichts mehr zu sperren.
+- Safe Mode verhindert das Einschalten und beendet eine laufende Sperre.
+- Keine Tastenkombination zum Einschalten ab Werk; Einschalten per Leader oder Hyper ist erlaubt.
+- Aktion `system.catMode.toggle`.
+- Geraetepruefung Pflicht vor Freigabe, Punkt V-19.
+
+Pruefraster (Checklisten folgen je Block mit der Umsetzung):
+
+| Block | Kernpruefung |
+|---|---|
+| 14B | Rueckfrage nennt die richtigen Apps; eine App mit ungesichertem Dokument fragt selbst und bleibt bei Abbruch offen |
+| 14C | Schliessen des letzten Fensters beendet nur gelistete Apps, nach der Wartezeit; neues Fenster in der Wartezeit verhindert es |
+| 14D | Displays gehen aus und wachen bei Tastendruck normal auf |
+| 14E | Haekchen stimmt nach Geraetewechsel (AirPods an/aus) |
+| 14G | USB-Stick, Disk-Image und Netzlaufwerk werden ausgeworfen; ein belegtes Laufwerk wird gemeldet |
+| 14H | Beide Aktionen wirken unter der aktuellen macOS-Version; unbekannte Version deaktiviert sie |
+| 14I | Alle Werkzeuge auf zwei Displays mit unterschiedlicher Skalierung; Escape bricht ohne Rest ab |
+| 14J | Umschalten wirkt sofort; Ausschalten gibt den Ausgangswert zurueck |
+| 14K | Alle drei Auswege; Tap-Ausfall beendet sichtbar; Auto-Ende nach Ablauf und bei Sleep |
+
+Umsetzungsstand 2026-09-16:
+
+- 14A: entfernt, siehe oben.
+- 14B: Rueckfrage mit "Cancel" als Standard, danach `terminate()`; nach 5 s Hinweis auf noch laufende Apps.
+- 14C: Einhaengepunkt ist die gebuendelte Zerstoerung in `AccessibilityEvents.windowDestroyed`, nicht `Windows.removeWindows`, damit das Entfernen unerreichbarer Fenster kein Beenden ausloest. **Abweichung**: Die Einstellungen stehen im neuen Tab `System Actions`, nicht in `General`.
+- 14D: zuerst `pmset displaysleepnow`, sonst `IODisplayWrangler`; beides am Geraet offen.
+- 14E: wie spezifiziert; der Listener fuer das Standard-Eingabegeraet existiert nur waehrend einer simulierten Stummschaltung.
+- 14E, Nachtrag 2026-09-16 auf Wunsch des Nutzers: macOS zeigt ein stummes Mikrofon nirgends an. `MicMuteIndicator` legt deshalb ein eigenes Menueleisten-Symbol (`mic.slash.fill`) an, solange das Standard-Mikrofon stumm ist, egal wer es stummgeschaltet hat; ein Klick hebt die Stummschaltung auf. CoreAudio-Listener auf Mute und Lautstaerke des Geraets und auf den Wechsel des Standardgeraets laufen nur, solange die Einstellung `Show an icon in the menu bar while the microphone is muted` (Tab `System Actions`, Standard an) aktiv ist. Am Geraet gesehen: Symbol erscheint bei stummem Mikrofon.
+- 14I: Uebersetzung ueber `TranslationSession(installedSource:target:)`, das im SDK ab macOS 26 ohne SwiftUI verfuegbar ist (2026-09-16 im Interface gelesen); Quellsprache per `NLLanguageRecognizer`. Unter macOS 26 ist `Capture & Translate` deaktiviert, die anderen Aufnahme-Werkzeuge unter macOS 14.
+- 14H: Die Struktur der Mitteilungszentrale ist nicht belegt; freigegeben ist nur macOS 26 (V-21). Gesucht wird nach benannten AX-Aktionen (`Close`, `Clear`, `Clear All`, deutsch `Schliessen`, `Löschen`, `Alle löschen`).
+- 14J: Lesen von `HIDFKeyMode` ueber `IOHIDCopyCFTypeParameter` und Schreiben desselben Werts ueber `IOHIDSetCFTypeParameter` am 2026-09-16 erfolgreich; die Wirkung eines echten Wechsels ist V-20. Die Rueckgabe des Ausgangswerts liegt als Knopf im Tab `System Actions`, weil es keinen separaten Modul-Schalter gibt.
+- 14K: Der Tap erkennt den Notfall-Shortcut selbst und ruft `KeyboardEvents.triggerEmergencyStop()`; der Sicherheitspfad beendet Cat Mode ebenfalls. Faellt der Tap aus, endet Cat Mode mit Hinweis (fail-closed statt Reaktivierung).
+- 14L: Als Browser zaehlt nur eine App, die Web-Adressen **und** HTML-Dateien oeffnet. Nur Web-Adressen melden auch BetterTouchTool, ChatGPT und cmux an; am 2026-09-16 so geprueft, die sieben echten Browser erfuellen beides.
+- 14L: Die Browser-Aktionen werden beim Start fuer die dann installierten Browser registriert; ein spaeter installierter Browser bleibt ueber seine `stableId` ausloesbar.
+
+#### 14L. Standardbrowser
+
+Eintrag: `Default Browser` mit Untermenue.
+
+- Untermenue: alle installierten Apps, die `https` oeffnen koennen (`NSWorkspace.urlsForApplications(toOpen:)` mit einer `https`-URL), je mit App-Symbol (16 pt) und Namen, alphabetisch. Der aktuelle Standard (`NSWorkspace.urlForApplication(toOpen:)`) traegt ein Haekchen.
+- Auswahl setzt den Standard fuer `http` und `https` ueber `NSWorkspace.setDefaultApplication(at:toOpenURLsWithScheme:)`. macOS zeigt dabei seine eigene Rueckfrage; AltTab+ umgeht sie nicht.
+- Die Liste wird beim Oeffnen des Untermenues gebaut (`menuNeedsUpdate`), nicht beim Start.
+- Doppelte Eintraege derselben Bundle-ID (mehrere Installationen) zeigen den Pfad als Untertitel.
+- Aktionen: `browser.setDefault.<bundleId>` werden dynamisch registriert, damit Leader und FlickRing einen bestimmten Browser setzen koennen; fehlt der Browser spaeter, ist die Aktion `unavailable`.
+
+### 15. Menueleisten-Menue nach Kategorien gruppiert
+
+Status: Umgesetzt 2026-09-16; Menue am Geraet noch nicht angesehen (`docs/system-actions-checklist.md`, Schritte 1-6). Waechst mit neuen Eintraegen
+Prioritaet: Mittel. Ohne Gruppierung wird das Menue mit den neuen Eintraegen unbenutzbar lang
+
+Ziel: Alle Eintraege des Menueleisten-Menues stehen in Gruppen, die sich aus ihrem Inhalt ergeben. Jede Gruppe hat eine Ueberschrift und ist durch Trenner abgesetzt. Vorbild ist die Gliederung des Supercharge-Menues (Aktionen, Schalter, Untermenues, Systemeinstellungen, App-Menue), verfeinert nach Inhalt.
+
+Gruppen und Reihenfolge:
+
+| # | Gruppe | Eintraege | Herkunft |
+|---|---|---|---|
+| 1 | Switcher | `Show` | vorhanden |
+| 2 | Fenster | `Isolate Window`, `Minimize App Windows Except Frontmost`, `Hide Other Apps`, dazu die in 12b gewaehlten | Story 12 |
+| 3 | Apps | `Quit All Apps…`, `Quit All Apps Except Frontmost…` | Story 14B |
+| 4 | Werkzeuge | `Pick Color`, `Capture Text`, `Capture & Translate`, `Scan QR Code`, `Scan QR Code from Clipboard`. Immer sichtbar, ohne Schalter | Story 14I |
+| 5 | Mitteilungen | `Clear Visible Notifications`, `Clear All Notifications` | Story 14H |
+| 6 | System | `Clear Clipboard`, `Eject All Disks`, `Sleep Displays` | Story 14D, 14F, 14G |
+| 7 | Schalter | `Keep Awake >`, `Mute Sound`, `Mute Microphone`, `Function Keys`, `Auto-Quit Apps`, `Cat Mode` | Story 10, 14C, 14E, 14J, 14K |
+| 8 | Standards | `Default Browser >` | Story 14L |
+| 9 | AltTab+ | `Settings…`, `Check Permissions…`, `About AltTab+`, `Debug >`, `Quit AltTab+` | vorhanden, Story 13 |
+
+Aufbau:
+
+- **Entschieden 2026-09-16**: Alle Gruppen ausser `Switcher`, `Fenster` und dem AltTab+-Block stehen unter einem Eintrag `Other… >` (zuerst `Other Tools`, am selben Tag umbenannt), an der Stelle der ersten dieser Gruppen. Darin sind sie Abschnitte mit Ueberschrift `Tools` und `Toggles`, wie die Gruppen im Hauptmenue, keine weiteren Untermenues. Nur Keep Awake behaelt sein eigenes Untermenue mit den Dauern. `Fenster` bleibt flach. Eine leere Untergruppe faellt weg; sind beide leer, faellt `Other Tools` weg.
+- Ueberschriften ueber `NSMenuItem.sectionHeader(title:)` ab macOS 14; darunter nur Trenner ohne Ueberschrift (SA-05).
+- Die Gruppe `Schalter` zeigt Zustaende mit Haekchen (`state = .on`), wie im Supercharge-Menue. Eintraege mit Rueckfrage oder Fenster tragen Auslassungspunkte.
+- Die Gruppe `AltTab+` steht immer zuletzt, ohne Ueberschrift, nur durch einen Trenner abgesetzt.
+- Eine leere Gruppe (alle Eintraege ausgeblendet oder nicht verfuegbar) erscheint samt Ueberschrift und Trenner nicht. Doppelte oder fuehrende Trenner werden beim Aufbau entfernt.
+- Der Aufbau liegt in einer reinen Funktion, die aus einer Liste von Gruppen und Sichtbarkeiten die Menuestruktur als Daten liefert (unit-getestet: leere Gruppen, Trenner, Reihenfolge). `Menubar` setzt diese Daten nur in `NSMenuItem`s um.
+- Das Menue wird nicht bei jedem Oeffnen neu gebaut, sondern bei Aenderung der Sichtbarkeit; nur dynamische Inhalte (Haekchen, Restzeit, Browser-Liste, Verfuegbarkeit) aktualisiert `menuNeedsUpdate`. Das haelt das Oeffnen schnell (Bezug: Befund zum Idle-CPU der Spaces-Reihe, PR #44).
+- `Menubar.addMenuItem` bekommt das Zielmenue als Parameter (siehe Story 13) und einen Parameter fuer die Gruppe; eine zweite Hilfsfunktion entsteht nicht.
+
+Sichtbarkeit (ersetzt am 2026-09-16):
+
+- **Entschieden 2026-09-16**: `Settings…` steht als eigener Eintrag ganz oben, vor `Switcher`. Im AltTab+-Block steht `About AltTab+` vor `Check permissions…`.
+- **Entschieden 2026-09-16**: Es gibt kein Ein- und Ausblenden mehr. Alle Eintraege sind immer sichtbar. Im Hauptmenue stehen nur `Switcher`, `Fenster` und der AltTab+-Block; alle anderen Gruppen (`Apps`, `Werkzeuge`, `Mitteilungen`, `System`, `Schalter`, `Standards`) sind Abschnitte mit Ueberschrift im Untermenue `Other… >`.
+- Die frueheren Schalter-Praeferenzen (`menuGroupVisible.*`, `menuEntryVisible.*`) entfernt eine Migration beim Start.
+- Der Settings-Tab heisst jetzt `Menu Actions` und vergibt nur noch globale Shortcuts fuer die Aktionen, gruppiert wie im Menue. Keep-Awake-Shortcuts bleiben im Tab `Keep Awake`, damit je Praeferenz genau ein Recorder existiert.
+
+Umsetzungsstand 2026-09-16:
+
+- `MenuLayout` (rein, unit-getestet) liefert die Struktur; `MenubarMenu` setzt sie um und aktualisiert Titel, Haekchen und Verfuegbarkeit in `menuNeedsUpdate`. Submenues bauen sich beim Oeffnen neu.
+- Der eigene Sidebar-Eintrag (zuerst `Menu Bar Menu`, jetzt `Menu Actions`) vergibt die Shortcuts der neuen Aktionen.
+- `Menubar.addMenuItem` ist entfallen; das Menue entsteht vollstaendig im Builder.
+
+Regeln:
+
+| ID | Anforderung | Begruendung |
+|---|---|---|
+| MG-01 | Gruppen und Reihenfolge stammen aus einer einzigen Tabelle im Code | Keine verstreute Menuelogik |
+| MG-02 | Neue Eintraege spaeterer Stories werden einer bestehenden Gruppe zugeordnet; eine neue Gruppe entsteht nur, wenn der Inhalt in keine passt, und wird hier nachgetragen | Taxonomie folgt dem Inhalt |
+| MG-03 | `Settings…` und `Quit AltTab+` stehen immer im Hauptmenue | Ausweg aus jeder Einstellung |
+| MG-04 | Das Oeffnen des Menues loest keine AX-Arbeit und keinen Prozessstart aus | Menue muss sofort erscheinen |
+| MG-05 | Die bestehende Permission-Callout-Zeile bleibt ganz oben und wird wie heute ein- und ausgefuegt | Bestehendes Verhalten |
 
 ## Distribution und Migration
 
@@ -1390,7 +2092,7 @@ Default-Settings, Reset-Verhalten und Migration werden nach jedem neuen Modul ge
 | V-02 | Versions-Policy nach Tahoe-only | Klaeren: nur aktuelle Major-Version `N` oder `N und N-1` |
 | V-03 | Private Symbolbindung | `_AXUIElementGetWindow` ist optional zur Laufzeit gebunden; weitere private Symbole vor ihrer ersten neuen Modulnutzung gleichwertig degradierbar machen |
 | V-04 | Provenienz-Register | `THIRD-PARTY.md` ist fuer die bisher ausgewerteten Quellen angelegt; Pflege im PR-Prozess bleibt zu erzwingen |
-| V-05 | Modul- und App-Klassen-Checklisten | `docs/input-safety-checklist.md`, `docs/window-layout-checklist.md`, `docs/window-drag-checklist.md`, `docs/shortcut-clues-checklist.md` und `docs/spaces-menubar-checklist.md` vor jeder oeffentlichen Version und nach jedem unterstuetzten macOS-Major-Update ausfuehren |
+| V-05 | Modul- und App-Klassen-Checklisten | `docs/input-safety-checklist.md`, `docs/window-layout-checklist.md`, `docs/window-drag-checklist.md`, `docs/shortcut-clues-checklist.md` `docs/spaces-menubar-checklist.md` und `docs/system-actions-checklist.md` vor jeder oeffentlichen Version und nach jedem unterstuetzten macOS-Major-Update ausfuehren |
 | V-06 | Energie-Baseline | Idle- und Aktivmessungen auf dem Tahoe-/Apple-Silicon-Zielgeraet dokumentieren |
 | V-07 | Distribution | Signing, Notarisierung, Vertriebskanal und Update-Strategie vor erster oeffentlicher Version abschliessen; Sparkle bleibt optional |
 | V-08 | Safe Start und Circuit Breaker | Vor dem ersten ausgelieferten Input-Modul mit Login-Start, verbliebenem Arming-Marker und wiederholtem Tap-Timeout pruefen |
@@ -1403,6 +2105,10 @@ Default-Settings, Reset-Verhalten und Migration werden nach jedem neuen Modul ge
 | V-15 | Profile und Session-Restore | Fenster-Matching, App-Start, verlorene Space-Bindings, geaenderte Titel, mehrere Fenster derselben App und geaenderte Display-Topologie ohne falsche Mutation pruefen |
 | V-16 | Dock-Aktivierung ueber Space-Grenzen | Beobachtung 2A-1 zuordnen: Klick im Dock auf eine App, deren Fenster auf einem anderen Space liegt, wirkt erst beim zweiten Mal. Mit beendetem AltTab+ wiederholen; tritt es weiter auf, ist es Systemverhalten und die Beobachtung wird geschlossen, sonst beginnt die Suche bei den Maus-Taps |
 | V-17 | Scrollrichtung der Maus | Story 6a am Geraet: Umkehr wirkt in mehreren App-Klassen, das Trackpad bleibt unberuehrt, Safe Mode schaltet ab und gibt frei, der Tap kommt nach einem Timeout zurueck. Dazu die offene Messung: Scroll-Latenz und Leerlaufverbrauch mit dauerhaft aktivem `scrollWheel`-Tap gegen die Baseline. Checkliste in `docs/scroll-direction-checklist.md` |
+| V-18 | Smoothed Scrolling | Story 6c am Geraet: Fluss und Auslauf in AppKit, Safari, Chromium/Electron und Terminal, zusammen mit Reverse und Speed; Abbruch durch Safe Mode, Switcher, Sleep und Beenden ohne Nachlaufen; Leerlauf ohne Timer; Verbrauch waehrend des Scrollens. Das Ergebnis entscheidet ueber die Gesten-Begleiter (6c-2). Voraussetzung: V-17 bestanden. Checkliste folgt mit der Umsetzung |
+| V-19 | Cat Mode | Story 14K am Geraet: alle drei Auswege (Panic-Kill-Switch, Menue, `unlock`), Tap-Ausfall beendet sichtbar, Auto-Ende nach Ablauf, bei Sleep und Bildschirmsperre; keine haengenden Modifier nach dem Ende. Vor jeder Freigabe Pflicht |
+| V-20 | Funktionstasten | Story 14J: wirkt ein Wechsel von `HIDFKeyMode` sofort, bleibt er nach Neustart, und gibt `Restore Original Mode` den Ausgangswert zurueck. Lesen und Schreiben desselben Werts sind belegt (2026-09-16) |
+| V-21 | Mitteilungen per AX | Story 14H: Struktur und Aktionsnamen der Mitteilungszentrale unter macOS 26 belegen; erst danach gilt die Versionsfreigabe als geprueft |
 
 ## Provenienz-Register
 
@@ -1426,6 +2132,77 @@ Regeln:
 - `xiamaz/YabaiIndicator` ist MIT-lizenziert; vorerst Typ A fuer Menueleisten-Darstellung, Multi-Display-Gruppierung und ereignisbasierte Aktualisierung. Keine yabai-, Socket- oder SIP-abhaengige Implementierung uebernehmen.
 - `royalbhati/HopTab` ist MIT-lizenziert; vorerst Typ A fuer Profile, Space-Binding und Session-Ablauf. Keine direkte Uebernahme des sitzungslokalen Space-ID- oder titelbasierten Fenster-Matchings.
 - PR-Template spaeter um Checkbox ergaenzen: Provenienz-Register aktualisiert oder n/a.
+
+## Supercharge-Abgleich (2026-09-16)
+
+Quelle: Menue von Supercharge (Sindre Sorhus, https://sindresorhus.com/supercharge), Stand 2026-09-16, per Screenshot. Nicht quelloffen; alles hier ist Art A. Die Gruppen ergeben sich aus den Menueeintraegen selbst. Die technische Einschaetzung ist nicht am Geraet geprueft; Punkte mit **unverifiziert** vor einer Aufnahme belegen.
+
+Entschieden 2026-09-16:
+
+- **Nicht vorsehen**: Dock-Klick-Logik (minimieren, durch Fenster wechseln, Mittelklick-Aktionen) und Aktionen in Mission Control. Beide stehen unter `Nicht-Ziele`.
+- **Spezifiziert**: `Isolate Window` samt Verwandten als Story 12, die Debug-Eintraege als Story 13.
+- **Zur Uebernahme bestimmt, 2026-09-16**: Keep Awake (Story 10, Menue-Nachtrag), Apps beenden, Auto-Quit, Displays schlafen, Ton und Mikrofon, Zwischenablage, Laufwerke, Standardbrowser, Funktionstasten, Bildschirm-Werkzeuge, Mitteilungen und Cat Mode als Story 14; die Gruppierung des Menues als Story 15. Bleiben `ENTFERNEN`: Empty Trash, Cleaning Mode, Dark Mode, Night Shift, Grayscale, Low Power Mode, die Desktop- und Dock-Schalter sowie die Vertriebs-Eintraege.
+
+Legende: `STORY n` = in dieser Story spezifiziert; `VORHANDEN` = im Fork schon abgedeckt; `OPTIONAL` = passt, aber kein Bedarf festgestellt; `SPAETER` = passt, aber offene technische Frage; `ENTFERNEN` = passt nicht zum Produkt.
+
+| # | Gruppe | Supercharge-Eintrag | Einstufung | Begruendung |
+|---|---|---|---|---|
+| 1 | Fenster und Apps | Hide All Windows | STORY 12 | Stufe 12b, optional |
+| 2 | Fenster und Apps | Minimize All Windows | STORY 12 | Stufe 12b, optional |
+| 3 | Fenster und Apps | Minimize All Windows Except Frontmost | STORY 12 | Stufe 12b, optional |
+| 4 | Fenster und Apps | Minimize App Windows Except Frontmost | STORY 12 | Baustein B2, behalten |
+| 5 | Fenster und Apps | Isolate Window | STORY 12 | Kern der Story |
+| 6 | Fenster und Apps | Show Desktop | STORY 12 | Stufe 12b, spaeter |
+| 7 | Bildschirm-Werkzeuge | Pick Color | STORY 14 | 14I; am 2026-09-16 vom Nutzer zur Uebernahme bestimmt |
+| 8 | Bildschirm-Werkzeuge | Capture Text | STORY 14 | 14I |
+| 9 | Bildschirm-Werkzeuge | Capture & Translate | STORY 14 | 14I; Uebersetzung **unverifiziert** |
+| 10 | Bildschirm-Werkzeuge | Scan QR Code | STORY 14 | 14I |
+| 11 | Bildschirm-Werkzeuge | Scan QR Code from Clipboard | STORY 14 | 14I |
+| 12 | Mitteilungen | Clear Visible Notifications | STORY 14 | 14H; AX-Fernsteuerung, versionsgegatet |
+| 13 | Mitteilungen | Clear All Notifications | STORY 14 | 14H; wie oben |
+| 14 | Aufraeumen | Clear Clipboard | STORY 14 | 14F |
+| 15 | Fenster und Apps | Quit All Apps | STORY 14 | 14B, mit Rueckfrage |
+| 16 | Fenster und Apps | Quit All Apps Except Frontmost | STORY 14 | 14B, mit Rueckfrage |
+| 17 | Aufraeumen | Eject All Disks | STORY 14 | 14G |
+| 18 | Aufraeumen | Empty Trash | ENTFERNEN | Endgueltiges Loeschen per Tastendruck ist zu riskant |
+| 19 | Eingabe und Ton | Cleaning Mode | ENTFERNEN | Sperrt alle Eingaben ueber einen umfassenden Tap; kollidiert mit Q-01 |
+| 20 | Eingabe und Ton | Cat Mode | STORY 14 | 14K; drei Pflicht-Auswege inkl. Q-01 |
+| 21 | Energie und Anzeige | Sleep Displays | STORY 14 | 14D; Weg ohne Admin-Rechte **unverifiziert** |
+| 22 | Energie und Anzeige | Dark Mode | ENTFERNEN | Nur ueber AppleScript an System Events, also neue Automation-Berechtigung |
+| 23 | Energie und Anzeige | Night Shift | ENTFERNEN | Nur ueber private API (**unverifiziert**); kein Produktbezug |
+| 24 | Energie und Anzeige | Grayscale Mode | ENTFERNEN | Wie Night Shift |
+| 25 | Energie und Anzeige | Low Power Mode | ENTFERNEN | Umschalten braucht nach Kenntnisstand Admin-Rechte (**unverifiziert**); kein `sudo` |
+| 26 | Energie und Anzeige | Keep Awake | STORY 10 | Spezifiziert; Menue-Einbindung nachgetragen 2026-09-16 |
+| 27 | Desktop und Dock | Desktop Icons | ENTFERNEN | Schreibt Finder-Einstellungen und startet Finder neu; widerspricht dem Besitz-Modell fuer Systemwerte |
+| 28 | Desktop und Dock | Desktop Widgets | ENTFERNEN | Wie oben, fuer WindowManager |
+| 29 | Desktop und Dock | Desktop Icons & Widgets | ENTFERNEN | Kombination der beiden |
+| 30 | Desktop und Dock | Hot Corners | ENTFERNEN | Schreibt Dock-Einstellungen und startet das Dock neu; stoert Instant Spaces |
+| 31 | Eingabe und Ton | Function Keys | STORY 14 | 14J; sofortige Wirkung **unverifiziert** |
+| 32 | Eingabe und Ton | Mute Sound | STORY 14 | 14E |
+| 33 | Eingabe und Ton | Mute Microphone | STORY 14 | 14E |
+| 34 | Mitteilungen | iOS Notifications | ENTFERNEN | Zur Uebernahme bestimmt, nach dem Test am 2026-09-16 wieder verworfen (14A) |
+| 35 | Fenster und Apps | Auto-Quit Apps | STORY 14 | 14C |
+| 36 | Systemeinstellungen | Default Browser (Untermenue) | STORY 14 | 14L, Untermenue mit App-Symbolen |
+| 37 | Systemeinstellungen | VPN & Filters | ENTFERNEN | Zur Uebernahme bestimmt, nach dem Test am 2026-09-16 wieder verworfen (14A) |
+| 38 | Systemeinstellungen | Hide My Email | ENTFERNEN | Zur Uebernahme bestimmt, nach dem Test am 2026-09-16 wieder verworfen (14A) |
+| 39 | Systemeinstellungen | Private Relay | ENTFERNEN | Zur Uebernahme bestimmt, nach dem Test am 2026-09-16 wieder verworfen (14A) |
+| 40 | App-Menue | Settings… | VORHANDEN | Standard |
+| 41 | App-Menue | About | VORHANDEN | Standard |
+| 42 | App-Menue | Support & Feedback | VORHANDEN | Das Feedback-Fenster des Forks existiert (`FeedbackWindow`) |
+| 43 | App-Menue | Release Notes | VORHANDEN | Der About-Tab verlinkt `Latest releases` |
+| 44 | App-Menue | Troubleshooting | OPTIONAL | Einstieg zu `docs/high-cpu-troubleshooting.md` und den Checklisten |
+| 45 | App-Menue | Tips | ENTFERNEN | Vertriebs- und Onboarding-Inhalt ohne Nutzen fuer den Fork |
+| 46 | App-Menue | FAQ | ENTFERNEN | Wie oben |
+| 47 | App-Menue | Website | OPTIONAL | Ein Link auf das Repo |
+| 48 | App-Menue | Share App | ENTFERNEN | Vertriebsfunktion |
+| 49 | App-Menue | More Apps by Me | ENTFERNEN | Vertriebsfunktion |
+| 50 | Debug | Copy Debug Info | STORY 13 | D1 |
+| 51 | Debug | Copy Accessibility Tree | STORY 13 | D2 |
+| 52 | Debug | Reset Permissions | STORY 13 | D3 |
+| 53 | App-Menue | Quit Supercharge | VORHANDEN | Standard |
+| 54 | App-Menue | Buy App | ENTFERNEN | Vertriebsfunktion |
+
+Die drei Debug-Eintraege sind fuer die Entwicklung dieses Forks wertvoller als alle uebrigen optionalen Punkte; sie sind am 2026-09-16 als Story 13 aufgenommen. Die Tabelle fuehrt die Eintraege in der Reihenfolge des Menues (54 Eintraege; die Browser-Liste im Untermenue `Default Browser` zaehlt nicht mit, sie zeigt installierte Apps).
 
 ## Gelesene Inspirationsquellen
 
@@ -1452,8 +2229,12 @@ Regeln:
 - jurplel/InstantSpaceSwitcher: https://github.com/jurplel/InstantSpaceSwitcher
 - xiamaz/YabaiIndicator: https://github.com/xiamaz/YabaiIndicator
 - royalbhati/HopTab: https://github.com/royalbhati/HopTab
+- Supercharge: https://sindresorhus.com/supercharge
+- LinearMouse Smoothed Scrolling: https://github.com/linearmouse/linearmouse/tree/d82e98fba7f2/LinearMouse/EventTransformer
 
 ## Nicht-Ziele fuer die erste Iteration
+
+- Spruenge in die Systemeinstellungen als Menueeintraege (VPN, Hide My Email, Private Relay, iPhone-Mitteilungen). Entschieden 2026-09-16; einzelne Bereiche lassen sich weiter ueber Open-URL-Slots oeffnen.
 
 - Vollstaendige BetterTouchTool-Kompatibilitaet.
 - Beliebig skriptbare Automationen.
@@ -1462,5 +2243,7 @@ Regeln:
 - App-, Display- oder Device-ID-spezifische Pointer-/Scroll-Regeln.
 - Ueberschreiben oder Unterdruecken nativer Apple-Snap-Zonen ausserhalb einer expliziten AltTab+-Modifier-Drag-Sitzung.
 - Abfangen oder Ersetzen nativer Space-Trackpad-Swipes im Instant-Spaces-MVP.
+- Dock-Klick-Logik nach Supercharge-Vorbild (Klick minimiert, wechselt durch Fenster oder holt minimierte zurueck; Mittelklick-Aktionen). Entschieden 2026-09-16: braucht einen Maus-Tap mit Dock-Trefferpruefung, das Durchwechseln leistet der Switcher, und V-16 ist ungeklaert.
+- Aktionen direkt in Mission Control (Schliessen, Ausblenden, Beenden, Minimieren). Entschieden 2026-09-16: keine oeffentliche Schnittstelle; der Switcher bietet dieselben Aktionen je Kachel.
 - Intel-Support.
 - Support fuer macOS-Versionen vor Tahoe.

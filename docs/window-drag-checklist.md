@@ -43,12 +43,15 @@ route comes first.
 
 | # | Step | Expectation |
 |---|---|---|
-| 13 | Drag to the left and right screen edge | Overlay appears immediately, window snaps to that half on release |
-| 14 | Drag to the top edge, into the menubar strip | Overlay fills the visible desktop; not a fullscreen Space |
-| 15 | Drag to the bottom edge | Nothing — that edge is deliberately inert because of the Dock |
+| 13 | Drag to the left and right screen edge, in the mid-height strip | Overlay shows the half at the very edge |
+| 13a | Keep pushing inward from that edge | Overlay steps half → left/right third → two-thirds across three ~16pt bands, then clears past ~48pt |
+| 13b | Drag into each of the four corners | Overlay shows that corner's quarter; the corner wins over the half/third bands and over fill |
+| 14 | Drag to the top edge (mid), into the menubar strip | Overlay fills the visible desktop; not a fullscreen Space |
+| 14a | Compare a drag-snapped third with the keyboard Window Layout third | Both land on the exact same rectangle |
+| 15 | Drag to the bottom edge (mid) | Nothing — that edge is deliberately inert because of the Dock |
 | 16 | Leave an edge again before releasing | The overlay disappears and the window keeps the free position |
 | 17 | Release in the middle of the screen | The window stays where it was dropped |
-| 18 | With several displays: approach an edge shared with another display | Snapping needs a short dwell, crossing to the other screen does not snap |
+| 18 | With several displays: approach an edge shared with another display | Snapping needs a short dwell for every target on that edge (half, third, two-thirds, corner), crossing over does not snap |
 
 ## Menubar drop
 

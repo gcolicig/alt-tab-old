@@ -159,6 +159,12 @@ class ControlsTab {
         (0..<Preferences.maxOpenUrlCount).forEach { index in
             actions[OpenUrlAction.shortcutPreferenceKey(index)] = { Actions.perform(.openUrl(index)) }
         }
+        (0..<Preferences.maxProfileCount).forEach { index in
+            actions[ProfileStore.shortcutPreferenceKey(index)] = { Actions.perform(.activateProfile(index)) }
+        }
+        SystemAction.allCases.forEach { action in
+            actions[action.shortcutPreferenceKey] = { Actions.perform(.system(action)) }
+        }
         return actions
     }()
     static var arrowKeysCheckbox: Switch!
@@ -190,6 +196,8 @@ class ControlsTab {
         keys += SpaceAction.all.map(\.shortcutPreferenceKey)
         keys += (0..<Preferences.maxLaunchAppCount).map(LaunchAppAction.shortcutPreferenceKey)
         keys += (0..<Preferences.maxOpenUrlCount).map(OpenUrlAction.shortcutPreferenceKey)
+        keys += (0..<Preferences.maxProfileCount).map(ProfileStore.shortcutPreferenceKey)
+        keys += SystemAction.allCases.map(\.shortcutPreferenceKey)
         return keys
     }()
     private static let globalActionShortcutPreferences = Set(
@@ -198,6 +206,7 @@ class ControlsTab {
             + SpaceAction.all.map(\.shortcutPreferenceKey)
             + (0..<Preferences.maxLaunchAppCount).map(LaunchAppAction.shortcutPreferenceKey)
             + (0..<Preferences.maxOpenUrlCount).map(OpenUrlAction.shortcutPreferenceKey)
+            + (0..<Preferences.maxProfileCount).map(ProfileStore.shortcutPreferenceKey)
             + [ShortcutCluesController.shortcutPreferenceKey])
     private static let removableShortcutPreferences = [
         "holdShortcut", "nextWindowShortcut",

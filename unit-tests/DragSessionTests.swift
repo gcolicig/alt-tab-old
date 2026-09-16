@@ -138,6 +138,66 @@ final class DragSessionTests: XCTestCase {
         XCTAssertEqual(DragSnapPolicy.frame(.rightHalf, in: odd)!.maxX, odd.maxX)
     }
 
+    // MARK: - Phase 5: quarters and edge-depth thirds
+
+    /// The four 48x48 corner boxes snap to quarters. Screen is 1000x800, so the near-corner reach ends at
+    /// x 48/952 and y 48/752.
+    func testTheCornersSnapToQuarters() {
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: CGPoint(x: 10, y: 10), visibleFrame: screen)), .topLeftQuarter)
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: CGPoint(x: 990, y: 10), visibleFrame: screen)), .topRightQuarter)
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: CGPoint(x: 10, y: 790), visibleFrame: screen)), .bottomLeftQuarter)
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: CGPoint(x: 990, y: 790), visibleFrame: screen)), .bottomRightQuarter)
+    }
+
+    /// A corner wins over the depth bands and over fill: the very top-left is a quarter, not a half or fill.
+    func testACornerWinsOverTheEdgeItShares() {
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: CGPoint(x: 2, y: 2), visibleFrame: screen)), .topLeftQuarter)
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: CGPoint(x: 2, y: 40), visibleFrame: screen)), .topLeftQuarter)
+        // just below the corner box, the left edge is a plain half again
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: CGPoint(x: 2, y: 60), visibleFrame: screen)), .leftHalf)
+    }
+
+    /// In the mid-height strip, pushing inward from the left edge steps half → third → two-thirds; the bands
+    /// are 16pt each (edgeReach 48 / 3).
+    func testTheLeftEdgeDepthStepsThroughHalfThirdTwoThirds() {
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: CGPoint(x: 5, y: 400), visibleFrame: screen)), .leftHalf)
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: CGPoint(x: 20, y: 400), visibleFrame: screen)), .leftThird)
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: CGPoint(x: 40, y: 400), visibleFrame: screen)), .leftTwoThirds)
+        // past the reach the window drags freely again
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: CGPoint(x: 60, y: 400), visibleFrame: screen)), .none)
+    }
+
+    func testTheRightEdgeDepthMirrorsTheLeft() {
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: CGPoint(x: 995, y: 400), visibleFrame: screen)), .rightHalf)
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: CGPoint(x: 980, y: 400), visibleFrame: screen)), .rightThird)
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: CGPoint(x: 960, y: 400), visibleFrame: screen)), .rightTwoThirds)
+    }
+
+    /// The new targets keep the shared-edge dwell: a third on an edge that borders another display waits.
+    func testDepthAndCornerTargetsStillRespectSharedEdgeDwell() {
+        let third = CGPoint(x: 20, y: 400)
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: third, visibleFrame: screen, hasNeighbourLeft: true, dwellElapsed: 0.05)), .none)
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: third, visibleFrame: screen, hasNeighbourLeft: true, dwellElapsed: 0.25)), .leftThird)
+        // a top-left quarter is shared by the display above as well
+        let corner = CGPoint(x: 10, y: 10)
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: corner, visibleFrame: screen, hasNeighbourAbove: true, dwellElapsed: 0.05)), .none)
+        XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: corner, visibleFrame: screen, hasNeighbourAbove: true, dwellElapsed: 0.25)), .topLeftQuarter)
+    }
+
+    func testThirdFramesMatchTheKeyboardLayoutsAndQuartersTileTheScreen() {
+        XCTAssertEqual(DragSnapPolicy.frame(.leftThird, in: screen), WindowLayoutGeometry.frame(.leftThird, in: screen))
+        XCTAssertEqual(DragSnapPolicy.frame(.rightTwoThirds, in: screen), WindowLayoutGeometry.frame(.rightTwoThirds, in: screen))
+        let tl = DragSnapPolicy.frame(.topLeftQuarter, in: screen)!
+        let tr = DragSnapPolicy.frame(.topRightQuarter, in: screen)!
+        let bl = DragSnapPolicy.frame(.bottomLeftQuarter, in: screen)!
+        let br = DragSnapPolicy.frame(.bottomRightQuarter, in: screen)!
+        XCTAssertEqual(tl, CGRect(x: 0, y: 0, width: 500, height: 400))
+        XCTAssertEqual(tl.maxX, tr.minX)
+        XCTAssertEqual(tl.maxY, bl.minY)
+        XCTAssertEqual(br.maxX, screen.maxX)
+        XCTAssertEqual(br.maxY, screen.maxY)
+    }
+
     func testADegenerateScreenProducesNoTargetAndNoFrame() {
         let empty = CGRect(x: 0, y: 0, width: 0, height: 0)
         XCTAssertEqual(DragSnapPolicy.target(DragSnapContext(cursor: .zero, visibleFrame: empty)), .none)

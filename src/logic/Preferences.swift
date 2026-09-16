@@ -72,7 +72,6 @@ class Preferences {
             "pointerTrackpadAcceleration": PointerAccelerationPreference.systemDefault.indexAsString,
             "pointerMouseSpeed": String(PointerSpeedSteps.maximumIndex),
             "pointerTrackpadSpeed": "4",
-            "scrollReverseMouse": "false",
             "pointerOwnershipMouse": "",
             "pointerOwnershipTrackpad": "",
             "windowDragModifier": "0",
@@ -80,13 +79,50 @@ class Preferences {
             "windowDragGestureOwnership": "",
             "windowResizeModifier": "0",
             "shortcutCluesShortcut": defaultShortcut(""),
+            "leaderEnabled": "false",
+            "leaderTriggerShortcut": defaultShortcut(""),
+            "flickRingEnabled": "false",
+            // a side button by default: the middle button clashes with the three-finger middle-click of the
+            // future gestures module, so the ring reserves a side button whole instead
+            "flickRingButton": "3",
+            "flickRingUp": "",
+            "flickRingRight": "",
+            "flickRingDown": "",
+            "flickRingLeft": "",
+            "reverseScrollMouse": "false",
+            "reverseScrollTrackpad": "false",
+            "scrollSpeedMouse": ScrollSpeedPreference.normal.indexAsString,
+            "scrollSpeedTrackpad": ScrollSpeedPreference.normal.indexAsString,
         ]
         (0..<maxShortcutCount).forEach { index in
             // Shortcut 1 mirrors Command-Tab, Shortcut 2 the native Command plus key above Tab
             values[indexToName("holdShortcut", index)] = defaultShortcut(index <= 1 ? "⌘" : "⌥")
             values[indexToName("nextWindowShortcut", index)] = defaultShortcut(index == 0 ? "⇥" : (index == 1 ? keyAboveTabDependingOnInputSource() : ""))
         }
+        (0..<maxLeaderSlotCount).forEach { index in
+            values["leaderSlotKeys\(index)"] = ""
+            values["leaderSlotAction\(index)"] = ""
+        }
+        (0..<maxProfileCount).forEach { index in
+            values["profileName\(index)"] = ""
+            values["profileApps\(index)"] = ""
+            values["profileLayout\(index)"] = ""
+            values["profileSpaceUuid\(index)"] = ""
+            values[ProfileStore.shortcutPreferenceKey(index)] = defaultShortcut("")
+        }
         SpaceAction.all.forEach { values[$0.shortcutPreferenceKey] = defaultShortcut("") }
+        SystemAction.allCases.forEach {
+            values[$0.shortcutPreferenceKey] = defaultShortcut("")
+        }
+        values["micMuteIndicator"] = "true"
+        values["autoQuitEnabled"] = "false"
+        values["autoQuitDelaySeconds"] = "10"
+        values["autoQuitMode"] = String(AutoQuitMode.onlyListed.rawValue)
+        values["autoQuitBundleIds"] = "[]"
+        values["catModeMinutes"] = "60"
+        values["keepAwakeLastDuration"] = String(KeepAwakeDuration.hour1.rawValue)
+        values["keepAwakeDisplay"] = "false"
+        values["keepAwakeBatteryThreshold"] = "20"
         (0..<maxLaunchAppCount).forEach { index in
             values[indexToName("launchAppBundleIdentifier", index)] = ""
             values[LaunchAppAction.shortcutPreferenceKey(index)] = defaultShortcut("")
@@ -145,9 +181,24 @@ class Preferences {
     static var windowDragModifier: DragModifierPreference { CachedUserDefaults.macroPref("windowDragModifier", DragModifierPreference.selectable) }
     static var windowResizeModifier: DragModifierPreference { CachedUserDefaults.macroPref("windowResizeModifier", DragModifierPreference.selectable) }
     static var windowDragArmingMarker: Bool { CachedUserDefaults.bool("windowDragArmingMarker") }
+    static var leaderEnabled: Bool { CachedUserDefaults.bool("leaderEnabled") }
+    static var flickRingEnabled: Bool { CachedUserDefaults.bool("flickRingEnabled") }
+    static var flickRingButton: Int { CachedUserDefaults.int("flickRingButton") }
+    static var reverseScrollMouse: Bool { CachedUserDefaults.bool("reverseScrollMouse") }
+    static var reverseScrollTrackpad: Bool { CachedUserDefaults.bool("reverseScrollTrackpad") }
+    static var scrollSpeedMouse: ScrollSpeedPreference { CachedUserDefaults.macroPref("scrollSpeedMouse", ScrollSpeedPreference.allCases) }
+    static var scrollSpeedTrackpad: ScrollSpeedPreference { CachedUserDefaults.macroPref("scrollSpeedTrackpad", ScrollSpeedPreference.allCases) }
+    static var micMuteIndicator: Bool { CachedUserDefaults.bool("micMuteIndicator") }
+    static var autoQuitEnabled: Bool { CachedUserDefaults.bool("autoQuitEnabled") }
+    static var autoQuitDelaySeconds: Int { CachedUserDefaults.int("autoQuitDelaySeconds") }
+    static var autoQuitMode: Int { CachedUserDefaults.int("autoQuitMode") }
+    static var autoQuitBundleIds: String { CachedUserDefaults.string("autoQuitBundleIds") }
+    static var catModeMinutes: Int { CachedUserDefaults.int("catModeMinutes") }
+    static var keepAwakeLastDuration: Int { CachedUserDefaults.int("keepAwakeLastDuration") }
+    static var keepAwakeDisplay: Bool { CachedUserDefaults.bool("keepAwakeDisplay") }
+    static var keepAwakeBatteryThreshold: Int { CachedUserDefaults.int("keepAwakeBatteryThreshold") }
     static var pointerMouseAcceleration: PointerAccelerationPreference { CachedUserDefaults.macroPref("pointerMouseAcceleration", PointerAccelerationPreference.allCases) }
     static var pointerTrackpadAcceleration: PointerAccelerationPreference { CachedUserDefaults.macroPref("pointerTrackpadAcceleration", PointerAccelerationPreference.allCases) }
-    static var scrollReverseMouse: Bool { CachedUserDefaults.bool("scrollReverseMouse") }
     static var pointerMouseSpeed: Double { PointerSpeedSteps.value(CachedUserDefaults.int("pointerMouseSpeed")) }
     static var pointerTrackpadSpeed: Double { PointerSpeedSteps.value(CachedUserDefaults.int("pointerTrackpadSpeed")) }
 
@@ -227,6 +278,8 @@ class Preferences {
     static let maxShortcutCount = 9
     static let maxLaunchAppCount = 9
     static let maxOpenUrlCount = 9
+    static let maxLeaderSlotCount = 8
+    static let maxProfileCount = 5
     static var shortcutCount: Int {
         max(minShortcutCount, min(maxShortcutCount, CachedUserDefaults.int("shortcutCount")))
     }

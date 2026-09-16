@@ -33,6 +33,13 @@ class Window {
     var isReachable = true
     /// false when the window carries no title of its own, and the switcher shows the application name
     var hasOwnTitle = false
+    /// How many consecutive reachability checks judged this window unreachable. The check reads volatile
+    /// signals (`CGSCopySpacesForWindows`, `kCGWindowIsOnscreen`), and `kAXWindowsAttribute` legitimately
+    /// omits other-Space windows, so a single unreachable read is often a race — acting on it flickered
+    /// reachable tiles in and out of the switcher. An orphaned window (e.g. a hidden Electron helper) stays
+    /// unreachable across checks and still crosses the threshold; a transient blip resets to zero.
+    private var unreachableStrikes = 0
+    private static let unreachableStrikeThreshold = 3
     var position: CGPoint?
     var size: CGSize?
     var spaceIds = [CGSSpaceID.max]
@@ -323,7 +330,14 @@ class Window {
     /// window server still lists it, so we re-evaluate reachability every time we refresh Spaces.
     private func updateReachability() {
         guard let cgWindowId else { return }
-        isReachable = !WindowReachabilityPolicy.isUnreachable(reachabilityFacts()) { CGWindow.isOnScreen(cgWindowId) }
+        let unreachableNow = WindowReachabilityPolicy.isUnreachable(reachabilityFacts()) { CGWindow.isOnScreen(cgWindowId) }
+        let result = ReachabilityDebounce.next(strikes: unreachableStrikes, isReachable: isReachable,
+                                               unreachableNow: unreachableNow, threshold: Window.unreachableStrikeThreshold)
+        if isReachable, !result.isReachable {
+            Logger.debug { "window judged unreachable after \(result.strikes) checks: \(self.debugId)" }
+        }
+        unreachableStrikes = result.strikes
+        isReachable = result.isReachable
     }
 
     private func reachabilityFacts() -> WindowReachabilityFacts {

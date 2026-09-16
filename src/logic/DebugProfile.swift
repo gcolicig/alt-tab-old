@@ -9,7 +9,7 @@ class DebugProfile {
     static let nestedSeparator = "\n  " + bulletPoint
 
     static func make() -> String {
-        let tuples: [(String, String)] = [
+        var tuples: [(String, String)] = [
             // app
             ("App version", App.version),
             ("App preferences", appPreferences()),
@@ -34,6 +34,8 @@ class DebugProfile {
             ("Resource utilization", resourcesUtilization()),
             ("Window drag AX deviations", windowDragDeviations()),
         ]
+        // appended separately: a long literal joined with `+` exceeds the type-checking budget on Xcode 16
+        tuples.append(contentsOf: DebugTools.extraProfileEntries())
         return listLevel1(tuples)
     }
 
@@ -66,7 +68,7 @@ class DebugProfile {
     }
 
     private static func appPreference(_ key: String) -> String {
-        UserDefaults.standard.object(forKey: key).map { String(describing: $0) } ?? "nil"
+        DebugRedaction.preferenceValue(key: key, value: UserDefaults.standard.object(forKey: key).map { String(describing: $0) })
     }
 
     private static func screen(_ screen: NSScreen) -> String {

@@ -66,6 +66,9 @@ class PreferencesEvents {
         case "hyperKeyHoldDuration": KeyboardEvents.resetHyperKeyState()
         case "inputModulesSafeMode": KeyboardEvents.inputSafeModeChanged()
         case "startAtLogin": applyStartAtLoginPreference()
+        case "autoQuitEnabled": AutoQuit.enabledChanged()
+        case "micMuteIndicator": MicMuteIndicator.preferenceChanged()
+        case "keepAwakeDisplay": KeepAwake.displayPreferenceChanged()
         case "updatePolicy": applyUpdatePolicyPreference()
         case let k where preferencesRequiringUiReset.contains(k) && TilesPanel.shared != nil: App.resetPreferencesDependentComponents()
         default: break

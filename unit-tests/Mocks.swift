@@ -142,6 +142,7 @@ class Preferences {
     static let maxShortcutCount = 9
     static let maxLaunchAppCount = 9
     static let maxOpenUrlCount = 9
+    static let maxProfileCount = 5
 
     static func indexToName(_ baseName: String, _ index: Int) -> String {
         return baseName + (index == 0 ? "" : String(index + 1))
@@ -165,6 +166,10 @@ enum LaunchAppAction {
 
 enum OpenUrlAction {
     static func shortcutPreferenceKey(_ index: Int) -> String { Preferences.indexToName("openUrlShortcut", index) }
+}
+
+enum ProfileStore {
+    static func shortcutPreferenceKey(_ index: Int) -> String { "profileShortcut\(index)" }
 }
 
 class ModifierFlags {

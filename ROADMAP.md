@@ -117,39 +117,95 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 ## Phase 4: Leader und FlickRing
 
 - Dual-Role-Hyper bleibt umgesetzt und deaktiviert per Default; Caps Lock kurz tippen schaltet weiterhin Caps Lock.
-- Leader erhaelt einen eigenen Trigger, verschachtelte Sequenzen, Escape, Timeout und eine kompakte AppKit-Uebersicht.
-- FlickRing verwendet eine konfigurierbare zusaetzliche Maustaste, Totbereich und vier Richtungen.
-- Beide Module fuehren ausschliesslich Aktionen aus dem gemeinsamen Register aus.
-- Die sichere Input-Laufzeit jeweils nur um den konkret benoetigten Modulpfad erweitern.
+- Umgesetzt: Leader hat einen eigenen konfigurierbaren Trigger, verschachtelte Sequenzen, Escape, Timeout und eine kompakte AppKit-Uebersicht. Er reitet auf dem bestehenden Keyboard-Tap, ohne zweiten Tap oder eigenen Arming-Marker; der Settings-Tab pflegt acht Sequenz-Slots mit Konfliktwarnung.
+- Umgesetzt: FlickRing nutzt eine konfigurierbare Maustaste (Default Seitentaste), einen 5pt-Totbereich und vier Richtungen mit Ring-Overlay; der Tap existiert nur bei aktivem Modul.
+- Umgesetzt: beide Module fuehren ausschliesslich Aktionen aus dem gemeinsamen Register aus, gebunden ueber die stabile Action-ID.
+- Umgesetzt: die sichere Input-Laufzeit ist nur um den benoetigten Pfad erweitert — Leader haengt an Not-Aus, Safe Mode und Sleep/Wake des Keyboard-Taps; FlickRing bringt einen eigenen Circuit Breaker mit und wird vom Not-Aus geschlossen.
+- Offen: die manuelle Abnahme beider Module am Tahoe-Zielgeraet gemaess `docs/leader-flickring-checklist.md`.
 
 ## Phase 5: Weiteres Snapping
 
-- Ausserhalb des eigenen Modifier-Drags nur Luecken schliessen, die Tahoe nicht nativ abdeckt.
-- Drag-Overlay fuer Thirds, Two-Thirds und weitere bestaetigte Ziele.
-- Display-Topologien, Separate Spaces und dynamische Display-Wechsel pruefen.
+- Umgesetzt: der eigene Modifier-Drag bietet neben Left/Right half und Fill jetzt vier Eck-Viertel und Kanten-Tiefenbaender (Haelfte am Rand, dann Drittel, dann Zwei-Drittel). Die Thirds teilen die Rechteck-Geometrie mit den Tastatur-Window-Layouts, sodass Drag und Shortcut auf demselben Rahmen landen. Reine Zonenlogik in `DragSnapPolicy`, unit-getestet; das bestehende Overlay zeichnet die neuen Ziele ueber denselben Rahmenpfad. Neighbour-/Dwell-Gating gilt fuer alle neuen Ziele.
+- Offen und bewusst zurueckgestellt: Luecken ausserhalb des eigenen Modifier-Drags. Der Scope dafuer haengt an der Tahoe-Feature-Matrix (offenes Geraete-Gate); ohne sie wuerde geraten, was Tahoe nativ abdeckt.
+- Offen: Display-Topologien, Separate Spaces und dynamische Display-Wechsel am Zielgeraet pruefen (`docs/window-drag-checklist.md`).
 - Padding, Bewegungsanimation und konfigurierbare Snap-Zonenstaerke bleiben Folgeumfang nach festen, getesteten MVP-Werten.
 
 ## Phase 6: Projektprofile und Session Restore
 
-- Stabile Profile mit Name, Apps, optionalem Layout, Space-Binding und konfliktgeprueftem Shortcut einfuehren.
-- Profilname kann in der Spaces-Menueleiste statt der Nummer erscheinen; verlorene Space-Bindings werden sichtbar und nicht automatisch umgebogen.
-- Zuerst explizite Profilaktivierung und App-Filterung, danach Opt-in-Aktionen zum Starten oder Zuordnen von Apps.
-- Session-/Layout-Restore erst nach robustem Fenster-Matching sowie App- und Display-Matrix; keine automatische Wiederherstellung im ersten Schritt.
+- Umgesetzt (Fundament): stabile Managed-Space-Identitaet im Code (`Spaces.uuidsById`, `currentSpaceUuid`, `identitySnapshot()`), reiner `SpaceIdentity`-Resolver. Eine UUID ohne aktuellen Space loest zu nil auf.
+- Umgesetzt (Stufe 1): fuenf Profil-Slots mit Name, Apps (Bundle-IDs), optionalem Layout, optionalem Space-Binding (per stabiler UUID) und eigenem konfliktgepruefter Shortcut (als globale Aktion im Register). Aktivierung wechselt auf den gebundenen Space, sofern das Binding noch aufloest, und **filtert** den Switcher auf die Profil-Apps; erneutes Ausloesen schaltet das Profil wieder ab. Ein verlorenes Binding wird gemeldet und nie umgebogen. Keine App wird gestartet, beendet, versteckt oder verschoben. Reines Modell + Planer + Space-Identitaet sind unit-getestet.
+- Zurueckgestellt: der Profilname in der Spaces-Menueleiste (statt der Nummer) — Menueleisten-Integration, spaeter.
+- Zurueckgestellt: das Profil-Layout wird gespeichert, aber bei Aktivierung noch nicht angewendet (unerwartete Fenstermutation vermeiden); Anwendung wird eine eigene Aktion.
+- Offen (Geraete-Gate): Session-/Layout-Restore erst nach robustem Fenster-Matching sowie App- und Display-Matrix; keine automatische Wiederherstellung im ersten Schritt. Manuelle Abnahme von Stufe 1 am Zielgeraet: `docs/profiles-checklist.md`.
 
 ## Phase 7: Scroll
 
-- **Vorgezogen am 2026-08-13, in der Roadmap nachgetragen am 2026-09-10.** Die getrennte Scrollrichtung ist die einzige LinearMouse-Funktion, die im taeglichen Gebrauch fehlt. Sie laeuft damit parallel zu den Phasen 4 bis 6 und wartet nicht auf sie.
-- Schritt 6a umgesetzt: Scrollrichtung der Maus, vertikal, ueber den bestehenden `scrollWheel`-Tap. Vorgabe aus.
-- Offen: Trackpad-Richtung und Scroll Speed, mit Momentum- und Phase-Behandlung.
-- Reverse Scrolling und Scroll Speed mit engem `scrollWheel`-Tap.
-- Nur nach bestandener Tap-, Berechtigungs- und Energiepruefung. Die Energie- und Latenzmessung fuer den dauerhaft aktiven Tap ist V-17 und noch offen.
-- Keine App- oder geraetespezifischen Regeln im MVP.
+- **Vorgezogen am 2026-08-13, in der Roadmap nachgetragen am 2026-09-10.** Die getrennte Scrollrichtung ist die einzige LinearMouse-Funktion, die im taeglichen Gebrauch fehlt. Sie lief damit parallel zu den Phasen 4 bis 6 und wartete nicht auf sie.
+- Umgesetzt (MVP 2026-08-18, beim Zusammenfuehren der beiden Arbeitsstaende am 2026-09-16 auf eine Implementierung vereinheitlicht): getrenntes Reverse-Scrolling und Scroll-Speed fuer Maus und Trackpad ueber den bestehenden `scrollWheel`-Tap. Der Tap laeuft nur, wenn der Switcher blockieren will oder eine Scroll-Einstellung aktiv ist; das Blockieren kontinuierlichen Scrollens bleibt strikt auf den aktiven Switcher beschraenkt, damit Trackpad-Scrollen ausserhalb nie blockiert wird. Kategorie ueber `kCGScrollWheelEventIsContinuous` (kontinuierlich = Trackpad/Magic Mouse, diskret = Rasterrad). Die reine `ScrollTransform`-Logik ist unit-getestet; sie schreibt Linien-, Pixel- und Fixed-Point-Deltas konsistent um. Safe Mode schaltet die Modifikation ab, ohne die Einstellung zu loeschen.
+- Reverse betrifft im MVP nur die vertikale Achse; Speed skaliert beide. Keine App- oder geraetespezifischen Regeln, kein Smoothing, keine eigenen Kurven.
+- Offen (Geraete-Gate): Tap-, Berechtigungs- und Energiepruefung am Zielgeraet (`docs/scroll-direction-checklist.md`), inkl. Momentum-/Phase-Verhalten. Die Energie- und Latenzmessung fuer den dauerhaft aktiven Tap ist V-17 und noch offen.
+
+- Folgestufe Smoothed Scrolling (Story 6c): Engine aus LinearMouse uebernehmen, Anbindung an den bestehenden Tap neu bauen. Erst Mausrad vertikal mit festem Preset und ohne Gesten-Begleiter, dann Messung (V-18), dann Presets und Regler. Beginnt erst nach bestandenem V-17.
 
 ## Phase 8: Gesten
 
 - Drei-Finger-Middle-Click als letzter Spike.
 - Private Multitouch-API strikt nach macOS-Version gaten.
 - Default-Aktivierung erst mit Helper-Prozess; unbekannte Version deaktiviert das Modul.
+
+## Phase 10: Keep Awake (Sleep Override)
+
+- MVP umgesetzt 2026-09-16 (ohne Disk-Assertion); Ausbaustufe offen.
+
+- Eigenstaendiges Modul, per Default aus: Caffeine als Minimal-Referenz (Menubar-Toggle), Amphetamine als Funktionsreferenz (Sessions, Trigger, Energie-Policies). Kein Event-Tap und keine private API — nur oeffentliche `IOPMAssertion` plus System-Observer; damit ausserhalb der Q-01..Q-16-Input-Sicherung.
+- MVP: Menubar-Toggle, Sessions (unbegrenzt / feste Dauer / bis Uhrzeit / verlaengern), System- vs. Display-wach, Restlaufzeit, globale Shortcuts ueber das Aktionsregister, Batterie-Auto-Ende, striktes Fail-safe gegen Assertion-Leak.
+- Ausbaustufe: Trigger (App laeuft, Stromversorgung, Batterie-Schwelle, Volume gemountet, externe Anzeige), Notifications, Auto-Start, Trennung manuell/triggerbasiert mit Prioritaetsregeln.
+- Spaeter: WLAN/SSID (Standort-Berechtigung), USB/Bluetooth, Idle, CPU, Netzwerkumgebung, Automation.
+- Bewusst nicht: Download-Trigger (kein verlaesslicher oeffentlicher Pfad), Maus-Jiggle (Assertions machen es ueberfluessig), Umgehung der Sperr-Policy.
+- Vollstaendige Spezifikation und die editierbare Feature-Checkliste in `backlog.md` unter Story 10 "Keep Awake / Sleep Override".
+
+## Phase 11: Switcher-Verhalten (minimierte Fenster, Per-App-Policies, Cmd+Tab)
+
+- Betrifft den Switcher-Kern, kein Add-on-Modul. Alt-Tab+ ist ein AltTab-Fork, darum nur das bewusst abweichende Verhalten bauen; vieles ist schon da (minimierte/versteckte Fenster konfigurierbar, Auswahl deminiaturisiert, Per-App-`ExceptionEntry`, `Cmd+Tab` als Default-Trigger).
+- Delta 1: Policy fuer minimierte Fenster erweitern um `ShowButDoNotRestore` und `RestoreOnlyOnExplicitAction` (heute nur Sichtbarkeit plus Auto-Restore). Default bleibt AlwaysRestore.
+- Delta 2: Per-App-Regeln (`ExceptionEntry`) um eine Minimized-Policy, App- vs. Window-Switching und Priorisierung erweitern; reichere Match-Kriterien spaeter.
+- Delta 3: neue Aktion `Restore most recent minimized window of selected app` im gemeinsamen Register.
+- Delta 4: `Cmd+Tab`-Remap ist bereits Realitaet; offen nur Onboarding-Hinweis und Reset-Pfad.
+- Benannte Default-Profile: Konservativ, Power-User, Windows-like.
+- Vollstaendige Spezifikation in `backlog.md` unter Story 11.
+
+## Phase 12: Fenster-Fokus-Aktionen
+
+- Umgesetzt 2026-09-16; Geraetepruefung offen (`docs/system-actions-checklist.md`).
+
+- `Isolate Window` als Aktion im gemeinsamen Register: andere Apps ausblenden, uebrige Fenster der Ziel-App minimieren. Kein Tap, kein Timer.
+- Danach die verwandten Aktionen aus denselben zwei Bausteinen, einzeln waehlbar.
+- Vollstaendige Spezifikation und der ganze Supercharge-Abgleich in `backlog.md` unter Story 12 und `Supercharge-Abgleich`.
+
+## Phase 13: Debug-Untermenue
+
+- Umgesetzt 2026-09-16; Geraetepruefung offen.
+
+- Der Menueleisten-Eintrag `Debug tools` wird zu `Debug` mit Untermenue: Debug-Info kopieren, Accessibility-Baum des fokussierten Fensters kopieren, Berechtigungen zuruecksetzen, dazu das bestehende Debug-Fenster.
+- Geschwaerzt: keine Fenstertitel, URL-Slots, Benutzernamen oder Textfeldinhalte im kopierten Text.
+- Vollstaendige Spezifikation in `backlog.md` unter Story 13.
+
+## Phase 14: System-Aktionen und Werkzeuge
+
+- Umgesetzt 2026-09-16, alle Bloecke; Geraetepruefung offen, dazu V-19 (Cat Mode), V-20 (Funktionstasten), V-21 (Mitteilungen).
+
+- Aus dem Supercharge-Abgleich uebernommen, in unabhaengigen Bloecken: Apps beenden (mit Rueckfrage), Auto-Quit, Displays schlafen, Ton und Mikrofon stummschalten, Zwischenablage leeren, Laufwerke auswerfen, Standardbrowser mit Untermenue, Funktionstasten, Bildschirm-Werkzeuge (Farbe, Texterkennung, Uebersetzung, QR), Mitteilungen leeren, Cat Mode.
+- Jede Funktion ist eine Aktion im gemeinsamen Register; keine Tastenkombination ab Werk; nichts laeuft im Hintergrund, solange es nicht benutzt wird.
+- Unverifizierte Wege (Displays ohne Admin, Funktionstasten, Mitteilungen per AX, Uebersetzung) zuerst per Spike belegen. Cat Mode nur nach V-19.
+- Vollstaendige Spezifikation in `backlog.md` unter Story 14.
+
+## Phase 15: Menueleisten-Menue gruppiert
+
+- Umgesetzt 2026-09-16; Shortcuts im Tab `Menu Actions`.
+
+- Alle Eintraege in inhaltlichen Gruppen mit Ueberschrift: Switcher, Fenster, Apps, Werkzeuge, Mitteilungen, System, Schalter, Standards, AltTab+. Die Gruppe Systemeinstellungen wurde am 2026-09-16 wieder entfernt.
+- Alles immer sichtbar: Switcher, Fenster und AltTab+ im Hauptmenue, alle anderen Gruppen als Abschnitte in `Other…`. Kein Ein- und Ausblenden (entschieden 2026-09-16).
+- Waechst mit Story 10, 12, 13 und 14. Vollstaendige Spezifikation in `backlog.md` unter Story 15.
 
 ## Release-Gates
 

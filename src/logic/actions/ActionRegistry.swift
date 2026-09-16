@@ -4,6 +4,9 @@ enum ActionIdentifier: Hashable {
     case space(SpaceAction)
     case launchApp(Int)
     case openUrl(Int)
+    case activateProfile(Int)
+    case system(SystemAction)
+    case defaultBrowser(String)
 
     var stableId: String {
         switch self {
@@ -12,6 +15,9 @@ enum ActionIdentifier: Hashable {
         case .space(let action): return "space.\(action.stableId)"
         case .launchApp(let index): return "launchApp.\(index)"
         case .openUrl(let index): return "openUrl.\(index)"
+        case .activateProfile(let index): return "activateProfile.\(index)"
+        case .system(let action): return action.rawValue
+        case .defaultBrowser(let bundleId): return DefaultBrowserActionId.stableId(bundleId)
         }
     }
 }

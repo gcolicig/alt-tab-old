@@ -54,6 +54,16 @@ The unit-test suite passes. Build with `./build.sh --test`; `SCHEME=Release ./bu
 - **Drag modifiers extended** (#26): picker order is now disabled, ⌘⌃, ⌘⌥, fn, ⌘⇧, ⌥⇧, with a one-shot
   index migration because the preference stores an index into that list.
 
+## What happened on 2026-09-16
+
+- The two machines' histories were merged (`merge/reunify`); reverse scrolling, built twice, now has one
+  implementation (`ScrollTransform`).
+- Stories 10 (Keep Awake MVP), 12 (window focus actions), 13 (debug submenu), 14 (system actions and
+  tools from the Supercharge comparison) and 15 (grouped menubar menu) were built in one go. All pure
+  logic is unit-tested (280 tests pass); **none of it has been operated on the device yet**. The app
+  launches and idles at 0 % CPU. Start with `docs/system-actions-checklist.md`, then V-19 to V-21.
+- New settings sidebar entries: `Menu Bar Menu`, `System Actions`, `Keep Awake`.
+
 ## The most important thing to understand
 
 **The unit tests have never found a real defect in this project.** Every one of the roughly ten defects
