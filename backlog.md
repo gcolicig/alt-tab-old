@@ -1941,6 +1941,82 @@ Regeln:
 | MG-04 | Das Oeffnen des Menues loest keine AX-Arbeit und keinen Prozessstart aus | Menue muss sofort erscheinen |
 | MG-05 | Die bestehende Permission-Callout-Zeile bleibt ganz oben und wird wie heute ein- und ausgefuegt | Bestehendes Verhalten |
 
+### 16. Einstellungsfenster umbauen
+
+Status: Spezifiziert 2026-09-16; Umsetzung in drei aufeinander aufbauenden Branches
+Prioritaet: Mittel. Folgt aus der kritischen Pruefung des Einstellungsfensters vom 2026-09-16 und dem Mockup dazu
+
+Ausgangslage (gelesen 2026-09-16):
+
+- `SettingsWindow` baut alle Bereiche als eine einzige, lange Seite (`sectionsStack`). Die Seitenleiste scrollt nur zur gewaehlten Stelle; ein Scroll-Beobachter setzt die Markierung nach. Die Suche blendet nicht passende Bereiche aus und hebt Treffer hervor.
+- Unten in der Seitenleiste stehen `Creator's settings…`, `Reset settings and restart…` und `Quit AltTab+`.
+- Recorder (`CustomRecorderControl`) sind fest 100 pt breit; der Platzhalter `Record Shortcut` wird zu `Recor…rtcut` gekuerzt.
+- Apps & URLs sind je 9 feste Slots (`launchAppBundleIdentifier0…8`, `openUrlValue0…8`), Profile 5 feste Slots (`profileName0…4` und weitere Felder). Leader und FlickRing binden per `stableId` mit Slot-Nummer (`launchApp.3`, `activateProfile.1`).
+- `CustomRecorderControlTestable.isShortcutAcceptable` erkennt bereits Konflikte mit anderen AltTab+-Shortcuts, mit macOS-Reservierungen und mit dem Game Overlay.
+
+Aufbau der Branches:
+
+| Stufe | Branch | Basis |
+|---|---|---|
+| 1 | `feat/settings-pages` | `main` nach dem Merge von PR #56 |
+| 2 | `feat/settings-lists` | `feat/settings-pages` |
+| 3 | `feat/settings-shortcut-overview` | `feat/settings-lists` |
+
+Jede Stufe ist fuer sich baubar, getestet und als eigener PR mergebar; die naechste Stufe wird nach dem Merge der vorherigen auf `main` rebased.
+
+#### Stufe 1: Seiten, Seitenleiste, Recorder, Aufraeumen, Texte
+
+- **Eine Seite pro Bereich.** Ohne Suchbegriff ist nur der gewaehlte Bereich sichtbar; ein Klick in der Seitenleiste wechselt die Seite und scrollt nach oben. Der Scroll-Beobachter setzt die Markierung nur noch im Suchmodus.
+- **Suche.** Mit Suchbegriff werden, wie heute, alle passenden Bereiche untereinander gezeigt, mit Hervorhebung. Die Seitenleiste zeigt nur die Bereiche mit Treffern. Leeren der Suche kehrt zur zuletzt gewaehlten Seite zurueck.
+- **Gegliederte Seitenleiste** mit Ueberschriften (Gruppenzeilen der Tabelle, nicht auswaehlbar):
+
+  | Gruppe | Bereiche |
+  |---|---|
+  | App | General |
+  | Switcher | Cmd-Tab, Cmd-Tab Controls, Exceptions |
+  | Windows | Window Layouts, Spaces, Profiles |
+  | Triggers | Hyperkey, Leader, FlickRing |
+  | Devices | Pointer & Scroll |
+  | Actions | Menu Actions, System Actions, Keep Awake, Apps & URLs |
+
+  Eine Gruppe ohne sichtbaren Bereich (Suche) erscheint nicht. Die Bereichsnamen bleiben unveraendert (Story 6b).
+- **Recorder.** Breite 130 pt; Platzhalter `Record` statt `Record Shortcut`, damit nichts gekuerzt wird.
+- **Seitenleiste unten aufraeumen.** `Quit AltTab+` entfaellt (steht im Menue). `Creator's settings…` und `Reset settings and restart…` ziehen nach General in eine eigene Tabelle `Settings file` zu Export und Import. Die Seitenleiste reicht dann bis zum unteren Rand.
+- **Texte.** Button- und Menuetitel mit drei Punkten verwenden `…`. Zeilentitel beginnen gross, sonst klein (Satzanfang), soweit sie in den neuen Stories entstanden sind; aeltere Titel aus dem Fork-Ursprung bleiben, um den Abgleich mit Upstream nicht zu erschweren.
+- **Reine Logik** (`SettingsSidebarTestable`): aus Bereichen, Gruppen und Sichtbarkeit die Zeilenliste der Seitenleiste bilden (Ueberschriften, keine leeren Gruppen) und die Seitenauswahl nach Suche bestimmen. Unit-getestet.
+
+Exit: Jeder Bereich erscheint allein; Suche zeigt Treffer ueber alle Bereiche; keine gekuerzten Recorder; kein `Quit` in der Seitenleiste; alle Tests gruen.
+
+#### Stufe 2: Apps & URLs und Profiles als Listen
+
+- **Speicherung bleibt.** Die festen Slots bleiben das Speicherformat. Grund: Leader- und FlickRing-Bindungen, Shortcuts und exportierte Einstellungsdateien verweisen auf Slot-Nummern. Eine Umstellung auf neue IDs braucht eine Migration aller dieser Verweise und bringt fuer den Nutzer nichts Sichtbares. **Die im Auftrag genannte Migration beschraenkt sich deshalb auf das Aufraeumen der Slots** (siehe unten); das Format bleibt.
+- **Apps & URLs** zeigen nur belegte Slots als Liste: App-Symbol und Name bzw. die URL, der Shortcut-Recorder und `Remove`. Darunter `Add App…` (Dialog fuer Programme, Mehrfachauswahl) und `Add URL…` (Eingabedialog mit Pruefung ueber `OpenUrlTarget`). Neue Eintraege fuellen den ersten freien Slot. Sind alle 9 belegt, ist der Knopf deaktiviert und nennt den Grund.
+- **Profiles** als Liste links (Name, sonst `Profile n`) und Details rechts: Name, Apps, Layout, gebundener Space, Shortcut. `New` legt ein Profil im ersten freien Slot an, `Delete` leert den Slot.
+- **Apps eines Profils** werden als Liste mit App-Namen gezeigt, hinzugefuegt ueber `Choose…` (Programme-Dialog, Mehrfachauswahl) und je Zeile entfernt. Das Speicherformat (Bundle-IDs zeilenweise) bleibt; unbekannte IDs erscheinen mit ihrer ID und einem Hinweis.
+- **Aufraeumen beim Start (Migration).** Einmalig: Slots, die nur aus Leerzeichen bestehen, werden geleert, damit sie nicht als belegte leere Eintraege erscheinen. Bindungen und Shortcuts leerer Slots bleiben unangetastet.
+- **Entfernen** leert Wert, Shortcut und Slot-Felder, verschiebt aber keine anderen Slots. Leader- und FlickRing-Bindungen auf den geleerten Slot werden beim naechsten Ausloesen `unavailable`, wie heute.
+- **Leere Zustaende.** `No apps or links yet. Add one to open it with a shortcut.` bzw. `No profiles yet.`
+- **Reine Logik** (`SlotListTestable`): belegte Slots aus Werten ermitteln, ersten freien Slot finden, Grund bei voller Liste. Unit-getestet.
+
+Exit: keine leeren Slots sichtbar; Hinzufuegen, Entfernen und Shortcuts funktionieren; bestehende Bindungen zeigen weiter auf dieselben Eintraege; alle Tests gruen.
+
+#### Stufe 3: Shortcut-Uebersicht
+
+- Der Bereich `Menu Actions` wird zu `Shortcuts` (Gruppe App, direkt nach General).
+- **Uebersicht.** Eine Tabelle aller globalen Aktions-Shortcuts: Aktion, Shortcut, Ort, Status. Quelle ist dieselbe Liste wie die globalen Shortcut-IDs (`KeyboardEventsTestable.globalShortcutsIds`), ohne die Switcher-Ausloeser `holdShortcut*` und `nextWindowShortcut*`; diese bleiben in Cmd-Tab Controls, die Leader-Taste bei Leader, die FlickRing-Taste bei FlickRing. Die Seite sagt das in ihrer Beschreibung.
+- **Ein Recorder pro Shortcut.** Wo ein Shortcut eine eigene Seite hat (Window Layouts, Spaces, Apps & URLs, Profiles, Keep Awake), zeigt die Uebersicht ihn nur an, mit `Show`: Klick wechselt auf die Seite und hebt die Zeile hervor. Nur Menue-Aktionen ohne eigene Seite (Story 12 und 14 ausser Keep Awake) haben ihren Recorder direkt in der Uebersicht.
+- **Konflikte.** Status je Zeile aus `CustomRecorderControlTestable.isShortcutAcceptable` fuer den gespeicherten Shortcut: doppelt belegt (mit Name der anderen Aktion), von macOS reserviert, vom Game Overlay belegt. Konfliktzeilen stehen oben und sind markiert. Die Pruefung laeuft beim Oeffnen der Seite und nach jeder Aenderung eines Shortcuts, nicht dauernd.
+- **Filter.** Ein Umschalter `All`, `Assigned`, `Conflicts`; die globale Suche der Seitenleiste bleibt die einzige Textsuche.
+- **Reine Logik** (`ShortcutOverviewTestable`): Zeilen aus Schluessel, Titel, Ort und Shortcut bilden, Konflikte paaren, sortieren (Konflikte zuerst, dann Gruppe, dann Titel). Unit-getestet.
+
+Exit: jeder Aktions-Shortcut erscheint genau einmal in der Uebersicht und genau einmal als Recorder; `Show` springt richtig; ein absichtlich doppelt vergebener Shortcut erscheint als Konflikt; alle Tests gruen.
+
+Nicht im Scope aller Stufen:
+
+- Neue Bereichsnamen fuer Cmd-Tab und Cmd-Tab Controls.
+- Aenderungen an der Aktionsauswahl von Leader und FlickRing und an den Ownership-Zeilen von Pointer & Scroll (Befunde der Pruefung, eigene Story).
+- Kuerzen der Keep-Awake-Shortcuts.
+
 ## Distribution und Migration
 
 - Produktname und Bundle-ID bleiben fork-spezifisch: AltTab+ und `com.gcolicig.alttab-plus`.
