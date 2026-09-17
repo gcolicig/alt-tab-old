@@ -14,8 +14,8 @@ enum MenuGroup: String, CaseIterable {
     case defaults
     case app
 
-    /// `Settings…` opens the menu on its own (decided 2026-09-16); the app group closes it. Neither needs a
-    /// heading.
+    /// `settings` is kept for a menu that opens with `Settings…` on its own (decided 2026-09-16); since
+    /// 2026-09-17 the entry sits in the app group instead, so the group stays empty. Neither needs a heading.
     var hasHeader: Bool { ![.settings, .app].contains(self) }
 
     /// Decided 2026-09-16: every group except the switcher, the window actions and the app block becomes a

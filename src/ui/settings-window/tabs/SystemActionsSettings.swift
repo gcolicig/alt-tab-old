@@ -49,10 +49,22 @@ class SystemActionsTab {
         autoQuit.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Enable Auto-Quit", comment: ""), rightViews: [LabelAndControl.makeSwitch("autoQuitEnabled")]))
         autoQuit.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Delay", comment: ""), rightViews: [SettingsControls.valuePopup("autoQuitDelaySeconds", delayOptions)]))
         autoQuit.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Apps affected", comment: ""), rightViews: [SettingsControls.valuePopup("autoQuitMode", modeOptions)]))
-        autoQuit.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("App list", comment: ""), rightViews: [appListView()]))
-        autoQuit.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Quit even with a menu bar item", comment: ""),
-            subTitle: NSLocalizedString("These apps quit although they keep an item in the menu bar, which then disappears too.", comment: ""),
-            rightViews: [menuBarExceptionListView()]))
+        // the lists live in the secondary part of a row, which grows with its content; the main part has a
+        // fixed height and let a growing list spill over the next row
+        appListStack = verticalStack()
+        refreshAppList()
+        autoQuit.addRow(leftViews: [TableGroupView.makeText(NSLocalizedString("App list", comment: ""))],
+            rightViews: [addButton { AutoQuit.addApps($0); refreshAppList() }],
+            secondaryViews: [appListStack!], secondaryViewsOrientation: .vertical)
+        menuBarExceptionStack = verticalStack()
+        refreshMenuBarExceptionList()
+        let exceptionHint = NSTextField(wrappingLabelWithString: NSLocalizedString("These apps quit although they keep an item in the menu bar, which then disappears too.", comment: ""))
+        exceptionHint.font = NSFont.systemFont(ofSize: 12)
+        exceptionHint.textColor = .gray
+        exceptionHint.preferredMaxLayoutWidth = SettingsWindow.contentWidth - 2 * TableGroupView.padding
+        autoQuit.addRow(leftViews: [TableGroupView.makeText(NSLocalizedString("Quit even with a menu bar item", comment: ""))],
+            rightViews: [addButton { AutoQuit.addMenuBarExceptions($0); refreshMenuBarExceptionList() }],
+            secondaryViews: [exceptionHint, menuBarExceptionStack!], secondaryViewsOrientation: .vertical)
         let catMode = TableGroupView(title: NSLocalizedString("Cat Mode", comment: ""),
             subTitle: NSLocalizedString("Locks the keyboard. End it from the menu, by typing “unlock”, or with the emergency shortcut ⌃⌥⇧⌘⎋.", comment: ""),
             width: SettingsWindow.contentWidth)
@@ -75,46 +87,31 @@ class SystemActionsTab {
         (NSLocalizedString("All apps except the list", comment: ""), AutoQuitMode.allExceptListed.rawValue),
     ]
 
-    private static func appListView() -> NSView {
-        let stack = verticalStack()
-        appListStack = stack
-        refreshAppList()
-        return stack
-    }
-
-    private static func menuBarExceptionListView() -> NSView {
-        let stack = verticalStack()
-        menuBarExceptionStack = stack
-        refreshMenuBarExceptionList()
-        return stack
-    }
-
     private static func verticalStack() -> NSStackView {
         let stack = NSStackView()
         stack.orientation = .vertical
-        stack.alignment = .trailing
+        stack.alignment = .leading
         return stack
     }
 
+    private static func addButton(_ add: @escaping ([String]) -> Void) -> NSButton {
+        let button = NSButton(title: NSLocalizedString("Add App…", comment: ""), target: nil, action: nil)
+        button.onAction = { _ in chooseApps().map(add) }
+        return button
+    }
+
     static func refreshAppList() {
-        fill(appListStack, AutoQuitPolicy.decodeList(Preferences.autoQuitBundleIds),
-            remove: { AutoQuit.removeApp($0); refreshAppList() },
-            add: { AutoQuit.addApps($0); refreshAppList() })
+        fill(appListStack, AutoQuitPolicy.decodeList(Preferences.autoQuitBundleIds)) { AutoQuit.removeApp($0); refreshAppList() }
     }
 
     static func refreshMenuBarExceptionList() {
-        fill(menuBarExceptionStack, AutoQuit.menuBarExceptions.sorted(),
-            remove: { AutoQuit.removeMenuBarException($0); refreshMenuBarExceptionList() },
-            add: { AutoQuit.addMenuBarExceptions($0); refreshMenuBarExceptionList() })
+        fill(menuBarExceptionStack, AutoQuit.menuBarExceptions.sorted()) { AutoQuit.removeMenuBarException($0); refreshMenuBarExceptionList() }
     }
 
-    private static func fill(_ stack: NSStackView?, _ bundleIds: [String], remove: @escaping (String) -> Void, add: @escaping ([String]) -> Void) {
+    private static func fill(_ stack: NSStackView?, _ bundleIds: [String], remove: @escaping (String) -> Void) {
         guard let stack else { return }
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         bundleIds.forEach { stack.addArrangedSubview(appRow($0, remove)) }
-        let addButton = NSButton(title: NSLocalizedString("Add App…", comment: ""), target: nil, action: nil)
-        addButton.onAction = { _ in chooseApps().map(add) }
-        stack.addArrangedSubview(addButton)
     }
 
     private static func appRow(_ bundleId: String, _ remove: @escaping (String) -> Void) -> NSView {

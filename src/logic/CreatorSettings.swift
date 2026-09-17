@@ -84,13 +84,16 @@ enum CreatorSettings {
         let rows = summaryItems.map { item -> NSView in
             let icon = NSImageView(image: NSImage(systemSymbolName: item.symbol, accessibilityDescription: nil) ?? NSImage())
             icon.contentTintColor = .secondaryLabelColor
+            // symbols differ in width; pinning each to the left keeps the column edge straight
+            icon.imageAlignment = .alignLeft
             icon.translatesAutoresizingMaskIntoConstraints = false
             icon.widthAnchor.constraint(equalToConstant: 20).isActive = true
             let text = NSTextField(wrappingLabelWithString: item.text)
             text.preferredMaxLayoutWidth = width - 30
             let row = NSStackView(views: [icon, text])
             row.orientation = .horizontal
-            row.alignment = .firstBaseline
+            // icon and first line share the top edge, both flush left
+            row.alignment = .top
             row.spacing = 10
             return row
         }
@@ -98,6 +101,8 @@ enum CreatorSettings {
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 8
+        // the alert places its accessory view slightly left of the informative text; this lines the icons up with it
+        stack.edgeInsets = NSEdgeInsets(top: 0, left: 4, bottom: 0, right: 0)
         stack.frame = NSRect(origin: .zero, size: NSSize(width: width, height: stack.fittingSize.height))
         return stack
     }
