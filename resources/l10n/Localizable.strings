@@ -1383,6 +1383,9 @@
 "Turn On" = "Turn On";
 
 /* No comment provided by engineer. */
+"Turns on Auto-Quit: an app quits 60 seconds after its last window closed, unless it is frontmost again. Finder, menu bar apps and apps with their own menu bar item keep running." = "Turns on Auto-Quit: an app quits 60 seconds after its last window closed, unless it is frontmost again. Finder, menu bar apps and apps with their own menu bar item keep running.";
+
+/* No comment provided by engineer. */
 "Turns on FlickRing, which takes over the middle mouse button system-wide: a middle click no longer reaches apps. Drag up, down, left or right for center focus, restore, left focus or right focus. You can turn it off again under FlickRing." = "Turns on FlickRing, which takes over the middle mouse button system-wide: a middle click no longer reaches apps. Drag up, down, left or right for center focus, restore, left focus or right focus. You can turn it off again under FlickRing.";
 
 /* No comment provided by engineer. */

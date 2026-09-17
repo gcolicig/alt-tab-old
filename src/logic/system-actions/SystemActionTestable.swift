@@ -107,8 +107,10 @@ enum AutoQuitPolicy {
     }
 
     /// Re-checked when the delay ends: a new window or the user coming back to the app cancels it.
-    static func shouldQuitNow(hasWindows: Bool, isFrontmost: Bool, isTerminated: Bool) -> Bool {
-        !hasWindows && !isFrontmost && !isTerminated
+    /// An app with its own menu bar item keeps running without windows on purpose (a password manager, a
+    /// container runtime), so quitting it would take the item away.
+    static func shouldQuitNow(hasWindows: Bool, isFrontmost: Bool, isTerminated: Bool, hasMenuBarItems: Bool) -> Bool {
+        !hasWindows && !isFrontmost && !isTerminated && !hasMenuBarItems
     }
 
     static func decodeList(_ raw: String) -> [String] {

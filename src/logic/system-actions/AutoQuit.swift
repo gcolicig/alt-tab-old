@@ -47,10 +47,33 @@ enum AutoQuit {
 
     private static func quitIfStillIdle(_ running: NSRunningApplication, _ pid: pid_t) {
         pending.removeValue(forKey: pid)
-        guard Preferences.autoQuitEnabled,
-              AutoQuitPolicy.shouldQuitNow(hasWindows: hasWindows(pid), isFrontmost: running.isActive, isTerminated: running.isTerminated) else { return }
-        Logger.info { "Auto-quit \(running.bundleIdentifier ?? "?")" }
-        running.terminate()
+        guard Preferences.autoQuitEnabled else { return }
+        // the menu bar question goes to the other app over Accessibility, which can block; ask off the main thread
+        BackgroundWork.accessibilityCommandsQueue.addOperation {
+            let menuBarItems = hasMenuBarItems(pid)
+            DispatchQueue.main.async {
+                guard Preferences.autoQuitEnabled,
+                      AutoQuitPolicy.shouldQuitNow(hasWindows: hasWindows(pid), isFrontmost: running.isActive,
+                          isTerminated: running.isTerminated, hasMenuBarItems: menuBarItems) else {
+                    if menuBarItems { Logger.info { "Auto-quit skipped, app owns menu bar items: \(running.bundleIdentifier ?? "?")" } }
+                    return
+                }
+                Logger.info { "Auto-quit \(running.bundleIdentifier ?? "?")" }
+                running.terminate()
+            }
+        }
+    }
+
+    /// `AXExtrasMenuBar` is the app's own status items. A failed query counts as having items: when in doubt,
+    /// the app keeps running.
+    private static func hasMenuBarItems(_ pid: pid_t) -> Bool {
+        var value: AnyObject?
+        let result = AXUIElementCopyAttributeValue(AXUIElementCreateApplication(pid), "AXExtrasMenuBar" as CFString, &value)
+        switch result {
+            case .success: return value != nil
+            case .noValue, .attributeUnsupported: return false
+            default: return true
+        }
     }
 
     static func addApps(_ bundleIds: [String]) {

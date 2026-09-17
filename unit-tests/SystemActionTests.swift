@@ -33,9 +33,13 @@ class SystemActionTests: XCTestCase {
     }
 
     func testAutoQuitRecheckCancelsOnNewWindowOrFocus() {
-        XCTAssertTrue(AutoQuitPolicy.shouldQuitNow(hasWindows: false, isFrontmost: false, isTerminated: false))
-        XCTAssertFalse(AutoQuitPolicy.shouldQuitNow(hasWindows: true, isFrontmost: false, isTerminated: false))
-        XCTAssertFalse(AutoQuitPolicy.shouldQuitNow(hasWindows: false, isFrontmost: true, isTerminated: false))
+        XCTAssertTrue(AutoQuitPolicy.shouldQuitNow(hasWindows: false, isFrontmost: false, isTerminated: false, hasMenuBarItems: false))
+        XCTAssertFalse(AutoQuitPolicy.shouldQuitNow(hasWindows: true, isFrontmost: false, isTerminated: false, hasMenuBarItems: false))
+        XCTAssertFalse(AutoQuitPolicy.shouldQuitNow(hasWindows: false, isFrontmost: true, isTerminated: false, hasMenuBarItems: false))
+    }
+
+    func testAutoQuitSparesAppsWithMenuBarItems() {
+        XCTAssertFalse(AutoQuitPolicy.shouldQuitNow(hasWindows: false, isFrontmost: false, isTerminated: false, hasMenuBarItems: true))
     }
 
     func testAutoQuitListRoundTripsAndToleratesGarbage() {

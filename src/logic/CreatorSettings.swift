@@ -21,6 +21,10 @@ enum CreatorSettings {
         ("showTitles", ShowTitlesPreference.appNameAndWindowTitle.indexAsString),
         ("hideSpaceNumberLabels", "true"),
         ("catModeMinutes", "30"),
+        // every app except Finder, menu bar apps and apps with their own menu bar item; see AutoQuitPolicy
+        ("autoQuitEnabled", "true"),
+        ("autoQuitDelaySeconds", "60"),
+        ("autoQuitMode", String(AutoQuitMode.allExceptListed.rawValue)),
         ("keepAwakeDisplay", "true"),
         ("keepAwakeBatteryThreshold", "10"),
         // FlickRing on the middle mouse button (button number 2), one focus layout per direction
@@ -64,6 +68,7 @@ enum CreatorSettings {
          NSLocalizedString("Hides app badges and status icons.", comment: ""),
          NSLocalizedString("Opens the switcher without delay and without the preview fade.", comment: ""),
          NSLocalizedString("Shows Spaces next to the menu bar icon, without Space numbers in the switcher.", comment: ""),
+         NSLocalizedString("Turns on Auto-Quit: an app quits 60 seconds after its last window closed, unless it is frontmost again. Finder, menu bar apps and apps with their own menu bar item keep running.", comment: ""),
          NSLocalizedString("Ends Cat Mode after 30 minutes. Keep Awake also keeps the display on, and ends on battery at 10%.", comment: ""),
          NSLocalizedString("Assigns the Hyper presets for Spaces and Window Layouts: A, W and D for left, center and right focus, S for restore.", comment: ""),
          // each armed input module is named in its own sentence, as the Q-08 carve-out requires
