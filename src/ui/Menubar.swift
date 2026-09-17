@@ -23,6 +23,8 @@ class Menubar {
         let overflowIndexes: [Int]?
     }
     private static var segmentTargets = [SegmentTarget]()
+    private static var muteTargets = [(rect: CGRect, icon: MuteIcon)]()
+    private static let muteIconWidth = CGFloat(22)
 
     private struct SpaceGroup {
         let displayUuid: ScreenUuid
@@ -82,6 +84,10 @@ class Menubar {
     private static func handleSegmentClick() -> Bool {
         guard let button = statusItem?.button, let event = NSApp.currentEvent, event.type == .leftMouseDown else { return false }
         let point = button.convert(event.locationInWindow, from: nil)
+        if let mute = muteTargets.first(where: { $0.rect.contains(point) }) {
+            MicMuteIndicator.unmute(mute.icon)
+            return true
+        }
         guard let target = segmentTargets.first(where: { $0.rect.contains(point) }) else { return false }
         // a synthetic Space switch reaches only the display the cursor is on, so a click on another display's
         // group is refused with the same notice the live buttons showed
@@ -171,14 +177,17 @@ class Menubar {
         // overflow menu. The row is torn down here, so this is where the table stops being true.
         overflowIndexesByButton.removeAll()
         groupBoundsInButton.removeAll()
+        segmentTargets.removeAll()
+        muteTargets.removeAll()
         statusButton.image = preferredIcon()
         statusItem.length = NSStatusItem.squareLength
         statusButton.alignment = .center
         statusButton.setAccessibilityLabel(App.name)
-        guard Preferences.menubarIconShown, Preferences.spacesInMenubarShown else { return }
-        let groups = spaceGroups()
-        guard !groups.isEmpty else { return }
-        statusButton.setAccessibilityLabel(spacesAccessibilityLabel(groups))
+        guard Preferences.menubarIconShown else { return }
+        let muteIcons = MicMuteIndicator.rowIcons
+        let groups = Preferences.spacesInMenubarShown ? spaceGroups() : []
+        guard !groups.isEmpty || !muteIcons.isEmpty else { return }
+        statusButton.setAccessibilityLabel(rowAccessibilityLabel(groups, muteIcons))
         let switchingEnabled = InstantSpaces.runtimeAvailability().isAvailable
         let cursorUuid = NSScreen.withMouse()?.cachedUuid()
         // the row must never collapse: the status button can still be unsized the first time this runs,
@@ -186,9 +195,12 @@ class Menubar {
         // Beyond that the button's own height wins: `thickness` reports 22 on a menubar that is 32pt tall,
         // and taking the larger of the two placed the row above the button's centre.
         let rowHeight = statusButton.bounds.height > 0 ? statusButton.bounds.height : NSStatusBar.system.thickness
-        let totalWidth = MenubarSpaceRow.totalWidth(groups.map { $0.spaceIds.count })
+        let totalWidth = groups.isEmpty ? 0 : MenubarSpaceRow.totalWidth(groups.map { $0.spaceIds.count })
+        // mute icons sit between the AltTab+ icon and the Spaces, so the Spaces start after them
+        let muteWidth = CGFloat(muteIcons.count) * muteIconWidth
+        let spacesX = iconWidth + muteWidth
         // the container carries its final frame before any segment goes in, like the single-row version did
-        let container = SpaceSegmentsView(frame: NSRect(x: iconWidth, y: 0, width: totalWidth, height: rowHeight))
+        let container = SpaceSegmentsView(frame: NSRect(x: spacesX, y: 0, width: totalWidth, height: rowHeight))
         var x = CGFloat(0)
         var groupBounds = [(ScreenUuid, CGRect)]()
         groups.enumerated().forEach { groupOffset, group in
@@ -203,21 +215,29 @@ class Menubar {
                                                                                   separateSpaces: NSScreen.screensHaveSeparateSpaces),
                                    displayOrdinal: groups.count > 1 ? groupOffset + 1 : nil, into: container)
             // recorded in the button's own coordinates, so a drag can ask which display a drop landed on
-            groupBounds.append((group.displayUuid, CGRect(x: iconWidth + groupStart, y: 0, width: x - groupStart, height: rowHeight)))
+            groupBounds.append((group.displayUuid, CGRect(x: spacesX + groupStart, y: 0, width: x - groupStart, height: rowHeight)))
         }
         groupBoundsInButton = groupBounds
-        statusItem.length = iconWidth + totalWidth + 2
+        let rowWidth = spacesX + totalWidth + 2
+        statusItem.length = rowWidth
         // Render the icon and segments as one image instead of hosting live, translucent subviews. On macOS 26
         // the status item re-snapshots live translucent subviews on every frame to draw its menu-bar shadow,
         // which burned a CPU core at idle. A rendered image is snapshotted once. Clicks map to a segment by
         // position (handleSegmentClick), so switching and the window drag keep working.
-        let rowWidth = iconWidth + totalWidth + 2
         let row = NSView(frame: NSRect(x: 0, y: 0, width: rowWidth, height: rowHeight))
         let iconView = NSImageView(frame: MenubarSpaceRow.centeredRect(x: 4, width: 20, availableHeight: rowHeight, preferredHeight: MenubarSpaceRow.iconHeight))
         iconView.image = tintedMenubarIcon()
         iconView.imageScaling = .scaleProportionallyUpOrDown
         row.addSubview(iconView)
-        row.addSubview(container) // container already carries x: iconWidth
+        muteIcons.enumerated().forEach { offset, icon in
+            let x = iconWidth + CGFloat(offset) * muteIconWidth
+            let view = NSImageView(frame: MenubarSpaceRow.centeredRect(x: x + 2, width: muteIconWidth - 4, availableHeight: rowHeight, preferredHeight: MenubarSpaceRow.iconHeight))
+            view.image = tinted(icon.image)
+            view.imageScaling = .scaleProportionallyUpOrDown
+            row.addSubview(view)
+            muteTargets.append((CGRect(x: x, y: 0, width: muteIconWidth, height: rowHeight), icon))
+        }
+        row.addSubview(container) // container already carries its x
         segmentTargets = collectSegmentTargets(container)
         statusButton.image = renderRowImage(row)
         statusButton.imageScaling = .scaleNone
@@ -229,6 +249,10 @@ class Menubar {
     /// VoiceOver reads the rendered row through this label. Per-segment accessibility children were measured
     /// on 2026-09-15 and do not work: the menu bar item exposes the button's label but drops its children,
     /// on the button and on its cell alike. So the row's information goes into one spoken summary.
+    private static func rowAccessibilityLabel(_ groups: [SpaceGroup], _ muteIcons: [MuteIcon]) -> String {
+        ([spacesAccessibilityLabel(groups)] + muteIcons.map { $0.label }).joined(separator: ", ")
+    }
+
     private static func spacesAccessibilityLabel(_ groups: [SpaceGroup]) -> String {
         let summaries = groups.enumerated().map { offset, group -> String in
             let activeIndex = group.spaceIds.firstIndex { $0 == group.activeSpaceId }.map { $0 + 1 } ?? 0
@@ -242,7 +266,11 @@ class Menubar {
     /// Bakes the menu-bar tint into the icon. A template image renders black off-screen, so the rendered row
     /// would show a black icon on a dark menu bar; tinting with the row's own text colour matches the bar.
     private static func tintedMenubarIcon() -> NSImage {
-        let icon = preferredIcon()
+        tinted(preferredIcon()) ?? preferredIcon()
+    }
+
+    private static func tinted(_ image: NSImage?) -> NSImage? {
+        guard let icon = image else { return nil }
         guard icon.isTemplate else { return icon }
         let tinted = NSImage(size: icon.size)
         tinted.lockFocus()
@@ -259,7 +287,7 @@ class Menubar {
     private static func collectSegmentTargets(_ container: NSView) -> [SegmentTarget] {
         container.subviews.compactMap { subview in
             guard let button = subview as? NSButton, let uuid = button.identifier?.rawValue else { return nil }
-            let rect = CGRect(x: iconWidth + button.frame.minX, y: button.frame.minY, width: button.frame.width, height: button.frame.height)
+            let rect = CGRect(x: container.frame.minX + button.frame.minX, y: button.frame.minY, width: button.frame.width, height: button.frame.height)
             return SegmentTarget(rect: rect, displayUuid: uuid, spaceIndex: button.tag, overflowIndexes: overflowIndexesByButton[ObjectIdentifier(button)])
         }
     }

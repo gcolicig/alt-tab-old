@@ -52,6 +52,9 @@
 /* No comment provided by engineer. */
 "A sequence uses keys other than letters and digits." = "A sequence uses keys other than letters and digits.";
 
+/* No comment provided by engineer. */
+"A, W and D for left, center and right focus, and S for restore, on the Hyper key. Stays clear of Rectangle and Magnet. Requires the Hyper key to be enabled." = "A, W and D for left, center and right focus, and S for restore, on the Hyper key. Stays clear of Rectangle and Magnet. Requires the Hyper key to be enabled.";
+
 /* Menubar option. %@ is AltTab */
 "About %@" = "About %@";
 
@@ -221,7 +224,7 @@
 "Assign shortcuts to launch apps or open URLs." = "Assign shortcuts to launch apps or open URLs.";
 
 /* No comment provided by engineer. */
-"Assigns the Hyper presets for Spaces and Window Layouts." = "Assigns the Hyper presets for Spaces and Window Layouts.";
+"Assigns the Hyper presets for Spaces and Window Layouts: A, W and D for left, center and right focus, S for restore." = "Assigns the Hyper presets for Spaces and Window Layouts: A, W and D for left, center and right focus, S for restore.";
 
 /* No comment provided by engineer. */
 "Auto" = "Auto";
@@ -444,6 +447,9 @@
 
 /* No comment provided by engineer. */
 "End on battery at" = "End on battery at";
+
+/* No comment provided by engineer. */
+"Ends Cat Mode after 30 minutes. Keep Awake also keeps the display on, and ends on battery at 10%." = "Ends Cat Mode after 30 minutes. Keep Awake also keeps the display on, and ends on battery at 10%.";
 
 /* No comment provided by engineer. */
 "Exceptions" = "Exceptions";
@@ -690,9 +696,6 @@
 
 /* No comment provided by engineer. */
 "Locks the keyboard. End it from the menu, by typing “unlock”, or with the emergency shortcut ⌃⌥⇧⌘⎋." = "Locks the keyboard. End it from the menu, by typing “unlock”, or with the emergency shortcut ⌃⌥⇧⌘⎋.";
-
-/* No comment provided by engineer. */
-"macOS has no indicator for a muted microphone. Click the icon to unmute." = "macOS has no indicator for a muted microphone. Click the icon to unmute.";
 
 /* No comment provided by engineer. */
 "macOS Spaces shortcuts" = "macOS Spaces shortcuts";
@@ -948,7 +951,10 @@
 "Quit app" = "Quit app";
 
 /* No comment provided by engineer. */
-"Quits an app some time after its last window closed, unless it opened a new window or came to the front meanwhile. Finder is never quit." = "Quits an app some time after its last window closed, unless it opened a new window or came to the front meanwhile. Finder is never quit.";
+"Quit even with a menu bar item" = "Quit even with a menu bar item";
+
+/* No comment provided by engineer. */
+"Quits an app some time after its last window closed, unless it opened a new window or came to the front meanwhile. Finder, menu bar apps and apps with their own menu bar item keep running." = "Quits an app some time after its last window closed, unless it opened a new window or came to the front meanwhile. Finder, menu bar apps and apps with their own menu bar item keep running.";
 
 /* No comment provided by engineer. */
 "Reads the menus of the app in front. It never absorbs keys, so a shortcut you press while looking still runs." = "Reads the menus of the app in front. It never absorbs keys, so a shortcut you press while looking still runs.";
@@ -1110,7 +1116,7 @@
 "Show & Hide" = "Show & Hide";
 
 /* No comment provided by engineer. */
-"Show an icon in the menu bar while the microphone is muted" = "Show an icon in the menu bar while the microphone is muted";
+"Show an icon in the menu bar while the microphone or the sound is muted" = "Show an icon in the menu bar while the microphone or the sound is muted";
 
 /* No comment provided by engineer. */
 "Show an item in the switcher for each window, or for each application. Windows will be focused, whereas applications will be activated." = "Show an item in the switcher for each window, or for each application. Windows will be focused, whereas applications will be activated.";
@@ -1161,10 +1167,10 @@
 "Show, activate, and move between macOS Spaces." = "Show, activate, and move between macOS Spaces.";
 
 /* No comment provided by engineer. */
-"Shows Spaces next to the menu bar icon." = "Shows Spaces next to the menu bar icon.";
+"Shows Spaces next to the menu bar icon, without Space numbers in the switcher." = "Shows Spaces next to the menu bar icon, without Space numbers in the switcher.";
 
 /* No comment provided by engineer. */
-"Shows window titles instead of thumbnails, and tabs as separate windows." = "Shows window titles instead of thumbnails, and tabs as separate windows.";
+"Shows window titles with the app name instead of thumbnails, and tabs as separate windows." = "Shows window titles with the app name instead of thumbnails, and tabs as separate windows.";
 
 /* No comment provided by engineer. */
 "Side button (back)" = "Side button (back)";
@@ -1186,6 +1192,12 @@
 
 /* No comment provided by engineer. */
 "Some apps like Finder or Preview use standard tabs which act like independent windows. Some other apps like web browsers use custom tabs which act in unique ways and are not actual windows. AltTab can't list those separately." = "Some apps like Finder or Preview use standard tabs which act like independent windows. Some other apps like web browsers use custom tabs which act in unique ways and are not actual windows. AltTab can't list those separately.";
+
+/* No comment provided by engineer. */
+"Sound muted" = "Sound muted";
+
+/* No comment provided by engineer. */
+"Sound muted — click to unmute" = "Sound muted — click to unmute";
 
 /* No comment provided by engineer. */
 "Source code repository" = "Source code repository";
@@ -1287,6 +1299,9 @@
 "The function key mode could not be changed." = "The function key mode could not be changed.";
 
 /* No comment provided by engineer. */
+"The icons appear between the AltTab+ icon and the Spaces. macOS has no indicator for a muted microphone. Click an icon to unmute." = "The icons appear between the AltTab+ icon and the Spaces. macOS has no indicator for a muted microphone. Click an icon to unmute.";
+
+/* No comment provided by engineer. */
 "The language of the text could not be detected." = "The language of the text could not be detected.";
 
 /* No comment provided by engineer. */
@@ -1294,9 +1309,6 @@
 
 /* No comment provided by engineer. */
 "The permissions could not be reset." = "The permissions could not be reset.";
-
-/* No comment provided by engineer. */
-"The Rectangle letters on the Hyper key, which stays clear of Rectangle and Magnet. Requires the Hyper key to be enabled." = "The Rectangle letters on the Hyper key, which stays clear of Rectangle and Magnet. Requires the Hyper key to be enabled.";
 
 /* No comment provided by engineer. */
 "The screen area could not be captured." = "The screen area could not be captured.";
@@ -1318,6 +1330,9 @@
 
 /* No comment provided by engineer. */
 "Theme" = "Theme";
+
+/* No comment provided by engineer. */
+"These apps quit although they keep an item in the menu bar, which then disappears too." = "These apps quit although they keep an item in the menu bar, which then disappears too.";
 
 /* No comment provided by engineer. */
 "This build does not include translation." = "This build does not include translation.";
@@ -1378,6 +1393,12 @@
 
 /* No comment provided by engineer. */
 "Turn On" = "Turn On";
+
+/* No comment provided by engineer. */
+"Turns on Auto-Quit: an app quits 60 seconds after its last window closed, unless it is frontmost again. Finder, menu bar apps and apps with their own menu bar item keep running." = "Turns on Auto-Quit: an app quits 60 seconds after its last window closed, unless it is frontmost again. Finder, menu bar apps and apps with their own menu bar item keep running.";
+
+/* No comment provided by engineer. */
+"Turns on FlickRing, which takes over the middle mouse button system-wide: a middle click no longer reaches apps. Drag up, down, left or right for center focus, restore, left focus or right focus. You can turn it off again under FlickRing." = "Turns on FlickRing, which takes over the middle mouse button system-wide: a middle click no longer reaches apps. Drag up, down, left or right for center focus, restore, left focus or right focus. You can turn it off again under FlickRing.";
 
 /* No comment provided by engineer. */
 "Turns on Hyperkey, which remaps Caps Lock system-wide. You can turn it off again under Hyperkey." = "Turns on Hyperkey, which remaps Caps Lock system-wide. You can turn it off again under Hyperkey.";

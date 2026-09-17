@@ -33,9 +33,29 @@ class SystemActionTests: XCTestCase {
     }
 
     func testAutoQuitRecheckCancelsOnNewWindowOrFocus() {
-        XCTAssertTrue(AutoQuitPolicy.shouldQuitNow(hasWindows: false, isFrontmost: false, isTerminated: false))
-        XCTAssertFalse(AutoQuitPolicy.shouldQuitNow(hasWindows: true, isFrontmost: false, isTerminated: false))
-        XCTAssertFalse(AutoQuitPolicy.shouldQuitNow(hasWindows: false, isFrontmost: true, isTerminated: false))
+        XCTAssertTrue(AutoQuitPolicy.shouldQuitNow(hasWindows: false, isFrontmost: false, isTerminated: false, hasMenuBarItems: false))
+        XCTAssertFalse(AutoQuitPolicy.shouldQuitNow(hasWindows: true, isFrontmost: false, isTerminated: false, hasMenuBarItems: false))
+        XCTAssertFalse(AutoQuitPolicy.shouldQuitNow(hasWindows: false, isFrontmost: true, isTerminated: false, hasMenuBarItems: false))
+    }
+
+    func testAutoQuitTreatsOrderedOutWindowsAsClosed() {
+        // Music and Cisco Secure Client after the red button: no Space, off screen
+        XCTAssertFalse(AutoQuitPolicy.windowCountsAsOpen(isMinimized: false, appIsHidden: false, isOnAnySpace: false, isOnScreen: { false }))
+        // a minimized window keeps its Space (Ollama, Bitwarden)
+        XCTAssertTrue(AutoQuitPolicy.windowCountsAsOpen(isMinimized: true, appIsHidden: false, isOnAnySpace: true, isOnScreen: { false }))
+        XCTAssertTrue(AutoQuitPolicy.windowCountsAsOpen(isMinimized: true, appIsHidden: false, isOnAnySpace: false, isOnScreen: { false }))
+        // a hidden app keeps its windows
+        XCTAssertTrue(AutoQuitPolicy.windowCountsAsOpen(isMinimized: false, appIsHidden: true, isOnAnySpace: false, isOnScreen: { false }))
+        // Trello orders out but keeps its Space: still open
+        XCTAssertTrue(AutoQuitPolicy.windowCountsAsOpen(isMinimized: false, appIsHidden: false, isOnAnySpace: true, isOnScreen: { false }))
+        XCTAssertTrue(AutoQuitPolicy.windowCountsAsOpen(isMinimized: false, appIsHidden: false, isOnAnySpace: false, isOnScreen: { true }))
+    }
+
+    func testAutoQuitSparesAppsWithMenuBarItems() {
+        XCTAssertFalse(AutoQuitPolicy.shouldQuitNow(hasWindows: false, isFrontmost: false, isTerminated: false, hasMenuBarItems: true))
+        // the user's own exception list overrides the menu bar item, and nothing else
+        XCTAssertTrue(AutoQuitPolicy.shouldQuitNow(hasWindows: false, isFrontmost: false, isTerminated: false, hasMenuBarItems: true, quitsDespiteMenuBarItem: true))
+        XCTAssertFalse(AutoQuitPolicy.shouldQuitNow(hasWindows: false, isFrontmost: true, isTerminated: false, hasMenuBarItems: true, quitsDespiteMenuBarItem: true))
     }
 
     func testAutoQuitListRoundTripsAndToleratesGarbage() {

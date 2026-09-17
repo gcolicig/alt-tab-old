@@ -550,6 +550,7 @@ class Windows {
         guard !unreachable.isEmpty else { return }
         Logger.info { "removing unreachable windows: \(unreachable.map { $0.debugId })" }
         removeWindows(unreachable, true)
+        AutoQuit.windowsClosed(unreachable)
     }
 
     static func removeWindows(_ windows: [Window], _ addWindowlessWindowIfNeeded: Bool) {

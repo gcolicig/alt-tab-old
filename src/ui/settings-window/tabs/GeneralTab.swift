@@ -53,8 +53,8 @@ class GeneralTab {
     static func applyCreatorSettings() {
         let alert = NSAlert()
         alert.messageText = NSLocalizedString("Apply the creator's settings?", comment: "")
-        alert.informativeText = CreatorSettings.summary + "\n\n"
-            + NSLocalizedString("This replaces your current appearance and shortcut assignments.", comment: "")
+        alert.informativeText = NSLocalizedString("This replaces your current appearance and shortcut assignments.", comment: "")
+        alert.accessoryView = CreatorSettings.summaryView(width: 420)
         alert.addButton(withTitle: NSLocalizedString("Apply", comment: ""))
         alert.addButton(withTitle: NSLocalizedString("Cancel", comment: ""))
         guard alert.runModal() == .alertFirstButtonReturn else { return }
