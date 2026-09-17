@@ -144,7 +144,7 @@ final class MenubarMenu: NSObject, NSMenuDelegate {
         MenubarEntry(id: "app.debug", group: .app, title: { NSLocalizedString("Debug", comment: "Menubar option") }, symbol: "wrench.and.screwdriver",
             submenu: { SubmenuBuilder.debug() }) {},
         MenubarEntry(id: "app.quit", group: .app, title: { String(format: NSLocalizedString("Quit %@", comment: "Menubar option. %@ is AltTab"), App.name) },
-            symbol: nil, keyEquivalent: "q") { NSApp.terminate(nil) },
+            symbol: "xmark.rectangle", keyEquivalent: "q") { NSApp.terminate(nil) },
     ]
 }
 

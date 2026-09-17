@@ -60,9 +60,10 @@ enum AutoQuit {
     private static func quitIfStillIdle(_ running: NSRunningApplication, _ pid: pid_t) {
         pending.removeValue(forKey: pid)
         guard Preferences.autoQuitEnabled else { return }
+        let quitsDespiteMenuBarItem = running.bundleIdentifier.map { menuBarExceptions.contains($0) } ?? false
         // the menu bar question goes to the other app over Accessibility, which can block; ask off the main thread
         BackgroundWork.accessibilityCommandsQueue.addOperation {
-            let menuBarItems = hasMenuBarItems(pid)
+            let menuBarItems = !quitsDespiteMenuBarItem && hasMenuBarItems(pid)
             DispatchQueue.main.async {
                 guard Preferences.autoQuitEnabled,
                       AutoQuitPolicy.shouldQuitNow(hasWindows: hasWindows(pid), isFrontmost: running.isActive,
@@ -86,6 +87,19 @@ enum AutoQuit {
             case .noValue, .attributeUnsupported: return false
             default: return true
         }
+    }
+
+    static var menuBarExceptions: Set<String> {
+        Set(AutoQuitPolicy.decodeList(Preferences.autoQuitMenuBarBundleIds))
+    }
+
+    static func addMenuBarExceptions(_ bundleIds: [String]) {
+        let merged = Array(menuBarExceptions.union(bundleIds)).sorted()
+        Preferences.set("autoQuitMenuBarBundleIds", AutoQuitPolicy.encodeList(merged))
+    }
+
+    static func removeMenuBarException(_ bundleId: String) {
+        Preferences.set("autoQuitMenuBarBundleIds", AutoQuitPolicy.encodeList(menuBarExceptions.subtracting([bundleId]).sorted()))
     }
 
     static func addApps(_ bundleIds: [String]) {

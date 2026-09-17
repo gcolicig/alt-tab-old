@@ -698,9 +698,6 @@
 "Locks the keyboard. End it from the menu, by typing “unlock”, or with the emergency shortcut ⌃⌥⇧⌘⎋." = "Locks the keyboard. End it from the menu, by typing “unlock”, or with the emergency shortcut ⌃⌥⇧⌘⎋.";
 
 /* No comment provided by engineer. */
-"macOS has no indicator for a muted microphone. Click the icon to unmute." = "macOS has no indicator for a muted microphone. Click the icon to unmute.";
-
-/* No comment provided by engineer. */
 "macOS Spaces shortcuts" = "macOS Spaces shortcuts";
 
 /* No comment provided by engineer. */
@@ -954,7 +951,10 @@
 "Quit app" = "Quit app";
 
 /* No comment provided by engineer. */
-"Quits an app some time after its last window closed, unless it opened a new window or came to the front meanwhile. Finder is never quit." = "Quits an app some time after its last window closed, unless it opened a new window or came to the front meanwhile. Finder is never quit.";
+"Quit even with a menu bar item" = "Quit even with a menu bar item";
+
+/* No comment provided by engineer. */
+"Quits an app some time after its last window closed, unless it opened a new window or came to the front meanwhile. Finder, menu bar apps and apps with their own menu bar item keep running." = "Quits an app some time after its last window closed, unless it opened a new window or came to the front meanwhile. Finder, menu bar apps and apps with their own menu bar item keep running.";
 
 /* No comment provided by engineer. */
 "Reads the menus of the app in front. It never absorbs keys, so a shortcut you press while looking still runs." = "Reads the menus of the app in front. It never absorbs keys, so a shortcut you press while looking still runs.";
@@ -1116,7 +1116,7 @@
 "Show & Hide" = "Show & Hide";
 
 /* No comment provided by engineer. */
-"Show an icon in the menu bar while the microphone is muted" = "Show an icon in the menu bar while the microphone is muted";
+"Show an icon in the menu bar while the microphone or the sound is muted" = "Show an icon in the menu bar while the microphone or the sound is muted";
 
 /* No comment provided by engineer. */
 "Show an item in the switcher for each window, or for each application. Windows will be focused, whereas applications will be activated." = "Show an item in the switcher for each window, or for each application. Windows will be focused, whereas applications will be activated.";
@@ -1192,6 +1192,12 @@
 
 /* No comment provided by engineer. */
 "Some apps like Finder or Preview use standard tabs which act like independent windows. Some other apps like web browsers use custom tabs which act in unique ways and are not actual windows. AltTab can't list those separately." = "Some apps like Finder or Preview use standard tabs which act like independent windows. Some other apps like web browsers use custom tabs which act in unique ways and are not actual windows. AltTab can't list those separately.";
+
+/* No comment provided by engineer. */
+"Sound muted" = "Sound muted";
+
+/* No comment provided by engineer. */
+"Sound muted — click to unmute" = "Sound muted — click to unmute";
 
 /* No comment provided by engineer. */
 "Source code repository" = "Source code repository";
@@ -1293,6 +1299,9 @@
 "The function key mode could not be changed." = "The function key mode could not be changed.";
 
 /* No comment provided by engineer. */
+"The icons appear between the AltTab+ icon and the Spaces. macOS has no indicator for a muted microphone. Click an icon to unmute." = "The icons appear between the AltTab+ icon and the Spaces. macOS has no indicator for a muted microphone. Click an icon to unmute.";
+
+/* No comment provided by engineer. */
 "The language of the text could not be detected." = "The language of the text could not be detected.";
 
 /* No comment provided by engineer. */
@@ -1321,6 +1330,9 @@
 
 /* No comment provided by engineer. */
 "Theme" = "Theme";
+
+/* No comment provided by engineer. */
+"These apps quit although they keep an item in the menu bar, which then disappears too." = "These apps quit although they keep an item in the menu bar, which then disappears too.";
 
 /* No comment provided by engineer. */
 "This build does not include translation." = "This build does not include translation.";

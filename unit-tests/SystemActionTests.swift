@@ -53,6 +53,9 @@ class SystemActionTests: XCTestCase {
 
     func testAutoQuitSparesAppsWithMenuBarItems() {
         XCTAssertFalse(AutoQuitPolicy.shouldQuitNow(hasWindows: false, isFrontmost: false, isTerminated: false, hasMenuBarItems: true))
+        // the user's own exception list overrides the menu bar item, and nothing else
+        XCTAssertTrue(AutoQuitPolicy.shouldQuitNow(hasWindows: false, isFrontmost: false, isTerminated: false, hasMenuBarItems: true, quitsDespiteMenuBarItem: true))
+        XCTAssertFalse(AutoQuitPolicy.shouldQuitNow(hasWindows: false, isFrontmost: true, isTerminated: false, hasMenuBarItems: true, quitsDespiteMenuBarItem: true))
     }
 
     func testAutoQuitListRoundTripsAndToleratesGarbage() {
