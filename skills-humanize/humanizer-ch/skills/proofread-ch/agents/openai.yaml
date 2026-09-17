@@ -1,4 +1,0 @@
-interface:
-  display_name: "Proofread CH"
-  short_description: "Mehrsprachig korrigieren und prüfen"
-  default_prompt: "Use $proofread-ch to correct this text conservatively for the specified language and locale."
