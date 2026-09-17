@@ -1,0 +1,6 @@
+interface:
+  display_name: "Humanizer CH Maintainer"
+  short_description: "Verträge Tests und Releases prüfen"
+  default_prompt: "Use $humanizer-ch-maintainer to run the canonical repository verification and report blockers."
+policy:
+  allow_implicit_invocation: false

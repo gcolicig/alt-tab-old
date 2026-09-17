@@ -11,6 +11,7 @@ Dieser Vertrag begrenzt Modellaufrufe, trennt Kern- von Modelllatenz und macht d
 
 | Klasse | Umfang |
 |---|---|
+| `selection` | bis 1 000 ausgewaehlte Quelltokens bei bereits indexierter Dokumentrevision |
 | `small` | bis 1 000 Quelltokens |
 | `medium` | bis 10 000 Quelltokens |
 | `large` | bis 50 000 Quelltokens |
@@ -22,6 +23,7 @@ Jeder Benchmark dokumentiert Format, Sprache, Locale, Anzahl Segmente, Aenderung
 | Modus | Generative Standardpasses |
 |---|---|
 | `humanizer audit` | ein gebatchter Analysepass; kein Rewrite |
+| `critical_text selection` | ein semantischer Auditpass; Eskalation nur fuer markierte kritische Restunsicherheit |
 | `humanizer rewrite` | ein gebatchter Proposal-Pass plus hoechstens ein semantischer Recheck fuer geaenderte Segmente |
 | `proofread correct` | kein generativer Pass |
 | `proofread edit` | hoechstens ein gebatchter Adjudikationspass plus deterministischer Recheck |
@@ -30,12 +32,17 @@ Jeder Benchmark dokumentiert Format, Sprache, Locale, Anzahl Segmente, Aenderung
 
 Ein Modellaufruf pro Segment ist unzulaessig, solange Batching innerhalb des Kontextbudgets moeglich ist. Unveraenderte Segmente werden nicht erneut gesendet. Explizite Sprache und Locale ueberspringen automatische Erkennung, sofern kein Konflikt vorliegt.
 
+Bei `scope_mode=selection` zaehlen nur die ausgewaehlten Spannen und der explizit begrenzte, nicht editierbare Kontext zum Modellbudget. Der Volltext darf weder zur Bequemlichkeit geladen noch in den Modellrequest aufgenommen werden. Das Routing und allfaellige Eskalationen folgen `model-routing.md`.
+
+Die `selection`-Messung verwendet eine bereits indexierte, unveraenderte Dokumentrevision. Der Benchmark weist Auswahl-, Kontext- und Volltexttokens separat aus; Volltexttokens im Modellrequest muessen null sein. Der erste strukturelle Parse einer noch nicht indexierten Datei wird separat gemessen und darf nicht als Auswahl-Latenz ausgegeben werden.
+
 ## Kernlatenzbudgets
 
 Referenzprofil: vier CPU-Kerne, 8 GB RAM, lokale SSD, warmer Prozess, ohne Grammatik- oder generatives Modell.
 
 | Klasse | P95 fuer Parse Analyse Patch Verify |
 |---|---:|
+| `selection` | 0.5 Sekunden ohne Modellzeit |
 | `small` | 0.5 Sekunden |
 | `medium` | 3 Sekunden |
 | `large` | 15 Sekunden |

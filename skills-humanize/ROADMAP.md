@@ -1,6 +1,6 @@
 # Humanizer CH - Roadmap
 
-Status: Planungsentwurf 0.3
+Status: Planungsentwurf 0.5
 Planungsprinzip: Jede Phase liefert einen nutzbaren, verifizierbaren Stand. Sprachbreite wird erst nach stabilem Kern erweitert.
 
 ## Zielbild
@@ -14,6 +14,7 @@ Ziel: Bestehendes `humanizer-de` reproduzierbar erfassen und alle bindenden Prod
 Lieferumfang:
 
 - aktuelle Muster, Linter, Tests und CLI-Vertraege inventarisieren;
+- reproduzierbaren Baseline-Import aus dem bestehenden `humanizer-de` mit Quelle, Version, Lizenz, Dateidigest und Migrationsentscheid erzeugen;
 - bestehende 72 Muster nach `core`, `language:de` und `locale` klassifizieren;
 - Kompatibilitaetsvertrag fuer bestehende Muster-IDs und Aufrufe definieren;
 - repräsentative Baseline-Korpora und aktuelle False-Positive-Raten einfrieren;
@@ -28,7 +29,13 @@ Lieferumfang:
 - Patch-Autoritaet, Consent-Modi und Transaktionsumfang versionieren;
 - Alignment-Fallback fuer externe Quelle-Ziel-Paare versionieren;
 - Pass-, Latenz- und Hardwarebudgets versionieren;
+- Modellrollen, Standardprofile, Effortgrenzen und Eskalationsketten versionieren;
+- Auswahlvertrag fuer einzelne Textbausteine und das Review-Profil `critical_text` versionieren;
+- Konfigurationsprioritaet, Capability-Erkennung und sichere Defaults versionieren;
+- gemeinsame Fehlerklassen, Exit Codes, Wiederholbarkeit und Degradationspfade versionieren;
 - messbare Baseline-, Qualitaets- und Release-Gates einfrieren.
+- Zielstruktur fuer zwei kurze Produkt-Skills sowie einen nicht ausgelieferten Maintainer-Skill festlegen;
+- kanonische Reihenfolge und Ergebnisformat des gemeinsamen Test-Harness festlegen.
 
 Exit-Kriterien:
 
@@ -37,8 +44,10 @@ Exit-Kriterien:
 - keine offene Entscheidung blockiert die Kernarchitektur;
 - `humanizer-ch` besitzt keinen Uebersetzungs-Unterbefehl;
 - Status-, Invarianten-, Patch-, Revisions-, Checkpoint- und Formatvertraege sind versioniert;
-- alle vier normativen Vertraege sind widerspruchsfrei in Spezifikation und Backlog verlinkt;
+- Konfigurations- und Fehlervertraege sind versioniert und besitzen keine widerspruechlichen Defaults zwischen Skill, CLI und Kern;
+- alle normativen Vertraege sind widerspruchsfrei in Spezifikation und Backlog verlinkt;
 - die erste Implementierungsiteration ist gegen diese Vertraege auf Abhaengigkeiten geprueft.
+- der Baseline-Import ist aus dem Workspace reproduzierbar und benoetigt keine still veraenderliche installierte Skill-Kopie.
 
 ## Phase 1 - Gemeinsamer Textkern
 
@@ -57,6 +66,8 @@ Lieferumfang:
 - Agent-Core-Orchestrierung mit gebatchten, positionsgebundenen Rewrite-Vorschlaegen;
 - getrennte Zustandsachsen fuer Vorschlag, Policy, Nutzerentscheid und Anwendung;
 - versioniertes JSON-Schema fuer Befunde, typisierte Invarianten, Patch-Entscheidungen, Statusachsen und Reports.
+- Pruefbereiche `document`, `selection` und `segments` mit revisionsgebundenen Spans und nicht editierbarem Kontext;
+- kanonischer lokaler und CI-faehiger Test-Harness fuer Contracts, Unit-Tests, Korpora und Skill-Struktur;
 
 Exit-Kriterien:
 
@@ -65,6 +76,8 @@ Exit-Kriterien:
 - geschuetzte Tokens bleiben in allen Testfaellen unveraendert;
 - Kernmodule enthalten keine deutsche Lexik.
 - Kernlatenz und Modellpasszahl halten die freigegebenen Budgets ein.
+- direkte Textbausteine und ausgewaehlte Datei-Spans koennen ohne Volltextlauf geprueft werden; dokumentweite Checks erscheinen dabei als `not_run`.
+- derselbe Harness liefert lokal und in CI dasselbe maschinenlesbare Ergebnis fuer deterministische Tests.
 
 ## Phase 2 - Deutscher Sprachkern und DACH-Locales
 
@@ -78,6 +91,7 @@ Lieferumfang:
 - positive Persona-Locks fuer belegten Humor, Ironie, Direktheit, lokale Wendungen und bewusste Unregelmaessigkeiten;
 - Rewrite-Tiefen `minimal`, `local`, `structural` und `rebuild`;
 - deklarative Auslieferungsprofile fuer Medium, Zielgruppe und Kommunikationszweck;
+- Review-Profil `critical_text` fuer strenge Audits einzelner Textbausteine ohne automatische Rewrite-Eskalation;
 - Schweizer Orthografie und Typografie als sichere Locale-Transformation;
 - DACH-False-Positive-Korpus fuer Helvetismen, Austriazismen und deutsche Varianten;
 - CLI mit explizitem `--language` und `--locale`;
@@ -92,6 +106,7 @@ Exit-Kriterien:
 - bewusstes Code-Switching bleibt erhalten und nur bestaetigte Artefakte werden normalisiert;
 - `structural` und `rebuild` bestehen das Bedeutungsmanifest;
 - ein unbekanntes Medium verwendet das neutrale Auslieferungsprofil.
+- `critical_text` liefert bei guten Texten ein gueltiges Null-Edit und behauptet keine dokumentweite Abdeckung.
 
 ## Phase 3 - Proofread CH Minimum Viable Product
 
@@ -100,6 +115,7 @@ Ziel: Fehlerkorrektur fachlich von Humanisierung trennen.
 Lieferumfang:
 
 - eigener Skill `proofread-ch`;
+- mit dem Skill-Creator erzeugte kurze Einstiege fuer `humanizer-ch` und `proofread-ch` mit progressiv geladenen Referenzen und konsistenten UI-Metadaten;
 - Modi `correct` und `edit`;
 - lokale Grammatik-Engine als optionale Kandidatenquelle;
 - deterministische Typografie- und Locale-Pruefungen;
@@ -112,6 +128,7 @@ Exit-Kriterien:
 - Grammatik-Engine-Ausfall degradiert kontrolliert auf Kernregeln;
 - jede automatische Aenderung ist einer freigegebenen sicheren Regelklasse zugeordnet;
 - Nutzer koennen Regeln oder Kategorien deaktivieren.
+- beide Skill-Einstiege bestehen Struktur-, Trigger- und Nicht-Trigger-Tests und duplizieren keine gemeinsame Sprach- oder Kernlogik.
 
 ## Phase 4 - Englisches Sprachmodul
 
@@ -214,6 +231,8 @@ Lieferumfang:
 - dokumentierte Supportmatrix fuer Formate, Sprachen, Locales und Adapter;
 - Release-Bundle und Installationspruefung;
 - unabhaengige Verhaltens-Evaluation mit realistischen Aufgaben.
+- A/B-Evaluation der Rollen- und Effortprofile einschliesslich starkem Modell mit niedrigem Effort gegen guenstiges Modell mit hohem Effort;
+- repository-lokaler Maintainer-Skill fuer wiederholbare Inventur-, Eval-, Bundle- und Releaseablaeufe;
 - messbare Release-Matrix fuer Rekonstruktion, harte Invarianten, Baseline-Regressionsfreiheit, Auto-Apply-Regeln und P0/P1-Defekte.
 
 Exit-Kriterien:
@@ -226,6 +245,8 @@ Exit-Kriterien:
 - kein freigegebenes Ergebnis enthaelt offene Invariant-Blocker;
 - Null-Edit-, False-Positive- und `humanizer-de`-Baseline sind nicht verschlechtert;
 - keine offenen P0-Defekte und nur explizit akzeptierte P1-Abweichungen.
+- das freigegebene Routingprofil erfuellt harte Invarianten und den dokumentierten Trade-off aus Qualitaet, Latenz und Kosten.
+- der Maintainer-Skill ist explizit aufzurufen, verweist auf den kanonischen Harness und fehlt im ausgelieferten Nutzer-Bundle.
 
 ## Spaetere Optionen
 

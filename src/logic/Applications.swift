@@ -128,12 +128,17 @@ class Applications {
             let zombies = believedAlive.subtracting(confirmedAlive)
             guard !zombies.isEmpty else { return }
             DispatchQueue.main.async {
+                var removed = [Window]()
                 for window in Windows.list.reversed() {
                     if let wid = window.cgWindowId, zombies.contains(wid) {
                         Logger.debug { window.debugId }
                         Windows.removeWindows([window], true)
+                        removed.append(window)
                     }
                 }
+                // some apps (Zed, measured 2026-09-17) close windows without a destroyed event, so this is the
+                // only place auto-quit learns about it
+                AutoQuit.windowsClosed(removed)
             }
         }
     }

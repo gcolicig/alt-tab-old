@@ -1,0 +1,18 @@
+{
+  "name": "humanizer-ch",
+  "version": "0.1.0",
+  "description": "Foundation Preview für mehrsprachige, locale-bewusste Textprüfung und belegtreue Redaktion.",
+  "author": {
+    "name": "gcolicig"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Humanizer CH",
+    "shortDescription": "Preview für mehrsprachige Textprüfung.",
+    "longDescription": "Humanizer CH ist eine Foundation Preview. Die Skills trennen Humanisierung und Korrektorat, schützen Fakten und Struktur und berücksichtigen Sprache, Locale, Register sowie ausgewählte Textbausteine. Noch nicht freigegebene Modell- und Sprachmodule werden nicht als abgeschlossen ausgewiesen.",
+    "developerName": "gcolicig",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": "Prüfe diesen Textbaustein kritisch und bewahre Fakten, Stimme, Locale und Struktur."
+  }
+}

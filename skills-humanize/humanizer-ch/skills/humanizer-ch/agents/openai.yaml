@@ -1,0 +1,4 @@
+interface:
+  display_name: "Humanizer CH"
+  short_description: "Mehrsprachige Texte gezielt humanisieren"
+  default_prompt: "Use $humanizer-ch to audit this selected text critically while preserving facts, voice, locale, and structure."

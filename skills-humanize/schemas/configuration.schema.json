@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://humanizer-ch.local/schemas/configuration.schema.json",
+  "title": "humanizer-ch configuration profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version"],
+  "properties": {
+    "schema_version": {"const": "0.1"},
+    "profile_id": {"type": "string", "pattern": "^[a-z][a-z0-9_-]{0,63}$"},
+    "language": {"enum": ["und", "de", "en", "fr", "it"]},
+    "locale": {"$ref": "#/$defs/locale"},
+    "register": {"enum": ["locker", "sachlich", "formal"]},
+    "routing_profile": {"type": "string", "minLength": 1, "maxLength": 128},
+    "operation": {"enum": ["audit", "rewrite", "proofread", "translation_qa", "translate"]},
+    "scope_mode": {"enum": ["document", "selection", "segments"]},
+    "review_profile": {"enum": ["standard", "critical_text"]},
+    "source_locale": {"$ref": "#/$defs/locale"},
+    "target_locale": {"$ref": "#/$defs/locale"},
+    "rewrite_depth": {"enum": ["minimal", "local", "structural", "rebuild"]},
+    "policy": {"$ref": "#/$defs/policy"},
+    "routing": {"$ref": "#/$defs/routing"},
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/capabilityRequirement"},
+      "propertyNames": {"pattern": "^[a-z][a-z0-9_.-]{0,127}$"}
+    },
+    "runtime": {"$ref": "#/$defs/runtime"},
+    "reporting": {"$ref": "#/$defs/reporting"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"operation": {"const": "audit"}}, "required": ["operation"]},
+      "then": {"not": {"properties": {"rewrite_depth": {"const": "rebuild"}}, "required": ["rewrite_depth"]}}
+    },
+    {
+      "if": {"properties": {"operation": {"const": "translate"}}, "required": ["operation"]},
+      "then": {"required": ["source_locale", "target_locale"]}
+    }
+  ],
+  "$defs": {
+    "locale": {"enum": ["de-CH", "de-DE", "de-AT", "en", "en-GB", "en-US", "fr-CH", "it-CH"]},
+    "cacheEnvironmentBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["environment"],
+      "properties": {
+        "environment": {"const": "HUMANIZER_CH_CACHE_DIRECTORY"}
+      }
+    },
+    "endpointEnvironmentBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["environment"],
+      "properties": {
+        "environment": {"const": "HUMANIZER_CH_PRIVATE_ENDPOINT"}
+      }
+    },
+    "secretEnvironmentBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["environment"],
+      "properties": {
+        "environment": {"const": "HUMANIZER_CH_ADAPTER_SECRET"}
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "consent_mode": {"enum": ["preview", "safe_only", "apply_within_request", "interactive"]},
+        "cloud_fallback": {"const": false},
+        "log_text": {"const": false},
+        "preserve_protected_content": {"const": true}
+      }
+    },
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "profile": {"type": "string", "pattern": "^[a-z][a-z0-9_-]{0,63}$"},
+        "max_effort": {"enum": ["low", "medium", "high", "xhigh", "max"]},
+        "allow_escalation": {"type": "boolean"}
+      }
+    },
+    "capabilityRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "required"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "required": {"type": "boolean"},
+        "provider_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "probe": {"enum": ["metadata", "artifact_manifest", "healthcheck", "backend_metadata", "not_run"]}
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timeout_seconds": {"type": "number", "exclusiveMinimum": 0, "maximum": 3600},
+        "cache_directory": {"oneOf": [{"type": "string", "minLength": 1}, {"$ref": "#/$defs/cacheEnvironmentBinding"}]},
+        "private_endpoint": {"oneOf": [{"type": "string", "format": "uri"}, {"$ref": "#/$defs/endpointEnvironmentBinding"}]},
+        "secret": {"$ref": "#/$defs/secretEnvironmentBinding"},
+        "healthcheck_enabled": {"type": "boolean"}
+      }
+    },
+    "reporting": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "include_config_provenance": {"type": "boolean"},
+        "include_capabilities": {"type": "boolean"},
+        "debug": {"type": "boolean"}
+      }
+    }
+  }
+}

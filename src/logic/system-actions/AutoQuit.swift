@@ -32,8 +32,20 @@ enum AutoQuit {
             isSelf: app.pid == ProcessInfo.processInfo.processIdentifier) && !hasWindows(app.pid)
     }
 
+    /// Leaving an app is the only moment auto-quit hears about a window the app ordered out instead of
+    /// destroying: no accessibility event reports that.
+    static func appDeactivated(_ pid: pid_t) {
+        guard Preferences.autoQuitEnabled, let app = Applications.list.first(where: { $0.pid == pid }), isCandidate(app) else { return }
+        schedule(app)
+    }
+
     private static func hasWindows(_ pid: pid_t) -> Bool {
-        Windows.list.contains { $0.application.pid == pid && !$0.isWindowlessApp }
+        Windows.list.contains { window in
+            guard window.application.pid == pid, !window.isWindowlessApp else { return false }
+            guard let wid = window.cgWindowId else { return true }
+            return AutoQuitPolicy.windowCountsAsOpen(isMinimized: window.isMinimized, appIsHidden: window.application.isHidden,
+                isOnAnySpace: !wid.spaces().isEmpty, isOnScreen: { CGWindow.isOnScreen(wid) })
+        }
     }
 
     private static func schedule(_ app: Application) {

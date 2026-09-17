@@ -1,6 +1,6 @@
 # Humanizer CH - Backlog
 
-Status: Initialer Produktbacklog 0.3
+Status: Initialer Produktbacklog 0.5
 Prioritaeten: P0 blockiert den Produktkern, P1 ist fuer Version 1.0 erforderlich, P2 verbessert Qualitaet oder Betrieb, P3 ist spaeter optional.
 
 ## Arbeitsregeln
@@ -21,7 +21,9 @@ Prioritaeten: P0 blockiert den Produktkern, P1 ist fuer Version 1.0 erforderlich
 - Abnahme:
   - jedes der 72 Muster ist klassifiziert;
   - jedes Skript besitzt einen Migrationsentscheid;
-  - doppelte oder verwaiste Ressourcen sind markiert.
+  - doppelte oder verwaiste Ressourcen sind markiert;
+  - Quelle, Skill-Version, Lizenz und SHA-256 jedes uebernommenen Artefakts sind erfasst;
+  - der Import ist aus dem Workspace reproduzierbar und haengt nicht von einer spaeter veraenderten installierten Skill-Kopie ab.
 
 ### HC-002 - Baseline-Korpus einfrieren
 
@@ -52,7 +54,11 @@ Prioritaeten: P0 blockiert den Produktkern, P1 ist fuer Version 1.0 erforderlich
   - `humanizer-ch` und `proofread-ch` sind getrennte, duenne Skill-Einstiege;
   - `humanizer_ch_core` besitzt Dokument-, Sprach-, Befund-, Patch-, Invarianten- und Adapterschichten ohne duplizierte Skilllogik;
   - TranslateGemma und schwere NLP-Komponenten sind optionale Abhaengigkeiten;
-  - Ressourcenbesitz, Importgrenzen und Kompatibilitaetsschicht sind dokumentiert.
+  - Ressourcenbesitz, Importgrenzen und Kompatibilitaetsschicht sind dokumentiert;
+  - `.codex-plugin/plugin.json`, produktive Skill-Einstiege, UI-Metadaten, Referenzen, Skripte und Tests besitzen eindeutige Zielorte;
+  - `pyproject.toml`, Console-Scripts und optionale Abhaengigkeitsgruppen fuer Kern, Proofread, Translation und Entwicklung sind festgelegt;
+  - Plugin-, Python-Paket-, Schema- und Vertragsversionen besitzen eine dokumentierte Kompatibilitaetsmatrix und je eine eindeutige Versionsquelle;
+  - `critical_text` bleibt Profil, `translate-ch` bleibt CLI und beide werden nicht als zusaetzliche Skills dupliziert.
 
 ### HC-005 - Befehls- und Aufgabenverantwortung festlegen
 
@@ -69,7 +75,7 @@ Prioritaeten: P0 blockiert den Produktkern, P1 ist fuer Version 1.0 erforderlich
 
 - Prioritaet: P0
 - Aufgabe: Vor Implementierungsbeginn die versionierten Vertrage fuer Statusachsen, Invarianten, Patch-Entscheidungen, Revisionen, Checkpoints, Formatadapter und Qualitaetsgates freigeben.
-- Abhaengigkeiten: HC-001, HC-002, HC-003, HC-004, HC-005, HC-007, HC-008, HC-064, HC-076
+- Abhaengigkeiten: HC-001, HC-002, HC-003, HC-004, HC-005, HC-007, HC-008, HC-009, HC-064, HC-076, HC-077, HC-082, HC-083
 - Abnahme:
   - jeder Vertrag besitzt verantwortliches Modul, Schema-Version und Abwaertskompatibilitaetsregel;
   - Workflow-, Adapter- und Qualitaetsstatus sind orthogonal;
@@ -77,6 +83,20 @@ Prioritaeten: P0 blockiert den Produktkern, P1 ist fuer Version 1.0 erforderlich
   - Klartext-, Markdown- und JSON-Adapter folgen demselben Protokoll;
   - harte und baseline-abhaengige Release-Gates sind messbar;
   - die erste Implementierungsiteration startet erst nach dokumentierter Freigabe.
+
+### HC-009 - Modell-, Rollen- und Effort-Vertrag
+
+- Prioritaet: P0
+- Aufgabe: Rollenbasierte Modellwahl, praktische Standardprofile, Effortgrenzen, Eskalationsketten und Routingnachweis versionieren.
+- Abhaengigkeiten: HC-004, HC-005
+- Ergebnis: `contracts/model-routing.md`
+- Abnahme:
+  - deterministischer Kern, mechanische Hilfe, Voranalyse, semantische Redaktion und Eskalation sind getrennte Rollen;
+  - Sol oder Opus mit niedrigem Effort ist der Referenzstandard fuer semantische Arbeit, Astra oder Fable mit niedrigem bis mittlerem Effort fuer begruendete Eskalationen;
+  - Terra oder Sonnet dienen mit niedrigem Effort der Voranalyse, Luna oder Haiku mit niedrigem Effort nur mechanischen Aufgaben;
+  - hohe Effortstufen kleiner Modelle ersetzen keine passende Modellklasse;
+  - A/B-Matrix misst Invarianten, sprachkundige Blindbewertung, False Positives, Null-Edit, Latenz, Kosten und Eskalationsnutzen;
+  - jeder Modellaufruf weist Rolle, Routingprofil, Modellrevision, Effort und Eskalationsgrund aus.
 
 ### HC-007 - Agent-Core- und Rewrite-Proposal-Vertrag
 
@@ -215,6 +235,98 @@ Prioritaeten: P0 blockiert den Produktkern, P1 ist fuer Version 1.0 erforderlich
   - ohne Auswahl werden keine beliebigen Strings bearbeitet;
   - Schluesselreihenfolge und Formatierung folgen einer dokumentierten Rekonstruktionsgarantie;
   - ungueltige Pointer und Typkonflikte schlagen fehl.
+
+### HC-077 - Auswahl- und Kontextvertrag
+
+- Prioritaet: P0
+- Aufgabe: `document`, `selection` und `segments`, Auswahlidentitaet, Kontextgrenzen, Statussemantik und `critical_text` normativ definieren.
+- Abhaengigkeiten: HC-004, HC-005, HC-007
+- Ergebnis: `contracts/selection-scope.md`
+- Abnahme:
+  - direkte und dateibasierte Auswahlen besitzen eine vollstaendige, revisionssichere Identitaet;
+  - nur Auswahlspannen sind editierbar und Kontext ist explizit nicht editierbar;
+  - Wiederverwendung von Manifest und Segmentindex ist definiert;
+  - `critical_text` startet als Audit und erhoeht Rewrite-Tiefe, Modellklasse, Effort oder Passzahl nicht automatisch;
+  - dokumentweite Checks bleiben bei Teilpruefungen `not_run`;
+  - Volltexttokens im Modellrequest muessen bei einer Auswahl null sein.
+
+### HC-078 - Produkt-Skills mit progressiver Offenlegung
+
+- Prioritaet: P1
+- Aufgabe: Mit dem Skill-Creator die kurzen Einstiege `humanizer-ch` und `proofread-ch` erstellen und alle umfangreichen, bedingten Verfahren in gezielte Referenzen auslagern.
+- Abhaengigkeiten: HC-006, HC-030, HC-040, HC-077
+- Abnahme:
+  - beide `SKILL.md` besitzen trennscharfe Beschreibungen und automatische Auffindbarkeit ohne gegenseitige Fehlaktivierung;
+  - gemeinsame Regeln, Sprachwissen und Schemas werden nicht zwischen den Skills kopiert;
+  - jeder Verweis benennt, wann die Referenz gelesen werden muss;
+  - `humanizer-ch` routet `critical_text`, ohne einen dritten Produkt-Skill einzufuehren;
+  - `proofread-ch` eskaliert nicht still zu Humanisierung oder Uebersetzung;
+  - beide Skills bestehen `quick_validate.py` und realistische Trigger-/Nicht-Trigger-Faelle.
+
+### HC-079 - Kanonischer Test- und Eval-Harness
+
+- Prioritaet: P1
+- Aufgabe: Wiederkehrende Contract-, Unit-, Korpus-, Auswahl-, Verhaltens-, Routing- und Bundle-Pruefungen ueber einen Einstieg mit stabilem Ergebnisformat ausfuehren.
+- Abhaengigkeiten: HC-002, HC-006, HC-077
+- Abnahme:
+  - lokaler Lauf und CI verwenden dieselbe Testreihenfolge und dieselben Profile;
+  - deterministische Tests benoetigen weder Netzwerk noch Modellzugriff;
+  - optionale Modelltests werden ohne Konfiguration als `skipped` statt als bestanden ausgewiesen;
+  - Report enthaelt Korpusrevision, Vertragsversionen, Routingprofil, Modellrevisionen, Latenz, Kosten und Fehlerklassen;
+  - Auswahltests beweisen, dass der Modellrequest keine Volltexttokens enthaelt;
+  - alle Validator-Abhaengigkeiten, einschliesslich YAML-Parsing, liegen in der Entwicklungsgruppe und werden durch `doctor` vor dem Lauf diagnostiziert;
+  - einzelne Stufen und die gesamte Suite sind reproduzierbar aufrufbar.
+
+### HC-080 - Repository-lokaler Maintainer-Skill
+
+- Prioritaet: P1
+- Aufgabe: Mit dem Skill-Creator einen explizit aufzurufenden Entwicklungsskill fuer wiederkehrende Inventur-, Vertrags-, Eval-, Bundle- und Releaseablaeufe erstellen.
+- Abhaengigkeiten: HC-073, HC-079
+- Abnahme:
+  - der Skill orchestriert ausschliesslich kanonische Skripte und dupliziert keine Produktregeln;
+  - die Aufrufpolitik verhindert implizite Aktivierung bei normalen Schreibauftraegen;
+  - der Skill dokumentiert Stoppbedingungen und unterscheidet Pflicht-, optionale und uebersprungene Tests;
+  - der Skill besteht `quick_validate.py` sowie einen isolierten Forward-Test;
+  - das Nutzer-Bundle und die Plugin-Auslieferung enthalten den Maintainer-Skill nicht.
+
+### HC-081 - Auswahlmodus implementieren
+
+- Prioritaet: P1
+- Aufgabe: Den Auswahl- und Kontextvertrag fuer direkte Textbausteine, Datei-Spans und stabile Segment-IDs implementieren.
+- Abhaengigkeiten: HC-006, HC-010, HC-014, HC-017, HC-077
+- Abnahme:
+  - direkte Textbausteine erhalten eine synthetische Revision und stabile Segment-ID;
+  - Datei-Auswahlen validieren Quellrevision, Segment-ID, Span, Quell-Hash und Formatknoten;
+  - nur die Auswahl ist editierbar und begrenzter Nachbarkontext bleibt unveraendert;
+  - unveraenderte Dokumentrevisionen verwenden Manifest und Segmentindex wieder;
+  - ohne strukturelle Notwendigkeit erfolgt weder sprachliche Volltextanalyse noch Volltext-Modellrequest;
+  - Klartext-, Markdown- und JSON-Faelle bestehen Bereichs-, Null-Edit-, Cache- und Kontexttests.
+
+### HC-082 - Konfiguration und Capability-Erkennung
+
+- Prioritaet: P0
+- Aufgabe: Prioritaet, Herkunft und Validierung von Aufrufoptionen, Projektprofil, Nutzerprofil, Umgebungsvariablen und sicheren Standards definieren.
+- Abhaengigkeiten: HC-004, HC-005, HC-009
+- Ergebnis: `contracts/configuration-capabilities.md`, `schemas/configuration.schema.json`
+- Abnahme:
+  - explizite Aufrufoptionen haben Vorrang vor Projektprofil, Nutzerprofil und eingebauten Standards;
+  - Umgebungsvariablen koennen keine inhaltliche Freigabepolicy still ueberschreiben;
+  - optionale Grammar-, Modell- und TranslateGemma-Capabilities werden ohne Laden schwerer Komponenten erkannt;
+  - effektive Konfiguration und ihre Herkunft sind ohne Textinhalte reportierbar;
+  - unbekannte Optionen, ungueltige Profile und widerspruechliche Locales schlagen kontrolliert fehl.
+
+### HC-083 - Fehler- und Exit-Code-Vertrag
+
+- Prioritaet: P0
+- Aufgabe: Gemeinsame Fehlerklassen fuer Eingabe, Konfiguration, Struktur, Invarianten, Adapter, Modell, Zustimmung, I/O und interne Defekte definieren.
+- Abhaengigkeiten: HC-005, HC-007, HC-008, HC-077, HC-082
+- Ergebnis: `contracts/errors-exit-codes.md`, `schemas/error-report.schema.json`
+- Abnahme:
+  - jeder Fehler besitzt stabilen Code, Komponente, Schwere, Wiederholbarkeit und sichere Nutzerhandlung;
+  - CLI-Exit-Codes, Skill-Reports und JSON-Fehler bilden dieselbe Taxonomie ab;
+  - Adapterausfall, Qualitaetsablehnung und Workflowfehler bleiben unterscheidbar;
+  - partielle Batchfehler und uebersprungene optionale Tests sind keine falschen Gesamterfolge;
+  - unbekannte interne Fehler geben keinen Textinhalt oder Stacktrace im Standardreport aus.
 
 ## Epic C - Sprache und Locale
 
@@ -618,12 +730,15 @@ Prioritaeten: P0 blockiert den Produktkern, P1 ist fuer Version 1.0 erforderlich
 ### HC-073 - Packaging und Installation
 
 - Prioritaet: P1
-- Aufgabe: Skills, gemeinsame Ressourcen und optionale Abhaengigkeiten paketieren.
+- Aufgabe: Mit dem Plugin-Creator Plugin-Manifest und Paketstruktur erstellen sowie Skills, gemeinsame Ressourcen und optionale Abhaengigkeiten reproduzierbar paketieren.
 - Abhaengigkeiten: HC-004, HC-005
 - Abnahme:
   - Kerninstallation ohne TranslateGemma und schwere NLP-Modelle moeglich;
   - optionale Komponenten werden diagnostiziert;
-  - Bundle enthaelt keine Platzhalter oder Entwicklungsartefakte.
+  - Bundle enthaelt keine Platzhalter oder Entwicklungsartefakte;
+  - Plugin-Manifest, beide Produkt-Skills und ihre UI-Metadaten sind validiert;
+  - reproduzierbare Bundle-Inhalte stammen aus einer Allowlist;
+  - Maintainer-Skill, Tests und proprietaere Korpora werden nicht versehentlich ausgeliefert.
 
 ### HC-074 - Verhaltens-Evaluation
 
@@ -633,7 +748,9 @@ Prioritaeten: P0 blockiert den Produktkern, P1 ist fuer Version 1.0 erforderlich
 - Abnahme:
   - Humanizer-, Proofread- und Translation-QA-Aufgaben getrennt evaluiert;
   - Null-Edit, technische Texte und regionale Varianten enthalten;
-  - beobachtete Fehler fuehren nur zu gezielten Regelkorrekturen.
+  - beobachtete Fehler fuehren nur zu gezielten Regelkorrekturen;
+  - Routingvarianten vergleichen starke Modelle mit niedrigem Effort gegen guenstige Modelle mit hohem Effort auf demselben Korpus;
+  - Einzelbaustein-Faelle pruefen Laufzeit, Scope-Grenzen und korrekte Ausweisung nicht gelaufener Dokumentchecks.
 
 ### HC-075 - Version-1.0-Release-Gate
 
@@ -662,7 +779,9 @@ Prioritaeten: P0 blockiert den Produktkern, P1 ist fuer Version 1.0 erforderlich
   - kalte und warme Modellwerte werden getrennt;
   - Adapter pruefen Speicher und Kontextlimit vor langen Laeufen;
   - persistenter Modelldienst, Caching, ETA, Fortschritt und Abbruch sind festgelegt;
-  - Performance-Gates trennen Backend, Modellrevision und Quantisierung.
+  - Performance-Gates trennen Backend, Modellrevision und Quantisierung;
+  - Auswahlmodus budgetiert nur die ausgewaehlten Spannen und den begrenzten Kontext; ein Volltextlauf ist kein zulaessiger Standardpfad;
+  - fuer eine indexierte Auswahl bis 1 000 Tokens gilt ein eigenes Kernlatenzbudget; Modellrequest-Metriken weisen null Volltexttokens nach.
 
 ## Architektur-Gate vor der ersten Implementierungsiteration
 
@@ -673,9 +792,13 @@ Prioritaeten: P0 blockiert den Produktkern, P1 ist fuer Version 1.0 erforderlich
 5. HC-005 Befehls- und Aufgabenverantwortung festlegen
 6. HC-007 Agent-Core- und Rewrite-Proposal-Vertrag
 7. HC-008 Patch-Autoritaet und Transaktionsumfang
-8. HC-064 Alignment-Fallback-Vertrag
-9. HC-076 Pass-, Latenz- und Hardwarevertrag
-10. HC-006 Architektur-Gate freigeben
+8. HC-009 Modell-, Rollen- und Effort-Vertrag
+9. HC-064 Alignment-Fallback-Vertrag
+10. HC-076 Pass-, Latenz- und Hardwarevertrag
+11. HC-077 Auswahl- und Kontextvertrag
+12. HC-082 Konfiguration und Capability-Erkennung
+13. HC-083 Fehler- und Exit-Code-Vertrag
+14. HC-006 Architektur-Gate freigeben
 
 HC-001 und HC-002 duerfen sofort beginnen. Produktiver Implementierungscode startet erst nach HC-006.
 
@@ -693,5 +816,7 @@ HC-001 und HC-002 duerfen sofort beginnen. Produktiver Implementierungscode star
 10. HC-020 Sprach-, Locale- und Code-Switch-Router
 11. HC-022 Deutsches Sprachmodul extrahieren
 12. HC-023 de-CH-Profil
+13. HC-079 Kanonischer Test- und Eval-Harness
+14. HC-081 Auswahlmodus implementieren
 
 HC-019 fuer JSON folgt nach dem validierten Referenz- und Markdownpfad. HC-034 und HC-035 bauen auf dem stabilen Humanizer-Router auf. TranslateGemma-Arbeit beginnt erst nach dem stabilen Kern mit HC-050, HC-055 und HC-057. Dadurch wird der Adaptervertrag ohne Modellgewichte testbar und Checkpoint-Wiederverwendung bleibt revisionssicher.

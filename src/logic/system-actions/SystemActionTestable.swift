@@ -106,6 +106,13 @@ enum AutoQuitPolicy {
         return rules.mode == .onlyListed ? listed : !listed
     }
 
+    /// Whether a window still keeps its app alive. Music and Cisco Secure Client do not destroy a window on
+    /// the red button; they order it out, and it then sits on no Space and off screen (measured 2026-09-17).
+    /// A minimized window keeps its Space, and a hidden app keeps its windows, so neither counts as closed.
+    static func windowCountsAsOpen(isMinimized: Bool, appIsHidden: Bool, isOnAnySpace: Bool, isOnScreen: () -> Bool) -> Bool {
+        isMinimized || appIsHidden || isOnAnySpace || isOnScreen()
+    }
+
     /// Re-checked when the delay ends: a new window or the user coming back to the app cancels it.
     /// An app with its own menu bar item keeps running without windows on purpose (a password manager, a
     /// container runtime), so quitting it would take the item away.

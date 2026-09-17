@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://humanizer-ch.local/schemas/selection-request.schema.json",
+  "title": "humanizer-ch selection request",
+  "type": "object",
+  "required": ["contract_version", "operation", "scope_mode", "review_profile", "selection"],
+  "properties": {
+    "contract_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "operation": {"enum": ["audit", "rewrite"]},
+    "scope_mode": {"const": "selection"},
+    "review_profile": {"enum": ["standard", "critical_text"]},
+    "selection": {
+      "type": "object",
+      "required": ["source_revision", "segment_id", "format_node_id", "span", "source_hash"],
+      "properties": {
+        "source_revision": {"type": "string", "minLength": 1},
+        "segment_id": {"type": "string", "minLength": 1},
+        "format_node_id": {"type": "string", "minLength": 1},
+        "span": {
+          "type": "object",
+          "required": ["start", "end"],
+          "properties": {
+            "start": {"type": "integer", "minimum": 0},
+            "end": {"type": "integer", "minimum": 1}
+          },
+          "additionalProperties": false
+        },
+        "source_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
+
