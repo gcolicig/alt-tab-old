@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22">
+  <!-- Light menu bar variant. It is not a template image, so macOS does not tint it.
+       The windows behind share the grey of the front window body; the title bar is darker than the body. -->
+  <g fill="#6E6E6E">
+    <path d="M4.68 6.53v8.38h-.69a.82.82 0 0 1-.82-.82V7.35a.82.82 0 0 1 .82-.82z"/>
+    <path d="M17.32 6.53v8.38h.69a.82.82 0 0 0 .82-.82V7.35a.82.82 0 0 0-.82-.82z"/>
+  </g>
+  <!-- title bar: dark grey -->
+  <path fill="#454545" d="M5.41 6.16a1 1 0 0 1 1-1h9.18a1 1 0 0 1 1 1v.63H5.41z"/>
+  <!-- body: a lighter dark grey -->
+  <path fill="#6E6E6E" d="M5.41 7.35h11.18v7.9a1 1 0 0 1-1 1H6.41a1 1 0 0 1-1-1z"/>
+</svg>
