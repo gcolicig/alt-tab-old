@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22">
+  <g fill="#000" fill-rule="evenodd">
+    <!-- Only the clickable strip of each window behind stays; the gap to the front window is cut into the path,
+         because a flat template image has no shadow to separate the shapes. -->
+    <path d="M4.68 6.53v8.38h-.69a.82.82 0 0 1-.82-.82V7.35a.82.82 0 0 1 .82-.82z"/>
+    <path d="M17.32 6.53v8.38h.69a.82.82 0 0 0 .82-.82V7.35a.82.82 0 0 0-.82-.82z"/>
+    <!-- front window: title bar and body, split by a thin gap -->
+    <path d="M5.41 6.16a1 1 0 0 1 1-1h9.18a1 1 0 0 1 1 1v.63H5.41zM5.41 7.35h11.18v7.9a1 1 0 0 1-1 1H6.41a1 1 0 0 1-1-1z"/>
+  </g>
+</svg>

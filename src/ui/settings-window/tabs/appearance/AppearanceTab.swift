@@ -1,4 +1,5 @@
 import Cocoa
+import CoreImage
 
 struct ShowHideRowInfo {
     var rowId: String!
@@ -23,7 +24,7 @@ class IllustratedImageThemeView: ClickHoverImageView {
         // We will implement it later; for now, use the light theme.
         let theme = "light"
         let imageName = IllustratedImageThemeView.getConcatenatedImageName(style, theme)
-        let imageView = NSImageView(image: NSImage(named: imageName)!)
+        let imageView = NSImageView(image: IllustratedImageThemeView.greyscaleImage(imageName)!)
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.imageScaling = .scaleProportionallyUpOrDown
         imageView.wantsLayer = true
@@ -74,12 +75,33 @@ class IllustratedImageThemeView: ClickHoverImageView {
         if highlighted {
             updateImage(imageName)
         } else {
-            (infoCircle as! NSImageView).image = NSImage(named: self.imageName)
+            (infoCircle as! NSImageView).image = IllustratedImageThemeView.greyscaleImage(self.imageName)
         }
     }
 
     private func updateImage(_ imageName: String) {
-        (infoCircle as! NSImageView).image = NSImage(named: getStyleThemeImageName(imageName))
+        (infoCircle as! NSImageView).image = IllustratedImageThemeView.greyscaleImage(getStyleThemeImageName(imageName))
+    }
+
+    private static var greyscaleCache = [String: NSImage]()
+
+    /// The illustrations ship as flat colour JPGs. The wallpaper behind the stylised switcher draws the eye
+    /// away from the setting the image explains, so every illustration is desaturated on load. The images have
+    /// no layers, so the app icons inside the switcher lose their colour as well.
+    static func greyscaleImage(_ name: String) -> NSImage? {
+        if let cached = greyscaleCache[name] {
+            return cached
+        }
+        guard let image = NSImage(named: name) else { return nil }
+        guard let tiff = image.tiffRepresentation, let source = CIImage(data: tiff),
+              let filter = CIFilter(name: "CIColorControls") else { return image }
+        filter.setValue(source, forKey: kCIInputImageKey)
+        filter.setValue(0.0, forKey: kCIInputSaturationKey)
+        guard let output = filter.outputImage else { return image }
+        let grey = NSImage(size: image.size)
+        grey.addRepresentation(NSCIImageRep(ciImage: output))
+        greyscaleCache[name] = grey
+        return grey
     }
 
     static func getConcatenatedImageName(_ style: AppearanceStylePreference,
