@@ -52,6 +52,9 @@
 /* No comment provided by engineer. */
 "A sequence uses keys other than letters and digits." = "A sequence uses keys other than letters and digits.";
 
+/* No comment provided by engineer. */
+"A, W and D for left, center and right focus, and S for restore, on the Hyper key. Stays clear of Rectangle and Magnet. Requires the Hyper key to be enabled." = "A, W and D for left, center and right focus, and S for restore, on the Hyper key. Stays clear of Rectangle and Magnet. Requires the Hyper key to be enabled.";
+
 /* Menubar option. %@ is AltTab */
 "About %@" = "About %@";
 
@@ -221,7 +224,7 @@
 "Assign shortcuts to launch apps or open URLs." = "Assign shortcuts to launch apps or open URLs.";
 
 /* No comment provided by engineer. */
-"Assigns the Hyper presets for Spaces and Window Layouts." = "Assigns the Hyper presets for Spaces and Window Layouts.";
+"Assigns the Hyper presets for Spaces and Window Layouts: A, W and D for left, center and right focus, S for restore." = "Assigns the Hyper presets for Spaces and Window Layouts: A, W and D for left, center and right focus, S for restore.";
 
 /* No comment provided by engineer. */
 "Auto" = "Auto";
@@ -444,6 +447,9 @@
 
 /* No comment provided by engineer. */
 "End on battery at" = "End on battery at";
+
+/* No comment provided by engineer. */
+"Ends Cat Mode after 30 minutes. Keep Awake also keeps the display on, and ends on battery at 10%." = "Ends Cat Mode after 30 minutes. Keep Awake also keeps the display on, and ends on battery at 10%.";
 
 /* No comment provided by engineer. */
 "Exceptions" = "Exceptions";
@@ -1161,10 +1167,10 @@
 "Show, activate, and move between macOS Spaces." = "Show, activate, and move between macOS Spaces.";
 
 /* No comment provided by engineer. */
-"Shows Spaces next to the menu bar icon." = "Shows Spaces next to the menu bar icon.";
+"Shows Spaces next to the menu bar icon, without Space numbers in the switcher." = "Shows Spaces next to the menu bar icon, without Space numbers in the switcher.";
 
 /* No comment provided by engineer. */
-"Shows window titles instead of thumbnails, and tabs as separate windows." = "Shows window titles instead of thumbnails, and tabs as separate windows.";
+"Shows window titles with the app name instead of thumbnails, and tabs as separate windows." = "Shows window titles with the app name instead of thumbnails, and tabs as separate windows.";
 
 /* No comment provided by engineer. */
 "Side button (back)" = "Side button (back)";
@@ -1296,9 +1302,6 @@
 "The permissions could not be reset." = "The permissions could not be reset.";
 
 /* No comment provided by engineer. */
-"The Rectangle letters on the Hyper key, which stays clear of Rectangle and Magnet. Requires the Hyper key to be enabled." = "The Rectangle letters on the Hyper key, which stays clear of Rectangle and Magnet. Requires the Hyper key to be enabled.";
-
-/* No comment provided by engineer. */
 "The screen area could not be captured." = "The screen area could not be captured.";
 
 /* No comment provided by engineer. */
@@ -1378,6 +1381,9 @@
 
 /* No comment provided by engineer. */
 "Turn On" = "Turn On";
+
+/* No comment provided by engineer. */
+"Turns on FlickRing, which takes over the middle mouse button system-wide: a middle click no longer reaches apps. Drag up, down, left or right for center focus, restore, left focus or right focus. You can turn it off again under FlickRing." = "Turns on FlickRing, which takes over the middle mouse button system-wide: a middle click no longer reaches apps. Drag up, down, left or right for center focus, restore, left focus or right focus. You can turn it off again under FlickRing.";
 
 /* No comment provided by engineer. */
 "Turns on Hyperkey, which remaps Caps Lock system-wide. You can turn it off again under Hyperkey." = "Turns on Hyperkey, which remaps Caps Lock system-wide. You can turn it off again under Hyperkey.";

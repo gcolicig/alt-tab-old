@@ -137,6 +137,18 @@ enum ShortcutPresets {
         summary: NSLocalizedString("Control plus 1 to 9 switches to that Space, Control plus 0 toggles back to the last one, Control plus an arrow moves one Space. The matching system shortcuts, including native window tiling on the same combination, are disabled while this is assigned and restored when it is removed.", comment: ""),
         assignments: spaceAssignments(.control))
 
+    /// The Hyper layer uses its own scheme instead of the Rectangle letters: the left hand's WASD block, with
+    /// A, W and D for the three focus layouts and S for restore. Thirds and two-thirds stay free on purpose;
+    /// on Hyper, D would otherwise mean both left third (Rectangle) and right focus.
+    private static func hyperLayoutAssignments() -> [(key: String, shortcut: Shortcut)] {
+        [
+            (WindowLayoutAction.leftFocus.shortcutPreferenceKey, shortcut(.ansiA, hyper)),
+            (WindowLayoutAction.centerFocus.shortcutPreferenceKey, shortcut(.ansiW, hyper)),
+            (WindowLayoutAction.rightFocus.shortcutPreferenceKey, shortcut(.ansiD, hyper)),
+            (WindowLayoutAction.restore.shortcutPreferenceKey, shortcut(.ansiS, hyper)),
+        ]
+    }
+
     /// Leaves every macOS shortcut alone, at the price of needing the Hyper key enabled.
     static let hyperSpaces = ShortcutPreset(
         id: "hyperSpaces",
@@ -156,8 +168,8 @@ enum ShortcutPresets {
         id: "hyperLayouts",
         domain: layoutsDomain,
         title: NSLocalizedString("Hyper key layout shortcuts", comment: ""),
-        summary: NSLocalizedString("The Rectangle letters on the Hyper key, which stays clear of Rectangle and Magnet. Requires the Hyper key to be enabled.", comment: ""),
-        assignments: layoutAssignments(hyper))
+        summary: NSLocalizedString("A, W and D for left, center and right focus, and S for restore, on the Hyper key. Stays clear of Rectangle and Magnet. Requires the Hyper key to be enabled.", comment: ""),
+        assignments: hyperLayoutAssignments())
 
     // display order only; assignment state is stored by preset id, so reordering is safe
     static let spaces = [hyperSpaces, macOsSpaces]
