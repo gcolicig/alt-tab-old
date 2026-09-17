@@ -200,14 +200,20 @@ class ControlsTab {
         keys += SystemAction.allCases.map(\.shortcutPreferenceKey)
         return keys
     }()
-    private static let globalActionShortcutPreferences = Set(
-        WindowLayoutAction.allCases.map(\.shortcutPreferenceKey)
-            + DisplayMoveAction.allCases.map(\.shortcutPreferenceKey)
-            + SpaceAction.all.map(\.shortcutPreferenceKey)
-            + (0..<Preferences.maxLaunchAppCount).map(LaunchAppAction.shortcutPreferenceKey)
-            + (0..<Preferences.maxOpenUrlCount).map(OpenUrlAction.shortcutPreferenceKey)
-            + (0..<Preferences.maxProfileCount).map(ProfileStore.shortcutPreferenceKey)
-            + [ShortcutCluesController.shortcutPreferenceKey])
+    /// Global actions fire without the switcher; anything missing here is registered as a local shortcut
+    /// and only works while the switcher is open. Built step by step to stay within the type-checking budget.
+    private static let globalActionShortcutPreferences: Set<String> = {
+        var keys = Set<String>()
+        keys.formUnion(WindowLayoutAction.allCases.map(\.shortcutPreferenceKey))
+        keys.formUnion(DisplayMoveAction.allCases.map(\.shortcutPreferenceKey))
+        keys.formUnion(SpaceAction.all.map(\.shortcutPreferenceKey))
+        keys.formUnion((0..<Preferences.maxLaunchAppCount).map(LaunchAppAction.shortcutPreferenceKey))
+        keys.formUnion((0..<Preferences.maxOpenUrlCount).map(OpenUrlAction.shortcutPreferenceKey))
+        keys.formUnion((0..<Preferences.maxProfileCount).map(ProfileStore.shortcutPreferenceKey))
+        keys.formUnion(SystemAction.allCases.map(\.shortcutPreferenceKey))
+        keys.insert(ShortcutCluesController.shortcutPreferenceKey)
+        return keys
+    }()
     private static let removableShortcutPreferences = [
         "holdShortcut", "nextWindowShortcut",
         "appsToShow", "spacesToShow", "screensToShow",
