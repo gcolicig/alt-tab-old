@@ -53,6 +53,12 @@ class AccessibilityEvents {
     }
 
     private static func applicationActivated(_ app: Application, _ pid: pid_t, _ type: String, _ appFocusedWindow: AXUIElement?, _ wid: CGWindowID?) {
+        // an app that closed its windows without a destroyed event is only found by the zombie sweep; leaving
+        // the app is when auto-quit needs that answer, not the next time the switcher opens
+        if Preferences.autoQuitEnabled, let previousPid = Applications.frontmostPid, previousPid != pid {
+            Applications.removeZombieWindows()
+            AutoQuit.appDeactivated(previousPid)
+        }
         Applications.frontmostPid = pid
         if app.hasBeenActiveOnce != true {
             app.hasBeenActiveOnce = true

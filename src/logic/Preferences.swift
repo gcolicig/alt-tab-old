@@ -119,6 +119,7 @@ class Preferences {
         values["autoQuitDelaySeconds"] = "10"
         values["autoQuitMode"] = String(AutoQuitMode.onlyListed.rawValue)
         values["autoQuitBundleIds"] = "[]"
+        values["autoQuitMenuBarBundleIds"] = "[]"
         values["catModeMinutes"] = "60"
         values["keepAwakeLastDuration"] = String(KeepAwakeDuration.hour1.rawValue)
         values["keepAwakeDisplay"] = "false"
@@ -193,6 +194,7 @@ class Preferences {
     static var autoQuitDelaySeconds: Int { CachedUserDefaults.int("autoQuitDelaySeconds") }
     static var autoQuitMode: Int { CachedUserDefaults.int("autoQuitMode") }
     static var autoQuitBundleIds: String { CachedUserDefaults.string("autoQuitBundleIds") }
+    static var autoQuitMenuBarBundleIds: String { CachedUserDefaults.string("autoQuitMenuBarBundleIds") }
     static var catModeMinutes: Int { CachedUserDefaults.int("catModeMinutes") }
     static var keepAwakeLastDuration: Int { CachedUserDefaults.int("keepAwakeLastDuration") }
     static var keepAwakeDisplay: Bool { CachedUserDefaults.bool("keepAwakeDisplay") }

@@ -4,7 +4,7 @@ import Foundation
 /// Story 13, DB-03: what may leave the machine inside a copied report.
 enum DebugRedaction {
     /// Preferences whose values are user content. Matched by prefix because slots are numbered.
-    static let redactedKeyPrefixes = ["openUrlValue", "launchAppPath", "launchAppBundleIdentifier", "profileName", "profileApps", "autoQuitBundleIds"]
+    static let redactedKeyPrefixes = ["openUrlValue", "launchAppPath", "launchAppBundleIdentifier", "profileName", "profileApps", "autoQuitBundleIds", "autoQuitMenuBarBundleIds"]
     static let countOnlyKeys: Set<String> = ["exceptions"]
 
     static func preferenceValue(key: String, value: String?) -> String {

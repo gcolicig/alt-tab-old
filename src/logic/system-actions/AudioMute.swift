@@ -74,6 +74,10 @@ enum AudioMute {
         defaultDevice(input: true)
     }
 
+    static func defaultOutputDevice() -> AudioObjectID? {
+        defaultDevice(input: false)
+    }
+
     private static func defaultDevice(input: Bool) -> AudioObjectID? {
         var address = globalAddress(input ? kAudioHardwarePropertyDefaultInputDevice : kAudioHardwarePropertyDefaultOutputDevice)
         var device = AudioObjectID(0)
