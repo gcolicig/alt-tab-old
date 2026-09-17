@@ -196,9 +196,10 @@ class Menubar {
         // and taking the larger of the two placed the row above the button's centre.
         let rowHeight = statusButton.bounds.height > 0 ? statusButton.bounds.height : NSStatusBar.system.thickness
         let totalWidth = groups.isEmpty ? 0 : MenubarSpaceRow.totalWidth(groups.map { $0.spaceIds.count })
-        // mute icons sit between the AltTab+ icon and the Spaces, so the Spaces start after them
+        // mute icons sit at the right end, after the Spaces: next to the AltTab+ icon they caught clicks
+        // meant for the icon, and a mis-click unmuted (reported 2026-09-17)
         let muteWidth = CGFloat(muteIcons.count) * muteIconWidth
-        let spacesX = iconWidth + muteWidth
+        let spacesX = iconWidth
         // the container carries its final frame before any segment goes in, like the single-row version did
         let container = SpaceSegmentsView(frame: NSRect(x: spacesX, y: 0, width: totalWidth, height: rowHeight))
         var x = CGFloat(0)
@@ -218,7 +219,7 @@ class Menubar {
             groupBounds.append((group.displayUuid, CGRect(x: spacesX + groupStart, y: 0, width: x - groupStart, height: rowHeight)))
         }
         groupBoundsInButton = groupBounds
-        let rowWidth = spacesX + totalWidth + 2
+        let rowWidth = spacesX + totalWidth + muteWidth + 2
         statusItem.length = rowWidth
         // Render the icon and segments as one image instead of hosting live, translucent subviews. On macOS 26
         // the status item re-snapshots live translucent subviews on every frame to draw its menu-bar shadow,
@@ -230,7 +231,7 @@ class Menubar {
         iconView.imageScaling = .scaleProportionallyUpOrDown
         row.addSubview(iconView)
         muteIcons.enumerated().forEach { offset, icon in
-            let x = iconWidth + CGFloat(offset) * muteIconWidth
+            let x = spacesX + totalWidth + CGFloat(offset) * muteIconWidth
             let view = NSImageView(frame: MenubarSpaceRow.centeredRect(x: x + 2, width: muteIconWidth - 4, availableHeight: rowHeight, preferredHeight: MenubarSpaceRow.iconHeight))
             view.image = tinted(icon.image)
             view.imageScaling = .scaleProportionallyUpOrDown

@@ -59,12 +59,16 @@ class LeaderPanel: NSPanel {
                                  width: body.frame.width + LeaderPanel.padding * 2,
                                  height: body.frame.height + LeaderPanel.padding * 2)
         container.addSubview(body)
+        // size the window first: assigning the content view fits the view to the window, and the window was
+        // still 0×0, so the panel showed with no size at all (measured 2026-09-17)
+        let size = container.frame.size
+        setContentSize(size)
         contentView = container
-        setContentSize(container.frame.size)
     }
 
     private static func rows(_ options: [Option]) -> NSView {
-        let header = label(NSLocalizedString("Leader", comment: ""), font: .boldSystemFont(ofSize: 14), color: .labelColor)
+        // the rows list what may be pressed next, not what was typed; the heading says so
+        let header = label(NSLocalizedString("Leader – press next key", comment: ""), font: .boldSystemFont(ofSize: 14), color: .labelColor)
         let rows: [NSView] = options.map { option in
             let key = label(option.key.isEmpty ? "?" : option.key,
                             font: .monospacedDigitSystemFont(ofSize: 13, weight: .semibold), color: .labelColor)

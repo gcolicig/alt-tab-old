@@ -69,8 +69,11 @@ class ShortcutCluesPanel: NSPanel {
                                  width: body.frame.width + ShortcutCluesPanel.padding * 2,
                                  height: body.frame.height + ShortcutCluesPanel.padding * 2)
         container.addSubview(body)
+        // size the window before assigning the view, as in LeaderPanel: the other order fits the view to a
+        // window that is still 0×0
+        let size = container.frame.size
+        setContentSize(size)
         contentView = container
-        setContentSize(container.frame.size)
     }
 
     /// Grouped by menu, in menubar order, filling columns top to bottom. A truncated scan says so instead

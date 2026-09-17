@@ -54,7 +54,7 @@ class SystemActionsTab {
         catMode.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("End automatically after", comment: ""), rightViews: [SettingsControls.valuePopup("catModeMinutes", catModeOptions)]))
         let microphone = TableGroupView(title: NSLocalizedString("Microphone", comment: ""), width: SettingsWindow.contentWidth)
         microphone.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Show an icon in the menu bar while the microphone or the sound is muted", comment: ""),
-            subTitle: NSLocalizedString("The icons appear between the AltTab+ icon and the Spaces. macOS has no indicator for a muted microphone. Click an icon to unmute.", comment: ""),
+            subTitle: NSLocalizedString("The icons appear at the right end of the AltTab+ menu bar item, after the Spaces. macOS has no indicator for a muted microphone. Click an icon to unmute.", comment: ""),
             rightViews: [LabelAndControl.makeSwitch("micMuteIndicator")]))
         let keys = TableGroupView(title: NSLocalizedString("Function Keys", comment: ""), width: SettingsWindow.contentWidth)
         let restore = NSButton(title: NSLocalizedString("Restore Original Mode", comment: ""), target: nil, action: nil)

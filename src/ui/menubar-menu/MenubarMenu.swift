@@ -136,8 +136,7 @@ final class MenubarMenu: NSObject, NSMenuDelegate {
     private static let appEntries: [MenubarEntry] = [
         MenubarEntry(id: "app.about", group: .app, title: { String(format: NSLocalizedString("About %@", comment: "Menubar option. %@ is AltTab"), App.name) },
             symbol: "info.circle") { App.showAboutWindow() },
-        // decided 2026-09-17: Settings… sits in the app block, between About and Check permissions
-        MenubarEntry(id: "app.settings", group: .app, title: { NSLocalizedString("Settings…", comment: "Menubar option") },
+        MenubarEntry(id: "app.settings", group: .settings, title: { NSLocalizedString("Settings…", comment: "Menubar option") },
             symbol: "gear", keyEquivalent: ",") { App.showSettingsWindow() },
         MenubarEntry(id: "app.permissions", group: .app, title: { NSLocalizedString("Check permissions…", comment: "Menubar option") },
             symbol: "hand.raised") { App.showPermissionsWindow() },

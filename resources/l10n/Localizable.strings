@@ -7,6 +7,9 @@
 /* No comment provided by engineer. */
 "%@ scroll speed" = "%@ scroll speed";
 
+/* Leader overlay */
+"%d actions" = "%d actions";
+
 /* No comment provided by engineer. */
 "%d min" = "%d min";
 
@@ -725,6 +728,9 @@
 "Leader" = "Leader";
 
 /* No comment provided by engineer. */
+"Leader – press next key" = "Leader – press next key";
+
+/* No comment provided by engineer. */
 "Leading" = "Leading";
 
 /* No comment provided by engineer. */
@@ -795,9 +801,6 @@
 
 /* No comment provided by engineer. */
 "More Spaces" = "More Spaces";
-
-/* No comment provided by engineer. */
-"more…" = "more…";
 
 /* No comment provided by engineer. */
 "Mouse button" = "Mouse button";
@@ -1400,7 +1403,7 @@
 "The function key mode could not be changed." = "The function key mode could not be changed.";
 
 /* No comment provided by engineer. */
-"The icons appear between the AltTab+ icon and the Spaces. macOS has no indicator for a muted microphone. Click an icon to unmute." = "The icons appear between the AltTab+ icon and the Spaces. macOS has no indicator for a muted microphone. Click an icon to unmute.";
+"The icons appear at the right end of the AltTab+ menu bar item, after the Spaces. macOS has no indicator for a muted microphone. Click an icon to unmute." = "The icons appear at the right end of the AltTab+ menu bar item, after the Spaces. macOS has no indicator for a muted microphone. Click an icon to unmute.";
 
 /* No comment provided by engineer. */
 "The language of the text could not be detected." = "The language of the text could not be detected.";

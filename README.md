@@ -1,14 +1,99 @@
 # AltTab+
 
-AltTab+ is a fork-friendly snapshot of AltTab `v10.12.0`, the last known release before AltTab Pro was introduced upstream.
+AltTab+ is an independent GPL-3.0 fork of [AltTab](https://github.com/lwouis/alt-tab-macos), based on
+upstream `v10.12.0` (commit `317a485b`, 13 April 2026). It is not affiliated with, endorsed by, or
+supported by the upstream project.
 
-The goal of this repository is simple: clone it, build it, run it, read it, change it, and keep it understandable. This fork intentionally avoids requiring access to the original project's Apple certificates, GitHub bot token, Sparkle private key, or release infrastructure.
+It is no longer only an application switcher. It combines the window and desktop controls that used to need
+several menu bar utilities into one app, with one set of settings, one permission prompt, and one emergency
+shortcut.
 
-Upstream project: https://github.com/lwouis/alt-tab-macos
+Clone it, build it, run it, read it, change it. The repository needs no Apple certificate, no bot token, no
+Sparkle key, and no release infrastructure of the original project.
+
+## Thanks
+
+This app stands on other people's work.
+
+- **Louis Pontoise ([lwouis](https://github.com/lwouis)) and every AltTab contributor**, including
+  translators, testers, and issue reporters. Seven years of work on window switching on macOS, and the code
+  this fork starts from. Nothing here would exist without it.
+- **The tools that shaped keyboard-driven macOS workflows**, among them Rectangle, Magnet, Hyperkey,
+  Karabiner-Elements, LeaderKey, Supercharge, Hammerspoon, BetterTouchTool, Raycast and Alfred.
+- **The library authors**: ShortcutRecorder, Sparkle, LetsMove and SwiftyBeaver. See
+  [docs/acknowledgments.md](docs/acknowledgments.md) and [THIRD-PARTY.md](THIRD-PARTY.md).
+- **The free software community**, whose licences make inspection, forking and independent maintenance
+  possible in the first place.
+
+## Why This Fork Exists
+
+I use macOS with the expectations of a long-time Windows user: switching should be window-centric, keyboard
+workflows should be consistent, and the desktop should not need a row of partly overlapping menu bar
+utilities. Over the last ten to fifteen years this became harder rather than easier on macOS. Native window
+management stays limited, application-centric switching is often not enough, and useful utilities compete
+for the same global shortcuts and Accessibility permissions.
+
+AltTab came very close to solving a large part of this. The surrounding tool chain and its integration work
+never did.
+
+In May 2026, upstream released `v11.0.0` and introduced AltTab Pro. The upstream repository continues to be
+published under GPL-3.0, and upstream describes the core app as free and open source. This fork therefore
+makes no claim about a licence change. The Pro transition was a good moment to reassess the setup: some
+capabilities became associated with a Pro badge and a licence check, and I prefer a desktop control stack
+whose behaviour stays locally auditable, modifiable, and free of licence-gated states.
+
+Rather than starting another search through fragile tool combinations, I took the route OpenBao took with
+HashiCorp Vault: start from the last release before the change, keep the freedoms GPL-3.0 grants, and build
+the integrated tool I want to use. Generative AI and agentic coding made that practical for one person.
+
+The result looks like a Frankenstein of several familiar macOS utilities. That is deliberate. The aim is not
+to copy every feature of every tool, but to need fewer tools, remove duplicated global hooks, and make the
+remaining behaviour predictable.
 
 ## What It Does
 
-AltTab brings Windows-style window switching to macOS. It lists open windows, supports keyboard shortcuts, shows previews when permitted by macOS, and lets you focus windows quickly.
+- **Switcher**: open windows with previews, titles, fuzzy search and mouse hover.
+- **Window layouts**: thirds, two-thirds, three-quarters, focus layouts, moves between displays, and a
+  restore step, on shortcuts you assign yourself.
+- **Spaces**: switch Spaces by shortcut, and read them next to the menu bar icon.
+- **Hyper key**: Caps Lock acts as ⌃⌥⇧⌘ while held, and still toggles Caps Lock on a short tap.
+- **Leader sequences**: a trigger, then a short sequence of letters; an overlay shows what may follow.
+- **FlickRing**: hold a mouse button, flick in a direction, run the action bound to it.
+- **Move and resize with a modifier**, with snapping and a target frame overlay.
+- **Menu bar actions**: window and app actions, screen tools, Keep Awake, Cat Mode, Auto-Quit, mute
+  indicators for microphone and sound, and a Debug submenu.
+- **Pointer and scroll**: separate direction and speed for mouse and trackpad.
+- **Profiles** for apps, layout and Space.
+
+Everything that takes over a key, a mouse button or a system value is off by default, names what it takes
+over before it is armed, and can be switched off again with one fixed emergency shortcut.
+
+## Screenshots
+
+| Switcher | Spaces in the menu bar | Leader overlay |
+|---|---|---|
+| ![Switcher](docs/images/switcher.png) | ![Spaces row](docs/images/spaces-row.png) | ![Leader overlay](docs/images/leader-overlay.png) |
+
+## Status
+
+This is an opinionated project under active development. Shortcuts, settings, internal structure and
+behaviour still change. Use it if you are comfortable granting Accessibility and Screen Recording
+permissions, reading the source, and treating desktop control software as part of your trusted computing
+base.
+
+## Fork Lineage
+
+| | |
+|---|---|
+| Upstream project | [lwouis/alt-tab-macos](https://github.com/lwouis/alt-tab-macos) |
+| Fork base | `v10.12.0`, commit `317a485b`, 13 April 2026 |
+| Upstream Pro introduction | `v11.0.0`, 21 May 2026 |
+| Upstream licence | GPL-3.0 |
+| This project's licence | GPL-3.0 |
+| Bundle identifier | `com.gcolicig.alttab-plus` |
+
+Upstream commits are reviewed and ported selectively; see [backlog.md](backlog.md) for what was taken and
+what was left out.
 
 ## Fork Changes
 
@@ -265,4 +350,14 @@ Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md), [SUPPO
 
 ## License
 
-This fork keeps the upstream GPL-3.0 license. See [LICENSE](LICENSE).
+AltTab+ is licensed under the [GNU General Public License, version 3.0](LICENCE.md). It contains and
+modifies code from [AltTab](https://github.com/lwouis/alt-tab-macos), which is published under the same
+licence. The upstream licence file is kept unchanged, and upstream copyright and third-party notices stay
+in place.
+
+You may run, study, modify and redistribute this software under the terms of GPL-3.0. If you distribute
+modified versions or binaries, you must meet the corresponding source and notice obligations of that
+licence: ship or link the exact source of the version you distribute.
+
+The AltTab name, icon, website and other branding may be associated with the upstream project. See
+[TRADEMARKS.md](TRADEMARKS.md).

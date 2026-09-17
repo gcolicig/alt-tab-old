@@ -3,7 +3,6 @@ import Foundation
 /// Groups of the menubar menu, in display order. The groups follow what the entries do (story 15); a new
 /// entry joins an existing group unless none fits.
 enum MenuGroup: String, CaseIterable {
-    case settings
     case switcher
     case windows
     case apps
@@ -12,10 +11,11 @@ enum MenuGroup: String, CaseIterable {
     case system
     case toggles
     case defaults
+    case settings
     case app
 
-    /// `settings` is kept for a menu that opens with `Settings…` on its own (decided 2026-09-16); since
-    /// 2026-09-17 the entry sits in the app group instead, so the group stays empty. Neither needs a heading.
+    /// `Settings…` has a section of its own, right above the app block (decided 2026-09-17; it opened the
+    /// menu before). Neither needs a heading.
     var hasHeader: Bool { ![.settings, .app].contains(self) }
 
     /// Decided 2026-09-16: every group except the switcher, the window actions and the app block becomes a
