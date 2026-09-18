@@ -435,6 +435,7 @@ class AppearanceTab: NSObject {
 
     private static func makeAppearanceView() -> NSView {
         let table = TableGroupView(width: SettingsWindow.contentWidth)
+        addShowPreviewRow(table)
         table.addRow(secondaryViews: [LabelAndControl.makeImageRadioButtons("appearanceStyle", AppearanceStylePreference.allCases, extraAction: { _ in
             toggleCustomizeStyleButton()
             updatePreviewSelectedWindowState()
@@ -446,6 +447,21 @@ class AppearanceTab: NSObject {
         addAfterKeysReleasedRow(table)
         addPreviewSelectedWindowRow(table)
         return table
+    }
+
+    private static func addShowPreviewRow(_ table: TableGroupView) {
+        let previewButton = NSButton(title: NSLocalizedString("Show preview", comment: ""), target: nil, action: nil)
+        previewButton.onAction = { _ in showPreview() }
+        table.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Preview appearance and animation changes", comment: ""),
+            rightViews: [previewButton]))
+    }
+
+    /// Shows the real switcher so appearance/animation changes can be judged live, without binding it to a
+    /// held shortcut key. `App.showUi` sets `forceDoNothingOnRelease = true`, so even if a modifier happens
+    /// to be down when this runs, releasing it won't focus a window; dismissal only happens via Esc or a
+    /// click outside (both of which already just call `App.hideUi()`, never focusing a window).
+    static func showPreview() {
+        App.showUi(App.shortcutIndex)
     }
 
     private static func addAfterKeysReleasedRow(_ table: TableGroupView) {
