@@ -414,6 +414,7 @@ class AppearanceTab: NSObject {
     static var animationsDisclosure: DisclosureSection!
     static var customizeStyleSection: CustomizeStyleSection!
     static var previewSelectedWindowRowInfo: TableGroupView.RowInfo!
+    static var previewSelectedWindowNote: NSTextField!
 
     static func initTab() -> NSView {
         customizeStyleSection = CustomizeStyleSection()
@@ -470,8 +471,12 @@ class AppearanceTab: NSObject {
     }
 
     private static func addPreviewSelectedWindowRow(_ table: TableGroupView) {
-        previewSelectedWindowRowInfo = table.addRow(leftText: NSLocalizedString("Preview selected window", comment: ""),
-            rightViews: [LabelAndControl.makeSwitch("previewFocusedWindow")])
+        previewSelectedWindowNote = LabelAndControl.makeDependencyNote(
+            NSLocalizedString("AltTab is currently set to show Applications. This setting is only available when AltTab is set to show Windows.", comment: ""))
+        previewSelectedWindowRowInfo = table.addRow(
+            leftViews: [TableGroupView.makeText(NSLocalizedString("Preview selected window", comment: ""))],
+            rightViews: [LabelAndControl.makeSwitch("previewFocusedWindow")],
+            secondaryViews: [previewSelectedWindowNote])
         updatePreviewSelectedWindowState()
     }
 
@@ -488,6 +493,7 @@ class AppearanceTab: NSObject {
                 switchControl.isEnabled = isEnabled
             }
         }
+        previewSelectedWindowNote?.isHidden = isEnabled
     }
 
     private static func isPreviewSelectedWindowDisabled() -> Bool {

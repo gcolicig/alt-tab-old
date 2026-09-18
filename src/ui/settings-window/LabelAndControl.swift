@@ -137,6 +137,18 @@ class LabelAndControl: NSObject {
         return checkbox
     }
 
+    /// A small explanatory note for a row whose control is currently disabled. Hidden by default; the
+    /// caller toggles `isHidden` alongside the control's `isEnabled` state.
+    static func makeDependencyNote(_ text: String) -> NSTextField {
+        let note = NSTextField(wrappingLabelWithString: text)
+        note.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        note.textColor = .secondaryLabelColor
+        note.lineBreakMode = .byWordWrapping
+        note.maximumNumberOfLines = 0
+        note.isHidden = true
+        return note
+    }
+
     static func makeInfoButton(size: CGFloat = 16,
                                searchableTooltipTexts: [String] = [],
                                onClick: EventClosure? = nil,
