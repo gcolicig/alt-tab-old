@@ -55,4 +55,23 @@ class SettingsSidebarTests: XCTestCase {
         XCTAssertEqual(SettingsSidebarLayout.displayed(all: all, matching: all, selected: "leader", searching: false), ["leader"])
         XCTAssertEqual(SettingsSidebarLayout.displayed(all: all, matching: ["spaces", "general"], selected: "leader", searching: true), ["general", "spaces"])
     }
+
+    func testSearchPathJoinsGroupPageAndSections() {
+        XCTAssertEqual(SettingsSidebarLayout.searchPath(groupTitle: "Switcher", pageTitle: "Cmd-Tab", sectionTitles: ["Animations"]),
+                       "Switcher › Cmd-Tab › Animations")
+    }
+
+    func testSearchPathWithoutMatchingSectionsStaysAtGroupAndPage() {
+        XCTAssertEqual(SettingsSidebarLayout.searchPath(groupTitle: "Input", pageTitle: "Leader", sectionTitles: []), "Input › Leader")
+    }
+
+    func testSearchPathDeduplicatesSectionTitlesInOrder() {
+        XCTAssertEqual(SettingsSidebarLayout.searchPath(groupTitle: "Input", pageTitle: "Leader", sectionTitles: ["Timing", "Timing"]),
+                       "Input › Leader › Timing")
+    }
+
+    func testSearchPathCapsSectionTitlesAtTwoWithEllipsis() {
+        XCTAssertEqual(SettingsSidebarLayout.searchPath(groupTitle: "Switcher", pageTitle: "Cmd-Tab", sectionTitles: ["Animations", "Style", "Position"]),
+                       "Switcher › Cmd-Tab › Animations › Style › …")
+    }
 }

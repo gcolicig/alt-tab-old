@@ -57,6 +57,11 @@ final class SettingsSection {
     let interSectionSpacingConstraint: NSLayoutConstraint
     let bottomSpacingConstraint: NSLayoutConstraint
     let titleTopConstraint: NSLayoutConstraint
+    /// Breadcrumb shown above the title while searching (e.g. "Switcher › Cmd-Tab › Animations").
+    /// Collapsed to zero height outside of search via `pathLabelHeightConstraint`.
+    private let pathLabel: NSTextField
+    private let pathLabelHeightConstraint: NSLayoutConstraint
+    private let pathToTitleSpacingConstraint: NSLayoutConstraint
 
     init(_ id: String,
          _ title: String,
@@ -67,7 +72,10 @@ final class SettingsSection {
          _ highlightTargets: [SettingsSearchHighlightTarget],
          _ interSectionSpacingConstraint: NSLayoutConstraint,
          _ bottomSpacingConstraint: NSLayoutConstraint,
-         _ titleTopConstraint: NSLayoutConstraint) {
+         _ titleTopConstraint: NSLayoutConstraint,
+         _ pathLabel: NSTextField,
+         _ pathLabelHeightConstraint: NSLayoutConstraint,
+         _ pathToTitleSpacingConstraint: NSLayoutConstraint) {
         self.id = id
         self.title = title
         self.icon = icon
@@ -78,6 +86,9 @@ final class SettingsSection {
         self.interSectionSpacingConstraint = interSectionSpacingConstraint
         self.bottomSpacingConstraint = bottomSpacingConstraint
         self.titleTopConstraint = titleTopConstraint
+        self.pathLabel = pathLabel
+        self.pathLabelHeightConstraint = pathLabelHeightConstraint
+        self.pathToTitleSpacingConstraint = pathToTitleSpacingConstraint
     }
 
     func matches(_ query: String) -> Bool {
@@ -92,5 +103,20 @@ final class SettingsSection {
 
     func clearHighlights() {
         highlightTargets.forEach { $0.clear() }
+    }
+
+    /// `nil` or empty hides the breadcrumb and collapses its height back to zero.
+    func updateSearchPath(_ path: String?) {
+        guard let path, !path.isEmpty else {
+            pathLabel.isHidden = true
+            pathLabel.stringValue = ""
+            pathLabelHeightConstraint.isActive = true
+            pathToTitleSpacingConstraint.constant = 0
+            return
+        }
+        pathLabel.stringValue = path
+        pathLabel.isHidden = false
+        pathLabelHeightConstraint.isActive = false
+        pathToTitleSpacingConstraint.constant = 4
     }
 }

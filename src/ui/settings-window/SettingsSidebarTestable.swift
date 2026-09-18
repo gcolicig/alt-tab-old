@@ -74,4 +74,21 @@ enum SettingsSidebarLayout {
         guard searching else { return selected.map { [$0] } ?? [] }
         return all.filter { matching.contains($0) }
     }
+
+    /// The breadcrumb shown above a page while searching, e.g. "Switcher › Cmd-Tab › Animations".
+    /// `sectionTitles` are the disclosure sections (in the page) that contain a match; they are
+    /// deduplicated in order and capped at 2, with "…" standing in for the rest, so a page with
+    /// many matching sections still reads as a short, stable path.
+    static func searchPath(groupTitle: String, pageTitle: String, sectionTitles: [String]) -> String {
+        var deduplicated = [String]()
+        for title in sectionTitles where !deduplicated.contains(title) {
+            deduplicated.append(title)
+        }
+        var components = [groupTitle, pageTitle]
+        components.append(contentsOf: deduplicated.prefix(2))
+        if deduplicated.count > 2 {
+            components.append("…")
+        }
+        return components.joined(separator: " › ")
+    }
 }

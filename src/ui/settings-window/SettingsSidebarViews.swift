@@ -98,7 +98,7 @@ extension SettingsWindow: NSTableViewDataSource, NSTableViewDelegate {
         selectSection(section, scroll: true, selectInSidebar: false)
     }
 
-    private static func groupTitle(_ group: SettingsSidebarGroup) -> String {
+    static func groupTitle(_ group: SettingsSidebarGroup) -> String {
         switch group {
             case .app: return App.name
             case .switcher: return NSLocalizedString("Switcher", comment: "")

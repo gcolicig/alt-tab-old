@@ -254,6 +254,11 @@ class SettingsWindow: NSWindow {
     }
 
     private func addSection(_ definition: SettingsSectionDefinition) {
+        let pathLabel = TableGroupView.makeText("")
+        pathLabel.font = NSFont.systemFont(ofSize: 11)
+        pathLabel.textColor = .secondaryLabelColor
+        pathLabel.lineBreakMode = .byTruncatingTail
+        pathLabel.isHidden = true
         let sectionTitle = TableGroupView.makeText(definition.title, bold: true)
         sectionTitle.font = NSFont.systemFont(ofSize: 15, weight: .medium)
         sectionTitle.lineBreakMode = .byWordWrapping
@@ -266,20 +271,30 @@ class SettingsWindow: NSWindow {
         sectionDescription.preferredMaxLayoutWidth = Self.contentWidth
         let container = NSView()
         let spacer = NSView()
+        container.addSubview(pathLabel)
         container.addSubview(sectionTitle)
         container.addSubview(sectionDescription)
         container.addSubview(definition.view)
         container.addSubview(spacer)
+        pathLabel.translatesAutoresizingMaskIntoConstraints = false
         sectionTitle.translatesAutoresizingMaskIntoConstraints = false
         sectionDescription.translatesAutoresizingMaskIntoConstraints = false
         definition.view.translatesAutoresizingMaskIntoConstraints = false
         spacer.translatesAutoresizingMaskIntoConstraints = false
         container.translatesAutoresizingMaskIntoConstraints = false
-        let titleTopConstraint = sectionTitle.topAnchor.constraint(equalTo: container.topAnchor)
+        // `titleTopConstraint` now anchors the breadcrumb (the topmost element); the isFirst/spacing
+        // logic in updateVisibleSectionsSpacing is unaffected since it only changes this constant.
+        let titleTopConstraint = pathLabel.topAnchor.constraint(equalTo: container.topAnchor)
+        let pathLabelHeightConstraint = pathLabel.heightAnchor.constraint(equalToConstant: 0)
+        let pathToTitleSpacingConstraint = sectionTitle.topAnchor.constraint(equalTo: pathLabel.bottomAnchor, constant: 0)
         let interSectionSpacingConstraint = spacer.topAnchor.constraint(equalTo: definition.view.bottomAnchor, constant: Self.sectionInterSectionSpacing)
         let spacerHeightConstraint = spacer.heightAnchor.constraint(equalToConstant: Self.sectionBottomSpacing)
         NSLayoutConstraint.activate([
             titleTopConstraint,
+            pathLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            pathLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            pathLabelHeightConstraint,
+            pathToTitleSpacingConstraint,
             sectionTitle.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             sectionTitle.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             sectionDescription.topAnchor.constraint(equalTo: sectionTitle.bottomAnchor, constant: 4),
@@ -306,7 +321,10 @@ class SettingsWindow: NSWindow {
                                       highlightTargets,
                                       interSectionSpacingConstraint,
                                       spacerHeightConstraint,
-                                      titleTopConstraint)
+                                      titleTopConstraint,
+                                      pathLabel,
+                                      pathLabelHeightConstraint,
+                                      pathToTitleSpacingConstraint)
         sections.append(section)
     }
 
@@ -419,9 +437,61 @@ class SettingsWindow: NSWindow {
         applySearch("")
         guard let section = sections.first(where: { $0.id == sectionId }),
               let label = Self.findLabel(rowTitle, in: section.container) else { return }
+        scrollToVisibleAndFlash(label)
+    }
+
+    /// Jumps to the first highlighted match on Return without touching the search query, so the
+    /// user can keep refining it. See `control(_:textView:doCommandBy:)` for why this isn't driven
+    /// by the search field's action.
+    private func jumpToFirstMatch() {
+        guard isSearching, let firstSection = visibleSections.first,
+              let target = Self.firstHighlightedView(in: firstSection.container) else { return }
+        scrollToVisibleAndFlash(target)
+    }
+
+    private func scrollToVisibleAndFlash(_ view: NSView) {
         sectionsDocumentView.layoutSubtreeIfNeeded()
-        label.scrollToVisible(label.bounds.insetBy(dx: 0, dy: -80))
-        Self.flash(label)
+        view.scrollToVisible(view.bounds.insetBy(dx: 0, dy: -80))
+        Self.flash(view)
+    }
+
+    private func searchPath(for section: SettingsSection) -> String {
+        let groupTitle = Self.groupTitle(SettingsSidebarLayout.group(of: section.id))
+        let sectionTitles = Self.matchedDisclosureSectionTitles(in: section.container)
+        return SettingsSidebarLayout.searchPath(groupTitle: groupTitle, pageTitle: section.title, sectionTitles: sectionTitles)
+    }
+
+    /// Titles of the `DisclosureSection`s (in document order) that contain a highlighted match,
+    /// found by looking for the highlight sublayers `SettingsSearchHighlighting` applies to a
+    /// matching view. Relies on `highlightMatches` having already run for this query.
+    private static func matchedDisclosureSectionTitles(in view: NSView) -> [String] {
+        var titles = [String]()
+        func walk(_ view: NSView) {
+            if let disclosure = view as? DisclosureSection, containsHighlight(disclosure) {
+                titles.append(disclosure.title)
+            }
+            view.subviews.forEach(walk)
+        }
+        walk(view)
+        return titles
+    }
+
+    private static func firstHighlightedView(in view: NSView) -> NSView? {
+        if isHighlighted(view) { return view }
+        for subview in view.subviews {
+            if let found = firstHighlightedView(in: subview) { return found }
+        }
+        return nil
+    }
+
+    private static func isHighlighted(_ view: NSView) -> Bool {
+        guard let sublayers = view.layer?.sublayers else { return false }
+        let highlightLayerNames: Set<String> = [roundedHighlightLayerName, controlHighlightLayerName, segmentedControlHighlightLayerName]
+        return sublayers.contains { highlightLayerNames.contains($0.name ?? "") }
+    }
+
+    private static func containsHighlight(_ view: NSView) -> Bool {
+        isHighlighted(view) || view.subviews.contains { containsHighlight($0) }
     }
 
     private static func findLabel(_ title: String, in view: NSView) -> NSTextField? {
@@ -456,8 +526,12 @@ class SettingsWindow: NSWindow {
         visibleSections = sections.filter { !isSearching || $0.matches(query) }
         let matchingIds = Set(visibleSections.map(\.id))
         sections.forEach { section in
-            guard isSearching, matchingIds.contains(section.id) else { return section.clearHighlights() }
+            guard isSearching, matchingIds.contains(section.id) else {
+                section.clearHighlights()
+                return section.updateSearchPath(nil)
+            }
             section.highlightMatches(query)
+            section.updateSearchPath(searchPath(for: section))
         }
         sidebarRows = SettingsSidebarLayout.rows(visibleSections.map(\.id))
         sidebarTableView.reloadData()
@@ -496,5 +570,13 @@ extension SettingsWindow: NSWindowDelegate {
 extension SettingsWindow: NSSearchFieldDelegate {
     func controlTextDidChange(_ notification: Notification) {
         applySearch(searchField.stringValue)
+    }
+
+    // `sendsSearchStringImmediately` fires the field's action on every keystroke, so Return can't be
+    // told apart from typing there; `doCommandBySelector` gets the actual key command instead.
+    func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        guard commandSelector == #selector(NSResponder.insertNewline(_:)) else { return false }
+        jumpToFirstMatch()
+        return true
     }
 }
