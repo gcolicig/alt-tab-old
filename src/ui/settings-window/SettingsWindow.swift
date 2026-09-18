@@ -228,15 +228,29 @@ class SettingsWindow: NSWindow {
             // not named in the requested order; placed next to Spaces because both arrange windows across
             // the system rather than inside the switcher
             SettingsSectionDefinition(id: "window-layouts", title: NSLocalizedString("Window Layouts", comment: ""), description: NSLocalizedString("Assign shortcuts for arranging the focused window.", comment: ""), imageName: "controls", systemSymbolName: "rectangle.split.3x1", view: WindowLayoutsTab.initTab(), builder: { WindowLayoutsTab.initTab() }),
-            SettingsSectionDefinition(id: "leader", title: NSLocalizedString("Leader", comment: ""), description: NSLocalizedString("Run actions from nested key sequences after a trigger key.", comment: ""), imageName: "controls", systemSymbolName: "keyboard", view: LeaderTab.initTab(), builder: { LeaderTab.initTab() }),
-            SettingsSectionDefinition(id: "flick-ring", title: NSLocalizedString("FlickRing", comment: ""), description: NSLocalizedString("Open a four-direction action ring on a mouse button.", comment: ""), imageName: "controls", systemSymbolName: "circle.grid.cross", view: FlickRingTab.initTab(), builder: { FlickRingTab.initTab() }),
-            SettingsSectionDefinition(id: "profiles", title: NSLocalizedString("Profiles", comment: ""), description: NSLocalizedString("Group apps into a profile, optionally bound to a space, and filter the switcher to it.", comment: ""), imageName: "controls", systemSymbolName: "square.stack.3d.up", view: ProfilesTab.initTab(), builder: { ProfilesTab.initTab() }),
+            // `leaderSlotAction*` is written by a custom popup with no `identifier` (see LeaderTab), so
+            // the view-tree collector cannot find it; declared here instead. Resetting it does not by
+            // itself rebuild the cached lookup trie those actions run through, hence `afterReset`.
+            SettingsSectionDefinition(id: "leader", title: NSLocalizedString("Leader", comment: ""), description: NSLocalizedString("Run actions from nested key sequences after a trigger key.", comment: ""), imageName: "controls", systemSymbolName: "keyboard", view: LeaderTab.initTab(), builder: { LeaderTab.initTab() },
+                extraResettableKeys: { PreferencesResetLogic.keysWithPrefix("leaderSlotAction", in: Preferences.defaultValues) },
+                afterReset: { LeaderController.rebuildTrie() }),
+            // `flickRing{Up,Right,Down,Left}` are written by custom popups with no `identifier` (see
+            // FlickRingTab); declared here instead. Unlike Leader's trie, bindings are read live from
+            // `CachedUserDefaults` on every flick, so no extra rebuild step is needed after a reset.
+            SettingsSectionDefinition(id: "flick-ring", title: NSLocalizedString("FlickRing", comment: ""), description: NSLocalizedString("Open a four-direction action ring on a mouse button.", comment: ""), imageName: "controls", systemSymbolName: "circle.grid.cross", view: FlickRingTab.initTab(), builder: { FlickRingTab.initTab() },
+                extraResettableKeys: { PreferencesResetLogic.keysWithPrefix("flickRing", in: Preferences.defaultValues) }),
+            // No reset button: a profile is user-created content (name, apps, layout, space), not a
+            // setting, so "Reset to Defaults" must not delete it.
+            SettingsSectionDefinition(id: "profiles", title: NSLocalizedString("Profiles", comment: ""), description: NSLocalizedString("Group apps into a profile, optionally bound to a space, and filter the switcher to it.", comment: ""), imageName: "controls", systemSymbolName: "square.stack.3d.up", view: ProfilesTab.initTab(), builder: { ProfilesTab.initTab() },
+                hidesResetButton: true),
             SettingsSectionDefinition(id: "appearance", title: NSLocalizedString("Cmd-Tab", comment: ""), description: NSLocalizedString("Choose how the window switcher looks and where it appears.", comment: ""), imageName: "appearance", systemSymbolName: "paintpalette", view: AppearanceTab.initTab(), builder: { AppearanceTab.initTab() }),
             SettingsSectionDefinition(id: "controls", title: NSLocalizedString("Cmd-Tab Controls", comment: ""), description: NSLocalizedString("Set how you open and navigate the window switcher.", comment: ""), imageName: "controls", systemSymbolName: "command", view: ControlsTab.initTab(), builder: { ControlsTab.initTab() }),
             SettingsSectionDefinition(id: ShortcutOverviewTab.sectionId, title: NSLocalizedString("Shortcuts", comment: ""), description: NSLocalizedString("Every action shortcut and its conflicts. Switcher triggers stay in Cmd-Tab Controls, the Leader key in Leader, and the FlickRing button in FlickRing.", comment: ""), imageName: "controls", systemSymbolName: "keyboard", view: ShortcutOverviewTab.initTab(), builder: { ShortcutOverviewTab.initTab() }),
             SettingsSectionDefinition(id: "system-actions", title: NSLocalizedString("System Actions", comment: ""), description: NSLocalizedString("Configure Auto-Quit, Cat Mode, and the function key mode.", comment: ""), imageName: "controls", systemSymbolName: "switch.2", view: SystemActionsTab.initTab(), builder: { SystemActionsTab.initTab() }),
             SettingsSectionDefinition(id: "keep-awake", title: NSLocalizedString("Keep Awake", comment: ""), description: NSLocalizedString("Keep the Mac awake for a while, with battery protection.", comment: ""), imageName: "controls", systemSymbolName: "cup.and.saucer", view: KeepAwakeTab.initTab(), builder: { KeepAwakeTab.initTab() }),
-            SettingsSectionDefinition(id: "apps-urls", title: NSLocalizedString("Apps & URLs", comment: ""), description: NSLocalizedString("Assign shortcuts to launch apps or open URLs.", comment: ""), imageName: "controls", systemSymbolName: "app.badge", view: AppsUrlsTab.initTab(), builder: { AppsUrlsTab.initTab() }),
+            // No reset button: the launch-app/open-URL entries are user-created content, not settings.
+            SettingsSectionDefinition(id: "apps-urls", title: NSLocalizedString("Apps & URLs", comment: ""), description: NSLocalizedString("Assign shortcuts to launch apps or open URLs.", comment: ""), imageName: "controls", systemSymbolName: "app.badge", view: AppsUrlsTab.initTab(), builder: { AppsUrlsTab.initTab() },
+                hidesResetButton: true),
             SettingsSectionDefinition(id: "exceptions", title: NSLocalizedString("Exceptions", comment: ""), description: NSLocalizedString("Choose apps whose windows should not appear in the switcher.", comment: ""), imageName: "exceptions", systemSymbolName: "hand.raised", view: ExceptionsTab.initTab(), builder: { ExceptionsTab.initTab() }),
         ]
     }
@@ -272,7 +286,9 @@ class SettingsWindow: NSWindow {
         // Reset button, right-aligned below the description; hidden (and collapsed to zero height)
         // on pages with nothing to reset. Kept in the tree unconditionally so the constraint chain
         // below the header stays the same whether or not the button is shown.
-        let resetButton = NSButton(title: NSLocalizedString("Reset to Defaults", comment: ""), target: nil, action: nil)
+        // Sentence case, matching the codebase's more recent settings button titles (e.g. "Show preview")
+        // over the older Title Case ones ("Open System Settings").
+        let resetButton = NSButton(title: NSLocalizedString("Reset to defaults", comment: ""), target: nil, action: nil)
         resetButton.bezelStyle = .inline
         resetButton.controlSize = .small
         resetButton.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
@@ -329,14 +345,52 @@ class SettingsWindow: NSWindow {
         sectionsStack.addArrangedSubview(container)
         container.widthAnchor.constraint(equalTo: sectionsStack.widthAnchor).isActive = true
         let (searchableStrings, highlightTargets) = collectSearchContent(sectionTitle, sectionDescription, definition.view)
-        let resettableKeys = SettingsResetKeysCollector.collectResettableKeys(in: definition.view)
+        // Tracks whichever view is currently pinned into `contentSlot`, so both a reset (which swaps it
+        // for a freshly built one) and an in-place mutation (e.g. AppearanceTab's CustomizeStyle
+        // disclosure) walk/index the view that is actually on screen, not the one from construction time.
+        var currentContentView = definition.view
+        let knownDefaultKeys = Set(Preferences.defaultValues.keys)
+        let resettableKeysProvider: () -> [String] = {
+            var seen = Set<String>()
+            return (SettingsResetKeysCollector.collectResettableKeys(in: currentContentView) + definition.extraResettableKeys())
+                .filter { knownDefaultKeys.contains($0) && seen.insert($0).inserted }
+        }
         var section: SettingsSection!
-        let rebuildContent: () -> Void = { [weak self] in
+        func refreshResetButtonVisibility() {
+            let showsResetButton = section.canResetToDefaults
+            resetButton.isHidden = !showsResetButton
+            resetButtonHeightConstraint.isActive = !showsResetButton
+            resetButtonTopConstraint.constant = showsResetButton ? 8 : 0
+            if showsResetButton {
+                resetButton.target = self
+                resetButton.action = #selector(resetSectionToDefaults(_:))
+                resetButton.tag = sections.count
+            }
+        }
+        let rebuildContent: ([String]) -> Void = { [weak self] changedKeys in
             guard let self, let section else { return }
             contentSlot.subviews.forEach { $0.removeFromSuperview() }
             let newContentView = definition.builder()
+            currentContentView = newContentView
             self.pinContentView(newContentView, into: contentSlot)
             let (searchableStrings, highlightTargets) = self.collectSearchContent(sectionTitle, sectionDescription, newContentView)
+            section.updateSearchContent(searchableStrings, highlightTargets)
+            if !changedKeys.isEmpty {
+                let changedKeysSet = Set(changedKeys)
+                SettingsResetKeysCollector.collectResettableControls(in: newContentView)
+                    .filter { changedKeysSet.contains($0.identifier?.rawValue ?? "") }
+                    // Replays the same target/action `LabelAndControl.setupControl` wired up for an
+                    // interactive edit, so a control's `extraAction` (releasing pointer ownership,
+                    // clearing `AppleLanguages`, rebuilding a cached trie, …) applies to the default
+                    // value too, instead of the reset only clearing the preference underneath it.
+                    .forEach { $0.sendAction($0.action, to: $0.target) }
+            }
+            definition.afterReset?()
+            refreshResetButtonVisibility()
+        }
+        let reindex: () -> Void = { [weak self] in
+            guard let self, let section else { return }
+            let (searchableStrings, highlightTargets) = self.collectSearchContent(sectionTitle, sectionDescription, currentContentView)
             section.updateSearchContent(searchableStrings, highlightTargets)
         }
         section = SettingsSection(definition.id,
@@ -352,18 +406,19 @@ class SettingsWindow: NSWindow {
                                       pathLabel,
                                       pathLabelHeightConstraint,
                                       pathToTitleSpacingConstraint,
-                                      resettableKeys,
-                                      rebuildContent)
-        let showsResetButton = section.canResetToDefaults
-        resetButton.isHidden = !showsResetButton
-        resetButtonHeightConstraint.isActive = !showsResetButton
-        resetButtonTopConstraint.constant = showsResetButton ? 8 : 0
-        if showsResetButton {
-            resetButton.target = self
-            resetButton.action = #selector(resetSectionToDefaults(_:))
-            resetButton.tag = sections.count
-        }
+                                      resettableKeysProvider,
+                                      definition.hidesResetButton,
+                                      rebuildContent,
+                                      reindex)
+        refreshResetButtonVisibility()
         sections.append(section)
+    }
+
+    /// Re-indexes settings search for a section from its current content, without rebuilding it. For a
+    /// page that mutates its own content in place outside of a reset (e.g. AppearanceTab's CustomizeStyle
+    /// disclosure), so search does not keep pointing at the discarded content view.
+    func reindexSection(_ id: String) {
+        sections.first { $0.id == id }?.reindexSearchContent()
     }
 
     /// Pins a page's content view to fill `slot` on all four edges, matching the layout the

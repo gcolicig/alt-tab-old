@@ -529,5 +529,9 @@ class AppearanceTab: NSObject {
         customizeStyleDisclosure.title = customizeStyleDisclosureTitle()
         customizeStyleSection = CustomizeStyleSection()
         customizeStyleDisclosure.setContent(customizeStyleSection.makeView())
+        // The disclosure's content view was just swapped in place: the owning section's search index
+        // and highlight targets still point at what was discarded, so re-index against the page's
+        // current (unchanged) root view instead of waiting for a full page rebuild.
+        SettingsWindow.shared?.reindexSection("appearance")
     }
 }

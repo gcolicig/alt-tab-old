@@ -20,4 +20,20 @@ class PreferencesResetTests: XCTestCase {
     func testEmptyRequestReturnsEmpty() {
         XCTAssertEqual(PreferencesResetLogic.resettableKeys(requested: [], knownDefaultKeys: ["startAtLogin"]), [])
     }
+
+    func testKeysWithPrefixReturnsOnlyMatchingKeysSorted() {
+        let defaults: [String: Any] = ["leaderSlotAction1": "", "leaderSlotAction0": "", "leaderSlotKeys0": "", "startAtLogin": "true"]
+        XCTAssertEqual(PreferencesResetLogic.keysWithPrefix("leaderSlotAction", in: defaults), ["leaderSlotAction0", "leaderSlotAction1"])
+    }
+
+    func testKeysWithPrefixReturnsEmptyWhenNothingMatches() {
+        let defaults: [String: Any] = ["startAtLogin": "true", "menubarIcon": "0"]
+        XCTAssertEqual(PreferencesResetLogic.keysWithPrefix("flickRing", in: defaults), [])
+    }
+
+    func testKeysWithPrefixDoesNotMatchAnUnrelatedKeyContainingThePrefix() {
+        let defaults: [String: Any] = ["flickRingButton": "3", "flickRingUp": "", "otherFlickRingButtonNote": ""]
+        // hasPrefix only matches a leading substring, so "otherFlickRingButtonNote" (prefix elsewhere) is excluded
+        XCTAssertEqual(PreferencesResetLogic.keysWithPrefix("flickRing", in: defaults), ["flickRingButton", "flickRingUp"])
+    }
 }
