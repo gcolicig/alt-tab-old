@@ -104,7 +104,7 @@ class SystemActionsTab {
         let name = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId).map(DefaultBrowser.displayName) ?? bundleId
         let removeButton = NSButton(title: NSLocalizedString("Remove", comment: ""), target: nil, action: nil)
         removeButton.onAction = { _ in remove(bundleId) }
-        return StackView([NSTextField(labelWithString: name), removeButton])
+        return StackView([TableGroupView.makeText(name), removeButton])
     }
 
     private static func chooseApps() -> [String]? {

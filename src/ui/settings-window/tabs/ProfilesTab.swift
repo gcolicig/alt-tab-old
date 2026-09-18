@@ -180,7 +180,7 @@ class ProfilesTab {
     }
 
     private static func makeBindingViews(_ index: Int) -> [NSView] {
-        let label = NSTextField(labelWithString: "")
+        let label = TableGroupView.makeText("")
         label.translatesAutoresizingMaskIntoConstraints = false
         bindingLabel = label
         updateBindingLabel(index)
