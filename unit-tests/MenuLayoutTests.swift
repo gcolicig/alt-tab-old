@@ -72,7 +72,7 @@ class MenuLayoutTests: XCTestCase {
         XCTAssertTrue(MenuGroup.windowsMore.isInOther)
         XCTAssertTrue(MenuGroup.windowsMore.hasHeader)
         XCTAssertEqual(MenuGroup.allCases.filter(\.isInOther),
-                       [.windowsMore, .toggles, .tools, .system, .defaults, .notifications, .apps])
+                       [.windowsMore, .toggles, .defaults, .tools, .system, .notifications, .apps])
     }
 
     func testRetiredVisibilityPreferencesAreRecognised() {

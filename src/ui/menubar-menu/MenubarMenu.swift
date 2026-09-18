@@ -104,7 +104,7 @@ final class MenubarMenu: NSObject, NSMenuDelegate {
             case .notifications: return NSLocalizedString("Notifications", comment: "")
             case .system: return NSLocalizedString("System", comment: "")
             case .toggles: return NSLocalizedString("Toggles", comment: "")
-            case .defaults: return NSLocalizedString("Defaults", comment: "")
+            case .defaults: return NSLocalizedString("Default Browser", comment: "")
             case .settings, .app: return App.name
         }
     }

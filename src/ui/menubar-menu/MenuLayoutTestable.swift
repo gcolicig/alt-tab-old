@@ -8,12 +8,12 @@ enum MenuGroup: String, CaseIterable {
     /// The window actions used less often (decided 2026-09-18): the main menu keeps Isolate Window and
     /// Focus on 3 Foremost Windows, the rest opens the `Other…` submenu under the same heading.
     case windowsMore
-    // order inside `Other…` decided 2026-09-18: the toggles right after the window actions, notifications
-    // and apps last, with Quit All Apps at the very bottom
+    // order inside `Other…` decided 2026-09-18: the toggles right after the window actions, then the default
+    // browser; notifications and apps last, with Quit All Apps at the very bottom
     case toggles
+    case defaults
     case tools
     case system
-    case defaults
     case notifications
     case apps
     case settings
