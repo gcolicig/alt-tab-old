@@ -63,7 +63,7 @@ class SystemActionsTab {
         let restore = NSButton(title: NSLocalizedString("Restore Original Mode", comment: ""), target: nil, action: nil)
         restore.onAction = { _ in FunctionKeys.releaseOwnership() }
         keys.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Give back the function key mode from before AltTab+ changed it", comment: ""), rightViews: [restore]))
-        return TableGroupSetView(originalViews: [autoQuit, catMode, microphone, keys], bottomPadding: 0)
+        return TableGroupSetView(originalViews: [autoQuit, catMode, microphone, keys], padding: 0, bottomPadding: 0)
     }
 
     private static let delayOptions: [(String, Int)] = [0, 5, 10, 30, 60, 120, 300].map { (String(format: NSLocalizedString("%d s", comment: ""), $0), $0) }
@@ -132,7 +132,7 @@ class KeepAwakeTab {
             guard let spec = SystemActions.spec(action) else { return }
             table.addRow(TableGroupView.Row(leftTitle: spec.title, rightViews: [SettingsControls.recorder(action, spec.title)]))
         }
-        return TableGroupSetView(originalViews: [table], bottomPadding: 0)
+        return TableGroupSetView(originalViews: [table], padding: 0, bottomPadding: 0)
     }
 
     /// Their shortcuts are assigned here only; one recorder per preference keeps the two tabs from fighting.

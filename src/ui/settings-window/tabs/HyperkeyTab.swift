@@ -9,6 +9,6 @@ class HyperkeyTab {
         table.addRow(TableGroupView.Row(
             leftTitle: NSLocalizedString("Tap/hold threshold", comment: ""),
             rightViews: [LabelAndControl.makeDropdown("hyperKeyHoldDuration", HyperKeyHoldDurationPreference.allCases)]))
-        return TableGroupSetView(originalViews: [table], bottomPadding: 0)
+        return TableGroupSetView(originalViews: [table], padding: 0, bottomPadding: 0)
     }
 }

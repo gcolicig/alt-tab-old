@@ -157,6 +157,6 @@ final class RebuildableSettingsView: NSStackView {
         orientation = .vertical
         alignment = .leading
         arrangedSubviews.forEach { $0.removeFromSuperview() }
-        addArrangedSubview(TableGroupSetView(originalViews: content(), bottomPadding: 0))
+        addArrangedSubview(TableGroupSetView(originalViews: content(), padding: 0, bottomPadding: 0))
     }
 }

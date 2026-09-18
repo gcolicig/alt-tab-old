@@ -13,6 +13,6 @@ class SpacesTab {
             let views = LabelAndControl.makeLabelWithRecorder($0.localizedTitle, $0.shortcutPreferenceKey, Preferences.shortcut($0.shortcutPreferenceKey))
             table.addRow(TableGroupView.Row(leftTitle: $0.localizedTitle, rightViews: [views[1]]))
         }
-        return TableGroupSetView(originalViews: [table], bottomPadding: 0)
+        return TableGroupSetView(originalViews: [table], padding: 0, bottomPadding: 0)
     }
 }

@@ -283,30 +283,35 @@ class SettingsWindow: NSWindow {
         sectionDescription.maximumNumberOfLines = 0
         // without a wrapping width a long description asks for its one-line width and stretches the window
         sectionDescription.preferredMaxLayoutWidth = Self.contentWidth
-        // Reset button, right-aligned below the description; hidden (and collapsed to zero height)
-        // on pages with nothing to reset. Kept in the tree unconditionally so the constraint chain
-        // below the header stays the same whether or not the button is shown.
+        // Reset button, in the title row, vertically centered on the title and right-aligned to the
+        // content tables; hidden on pages with nothing to reset. Kept in the tree unconditionally so
+        // the constraint chain below the header stays the same whether or not the button is shown.
         // Sentence case, matching the codebase's more recent settings button titles (e.g. "Show preview")
         // over the older Title Case ones ("Open System Settings").
         let resetButton = NSButton(title: NSLocalizedString("Reset to defaults", comment: ""), target: nil, action: nil)
         resetButton.bezelStyle = .inline
         resetButton.controlSize = .small
         resetButton.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        // [title ... flexible space ... button]: the title's low horizontal hugging (the NSTextField
+        // default) lets it stretch to fill the row, while the button keeps its intrinsic size and sits
+        // flush with the trailing edge — the same edge the content tables end at.
+        let titleRow = NSStackView(views: [sectionTitle, resetButton])
+        titleRow.orientation = .horizontal
+        titleRow.alignment = .centerY
+        titleRow.spacing = 8
         // The content view is wrapped in a stable slot so a rebuilt page can be swapped in without
         // recreating the constraints that anchor it to the header above and the spacer below.
         let contentSlot = NSView()
         let container = NSView()
         let spacer = NSView()
         container.addSubview(pathLabel)
-        container.addSubview(sectionTitle)
+        container.addSubview(titleRow)
         container.addSubview(sectionDescription)
-        container.addSubview(resetButton)
         container.addSubview(contentSlot)
         container.addSubview(spacer)
         pathLabel.translatesAutoresizingMaskIntoConstraints = false
-        sectionTitle.translatesAutoresizingMaskIntoConstraints = false
+        titleRow.translatesAutoresizingMaskIntoConstraints = false
         sectionDescription.translatesAutoresizingMaskIntoConstraints = false
-        resetButton.translatesAutoresizingMaskIntoConstraints = false
         contentSlot.translatesAutoresizingMaskIntoConstraints = false
         spacer.translatesAutoresizingMaskIntoConstraints = false
         container.translatesAutoresizingMaskIntoConstraints = false
@@ -315,9 +320,7 @@ class SettingsWindow: NSWindow {
         // logic in updateVisibleSectionsSpacing is unaffected since it only changes this constant.
         let titleTopConstraint = pathLabel.topAnchor.constraint(equalTo: container.topAnchor)
         let pathLabelHeightConstraint = pathLabel.heightAnchor.constraint(equalToConstant: 0)
-        let pathToTitleSpacingConstraint = sectionTitle.topAnchor.constraint(equalTo: pathLabel.bottomAnchor, constant: 0)
-        let resetButtonTopConstraint = resetButton.topAnchor.constraint(equalTo: sectionDescription.bottomAnchor, constant: 0)
-        let resetButtonHeightConstraint = resetButton.heightAnchor.constraint(equalToConstant: 0)
+        let pathToTitleSpacingConstraint = titleRow.topAnchor.constraint(equalTo: pathLabel.bottomAnchor, constant: 0)
         let interSectionSpacingConstraint = spacer.topAnchor.constraint(equalTo: contentSlot.bottomAnchor, constant: Self.sectionInterSectionSpacing)
         let spacerHeightConstraint = spacer.heightAnchor.constraint(equalToConstant: Self.sectionBottomSpacing)
         NSLayoutConstraint.activate([
@@ -326,14 +329,14 @@ class SettingsWindow: NSWindow {
             pathLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             pathLabelHeightConstraint,
             pathToTitleSpacingConstraint,
-            sectionTitle.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            sectionTitle.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            sectionDescription.topAnchor.constraint(equalTo: sectionTitle.bottomAnchor, constant: 4),
+            titleRow.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            titleRow.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            sectionDescription.topAnchor.constraint(equalTo: titleRow.bottomAnchor, constant: 4),
             sectionDescription.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             sectionDescription.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            resetButtonTopConstraint,
-            resetButton.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            contentSlot.topAnchor.constraint(equalTo: resetButton.bottomAnchor, constant: 12),
+            // Matches `TableGroupSetView.spacing`, the same rhythm used between table groups within a
+            // page, so the header-to-first-table gap reads as part of the same vertical grid.
+            contentSlot.topAnchor.constraint(equalTo: sectionDescription.bottomAnchor, constant: TableGroupSetView.spacing),
             contentSlot.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             contentSlot.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor),
             interSectionSpacingConstraint,
@@ -358,9 +361,9 @@ class SettingsWindow: NSWindow {
         var section: SettingsSection!
         func refreshResetButtonVisibility() {
             let showsResetButton = section.canResetToDefaults
+            // Hiding an arranged subview collapses its space in the stack view, so no extra
+            // height/spacing bookkeeping is needed here (unlike the old below-description layout).
             resetButton.isHidden = !showsResetButton
-            resetButtonHeightConstraint.isActive = !showsResetButton
-            resetButtonTopConstraint.constant = showsResetButton ? 8 : 0
             if showsResetButton {
                 resetButton.target = self
                 resetButton.action = #selector(resetSectionToDefaults(_:))

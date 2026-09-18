@@ -51,7 +51,7 @@ class GeneralTab {
         updateMenubarIconDropdownState()
         table.addNewTable()
         table.addRow(language)
-        return TableGroupSetView(originalViews: [table, permissionsTable(), settingsFileTable()], bottomPadding: 0)
+        return TableGroupSetView(originalViews: [table, permissionsTable(), settingsFileTable()], padding: 0, bottomPadding: 0)
     }
 
     private static func permissionsTable() -> TableGroupView {

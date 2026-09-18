@@ -24,7 +24,7 @@ class PointerScrollTab {
         addScroll(scroll, "Mouse", "reverseScrollMouse", "scrollSpeedMouse")
         scroll.addNewTable()
         addScroll(scroll, "Trackpad", "reverseScrollTrackpad", "scrollSpeedTrackpad")
-        return TableGroupSetView(originalViews: [table, scroll], bottomPadding: 0)
+        return TableGroupSetView(originalViews: [table, scroll], padding: 0, bottomPadding: 0)
     }
 
     /// Reverse direction and speed run through a scrollWheel tap, which exists only while one of these is on.

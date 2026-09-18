@@ -27,7 +27,7 @@ class LeaderTab {
         slots.addRow(TableGroupView.Row(
             leftTitle: NSLocalizedString("Sequences use letters and digits, e.g. \"wl\". Escape and timeout cancel.", comment: ""),
             rightViews: [warning]))
-        return TableGroupSetView(originalViews: [top, slots], bottomPadding: 0)
+        return TableGroupSetView(originalViews: [top, slots], padding: 0, bottomPadding: 0)
     }
 
     private static func makeSlotRow(_ slot: Int) -> TableGroupView.Row {

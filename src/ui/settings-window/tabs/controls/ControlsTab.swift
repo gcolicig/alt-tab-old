@@ -293,7 +293,7 @@ class ControlsTab {
         shortcutsWhenActiveDisclosure = DisclosureSection(id: "controls.shortcutsWhenActive",
             title: NSLocalizedString("Shortcuts When Active", comment: ""), content: ShortcutsWhenActiveSection.makeView())
         let view = TableGroupSetView(originalViews: [shortcutsView, additionalControlsDisclosure, shortcutsWhenActiveDisclosure],
-            bottomPadding: 0, othersAlignment: .leading)
+            padding: 0, bottomPadding: 0, othersAlignment: .leading)
         refreshShortcutUi()
         (0..<Preferences.shortcutCount).forEach { initializeShortcutRecorderState($0) }
         return view

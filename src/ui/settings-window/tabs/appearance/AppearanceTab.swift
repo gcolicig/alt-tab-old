@@ -428,7 +428,7 @@ class AppearanceTab: NSObject {
     private static func makeView() -> NSStackView {
         let appearanceView = makeAppearanceView()
         let multipleScreensView = makeMultipleScreensView()
-        let view = TableGroupSetView(originalViews: [appearanceView, multipleScreensView, customizeStyleDisclosure, animationsDisclosure], titleTableGroupSpacing: 15, bottomPadding: 0)
+        let view = TableGroupSetView(originalViews: [appearanceView, multipleScreensView, customizeStyleDisclosure, animationsDisclosure], titleTableGroupSpacing: 15, padding: 0, bottomPadding: 0)
         view.translatesAutoresizingMaskIntoConstraints = false
         view.widthAnchor.constraint(equalToConstant: view.fittingSize.width).isActive = true
         return view

@@ -35,7 +35,7 @@ class WindowLayoutsTab {
         table.addRow(TableGroupView.Row(
             leftTitle: NSLocalizedString("Disable input extensions (safe mode)", comment: ""),
             rightViews: [LabelAndControl.makeSwitch("inputModulesSafeMode") { _ in safeModeChanged() }]))
-        return TableGroupSetView(originalViews: [table], bottomPadding: 0)
+        return TableGroupSetView(originalViews: [table], padding: 0, bottomPadding: 0)
     }
 
     /// Both modules share one tap and one session, so the same combination cannot drive both: whichever
