@@ -367,6 +367,12 @@ class Preferences {
         }
     }
 
+    /// Restores each key's registered default. Keys with no registered default (typos, stale
+    /// identifiers) are ignored rather than crashing or removing unrelated UserDefaults entries.
+    static func reset(keys: [String]) {
+        PreferencesResetLogic.resettableKeys(requested: keys, knownDefaultKeys: Set(defaultValues.keys)).forEach { remove($0) }
+    }
+
     static var all: [String: Any] { UserDefaults.standard.persistentDomain(forName: App.bundleIdentifier)! }
 
     static func onlyShowApplications() -> Bool {

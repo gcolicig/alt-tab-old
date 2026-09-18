@@ -390,6 +390,7 @@
 		62495316E4696F987F605B12 /* SettingsSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93F947A3D89F2774549CB12D /* SettingsSearch.swift */; };
 		4A52A9DC51E7EAFEDC73470B /* SettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88993E1024A8E4F6E0761519 /* SettingsSection.swift */; };
 		FD280001618AEC49F5C13716 /* SettingsSearchHighlighting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 308E7603674E657AF3D1397F /* SettingsSearchHighlighting.swift */; };
+		6D38877E2A454941BF6694A7 /* SettingsResetKeysCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D1E9DB8CF984CFBADEC2305 /* SettingsResetKeysCollector.swift */; };
 		57D264D33C8B579E450EA076 /* SettingsSidebarViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B040D7D2BA4ECD913CBB69C5 /* SettingsSidebarViews.swift */; };
 		D04BAE8B16A06A10E2FA94DE /* AccessibilityEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = D04BA8FDCF137D892114F5F3 /* AccessibilityEvents.swift */; };
 		D04BAF12DF5D15B9D7D316A4 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D04BA61693F710CD7BD054D7 /* InfoPlist.strings */; };
@@ -439,8 +440,11 @@
 		C0DE100000000000000000D7 /* SystemActionsSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000CD /* SystemActionsSettings.swift */; };
 		C0DE100000000000000000D8 /* MicMuteIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000CE /* MicMuteIndicator.swift */; };
 		C0DE100000000000000000D9 /* SettingsSidebarTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000CF /* SettingsSidebarTestable.swift */; };
+		468E776ADE034172B4316914 /* PreferencesResetTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AC597FDBC9C498C9C0C6283 /* PreferencesResetTestable.swift */; };
 		C0DE100000000000000000DA /* SettingsSidebarTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000CF /* SettingsSidebarTestable.swift */; };
+		18351C13428142E794664853 /* PreferencesResetTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AC597FDBC9C498C9C0C6283 /* PreferencesResetTestable.swift */; };
 		C0DE100000000000000000DB /* SettingsSidebarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000D0 /* SettingsSidebarTests.swift */; };
+		3889619E19FD4D7FA5E146AE /* PreferencesResetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E1699A2D69849C483898542 /* PreferencesResetTests.swift */; };
 		C0DE100000000000000000DC /* SlotListTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000D1 /* SlotListTestable.swift */; };
 		C0DE100000000000000000DD /* SlotListTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000D1 /* SlotListTestable.swift */; };
 		C0DE100000000000000000DE /* SlotListTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000D2 /* SlotListTests.swift */; };
@@ -817,6 +821,7 @@
 		93F947A3D89F2774549CB12D /* SettingsSearch.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsSearch.swift; sourceTree = "<group>"; };
 		88993E1024A8E4F6E0761519 /* SettingsSection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsSection.swift; sourceTree = "<group>"; };
 		308E7603674E657AF3D1397F /* SettingsSearchHighlighting.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsSearchHighlighting.swift; sourceTree = "<group>"; };
+		6D1E9DB8CF984CFBADEC2305 /* SettingsResetKeysCollector.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsResetKeysCollector.swift; sourceTree = "<group>"; };
 		B040D7D2BA4ECD913CBB69C5 /* SettingsSidebarViews.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsSidebarViews.swift; sourceTree = "<group>"; };
 		D04BA0AAAE82C72855DBBA26 /* update_appcast.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = update_appcast.sh; sourceTree = "<group>"; };
 		D04BA0CE87BE264C52987ED1 /* 7 windows - 2 lines - wide window.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "7 windows - 2 lines - wide window.jpg"; sourceTree = "<group>"; };
@@ -1005,7 +1010,9 @@
 		C0DE200000000000000000CD /* SystemActionsSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemActionsSettings.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000CE /* MicMuteIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicMuteIndicator.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000CF /* SettingsSidebarTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSidebarTestable.swift; sourceTree = "<group>"; };
+		8AC597FDBC9C498C9C0C6283 /* PreferencesResetTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesResetTestable.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000D0 /* SettingsSidebarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSidebarTests.swift; sourceTree = "<group>"; };
+		3E1699A2D69849C483898542 /* PreferencesResetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesResetTests.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000D1 /* SlotListTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlotListTestable.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000D2 /* SlotListTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlotListTests.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000D3 /* ShortcutOverviewTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutOverviewTestable.swift; sourceTree = "<group>"; };
@@ -1413,6 +1420,7 @@
 				C0DE200000000000000000D4 /* ShortcutOverviewTests.swift */,
 				C0DE200000000000000000D2 /* SlotListTests.swift */,
 				C0DE200000000000000000D0 /* SettingsSidebarTests.swift */,
+				3E1699A2D69849C483898542 /* PreferencesResetTests.swift */,
 				C0DE200000000000000000CA /* DebugToolsTests.swift */,
 				C0DE200000000000000000C3 /* KeepAwakeTests.swift */,
 				C0DE200000000000000000BE /* SystemActionTests.swift */,
@@ -1705,6 +1713,7 @@
 				5F906A332F16A18000B99924 /* Screens.swift */,
 				D04BACD976030676FD0761D5 /* Windows.swift */,
 				D04BA9B93823398A542FF7A0 /* Preferences.swift */,
+				8AC597FDBC9C498C9C0C6283 /* PreferencesResetTestable.swift */,
 				D04BA7C6F2519091717F4B4E /* SystemPermissions.swift */,
 				D04BA7CF9C2D1BEC7C05AB24 /* Spaces.swift */,
 				D04BA015A45DE7AFDC9794FE /* Window.swift */,
@@ -2363,6 +2372,7 @@
 				93F947A3D89F2774549CB12D /* SettingsSearch.swift */,
 				88993E1024A8E4F6E0761519 /* SettingsSection.swift */,
 				308E7603674E657AF3D1397F /* SettingsSearchHighlighting.swift */,
+				6D1E9DB8CF984CFBADEC2305 /* SettingsResetKeysCollector.swift */,
 				B040D7D2BA4ECD913CBB69C5 /* SettingsSidebarViews.swift */,
 			);
 			path = "settings-window";
@@ -3008,7 +3018,9 @@
 				C0DE100000000000000000DE /* SlotListTests.swift in Sources */,
 				C0DE100000000000000000DD /* SlotListTestable.swift in Sources */,
 				C0DE100000000000000000DB /* SettingsSidebarTests.swift in Sources */,
+				3889619E19FD4D7FA5E146AE /* PreferencesResetTests.swift in Sources */,
 				C0DE100000000000000000DA /* SettingsSidebarTestable.swift in Sources */,
+				18351C13428142E794664853 /* PreferencesResetTestable.swift in Sources */,
 				C0DE100000000000000000D4 /* DebugToolsTests.swift in Sources */,
 				C0DE100000000000000000D2 /* DebugToolsTestable.swift in Sources */,
 				C0DE100000000000000000CD /* ScreenToolsTestable.swift in Sources */,
@@ -3080,6 +3092,7 @@
 				C0DE100000000000000000DF /* ShortcutOverviewTestable.swift in Sources */,
 				C0DE100000000000000000DC /* SlotListTestable.swift in Sources */,
 				C0DE100000000000000000D9 /* SettingsSidebarTestable.swift in Sources */,
+				468E776ADE034172B4316914 /* PreferencesResetTestable.swift in Sources */,
 				C0DE100000000000000000D8 /* MicMuteIndicator.swift in Sources */,
 				C0DE100000000000000000D7 /* SystemActionsSettings.swift in Sources */,
 				C0DE100000000000000000D6 /* MenubarMenu.swift in Sources */,
@@ -3225,6 +3238,7 @@
 				62495316E4696F987F605B12 /* SettingsSearch.swift in Sources */,
 				4A52A9DC51E7EAFEDC73470B /* SettingsSection.swift in Sources */,
 				FD280001618AEC49F5C13716 /* SettingsSearchHighlighting.swift in Sources */,
+				6D38877E2A454941BF6694A7 /* SettingsResetKeysCollector.swift in Sources */,
 				57D264D33C8B579E450EA076 /* SettingsSidebarViews.swift in Sources */,
 				BF0C8CC5057406014FD612CC /* ATShortcut.swift in Sources */,
 				BF0C8C7E96DB48120462DA00 /* TrafficLightButton.swift in Sources */,

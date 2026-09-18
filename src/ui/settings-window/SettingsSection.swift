@@ -7,6 +7,10 @@ struct SettingsSectionDefinition {
     let imageName: String
     let systemSymbolName: String
     let view: NSView
+    /// Rebuilds this page's content view from scratch. Used by "Reset to defaults" to redraw a
+    /// page's controls after their backing preferences are restored, since a control's initial
+    /// state is read once at construction and does not observe later preference changes.
+    let builder: () -> NSView
 }
 
 final class SettingsSearchHighlightTarget {
@@ -52,16 +56,38 @@ final class SettingsSection {
     let icon: NSImage
     let container: NSView
     let anchor: NSView
-    let searchableStrings: [String]
-    let highlightTargets: [SettingsSearchHighlightTarget]
+    /// Rebuilt in place by `rebuildContent()`, so search re-indexes the page after a reset.
+    private(set) var searchableStrings: [String]
+    private(set) var highlightTargets: [SettingsSearchHighlightTarget]
     let interSectionSpacingConstraint: NSLayoutConstraint
     let bottomSpacingConstraint: NSLayoutConstraint
     let titleTopConstraint: NSLayoutConstraint
+    /// Preference keys this page's controls expose, as found by `SettingsResetKeysCollector`.
+    /// Empty for pages with nothing to reset (e.g. a page of pure informational text).
+    let resettableKeys: [String]
+    /// Swaps this page's content view for a freshly built one and re-indexes search content.
+    /// `nil` when re-running the page's builder is not safe (see `SettingsWindow.addSection`).
+    private let rebuildContent: (() -> Void)?
     /// Breadcrumb shown above the title while searching (e.g. "Switcher › Cmd-Tab › Animations").
     /// Collapsed to zero height outside of search via `pathLabelHeightConstraint`.
     private let pathLabel: NSTextField
     private let pathLabelHeightConstraint: NSLayoutConstraint
     private let pathToTitleSpacingConstraint: NSLayoutConstraint
+
+    var canResetToDefaults: Bool { rebuildContent != nil && !resettableKeys.isEmpty }
+
+    /// Restores `resettableKeys` to their defaults and redraws the page's controls to reflect it.
+    func resetToDefaults() {
+        Preferences.reset(keys: resettableKeys)
+        rebuildContent?()
+    }
+
+    /// Called by `rebuildContent` once the page's content view has been swapped, so settings
+    /// search re-indexes the new controls instead of the ones that were just discarded.
+    func updateSearchContent(_ searchableStrings: [String], _ highlightTargets: [SettingsSearchHighlightTarget]) {
+        self.searchableStrings = searchableStrings
+        self.highlightTargets = highlightTargets
+    }
 
     init(_ id: String,
          _ title: String,
@@ -75,7 +101,9 @@ final class SettingsSection {
          _ titleTopConstraint: NSLayoutConstraint,
          _ pathLabel: NSTextField,
          _ pathLabelHeightConstraint: NSLayoutConstraint,
-         _ pathToTitleSpacingConstraint: NSLayoutConstraint) {
+         _ pathToTitleSpacingConstraint: NSLayoutConstraint,
+         _ resettableKeys: [String],
+         _ rebuildContent: (() -> Void)?) {
         self.id = id
         self.title = title
         self.icon = icon
@@ -88,6 +116,8 @@ final class SettingsSection {
         self.titleTopConstraint = titleTopConstraint
         self.pathLabel = pathLabel
         self.pathLabelHeightConstraint = pathLabelHeightConstraint
+        self.resettableKeys = resettableKeys
+        self.rebuildContent = rebuildContent
         self.pathToTitleSpacingConstraint = pathToTitleSpacingConstraint
     }
 

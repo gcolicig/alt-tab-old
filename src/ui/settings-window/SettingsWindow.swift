@@ -221,23 +221,23 @@ class SettingsWindow: NSWindow {
             //
             // The grouping runs from what applies to the whole machine down to what applies to single apps:
             // General, then the three system-wide modules, then the window switcher, then per-app lists.
-            SettingsSectionDefinition(id: "general", title: NSLocalizedString("General", comment: ""), description: NSLocalizedString("Manage startup, menu bar, language, and settings files.", comment: ""), imageName: "general", systemSymbolName: "gearshape", view: GeneralTab.initTab()),
-            SettingsSectionDefinition(id: "hyperkey", title: NSLocalizedString("Hyperkey", comment: ""), description: NSLocalizedString("Use Caps Lock as a system-wide combination of modifier keys.", comment: ""), imageName: "controls", systemSymbolName: "capslock", view: HyperkeyTab.initTab()),
-            SettingsSectionDefinition(id: "pointer-scroll", title: NSLocalizedString("Pointer & Scroll", comment: ""), description: NSLocalizedString("Adjust pointer acceleration and speed, and the direction of the mouse wheel.", comment: ""), imageName: "controls", systemSymbolName: "cursorarrow", view: PointerScrollTab.initTab()),
-            SettingsSectionDefinition(id: "spaces", title: NSLocalizedString("Spaces", comment: ""), description: NSLocalizedString("Show, activate, and move between macOS Spaces.", comment: ""), imageName: "controls", systemSymbolName: "square.grid.2x2", view: SpacesTab.initTab()),
+            SettingsSectionDefinition(id: "general", title: NSLocalizedString("General", comment: ""), description: NSLocalizedString("Manage startup, menu bar, language, and settings files.", comment: ""), imageName: "general", systemSymbolName: "gearshape", view: GeneralTab.initTab(), builder: { GeneralTab.initTab() }),
+            SettingsSectionDefinition(id: "hyperkey", title: NSLocalizedString("Hyperkey", comment: ""), description: NSLocalizedString("Use Caps Lock as a system-wide combination of modifier keys.", comment: ""), imageName: "controls", systemSymbolName: "capslock", view: HyperkeyTab.initTab(), builder: { HyperkeyTab.initTab() }),
+            SettingsSectionDefinition(id: "pointer-scroll", title: NSLocalizedString("Pointer & Scroll", comment: ""), description: NSLocalizedString("Adjust pointer acceleration and speed, and the direction of the mouse wheel.", comment: ""), imageName: "controls", systemSymbolName: "cursorarrow", view: PointerScrollTab.initTab(), builder: { PointerScrollTab.initTab() }),
+            SettingsSectionDefinition(id: "spaces", title: NSLocalizedString("Spaces", comment: ""), description: NSLocalizedString("Show, activate, and move between macOS Spaces.", comment: ""), imageName: "controls", systemSymbolName: "square.grid.2x2", view: SpacesTab.initTab(), builder: { SpacesTab.initTab() }),
             // not named in the requested order; placed next to Spaces because both arrange windows across
             // the system rather than inside the switcher
-            SettingsSectionDefinition(id: "window-layouts", title: NSLocalizedString("Window Layouts", comment: ""), description: NSLocalizedString("Assign shortcuts for arranging the focused window.", comment: ""), imageName: "controls", systemSymbolName: "rectangle.split.3x1", view: WindowLayoutsTab.initTab()),
-            SettingsSectionDefinition(id: "leader", title: NSLocalizedString("Leader", comment: ""), description: NSLocalizedString("Run actions from nested key sequences after a trigger key.", comment: ""), imageName: "controls", systemSymbolName: "keyboard", view: LeaderTab.initTab()),
-            SettingsSectionDefinition(id: "flick-ring", title: NSLocalizedString("FlickRing", comment: ""), description: NSLocalizedString("Open a four-direction action ring on a mouse button.", comment: ""), imageName: "controls", systemSymbolName: "circle.grid.cross", view: FlickRingTab.initTab()),
-            SettingsSectionDefinition(id: "profiles", title: NSLocalizedString("Profiles", comment: ""), description: NSLocalizedString("Group apps into a profile, optionally bound to a space, and filter the switcher to it.", comment: ""), imageName: "controls", systemSymbolName: "square.stack.3d.up", view: ProfilesTab.initTab()),
-            SettingsSectionDefinition(id: "appearance", title: NSLocalizedString("Cmd-Tab", comment: ""), description: NSLocalizedString("Choose how the window switcher looks and where it appears.", comment: ""), imageName: "appearance", systemSymbolName: "paintpalette", view: AppearanceTab.initTab()),
-            SettingsSectionDefinition(id: "controls", title: NSLocalizedString("Cmd-Tab Controls", comment: ""), description: NSLocalizedString("Set how you open and navigate the window switcher.", comment: ""), imageName: "controls", systemSymbolName: "command", view: ControlsTab.initTab()),
-            SettingsSectionDefinition(id: ShortcutOverviewTab.sectionId, title: NSLocalizedString("Shortcuts", comment: ""), description: NSLocalizedString("Every action shortcut and its conflicts. Switcher triggers stay in Cmd-Tab Controls, the Leader key in Leader, and the FlickRing button in FlickRing.", comment: ""), imageName: "controls", systemSymbolName: "keyboard", view: ShortcutOverviewTab.initTab()),
-            SettingsSectionDefinition(id: "system-actions", title: NSLocalizedString("System Actions", comment: ""), description: NSLocalizedString("Configure Auto-Quit, Cat Mode, and the function key mode.", comment: ""), imageName: "controls", systemSymbolName: "switch.2", view: SystemActionsTab.initTab()),
-            SettingsSectionDefinition(id: "keep-awake", title: NSLocalizedString("Keep Awake", comment: ""), description: NSLocalizedString("Keep the Mac awake for a while, with battery protection.", comment: ""), imageName: "controls", systemSymbolName: "cup.and.saucer", view: KeepAwakeTab.initTab()),
-            SettingsSectionDefinition(id: "apps-urls", title: NSLocalizedString("Apps & URLs", comment: ""), description: NSLocalizedString("Assign shortcuts to launch apps or open URLs.", comment: ""), imageName: "controls", systemSymbolName: "app.badge", view: AppsUrlsTab.initTab()),
-            SettingsSectionDefinition(id: "exceptions", title: NSLocalizedString("Exceptions", comment: ""), description: NSLocalizedString("Choose apps whose windows should not appear in the switcher.", comment: ""), imageName: "exceptions", systemSymbolName: "hand.raised", view: ExceptionsTab.initTab()),
+            SettingsSectionDefinition(id: "window-layouts", title: NSLocalizedString("Window Layouts", comment: ""), description: NSLocalizedString("Assign shortcuts for arranging the focused window.", comment: ""), imageName: "controls", systemSymbolName: "rectangle.split.3x1", view: WindowLayoutsTab.initTab(), builder: { WindowLayoutsTab.initTab() }),
+            SettingsSectionDefinition(id: "leader", title: NSLocalizedString("Leader", comment: ""), description: NSLocalizedString("Run actions from nested key sequences after a trigger key.", comment: ""), imageName: "controls", systemSymbolName: "keyboard", view: LeaderTab.initTab(), builder: { LeaderTab.initTab() }),
+            SettingsSectionDefinition(id: "flick-ring", title: NSLocalizedString("FlickRing", comment: ""), description: NSLocalizedString("Open a four-direction action ring on a mouse button.", comment: ""), imageName: "controls", systemSymbolName: "circle.grid.cross", view: FlickRingTab.initTab(), builder: { FlickRingTab.initTab() }),
+            SettingsSectionDefinition(id: "profiles", title: NSLocalizedString("Profiles", comment: ""), description: NSLocalizedString("Group apps into a profile, optionally bound to a space, and filter the switcher to it.", comment: ""), imageName: "controls", systemSymbolName: "square.stack.3d.up", view: ProfilesTab.initTab(), builder: { ProfilesTab.initTab() }),
+            SettingsSectionDefinition(id: "appearance", title: NSLocalizedString("Cmd-Tab", comment: ""), description: NSLocalizedString("Choose how the window switcher looks and where it appears.", comment: ""), imageName: "appearance", systemSymbolName: "paintpalette", view: AppearanceTab.initTab(), builder: { AppearanceTab.initTab() }),
+            SettingsSectionDefinition(id: "controls", title: NSLocalizedString("Cmd-Tab Controls", comment: ""), description: NSLocalizedString("Set how you open and navigate the window switcher.", comment: ""), imageName: "controls", systemSymbolName: "command", view: ControlsTab.initTab(), builder: { ControlsTab.initTab() }),
+            SettingsSectionDefinition(id: ShortcutOverviewTab.sectionId, title: NSLocalizedString("Shortcuts", comment: ""), description: NSLocalizedString("Every action shortcut and its conflicts. Switcher triggers stay in Cmd-Tab Controls, the Leader key in Leader, and the FlickRing button in FlickRing.", comment: ""), imageName: "controls", systemSymbolName: "keyboard", view: ShortcutOverviewTab.initTab(), builder: { ShortcutOverviewTab.initTab() }),
+            SettingsSectionDefinition(id: "system-actions", title: NSLocalizedString("System Actions", comment: ""), description: NSLocalizedString("Configure Auto-Quit, Cat Mode, and the function key mode.", comment: ""), imageName: "controls", systemSymbolName: "switch.2", view: SystemActionsTab.initTab(), builder: { SystemActionsTab.initTab() }),
+            SettingsSectionDefinition(id: "keep-awake", title: NSLocalizedString("Keep Awake", comment: ""), description: NSLocalizedString("Keep the Mac awake for a while, with battery protection.", comment: ""), imageName: "controls", systemSymbolName: "cup.and.saucer", view: KeepAwakeTab.initTab(), builder: { KeepAwakeTab.initTab() }),
+            SettingsSectionDefinition(id: "apps-urls", title: NSLocalizedString("Apps & URLs", comment: ""), description: NSLocalizedString("Assign shortcuts to launch apps or open URLs.", comment: ""), imageName: "controls", systemSymbolName: "app.badge", view: AppsUrlsTab.initTab(), builder: { AppsUrlsTab.initTab() }),
+            SettingsSectionDefinition(id: "exceptions", title: NSLocalizedString("Exceptions", comment: ""), description: NSLocalizedString("Choose apps whose windows should not appear in the switcher.", comment: ""), imageName: "exceptions", systemSymbolName: "hand.raised", view: ExceptionsTab.initTab(), builder: { ExceptionsTab.initTab() }),
         ]
     }
 
@@ -269,25 +269,40 @@ class SettingsWindow: NSWindow {
         sectionDescription.maximumNumberOfLines = 0
         // without a wrapping width a long description asks for its one-line width and stretches the window
         sectionDescription.preferredMaxLayoutWidth = Self.contentWidth
+        // Reset button, right-aligned below the description; hidden (and collapsed to zero height)
+        // on pages with nothing to reset. Kept in the tree unconditionally so the constraint chain
+        // below the header stays the same whether or not the button is shown.
+        let resetButton = NSButton(title: NSLocalizedString("Reset to Defaults", comment: ""), target: nil, action: nil)
+        resetButton.bezelStyle = .inline
+        resetButton.controlSize = .small
+        resetButton.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        // The content view is wrapped in a stable slot so a rebuilt page can be swapped in without
+        // recreating the constraints that anchor it to the header above and the spacer below.
+        let contentSlot = NSView()
         let container = NSView()
         let spacer = NSView()
         container.addSubview(pathLabel)
         container.addSubview(sectionTitle)
         container.addSubview(sectionDescription)
-        container.addSubview(definition.view)
+        container.addSubview(resetButton)
+        container.addSubview(contentSlot)
         container.addSubview(spacer)
         pathLabel.translatesAutoresizingMaskIntoConstraints = false
         sectionTitle.translatesAutoresizingMaskIntoConstraints = false
         sectionDescription.translatesAutoresizingMaskIntoConstraints = false
-        definition.view.translatesAutoresizingMaskIntoConstraints = false
+        resetButton.translatesAutoresizingMaskIntoConstraints = false
+        contentSlot.translatesAutoresizingMaskIntoConstraints = false
         spacer.translatesAutoresizingMaskIntoConstraints = false
         container.translatesAutoresizingMaskIntoConstraints = false
+        pinContentView(definition.view, into: contentSlot)
         // `titleTopConstraint` now anchors the breadcrumb (the topmost element); the isFirst/spacing
         // logic in updateVisibleSectionsSpacing is unaffected since it only changes this constant.
         let titleTopConstraint = pathLabel.topAnchor.constraint(equalTo: container.topAnchor)
         let pathLabelHeightConstraint = pathLabel.heightAnchor.constraint(equalToConstant: 0)
         let pathToTitleSpacingConstraint = sectionTitle.topAnchor.constraint(equalTo: pathLabel.bottomAnchor, constant: 0)
-        let interSectionSpacingConstraint = spacer.topAnchor.constraint(equalTo: definition.view.bottomAnchor, constant: Self.sectionInterSectionSpacing)
+        let resetButtonTopConstraint = resetButton.topAnchor.constraint(equalTo: sectionDescription.bottomAnchor, constant: 0)
+        let resetButtonHeightConstraint = resetButton.heightAnchor.constraint(equalToConstant: 0)
+        let interSectionSpacingConstraint = spacer.topAnchor.constraint(equalTo: contentSlot.bottomAnchor, constant: Self.sectionInterSectionSpacing)
         let spacerHeightConstraint = spacer.heightAnchor.constraint(equalToConstant: Self.sectionBottomSpacing)
         NSLayoutConstraint.activate([
             titleTopConstraint,
@@ -300,9 +315,11 @@ class SettingsWindow: NSWindow {
             sectionDescription.topAnchor.constraint(equalTo: sectionTitle.bottomAnchor, constant: 4),
             sectionDescription.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             sectionDescription.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            definition.view.topAnchor.constraint(equalTo: sectionDescription.bottomAnchor, constant: 12),
-            definition.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            definition.view.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor),
+            resetButtonTopConstraint,
+            resetButton.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            contentSlot.topAnchor.constraint(equalTo: resetButton.bottomAnchor, constant: 12),
+            contentSlot.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            contentSlot.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor),
             interSectionSpacingConstraint,
             spacer.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             spacer.trailingAnchor.constraint(equalTo: container.trailingAnchor),
@@ -312,7 +329,17 @@ class SettingsWindow: NSWindow {
         sectionsStack.addArrangedSubview(container)
         container.widthAnchor.constraint(equalTo: sectionsStack.widthAnchor).isActive = true
         let (searchableStrings, highlightTargets) = collectSearchContent(sectionTitle, sectionDescription, definition.view)
-        let section = SettingsSection(definition.id,
+        let resettableKeys = SettingsResetKeysCollector.collectResettableKeys(in: definition.view)
+        var section: SettingsSection!
+        let rebuildContent: () -> Void = { [weak self] in
+            guard let self, let section else { return }
+            contentSlot.subviews.forEach { $0.removeFromSuperview() }
+            let newContentView = definition.builder()
+            self.pinContentView(newContentView, into: contentSlot)
+            let (searchableStrings, highlightTargets) = self.collectSearchContent(sectionTitle, sectionDescription, newContentView)
+            section.updateSearchContent(searchableStrings, highlightTargets)
+        }
+        section = SettingsSection(definition.id,
                                       definition.title,
                                       sidebarImage(definition),
                                       container,
@@ -324,8 +351,45 @@ class SettingsWindow: NSWindow {
                                       titleTopConstraint,
                                       pathLabel,
                                       pathLabelHeightConstraint,
-                                      pathToTitleSpacingConstraint)
+                                      pathToTitleSpacingConstraint,
+                                      resettableKeys,
+                                      rebuildContent)
+        let showsResetButton = section.canResetToDefaults
+        resetButton.isHidden = !showsResetButton
+        resetButtonHeightConstraint.isActive = !showsResetButton
+        resetButtonTopConstraint.constant = showsResetButton ? 8 : 0
+        if showsResetButton {
+            resetButton.target = self
+            resetButton.action = #selector(resetSectionToDefaults(_:))
+            resetButton.tag = sections.count
+        }
         sections.append(section)
+    }
+
+    /// Pins a page's content view to fill `slot` on all four edges, matching the layout the
+    /// content view previously had directly inside the section container.
+    private func pinContentView(_ view: NSView, into slot: NSView) {
+        view.translatesAutoresizingMaskIntoConstraints = false
+        slot.addSubview(view)
+        NSLayoutConstraint.activate([
+            view.topAnchor.constraint(equalTo: slot.topAnchor),
+            view.leadingAnchor.constraint(equalTo: slot.leadingAnchor),
+            view.trailingAnchor.constraint(lessThanOrEqualTo: slot.trailingAnchor),
+            view.bottomAnchor.constraint(equalTo: slot.bottomAnchor),
+        ])
+    }
+
+    @objc private func resetSectionToDefaults(_ sender: NSButton) {
+        guard sections.indices.contains(sender.tag) else { return }
+        let section = sections[sender.tag]
+        let alert = NSAlert()
+        alert.messageText = String(format: NSLocalizedString("Reset %@ to defaults?", comment: ""), section.title)
+        alert.informativeText = NSLocalizedString("This page's settings return to their default values.", comment: "")
+        alert.addButton(withTitle: NSLocalizedString("Reset", comment: ""))
+        alert.addButton(withTitle: NSLocalizedString("Cancel", comment: ""))
+        alert.alertStyle = .warning
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        section.resetToDefaults()
     }
 
     private func updateVisibleSectionsSpacing(_ displayed: [SettingsSection]) {
