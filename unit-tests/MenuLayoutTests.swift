@@ -14,8 +14,8 @@ class MenuLayoutTests: XCTestCase {
 
     func testOtherGroupsAppearOnceAsSectionsOfOther() {
         let items = MenuLayout.build(entries, headersSupported: true)
-        let otherGroups: [MenuGroupEntries] = [MenuGroupEntries(group: .apps, ids: ["quitAll"]), MenuGroupEntries(group: .tools, ids: ["pick"]),
-                                               MenuGroupEntries(group: .toggles, ids: ["cat"])]
+        let otherGroups: [MenuGroupEntries] = [MenuGroupEntries(group: .toggles, ids: ["cat"]), MenuGroupEntries(group: .tools, ids: ["pick"]),
+                                               MenuGroupEntries(group: .apps, ids: ["quitAll"])]
         let expected: [MenuLayoutItem] = [
             .header(.switcher), .entry("show"), .separator,
             .header(.windows), .entry("isolate"), .separator,
@@ -71,7 +71,8 @@ class MenuLayoutTests: XCTestCase {
     func testTheRarerWindowActionsOpenFirstInOther() {
         XCTAssertTrue(MenuGroup.windowsMore.isInOther)
         XCTAssertTrue(MenuGroup.windowsMore.hasHeader)
-        XCTAssertEqual(MenuGroup.allCases.filter(\.isInOther).first, .windowsMore)
+        XCTAssertEqual(MenuGroup.allCases.filter(\.isInOther),
+                       [.windowsMore, .toggles, .tools, .system, .defaults, .notifications, .apps])
     }
 
     func testRetiredVisibilityPreferencesAreRecognised() {
