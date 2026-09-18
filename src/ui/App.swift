@@ -371,6 +371,7 @@ class App: NSApplication {
         InputSourceEvents.observe()
         Applications.initialDiscovery()
         KeyboardEvents.addEventHandlers()
+        MicKey.settingChanged()
         CursorEvents.observe()
         TrackpadEvents.observe()
         CliEvents.observe()
@@ -428,6 +429,7 @@ extension App: NSApplicationDelegate {
         PointerCategory.allCases.forEach { PointerOwnership.release($0) }
         KeepAwake.releaseOnQuit()
         AudioMute.restoreOnQuit()
+        MicKey.release()
         CatMode.stop(reason: nil)
     }
 

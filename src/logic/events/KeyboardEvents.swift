@@ -41,6 +41,13 @@ class KeyboardEvents {
         }
         if type == .keyDown {
             let keyCode = UInt32(cgEvent.getIntegerValueField(.keyboardEventKeycode))
+            // the microphone key, remapped to F17 by MicKey; a held key repeats, and a repeat must not toggle back
+            if keyCode == UInt32(kVK_F17), Preferences.micKeyMutesMicrophone {
+                if cgEvent.getIntegerValueField(.keyboardEventAutorepeat) == 0 {
+                    DispatchQueue.main.async { AudioMute.toggle(input: true) }
+                }
+                return nil
+            }
             let modifiers = NSEvent.ModifierFlags(rawValue: UInt(cgEvent.flags.rawValue))
             // Hyper runs first: it adds ⌃⌥⇧⌘ to the event while Caps Lock is held. Leader checked the raw
             // flags before, so a Hyper trigger such as Hyper+Space never matched (found 2026-09-17).

@@ -536,6 +536,9 @@
 "FlickRing" = "FlickRing";
 
 /* No comment provided by engineer. */
+"Focus on 3 Foremost Windows" = "Focus on 3 Foremost Windows";
+
+/* No comment provided by engineer. */
 "Focus selected window" = "Focus selected window";
 
 /* No comment provided by engineer. */
@@ -774,6 +777,9 @@
 
 /* No comment provided by engineer. */
 "Microphone" = "Microphone";
+
+/* No comment provided by engineer. */
+"Microphone key mutes the microphone" = "Microphone key mutes the microphone";
 
 /* No comment provided by engineer. */
 "Microphone muted" = "Microphone muted";
@@ -1410,6 +1416,9 @@
 
 /* No comment provided by engineer. */
 "The macOS set on the Hyper key instead of Control, so no macOS shortcut has to be disabled. Requires the Hyper key to be enabled." = "The macOS set on the Hyper key instead of Control, so no macOS shortcut has to be disabled. Requires the Hyper key to be enabled.";
+
+/* No comment provided by engineer. */
+"The microphone key in the F5 position toggles the mute instead of starting Dictation. After AltTab+ quits, the key starts Dictation again." = "The microphone key in the F5 position toggles the mute instead of starting Dictation. After AltTab+ quits, the key starts Dictation again.";
 
 /* No comment provided by engineer. */
 "The permissions could not be reset." = "The permissions could not be reset.";

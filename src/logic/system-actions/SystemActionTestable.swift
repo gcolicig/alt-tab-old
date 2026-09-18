@@ -165,3 +165,25 @@ enum CatModePanic {
         keyCode == escapeKeyCode && flags & requiredFlags == requiredFlags
     }
 }
+
+/// The microphone key sends a dictation usage that macOS handles before any event tap sees it. AltTab+
+/// remaps it to F17 through the HID `UserKeyMapping` property; no Apple keyboard has F17, so the remap takes
+/// no key away, and F17 then arrives in the event tap like any other key.
+enum MicKeyMapping {
+    static let sourceKey = "HIDKeyboardModifierMappingSrc"
+    static let destinationKey = "HIDKeyboardModifierMappingDst"
+    /// Consumer page 0x0C, usage 0xCF "Voice Command": the microphone key in the F5 position.
+    static let microphoneKey: UInt64 = 0xC000000CF
+    /// Keyboard page 0x07, usage 0x6C: F17.
+    static let f17: UInt64 = 0x70000006C
+
+    /// Other mappings stay; an earlier mapping of the microphone key is replaced, not duplicated.
+    static func adding(_ mappings: [[String: UInt64]]) -> [[String: UInt64]] {
+        mappings.filter { $0[sourceKey] != microphoneKey } + [[sourceKey: microphoneKey, destinationKey: f17]]
+    }
+
+    /// Removes only the mapping AltTab+ made, so a remap another tool made to some other key survives.
+    static func removing(_ mappings: [[String: UInt64]]) -> [[String: UInt64]] {
+        mappings.filter { !($0[sourceKey] == microphoneKey && $0[destinationKey] == f17) }
+    }
+}
