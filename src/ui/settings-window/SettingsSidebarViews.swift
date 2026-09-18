@@ -103,8 +103,7 @@ extension SettingsWindow: NSTableViewDataSource, NSTableViewDelegate {
             case .app: return App.name
             case .switcher: return NSLocalizedString("Switcher", comment: "")
             case .windows: return NSLocalizedString("Windows", comment: "")
-            case .triggers: return NSLocalizedString("Triggers", comment: "")
-            case .devices: return NSLocalizedString("Devices", comment: "")
+            case .input: return NSLocalizedString("Input", comment: "")
             case .actions: return NSLocalizedString("Actions", comment: "")
         }
     }

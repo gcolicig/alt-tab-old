@@ -95,6 +95,8 @@ class SettingsWindow: NSWindow {
         setupSidebar()
         setupContentPane()
         let definitions = sectionDefinitions()
+        assert(definitions.allSatisfy { SettingsSidebarLayout.allSectionIds.contains($0.id) },
+               "a section id is missing from SettingsSidebarLayout.allSectionIds and would silently fall back to .actions")
         SettingsSidebarLayout.order(definitions.map(\.id)).compactMap { id in definitions.first { $0.id == id } }.forEach { addSection($0) }
         refreshControlsFromSettings()
         applySearch("")

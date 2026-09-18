@@ -5,8 +5,7 @@ class SettingsSidebarTests: XCTestCase {
         let rows = SettingsSidebarLayout.rows(["general", "hyperkey", "pointer-scroll", "leader"])
         let expected: [SettingsSidebarRow] = [
             .header(.app), .section("general"),
-            .header(.triggers), .section("hyperkey"), .section("leader"),
-            .header(.devices), .section("pointer-scroll"),
+            .header(.input), .section("hyperkey"), .section("pointer-scroll"), .section("leader"),
         ]
         XCTAssertEqual(rows, expected)
     }
@@ -26,6 +25,23 @@ class SettingsSidebarTests: XCTestCase {
     func testEveryKnownSectionHasExactlyOneGroup() {
         let ids = SettingsSidebarLayout.sectionsByGroup.flatMap(\.1)
         XCTAssertEqual(Set(ids).count, ids.count)
+    }
+
+    func testEveryRegisteredSectionIdMapsToAGroupWithoutFallingBack() {
+        let known = Set(SettingsSidebarLayout.sectionsByGroup.flatMap(\.1))
+        for id in SettingsSidebarLayout.allSectionIds {
+            XCTAssertTrue(known.contains(id), "\(id) is not listed in sectionsByGroup and would silently fall back to .actions")
+        }
+    }
+
+    func testNoSectionIdIsListedTwice() {
+        let ids = SettingsSidebarLayout.allSectionIds
+        XCTAssertEqual(Set(ids).count, ids.count)
+    }
+
+    func testShortcutsAndPointerScrollAreGroupedUnderInput() {
+        XCTAssertEqual(SettingsSidebarLayout.group(of: "shortcuts"), .input)
+        XCTAssertEqual(SettingsSidebarLayout.group(of: "pointer-scroll"), .input)
     }
 
     func testSelectionKeepsTheChosenPageWhileItIsVisible() {
