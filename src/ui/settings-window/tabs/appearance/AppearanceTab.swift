@@ -140,7 +140,7 @@ class ShowHideIllustratedView {
     }
 
     func makeView() -> TableGroupSetView {
-        table = TableGroupView(width: CustomizeStyleSheet.width)
+        table = TableGroupView(width: CustomizeStyleSection.illustratedImageWidth)
         for row in showHideRows {
             setStateOnApplications(row: row)
             if row.supportedStyles.contains(style) {
@@ -410,24 +410,24 @@ extension Popover: NSPopoverDelegate {
 }
 
 class AppearanceTab: NSObject {
-    static var customizeStyleButton: NSButton!
-    static var animationsButton: NSButton!
-    static var customizeStyleSheet: CustomizeStyleSheet!
-    static var animationsSheet: AnimationsSheet!
+    static var customizeStyleDisclosure: DisclosureSection!
+    static var animationsDisclosure: DisclosureSection!
+    static var customizeStyleSection: CustomizeStyleSection!
     static var previewSelectedWindowRowInfo: TableGroupView.RowInfo!
 
     static func initTab() -> NSView {
-        customizeStyleButton = NSButton(title: getCustomizeStyleButtonTitle(), target: self, action: #selector(showCustomizeStyleSheet))
-        animationsButton = NSButton(title: NSLocalizedString("Animations…", comment: ""), target: self, action: #selector(showAnimationsSheet))
-        customizeStyleSheet = CustomizeStyleSheet()
-        animationsSheet = AnimationsSheet()
+        customizeStyleSection = CustomizeStyleSection()
+        customizeStyleDisclosure = DisclosureSection(id: "appearance.customizeStyle",
+            title: customizeStyleDisclosureTitle(), content: customizeStyleSection.makeView())
+        animationsDisclosure = DisclosureSection(id: "appearance.animations",
+            title: NSLocalizedString("Animations", comment: ""), content: AnimationsSection.makeView())
         return makeView()
     }
 
     private static func makeView() -> NSStackView {
         let appearanceView = makeAppearanceView()
         let multipleScreensView = makeMultipleScreensView()
-        let view = TableGroupSetView(originalViews: [appearanceView, multipleScreensView, animationsButton], titleTableGroupSpacing: 15, bottomPadding: 0)
+        let view = TableGroupSetView(originalViews: [appearanceView, multipleScreensView, customizeStyleDisclosure, animationsDisclosure], titleTableGroupSpacing: 15, bottomPadding: 0)
         view.translatesAutoresizingMaskIntoConstraints = false
         view.widthAnchor.constraint(equalToConstant: view.fittingSize.width).isActive = true
         return view
@@ -445,7 +445,6 @@ class AppearanceTab: NSObject {
             rightViews: [LabelAndControl.makeSegmentedControl("appearanceTheme", AppearanceThemePreference.allCases, segmentWidth: 100)])
         addAfterKeysReleasedRow(table)
         addPreviewSelectedWindowRow(table)
-        table.addRow(rightViews: customizeStyleButton)
         return table
     }
 
@@ -495,21 +494,18 @@ class AppearanceTab: NSObject {
         return NSLocalizedString("Customize Titles style…", comment: "")
     }
 
+    private static func customizeStyleDisclosureTitle() -> String {
+        getCustomizeStyleButtonTitle().trimmingCharacters(in: CharacterSet(charactersIn: "…"))
+    }
+
     @objc static func toggleCustomizeStyleButton() {
         NSObject.cancelPreviousPerformRequests(withTarget: self, selector: #selector(handleToggleAdvancedButton), object: nil)
         self.perform(#selector(handleToggleAdvancedButton), with: nil, afterDelay: 0.1)
     }
 
     @objc static func handleToggleAdvancedButton() {
-        customizeStyleButton.animator().title = getCustomizeStyleButtonTitle()
-        customizeStyleSheet = CustomizeStyleSheet()
-    }
-
-    @objc static func showCustomizeStyleSheet() {
-        SettingsWindow.shared.beginSheetWithSearchHighlight(customizeStyleSheet)
-    }
-
-    @objc static func showAnimationsSheet() {
-        SettingsWindow.shared.beginSheetWithSearchHighlight(animationsSheet)
+        customizeStyleDisclosure.title = customizeStyleDisclosureTitle()
+        customizeStyleSection = CustomizeStyleSection()
+        customizeStyleDisclosure.setContent(customizeStyleSection.makeView())
     }
 }

@@ -1,7 +1,7 @@
 import Cocoa
 
-class AdditionalControlsSheet: SheetWindow {
-    override func makeContentView() -> NSView {
+enum AdditionalControlsSection {
+    static func makeView() -> NSView {
         let enableArrows = TableGroupView.Row(leftTitle: NSLocalizedString("Select windows using arrow keys", comment: ""),
             rightViews: [LabelAndControl.makeSwitch("arrowKeysEnabled", extraAction: ControlsTab.arrowKeysEnabledCallback)])
         let enableVimKeys = TableGroupView.Row(leftTitle: NSLocalizedString("Select windows using vim keys", comment: ""),
@@ -16,13 +16,12 @@ class AdditionalControlsSheet: SheetWindow {
         ControlsTab.vimKeysCheckbox = enableVimKeys.rightViews[0] as? Switch
         ControlsTab.arrowKeysEnabledCallback(ControlsTab.arrowKeysCheckbox)
         ControlsTab.vimKeysEnabledCallback(ControlsTab.vimKeysCheckbox)
-        let table1 = TableGroupView(title: NSLocalizedString("Additional controls", comment: ""),
-            width: SheetWindow.width)
+        let table1 = TableGroupView(width: SettingsWindow.width)
         _ = table1.addRow(enableArrows)
         _ = table1.addRow(enableVimKeys)
         _ = table1.addRow(enableMouse)
         let table2 = TableGroupView(title: NSLocalizedString("Miscellaneous", comment: ""),
-            width: SheetWindow.width)
+            width: SettingsWindow.width)
         _ = table2.addRow(enableCursorFollowFocus)
         _ = table2.addRow(enableTrackpadHapticFeedback)
         let view = TableGroupSetView(originalViews: [table1, table2], padding: 0)

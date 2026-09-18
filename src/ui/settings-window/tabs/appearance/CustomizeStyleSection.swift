@@ -1,7 +1,7 @@
 import Cocoa
 
-class CustomizeStyleSheet: SheetWindow {
-    static let illustratedImageWidth = width
+class CustomizeStyleSection {
+    static let illustratedImageWidth = SettingsWindow.width
 
     let style = Preferences.appearanceStyle
     var illustratedImageView: IllustratedImageThemeView!
@@ -17,7 +17,7 @@ class CustomizeStyleSheet: SheetWindow {
     var advancedView: TableGroupSetView!
     var control: NSSegmentedControl!
 
-    override func makeContentView() -> NSView {
+    func makeView() -> NSView {
         makeComponents()
         showHideView = showHideIllustratedView.makeView()
         if style == .thumbnails {
@@ -33,18 +33,14 @@ class CustomizeStyleSheet: SheetWindow {
         ], trackingMode: .selectOne, target: self, action: #selector(switchTab(_:)))
         control.selectedSegment = 0
         LabelAndControl.applySystemSelectedSegmentStyle(control)
-        control.widthAnchor.constraint(equalToConstant: CustomizeStyleSheet.width).isActive = true
+        control.widthAnchor.constraint(equalToConstant: CustomizeStyleSection.illustratedImageWidth).isActive = true
         let view = TableGroupSetView(originalViews: [illustratedImageView, control, showHideView, advancedView], padding: 0)
+        switchTab(control)
         return view
     }
 
-    override func setupView() {
-        super.setupView()
-        switchTab(control)
-    }
-
     private func makeComponents() {
-        illustratedImageView = IllustratedImageThemeView(style, CustomizeStyleSheet.illustratedImageWidth)
+        illustratedImageView = IllustratedImageThemeView(style, CustomizeStyleSection.illustratedImageWidth)
         showHideIllustratedView = ShowHideIllustratedView(style, illustratedImageView)
         alignThumbnails = TableGroupView.Row(leftTitle: NSLocalizedString("Align windows", comment: ""),
             rightViews: LabelAndControl.makeRadioButtons(
@@ -75,7 +71,7 @@ class CustomizeStyleSheet: SheetWindow {
     }
 
     private func makeThumbnailsView() -> TableGroupSetView {
-        let table = TableGroupView(width: CustomizeStyleSheet.width)
+        let table = TableGroupView(width: CustomizeStyleSection.illustratedImageWidth)
         showTitlesRowInfo = table.addRow(showTitles, onMouseEntered: { event, view in
             self.showAppsOrWindowsIllustratedImage()
         })
@@ -117,7 +113,7 @@ class CustomizeStyleSheet: SheetWindow {
     }
 
     private func makeAppWindowTableGroupView() -> TableGroupView {
-        let view = TableGroupView(width: CustomizeStyleSheet.width)
+        let view = TableGroupView(width: CustomizeStyleSection.illustratedImageWidth)
         view.addRow(showAppsOrWindows, onMouseEntered: { event, view in
             self.showAppsOrWindowsIllustratedImage()
         })
@@ -169,15 +165,5 @@ class CustomizeStyleSheet: SheetWindow {
                 view!.isHidden = true
             }
         }
-        adjustWindowHeight()
-    }
-
-    private func adjustWindowHeight() {
-        guard let contentView else { return }
-        // Calculate the fitting height of the content view
-        let fittingSize = contentView.fittingSize
-        var windowFrame = frame
-        windowFrame.size.height = fittingSize.height
-        setFrame(windowFrame, display: true, animate: false)
     }
 }

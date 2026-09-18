@@ -170,8 +170,8 @@ class ControlsTab {
     static var arrowKeysCheckbox: Switch!
     static var vimKeysCheckbox: Switch!
 
-    static var shortcutsWhenActiveSheet: ShortcutsWhenActiveSheet!
-    static var additionalControlsSheet: AdditionalControlsSheet!
+    static var shortcutsWhenActiveDisclosure: DisclosureSection!
+    static var additionalControlsDisclosure: DisclosureSection!
 
     private static let shortcutSidebarWidth = CGFloat(200)
     private static let sidebarRowHeight = CGFloat(52)
@@ -288,12 +288,12 @@ class ControlsTab {
         shortcutEditorViews = (0..<Preferences.maxShortcutCount).map { shortcutTab($0) }
         gestureEditorView = gestureTab(Preferences.gestureIndex)
         let shortcutsView = makeShortcutsView()
-        let additionalControlsButton = NSButton(title: NSLocalizedString("Additional controls…", comment: ""), target: self, action: #selector(showAdditionalControlsSettings))
-        let shortcutsButton = NSButton(title: NSLocalizedString("Shortcuts when active…", comment: ""), target: self, action: #selector(showShortcutsSettings))
-        let tools = StackView([additionalControlsButton, shortcutsButton], .horizontal)
-        let view = TableGroupSetView(originalViews: [shortcutsView], toolsViews: [tools], bottomPadding: 0, othersAlignment: .leading, toolsAlignment: .trailing)
-        shortcutsWhenActiveSheet = ShortcutsWhenActiveSheet()
-        additionalControlsSheet = AdditionalControlsSheet()
+        additionalControlsDisclosure = DisclosureSection(id: "controls.additionalControls",
+            title: NSLocalizedString("Additional controls", comment: ""), content: AdditionalControlsSection.makeView())
+        shortcutsWhenActiveDisclosure = DisclosureSection(id: "controls.shortcutsWhenActive",
+            title: NSLocalizedString("Shortcuts When Active", comment: ""), content: ShortcutsWhenActiveSection.makeView())
+        let view = TableGroupSetView(originalViews: [shortcutsView, additionalControlsDisclosure, shortcutsWhenActiveDisclosure],
+            bottomPadding: 0, othersAlignment: .leading)
         refreshShortcutUi()
         (0..<Preferences.shortcutCount).forEach { initializeShortcutRecorderState($0) }
         return view
@@ -743,14 +743,6 @@ class ControlsTab {
                 }
             }
         }
-    }
-
-    @objc static func showShortcutsSettings() {
-        SettingsWindow.shared.beginSheetWithSearchHighlight(shortcutsWhenActiveSheet)
-    }
-
-    @objc static func showAdditionalControlsSettings() {
-        SettingsWindow.shared.beginSheetWithSearchHighlight(additionalControlsSheet)
     }
 
     private static func addShortcut(_ triggerPhase: ShortcutTriggerPhase, _ scope: ShortcutScope, _ shortcut: Shortcut, _ controlId: String, _ index: Int?) {

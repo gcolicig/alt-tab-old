@@ -54,7 +54,6 @@ class SettingsWindow: NSWindow {
     var chosenSectionId: String?
     var sidebarRows = [SettingsSidebarRow]()
     var selectedSectionId: String?
-    private var sheetHighlightTargets = [ObjectIdentifier: [SettingsSearchHighlightTarget]]()
     private var liveResizeOriginX: CGFloat?
     private var sectionSelectionTriggerRatio = SettingsWindow.sectionSelectionTriggerRatioWhenScrollingDown
     private var lastContentScrollY: CGFloat?
@@ -319,52 +318,6 @@ class SettingsWindow: NSWindow {
         }
     }
 
-    static func sheet(forSearchButton button: NSButton) -> SheetWindow? {
-        guard let action = button.action else { return nil }
-        if action == #selector(AppearanceTab.showCustomizeStyleSheet) { return AppearanceTab.customizeStyleSheet }
-        if action == #selector(AppearanceTab.showAnimationsSheet) { return AppearanceTab.animationsSheet }
-        if action == #selector(ControlsTab.showShortcutsSettings) { return ControlsTab.shortcutsWhenActiveSheet }
-        if action == #selector(ControlsTab.showAdditionalControlsSettings) { return ControlsTab.additionalControlsSheet }
-        return nil
-    }
-
-    static func sheetSearchStrings(_ sheet: SheetWindow) -> [String] {
-        guard let contentView = sheet.contentView else { return [] }
-        var values = [String]()
-        collectSearchStrings(contentView, &values)
-        return Array(Set(values))
-    }
-
-    private static func collectSearchStrings(_ root: NSView, _ values: inout [String]) {
-        if let textField = root as? NSTextField {
-            appendTrimmed(textField.stringValue, &values)
-        } else if let popUpButton = root as? NSPopUpButton {
-            appendTrimmed(popUpButton.title, &values)
-            popUpButton.itemTitles.forEach {
-                appendTrimmed($0, &values)
-            }
-        } else if let tableView = root as? TableView {
-            searchStrings(tableView).forEach {
-                appendTrimmed($0, &values)
-            }
-        } else if let button = root as? NSButton {
-            appendTrimmed(button.title, &values)
-        } else if let segmentedControl = root as? NSSegmentedControl {
-            (0..<segmentedControl.segmentCount).forEach {
-                appendTrimmed(segmentedControl.label(forSegment: $0) ?? "", &values)
-            }
-        } else if let infoButton = root as? ClickHoverImageView {
-            searchStrings(infoButton).forEach {
-                appendTrimmed($0, &values)
-            }
-        } else if let textView = root as? NSTextView {
-            appendTrimmed(textView.string, &values)
-        }
-        root.subviews.forEach {
-            collectSearchStrings($0, &values)
-        }
-    }
-
     /// Called every time the window is shown, not only when it is built.
     ///
     /// `setupView` runs once and the window is then reused, so a state that changed while it was closed —
@@ -375,69 +328,6 @@ class SettingsWindow: NSWindow {
     func refreshControlsFromSettings() {
         GeneralTab.refreshControlsFromPreferences()
         PointerScrollTab.refreshControlsFromPreferences()
-    }
-
-    func beginSheetWithSearchHighlight(_ sheet: SheetWindow) {
-        beginSheet(sheet) { [weak self] _ in
-            self?.clearSheetHighlights(sheet)
-        }
-        applySearchToSheet(sheet, searchField.stringValue)
-    }
-
-    private func applySearchToVisibleSheets(_ query: String) {
-        sheets.compactMap { $0 as? SheetWindow }.forEach {
-            applySearchToSheet($0, query)
-        }
-    }
-
-    private func applySearchToSheet(_ sheet: SheetWindow, _ query: String) {
-        let targets = highlightTargets(for: sheet)
-        if SettingsSearch.isQueryEmpty(query) {
-            targets.forEach { $0.clear() }
-            return
-        }
-        targets.forEach { $0.updateHighlight(query) }
-    }
-
-    private func highlightTargets(for sheet: SheetWindow) -> [SettingsSearchHighlightTarget] {
-        let key = ObjectIdentifier(sheet)
-        if let targets = sheetHighlightTargets[key] {
-            return targets
-        }
-        guard let contentView = sheet.contentView else { return [] }
-        var targets = [SettingsSearchHighlightTarget]()
-        collectSheetHighlightTargets(contentView, &targets)
-        sheetHighlightTargets[key] = targets
-        return targets
-    }
-
-    private func collectSheetHighlightTargets(_ root: NSView, _ targets: inout [SettingsSearchHighlightTarget]) {
-        if let textField = root as? NSTextField {
-            if let target = highlightTarget(textField) {
-                targets.append(target)
-            }
-        } else if let popUpButton = root as? NSPopUpButton {
-            if let target = highlightTarget(popUpButton) {
-                targets.append(target)
-            }
-        } else if let segmentedControl = root as? NSSegmentedControl {
-            if let target = highlightTarget(segmentedControl) {
-                targets.append(target)
-            }
-        } else if let infoButton = root as? ClickHoverImageView {
-            if let target = highlightTarget(infoButton) {
-                targets.append(target)
-            }
-        }
-        root.subviews.forEach {
-            collectSheetHighlightTargets($0, &targets)
-        }
-    }
-
-    private func clearSheetHighlights(_ sheet: SheetWindow) {
-        let key = ObjectIdentifier(sheet)
-        guard let targets = sheetHighlightTargets[key] else { return }
-        targets.forEach { $0.clear() }
     }
 
     @objc private func contentViewBoundsDidChange(_ notification: Notification) {
@@ -567,7 +457,6 @@ class SettingsWindow: NSWindow {
             guard isSearching, matchingIds.contains(section.id) else { return section.clearHighlights() }
             section.highlightMatches(query)
         }
-        applySearchToVisibleSheets(query)
         sidebarRows = SettingsSidebarLayout.rows(visibleSections.map(\.id))
         sidebarTableView.reloadData()
         let preferred = isSearching ? selectedSectionId : (chosenSectionId ?? selectedSectionId)

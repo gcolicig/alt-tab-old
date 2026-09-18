@@ -1,6 +1,19 @@
 import Cocoa
 
 extension SettingsWindow {
+    /// A collapsed `DisclosureSection` still has its content in the view tree (just hidden), so search
+    /// finds matches inside it; when it does, walk up from the matched view and expand every enclosing
+    /// disclosure section so the highlighted control becomes visible.
+    static func expandAncestorDisclosureSections(of view: NSView) {
+        var current: NSView? = view
+        while let v = current {
+            if let disclosure = v as? DisclosureSection {
+                disclosure.expand()
+            }
+            current = v.superview
+        }
+    }
+
     func collectSearchContent(_ sectionTitle: NSTextField, _ sectionDescription: NSTextField, _ root: NSView) -> ([String], [SettingsSearchHighlightTarget]) {
         var textValues = [String]()
         var highlightTargets = [SettingsSearchHighlightTarget]()
@@ -102,6 +115,7 @@ extension SettingsWindow {
             }
             textField.attributedStringValue = mutable
             SettingsWindow.applyRoundedHighlights(to: textField, attributedString: mutable, ranges: nsRanges)
+            SettingsWindow.expandAncestorDisclosureSections(of: textField)
             isHighlighted = true
         }, {
             guard isHighlighted else { return }
@@ -129,15 +143,10 @@ extension SettingsWindow {
     }
 
     private func highlightTarget(_ button: NSButton) -> SettingsSearchHighlightTarget? {
-        guard SettingsWindow.sheet(forSearchButton: button) != nil else { return nil }
-        return controlHighlightTarget(button) {
-            var values = [String]()
-            SettingsWindow.appendTrimmed(button.title, &values)
-            if let sheet = SettingsWindow.sheet(forSearchButton: button) {
-                values.append(contentsOf: SettingsWindow.sheetSearchStrings(sheet))
-            }
-            return Array(Set(values))
-        }
+        // Plain buttons only ever needed a highlight target when they opened a sheet; sheets are gone,
+        // so there is nothing button-specific left to highlight (their title is still searchable text
+        // via collectSearchContent).
+        nil
     }
 
     func highlightTarget(_ segmentedControl: NSSegmentedControl) -> SettingsSearchHighlightTarget? {
@@ -158,6 +167,7 @@ extension SettingsWindow {
             return [0..<1]
         }, { _ in
             SettingsWindow.applySegmentedControlHighlight(to: segmentedControl, segmentIndexes: matchingSegmentIndexes)
+            SettingsWindow.expandAncestorDisclosureSections(of: segmentedControl)
         }, {
             SettingsWindow.clearSegmentedControlHighlight(from: segmentedControl)
         })
@@ -177,6 +187,7 @@ extension SettingsWindow {
             }
         }, {
             SettingsWindow.applyControlHighlight(to: control)
+            SettingsWindow.expandAncestorDisclosureSections(of: control)
         }, {
             SettingsWindow.clearControlHighlight(from: control)
         })
