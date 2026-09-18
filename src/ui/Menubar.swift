@@ -383,8 +383,36 @@ class Menubar {
         return true
     }
 
+    /// The AltTab+ glyph: a focused window with a title bar, and a strip of a window behind it on each
+    /// side. It is drawn instead of loaded, so every edge sits on whole points and stays sharp at 1x and 2x;
+    /// the first asset had edges at fractions of a point and looked uneven. The title bar is darker than
+    /// the body on a light menu bar and lighter on a dark one, so it never merges with the bar.
+    private static func focusGlyph(dark: Bool) -> NSImage {
+        let body = NSColor(white: 0x6E / 255.0, alpha: 1)
+        let titleBar = NSColor(white: CGFloat(dark ? 0x9A : 0x45) / 255.0, alpha: 1)
+        let image = NSImage(size: NSSize(width: 22, height: 22), flipped: false) { _ in
+            body.setFill()
+            NSBezierPath(roundedRect: NSRect(x: 0, y: 4, width: 2, height: 14), xRadius: 1, yRadius: 1).fill()
+            NSBezierPath(roundedRect: NSRect(x: 20, y: 4, width: 2, height: 14), xRadius: 1, yRadius: 1).fill()
+            let front = NSBezierPath(roundedRect: NSRect(x: 3, y: 2, width: 16, height: 18), xRadius: 2, yRadius: 2)
+            front.fill()
+            NSGraphicsContext.saveGraphicsState()
+            front.setClip()
+            titleBar.setFill()
+            NSRect(x: 3, y: 17, width: 16, height: 3).fill()
+            NSRect(x: 3, y: 16, width: 16, height: 1).fill(using: .clear)
+            NSGraphicsContext.restoreGraphicsState()
+            return true
+        }
+        image.isTemplate = false
+        return image
+    }
+
     private static func preferredIcon() -> NSImage {
         let index = Preferences.menubarIcon.indexAsString
+        if index == "0" {
+            return focusGlyph(dark: NSApp.effectiveAppearance.getThemeName() == .dark)
+        }
         let image = NSImage(named: "menubar-\(index)")!
         image.isTemplate = index != "2"
         return image
