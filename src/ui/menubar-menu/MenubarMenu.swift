@@ -98,7 +98,7 @@ final class MenubarMenu: NSObject, NSMenuDelegate {
     static func groupTitle(_ group: MenuGroup) -> String {
         switch group {
             case .switcher: return NSLocalizedString("Switcher", comment: "")
-            case .windows: return NSLocalizedString("Windows", comment: "")
+            case .windows, .windowsMore: return NSLocalizedString("Windows", comment: "")
             case .apps: return NSLocalizedString("Apps", comment: "")
             case .tools: return NSLocalizedString("Tools", comment: "")
             case .notifications: return NSLocalizedString("Notifications", comment: "")

@@ -34,9 +34,9 @@ enum SystemActions {
 
     private static let windowActions: [SystemActionSpec] = [
         make(.isolateWindow, NSLocalizedString("Isolate Window", comment: ""), "macwindow", .windows, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.isolateWindow) },
-        make(.minimizeAppOthers, NSLocalizedString("Minimize App Windows Except Frontmost", comment: ""), "macwindow.stack", .windows, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.minimizeAppOthers) },
-        make(.hideOtherApps, NSLocalizedString("Hide Other Apps", comment: ""), "eye.slash", .windows, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.hideOtherApps) },
-        make(.hideAll, NSLocalizedString("Hide All Windows", comment: ""), "eye.slash.circle", .windows, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.hideAll) },
+        make(.minimizeAppOthers, NSLocalizedString("Minimize App Windows Except Frontmost", comment: ""), "macwindow.stack", .windowsMore, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.minimizeAppOthers) },
+        make(.hideOtherApps, NSLocalizedString("Hide Other Apps", comment: ""), "eye.slash", .windowsMore, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.hideOtherApps) },
+        make(.hideAll, NSLocalizedString("Hide All Windows", comment: ""), "eye.slash.circle", .windowsMore, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.hideAll) },
         make(.focusThreeWindows, NSLocalizedString("Focus on 3 Foremost Windows", comment: ""), "rectangle.split.3x1", .windows, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.focusThreeWindows) },
     ]
 

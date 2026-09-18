@@ -68,6 +68,12 @@ class MenuLayoutTests: XCTestCase {
         XCTAssertEqual(MenuGroup.allCases.suffix(2), [.settings, .app])
     }
 
+    func testTheRarerWindowActionsOpenFirstInOther() {
+        XCTAssertTrue(MenuGroup.windowsMore.isInOther)
+        XCTAssertTrue(MenuGroup.windowsMore.hasHeader)
+        XCTAssertEqual(MenuGroup.allCases.filter(\.isInOther).first, .windowsMore)
+    }
+
     func testRetiredVisibilityPreferencesAreRecognised() {
         XCTAssertTrue(MenuLayout.isRetiredPreference("menuGroupVisible.tools"))
         XCTAssertTrue(MenuLayout.isRetiredPreference("menuEntryVisible.system.clearClipboard"))

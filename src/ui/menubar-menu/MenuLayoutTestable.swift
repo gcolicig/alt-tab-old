@@ -5,6 +5,9 @@ import Foundation
 enum MenuGroup: String, CaseIterable {
     case switcher
     case windows
+    /// The window actions used less often (decided 2026-09-18): the main menu keeps Isolate Window and
+    /// Focus on 3 Foremost Windows, the rest opens the `Other…` submenu under the same heading.
+    case windowsMore
     case apps
     case tools
     case notifications
