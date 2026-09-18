@@ -32,4 +32,36 @@ class WindowFocusTests: XCTestCase {
         let windows: [FocusWindowInfo] = [window(20, pid: 1, spaces: [], allSpaces: true)]
         XCTAssertEqual(WindowFocusPlan.windowsToMinimize(windows, targetPid: 1, keeping: nil, visibleSpaces: [1]), [20])
     }
+
+    private func layouts(_ candidates: [(CGWindowID, CGFloat)]) -> [String] {
+        FocusThreePlan.assign(candidates.map { FocusThreeCandidate(id: $0.0, midX: $0.1) }).map { "\($0.id):\($0.layout.rawValue)" }
+    }
+
+    func testThreeWindowsCentreTheFrontmostAndKeepTheBackWindowsOnTheirSides() {
+        // window 2 sits right of window 3, so it keeps the right side
+        XCTAssertEqual(layouts([(1, 500), (2, 900), (3, 100)]), ["3:leftFocus", "2:rightFocus", "1:centerFocus"])
+        XCTAssertEqual(layouts([(1, 500), (2, 100), (3, 900)]), ["2:leftFocus", "3:rightFocus", "1:centerFocus"])
+    }
+
+    func testATieKeepsTheZOrder() {
+        XCTAssertEqual(layouts([(1, 500), (2, 300), (3, 300)]), ["2:leftFocus", "3:rightFocus", "1:centerFocus"])
+    }
+
+    func testTheCentreWindowIsSetLast() {
+        XCTAssertEqual(FocusThreePlan.assign([FocusThreeCandidate(id: 1, midX: 0), FocusThreeCandidate(id: 2, midX: 1)]).last?.layout, .centerFocus)
+    }
+
+    func testTwoWindowsKeepTheSideOfTheBackWindow() {
+        XCTAssertEqual(layouts([(1, 500), (2, 100)]), ["2:leftFocus", "1:centerFocus"])
+        XCTAssertEqual(layouts([(1, 500), (2, 900)]), ["2:rightFocus", "1:centerFocus"])
+    }
+
+    func testOnlyTheThreeForemostWindowsAreArranged() {
+        XCTAssertEqual(layouts([(1, 500), (2, 100), (3, 900), (4, 50)]), ["2:leftFocus", "3:rightFocus", "1:centerFocus"])
+    }
+
+    func testOneWindowIsNotAnArrangement() {
+        XCTAssertEqual(layouts([(1, 500)]), [])
+        XCTAssertEqual(layouts([]), [])
+    }
 }

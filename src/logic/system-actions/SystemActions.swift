@@ -37,6 +37,7 @@ enum SystemActions {
         make(.minimizeAppOthers, NSLocalizedString("Minimize App Windows Except Frontmost", comment: ""), "macwindow.stack", .windows, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.minimizeAppOthers) },
         make(.hideOtherApps, NSLocalizedString("Hide Other Apps", comment: ""), "eye.slash", .windows, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.hideOtherApps) },
         make(.hideAll, NSLocalizedString("Hide All Windows", comment: ""), "eye.slash.circle", .windows, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.hideAll) },
+        make(.focusThreeWindows, NSLocalizedString("Focus on 3 Foremost Windows", comment: ""), "rectangle.split.3x1", .windows, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.focusThreeWindows) },
     ]
 
     private static let appActions: [SystemActionSpec] = [

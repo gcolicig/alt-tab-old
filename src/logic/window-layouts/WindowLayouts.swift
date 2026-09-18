@@ -29,6 +29,35 @@ class WindowLayouts {
         }
     }
 
+    /// Several windows, each with its own layout, all on the display of the last one. The caller orders
+    /// them so that the frontmost window comes last: it moves last and stays on top. One window that
+    /// refuses a frame does not stop the others.
+    static func arrange(_ assignments: [(window: AXUIElement, pid: pid_t, layout: WindowLayoutAction)]) {
+        guard !App.appIsBeingUsed, !Preferences.inputModulesSafeMode, let anchor = assignments.last else { return }
+        let screenFrames = quartzVisibleFrames()
+        operationQueue.addOperation {
+            guard let attributes = try? eligibleAttributes(anchor.window),
+                  let screenFrame = bestScreenFrame(for: CGRect(origin: attributes.position!, size: attributes.size!), screenFrames) else {
+                Logger.error { "Window arrangement failed: the frontmost window of pid \(anchor.pid) is not eligible" }
+                return
+            }
+            assignments.forEach { place($0, in: screenFrame) }
+        }
+    }
+
+    private static func place(_ assignment: (window: AXUIElement, pid: pid_t, layout: WindowLayoutAction), in screenFrame: CGRect) {
+        do {
+            let attributes = try eligibleAttributes(assignment.window)
+            guard let targetFrame = WindowLayoutGeometry.frame(assignment.layout, in: screenFrame) else { return }
+            if restoreFrames[assignment.window] == nil {
+                restoreFrames[assignment.window] = CGRect(origin: attributes.position!, size: attributes.size!)
+            }
+            try setAndVerify(targetFrame, on: assignment.window, pid: assignment.pid, action: assignment.layout)
+        } catch {
+            Logger.error { "Window layout \(assignment.layout.rawValue) failed for pid \(assignment.pid): \(error)" }
+        }
+    }
+
     private static func apply(_ action: DisplayMoveAction, to pid: pid_t, screenFrames: [CGRect]) {
         do {
             let window = try focusedWindow(pid)
@@ -90,6 +119,7 @@ class WindowLayouts {
     }
 
     private static func setAndVerify(_ frame: CGRect, on window: AXUIElement, pid: pid_t, action: WindowLayoutAction) throws {
+        Logger.debug { "Window layout \(action.rawValue) pid:\(pid) enhancedUserInterface:\(enhancedUserInterface(pid).map(String.init) ?? "unreadable")" }
         try window.setFrame(frame)
         let result = try window.attributes([kAXPositionAttribute, kAXSizeAttribute])
         guard let position = result.position, let size = result.size else { throw AxError.runtimeError }
@@ -103,6 +133,14 @@ class WindowLayouts {
         } else {
             Logger.warning { "Window layout \(action.rawValue) pid:\(pid) proposed:\(frame) result:\(actual)" }
         }
+    }
+
+    /// Apps with `AXEnhancedUserInterface` on animate every frame change, and a second set during the
+    /// animation is dropped. Read for diagnosis of layouts that need several attempts.
+    private static func enhancedUserInterface(_ pid: pid_t) -> Bool? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(AXUIElementCreateApplication(pid), "AXEnhancedUserInterface" as CFString, &value) == .success else { return nil }
+        return value as? Bool
     }
 
     private static func bestScreenFrame(for windowFrame: CGRect, _ screenFrames: [CGRect]) -> CGRect? {

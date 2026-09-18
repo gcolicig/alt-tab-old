@@ -37,3 +37,35 @@ enum WindowFocusPlan {
         return window.isOnAllSpaces || window.spaceIds.contains { visibleSpaces.contains($0) }
     }
 }
+
+/// One of the foremost windows, as the arrangement needs it: its position in the z-order is its index in
+/// the list, so only the id and the horizontal centre are carried.
+struct FocusThreeCandidate: Equatable {
+    let id: CGWindowID
+    let midX: CGFloat
+}
+
+/// "Focus on 3 Foremost Windows". The frontmost window is centred; the geometry leaves a thin edge on
+/// each side of it, and the two windows behind fill those edges. A back window keeps the side it is on,
+/// so the arrangement does not swap windows the user already placed.
+enum FocusThreePlan {
+    /// `candidates` are ordered frontmost first. Returns nothing for fewer than two windows: a single
+    /// window is not an arrangement.
+    static func assign(_ candidates: [FocusThreeCandidate]) -> [(id: CGWindowID, layout: WindowLayoutAction)] {
+        guard candidates.count >= 2 else { return [] }
+        let front = candidates[0]
+        let back = Array(candidates[1..<min(3, candidates.count)])
+        var result: [(id: CGWindowID, layout: WindowLayoutAction)] = []
+        if back.count == 1 {
+            result.append((back[0].id, back[0].midX < front.midX ? .leftFocus : .rightFocus))
+        } else {
+            // a tie keeps the z-order: the window nearer the front goes left
+            let leftFirst = back[1].midX < back[0].midX ? [back[1], back[0]] : [back[0], back[1]]
+            result.append((leftFirst[0].id, .leftFocus))
+            result.append((leftFirst[1].id, .rightFocus))
+        }
+        // the centre window is set last, so it is the last one to move and stays on top
+        result.append((front.id, .centerFocus))
+        return result
+    }
+}

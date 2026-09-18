@@ -7,6 +7,7 @@ enum SystemAction: String, CaseIterable {
     case minimizeAppOthers = "windowFocus.minimizeAppOthers"
     case hideOtherApps = "windowFocus.hideOthers"
     case hideAll = "windowFocus.hideAll"
+    case focusThreeWindows = "windowFocus.focusThree"
     case quitAllApps = "apps.quitAll"
     case quitAllAppsExceptFrontmost = "apps.quitAllExceptFrontmost"
     case autoQuitToggle = "apps.autoQuit.toggle"
