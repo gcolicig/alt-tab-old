@@ -69,7 +69,7 @@ class WindowLayouts {
                   let targetIndex = DisplayMoveGeometry.targetScreenIndex(action, currentIndex: currentIndex, screenCount: ordered.count),
                   let targetFrame = DisplayMoveGeometry.frame(currentFrame, from: sourceFrame, to: ordered[targetIndex]) else { return }
             // a display move is not a layout, so it does not become the frame that Restore returns to
-            try window.setFrame(targetFrame)
+            _ = try setWithoutAnimation(targetFrame, on: window, pid: pid)
             Logger.debug { "Display move \(action.rawValue) pid:\(pid) proposed:\(targetFrame)" }
         } catch {
             Logger.error { "Display move \(action.rawValue) failed for pid \(pid): \(error)" }
@@ -119,27 +119,51 @@ class WindowLayouts {
     }
 
     private static func setAndVerify(_ frame: CGRect, on window: AXUIElement, pid: pid_t, action: WindowLayoutAction) throws {
-        Logger.debug { "Window layout \(action.rawValue) pid:\(pid) enhancedUserInterface:\(enhancedUserInterface(pid).map(String.init) ?? "unreadable")" }
-        try window.setFrame(frame)
-        let result = try window.attributes([kAXPositionAttribute, kAXSizeAttribute])
-        guard let position = result.position, let size = result.size else { throw AxError.runtimeError }
-        let actual = CGRect(origin: position, size: size)
-        let matches = abs(actual.minX - frame.minX) <= frameTolerance &&
-            abs(actual.minY - frame.minY) <= frameTolerance &&
-            abs(actual.width - frame.width) <= frameTolerance &&
-            abs(actual.height - frame.height) <= frameTolerance
-        if matches {
+        var actual = try setWithoutAnimation(frame, on: window, pid: pid)
+        if !matches(actual, frame) {
+            // one more pass: a window constrained by its old position accepts the size once it has moved
+            actual = try setWithoutAnimation(frame, on: window, pid: pid)
+        }
+        if matches(actual, frame) {
             Logger.debug { "Window layout \(action.rawValue) pid:\(pid) proposed:\(frame) result:\(actual)" }
         } else {
             Logger.warning { "Window layout \(action.rawValue) pid:\(pid) proposed:\(frame) result:\(actual)" }
         }
     }
 
-    /// Apps with `AXEnhancedUserInterface` on animate every frame change, and a second set during the
-    /// animation is dropped. Read for diagnosis of layouts that need several attempts.
+    /// Apps with `AXEnhancedUserInterface` on animate every frame change, and a set that arrives during
+    /// the animation is dropped. Measured 2026-09-18: all three apps in a test had it on, and Center focus
+    /// needed three attempts to land. The attribute is switched off for the change and restored after it.
+    private static func setWithoutAnimation(_ frame: CGRect, on window: AXUIElement, pid: pid_t) throws -> CGRect {
+        let application = AXUIElementCreateApplication(pid)
+        let wasEnhanced = enhancedUserInterface(pid) == true
+        if wasEnhanced {
+            AXUIElementSetAttributeValue(application, enhancedUserInterfaceAttribute, kCFBooleanFalse)
+        }
+        defer {
+            if wasEnhanced {
+                AXUIElementSetAttributeValue(application, enhancedUserInterfaceAttribute, kCFBooleanTrue)
+            }
+        }
+        try window.setFrame(frame)
+        let result = try window.attributes([kAXPositionAttribute, kAXSizeAttribute])
+        guard let position = result.position, let size = result.size else { throw AxError.runtimeError }
+        Logger.debug { "Window frame pid:\(pid) enhancedUserInterface:\(wasEnhanced) proposed:\(frame) result:\(CGRect(origin: position, size: size))" }
+        return CGRect(origin: position, size: size)
+    }
+
+    private static func matches(_ actual: CGRect, _ frame: CGRect) -> Bool {
+        abs(actual.minX - frame.minX) <= frameTolerance &&
+            abs(actual.minY - frame.minY) <= frameTolerance &&
+            abs(actual.width - frame.width) <= frameTolerance &&
+            abs(actual.height - frame.height) <= frameTolerance
+    }
+
+    private static let enhancedUserInterfaceAttribute = "AXEnhancedUserInterface" as CFString
+
     private static func enhancedUserInterface(_ pid: pid_t) -> Bool? {
         var value: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(AXUIElementCreateApplication(pid), "AXEnhancedUserInterface" as CFString, &value) == .success else { return nil }
+        guard AXUIElementCopyAttributeValue(AXUIElementCreateApplication(pid), enhancedUserInterfaceAttribute, &value) == .success else { return nil }
         return value as? Bool
     }
 
