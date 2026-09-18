@@ -387,7 +387,7 @@ class Menubar {
     /// side. It is drawn instead of loaded, so every edge sits on whole points and stays sharp at 1x and 2x;
     /// the first asset had edges at fractions of a point and looked uneven. The title bar is darker than
     /// the body on a light menu bar and lighter on a dark one, so it never merges with the bar.
-    private static func focusGlyph(dark: Bool) -> NSImage {
+    static func focusGlyph(dark: Bool) -> NSImage {
         let body = NSColor(white: 0x6E / 255.0, alpha: 1)
         let titleBar = NSColor(white: CGFloat(dark ? 0x9A : 0x45) / 255.0, alpha: 1)
         let image = NSImage(size: NSSize(width: 22, height: 22), flipped: false) { _ in
@@ -413,8 +413,9 @@ class Menubar {
         if index == "0" {
             return focusGlyph(dark: NSApp.effectiveAppearance.getThemeName() == .dark)
         }
+        // the remaining asset is the monochrome glyph, which macOS tints for the menu bar
         let image = NSImage(named: "menubar-\(index)")!
-        image.isTemplate = index != "2"
+        image.isTemplate = true
         return image
     }
 

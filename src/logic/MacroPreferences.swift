@@ -1,14 +1,12 @@
 enum MenubarIconPreference: CaseIterable, MacroPreference {
     case outlined
     case filled
-    case colored
 
     var localizedString: LocalizedString {
         switch self {
             // these spaces are different from each other; they have to be unique
             case .outlined: return " "
             case .filled: return " "
-            case .colored: return " "
         }
     }
 }

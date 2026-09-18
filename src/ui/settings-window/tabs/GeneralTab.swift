@@ -19,9 +19,10 @@ class GeneralTab {
             ])
         let language = TableGroupView.Row(leftTitle: NSLocalizedString("Language", comment: ""),
             rightViews: [LabelAndControl.makeDropdown("language", LanguagePreference.allCases, extraAction: setLanguageCallback)])
+        // 0 is the two-tone glyph the status item draws, 1 the same glyph as a template
         for i in 0..<MenubarIconPreference.allCases.count {
-            let image = NSImage.initCopy("menubar-\(i)")
-            image.isTemplate = i < 2
+            let image = i == 0 ? Menubar.focusGlyph(dark: NSApp.effectiveAppearance.getThemeName() == .dark) : NSImage.initCopy("menubar-\(i)")
+            image.isTemplate = i == 1
             menubarIconDropdown!.item(at: i)!.image = image
         }
         let cell = menubarIconDropdown!.cell! as! NSPopUpButtonCell
