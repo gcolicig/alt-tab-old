@@ -37,7 +37,10 @@ class LeaderTab {
         hint.isHidden = false
         hint.preferredMaxLayoutWidth = SettingsWindow.contentWidth - 2 * TableGroupView.padding
 
-        return TableGroupSetView(originalViews: [top, hint, warning], padding: 0, bottomPadding: 0)
+        // One vertical stack, so TableGroupSetView does not put the hint and the warning side by side.
+        let notes = StackView([hint, warning], .vertical)
+        notes.alignment = .leading
+        return TableGroupSetView(originalViews: [top, notes], padding: 0, bottomPadding: 0)
     }
 
     private static func makeSlotRow(_ slot: Int) -> TableGroupView.Row {
