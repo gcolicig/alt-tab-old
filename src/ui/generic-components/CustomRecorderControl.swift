@@ -82,6 +82,12 @@ class CustomRecorderControl: RecorderControl {
     /// centers — right-aligning text inside a frame that already equals the text's width would look
     /// identical to centered. While recording, the pod's own centered drawing is kept: it doubles as
     /// the recording indicator and is the only state that actually draws the cancel/clear buttons.
+    /// The pod invalidates only `labelDrawingGuide`'s frame on a value change, but `drawLabel` draws at the
+    /// right edge of `alignmentGuide`, outside that frame, so the whole control is redrawn instead.
+    override var objectValue: Shortcut? {
+        didSet { needsDisplay = true }
+    }
+
     override func drawLabel(_ aDirtyRect: NSRect) {
         guard !isRecording else {
             super.drawLabel(aDirtyRect)
