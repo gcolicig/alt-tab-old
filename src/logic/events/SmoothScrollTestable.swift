@@ -1,17 +1,21 @@
 import Cocoa
 
-/// How long a single wheel notch takes to settle into place. Initial values (unverified; tune by feel
-/// during manual testing): short favors responsiveness, long favors a cinematic glide.
+/// How long a single wheel notch takes to settle into place. The first test found 0.12 s and 0.22 s too
+/// sluggish, so the scale now starts much shorter and has finer steps at the responsive end.
 enum SmoothScrollDuration: String, CaseIterable {
+    case veryShort
     case short
     case medium
     case long
+    case veryLong
 
     var seconds: Double {
         switch self {
-            case .short: return 0.12
-            case .medium: return 0.22
-            case .long: return 0.35
+            case .veryShort: return 0.04
+            case .short: return 0.07
+            case .medium: return 0.11
+            case .long: return 0.17
+            case .veryLong: return 0.26
         }
     }
 }

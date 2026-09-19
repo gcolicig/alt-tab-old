@@ -72,8 +72,9 @@ final class SmoothScrollTests: XCTestCase {
     }
 
     func testDurationsAreOrderedShortestToLongest() {
-        XCTAssertLessThan(SmoothScrollDuration.short.seconds, SmoothScrollDuration.medium.seconds)
-        XCTAssertLessThan(SmoothScrollDuration.medium.seconds, SmoothScrollDuration.long.seconds)
+        let seconds = SmoothScrollDuration.allCases.map(\.seconds)
+        XCTAssertEqual(seconds, seconds.sorted())
+        XCTAssertEqual(Set(seconds).count, seconds.count)
     }
 
     func testAnyModifiesIncludesSmoothMouseScrolling() {
