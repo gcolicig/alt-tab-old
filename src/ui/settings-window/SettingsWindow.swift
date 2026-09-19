@@ -94,7 +94,11 @@ class SettingsWindow: NSWindow {
         setupSplitView()
         setupSidebar()
         setupContentPane()
+        // shortcut recorders built below run their normal change callback for UI sync; this flag
+        // keeps them from re-registering shortcuts that are already registered at launch
+        ControlsTab.isBuildingUI = true
         let definitions = sectionDefinitions()
+        ControlsTab.isBuildingUI = false
         assert(definitions.allSatisfy { SettingsSidebarLayout.allSectionIds.contains($0.id) },
                "a section id is missing from SettingsSidebarLayout.allSectionIds and would silently fall back to .actions")
         SettingsSidebarLayout.order(definitions.map(\.id)).compactMap { id in definitions.first { $0.id == id } }.forEach { addSection($0) }

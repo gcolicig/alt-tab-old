@@ -113,6 +113,10 @@ private class ShortcutSidebarRow: ClickHoverStackView {
 }
 
 class ControlsTab {
+    /// Set while settings pages are being built so shortcut recorders can run their normal change
+    /// callback (for UI sync) without re-registering global shortcuts that are already registered
+    /// at launch by `initializePreferencesDependentState()`.
+    static var isBuildingUI = false
     static var shortcuts = [String: ATShortcut]()
     static var shortcutControls = [String: (CustomRecorderControl, String)]()
     static var shortcutsActions: [String: () -> Void] = {
@@ -761,7 +765,9 @@ class ControlsTab {
         let atShortcut = ATShortcut(shortcut, controlId, scope, triggerPhase, index)
         removeShortcutIfExists(controlId)
         shortcuts[controlId] = atShortcut
-        if scope == .global {
+        // building settings pages just re-applies preferences that were already registered at
+        // launch; skip the actual (CGS) registration work, keep the in-memory model in sync
+        if scope == .global && !isBuildingUI {
             KeyboardEvents.addGlobalShortcut(controlId, atShortcut.shortcut)
             ControlsTab.toggleNativeCommandTabIfNeeded()
             NativeSystemShortcuts.apply()
@@ -909,11 +915,11 @@ class ControlsTab {
 
     private static func removeShortcutIfExists(_ controlId: String) {
         if let atShortcut = shortcuts[controlId] {
-            if atShortcut.scope == .global {
+            if atShortcut.scope == .global && !isBuildingUI {
                 KeyboardEvents.removeGlobalShortcut(controlId, atShortcut.shortcut)
             }
             shortcuts.removeValue(forKey: controlId)
-            if atShortcut.scope == .global {
+            if atShortcut.scope == .global && !isBuildingUI {
                 ControlsTab.toggleNativeCommandTabIfNeeded()
                 NativeSystemShortcuts.apply()
             }
