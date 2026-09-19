@@ -57,12 +57,18 @@ class SystemActionsTab {
             width: SettingsWindow.contentWidth)
         catMode.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("End automatically after", comment: ""), rightViews: [SettingsControls.valuePopup("catModeMinutes", catModeOptions)]))
         let microphone = TableGroupView(title: NSLocalizedString("Microphone", comment: ""), width: SettingsWindow.contentWidth)
+        let micMuteIndicatorFullText = NSLocalizedString("The icons appear at the right end of the AltTab+ menu bar item, after the Spaces. macOS has no indicator for a muted microphone. Click an icon to unmute.", comment: "")
         microphone.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Show an icon in the menu bar while the microphone or the sound is muted", comment: ""),
-            subTitle: NSLocalizedString("The icons appear at the right end of the AltTab+ menu bar item, after the Spaces. macOS has no indicator for a muted microphone. Click an icon to unmute.", comment: ""),
-            rightViews: [LabelAndControl.makeSwitch("micMuteIndicator")]))
+            subTitle: NSLocalizedString("Click the icon to unmute.", comment: ""),
+            rightViews: [LabelAndControl.makeInfoButton(searchableTooltipTexts: [micMuteIndicatorFullText], onMouseEntered: { event, view in
+                Popover.shared.show(event: event, positioningView: view, message: micMuteIndicatorFullText)
+            }, onMouseExited: { _, _ in Popover.shared.hide() }), LabelAndControl.makeSwitch("micMuteIndicator")]))
+        let micKeyFullText = NSLocalizedString("The microphone key in the F5 position toggles the mute instead of starting Dictation. After AltTab+ quits, the key starts Dictation again.", comment: "")
         microphone.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Microphone key mutes the microphone", comment: ""),
-            subTitle: NSLocalizedString("The microphone key in the F5 position toggles the mute instead of starting Dictation. After AltTab+ quits, the key starts Dictation again.", comment: ""),
-            rightViews: [LabelAndControl.makeSwitch("micKeyMutesMicrophone", extraAction: { _ in MicKey.settingChanged() })]))
+            subTitle: NSLocalizedString("Overrides Dictation while AltTab+ runs.", comment: ""),
+            rightViews: [LabelAndControl.makeInfoButton(searchableTooltipTexts: [micKeyFullText], onMouseEntered: { event, view in
+                Popover.shared.show(event: event, positioningView: view, message: micKeyFullText)
+            }, onMouseExited: { _, _ in Popover.shared.hide() }), LabelAndControl.makeSwitch("micKeyMutesMicrophone", extraAction: { _ in MicKey.settingChanged() })]))
         let keys = TableGroupView(title: NSLocalizedString("Function Keys", comment: ""), width: SettingsWindow.contentWidth)
         let restore = NSButton(title: NSLocalizedString("Restore original mode", comment: ""), target: nil, action: nil)
         restore.onAction = { _ in FunctionKeys.releaseOwnership() }

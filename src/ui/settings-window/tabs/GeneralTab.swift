@@ -34,7 +34,8 @@ class GeneralTab {
         cell.imagePosition = .imageOverlaps
         enableDraggingOffMenubarIcon(menuIconShownToggle)
         captureWindowsInBackgroundNote = LabelAndControl.makeDependencyNote(
-            NSLocalizedString("Available when window thumbnails are shown, either as the Thumbnails style or as the preview of the selected window in Windows mode.", comment: ""))
+            NSLocalizedString("Available when thumbnails are shown.", comment: ""))
+        let captureWindowsInBackgroundFullText = NSLocalizedString("Keeps thumbnail and full-size previews current while the switcher is hidden. Turning this off avoids the screen-recording indicator and possible DRM interruptions; required previews refresh when the switcher opens. Available when window thumbnails are shown, either as the Thumbnails style or as the preview of the selected window in Windows mode.", comment: "")
         let table = TableGroupView(width: SettingsWindow.contentWidth)
         table.addRow(startAtLogin)
         table.addRow(leftViews: [TableGroupView.makeText(NSLocalizedString("Menubar icon", comment: ""))],
@@ -42,9 +43,11 @@ class GeneralTab {
             secondaryViews: [menubarIconNote!])
         captureWindowsInBackgroundRowInfo = table.addRow(
             leftViews: [TableGroupView.makeText(NSLocalizedString("Keep window previews up to date in the background", comment: ""))],
-            rightViews: [LabelAndControl.makeSwitch("captureWindowsInBackground")],
+            rightViews: [LabelAndControl.makeInfoButton(searchableTooltipTexts: [captureWindowsInBackgroundFullText], onMouseEntered: { event, view in
+                Popover.shared.show(event: event, positioningView: view, message: captureWindowsInBackgroundFullText)
+            }, onMouseExited: { _, _ in Popover.shared.hide() }), LabelAndControl.makeSwitch("captureWindowsInBackground")],
             secondaryViews: [
-                makeSubtitleLabel(NSLocalizedString("Keeps thumbnail and full-size previews current while the switcher is hidden. Turning this off avoids the screen-recording indicator and possible DRM interruptions; required previews refresh when the switcher opens.", comment: "")),
+                makeSubtitleLabel(NSLocalizedString("Keeps previews current while the switcher is hidden.", comment: "")),
                 captureWindowsInBackgroundNote!,
             ], secondaryViewsOrientation: .vertical)
         updateCaptureWindowsInBackgroundState()

@@ -275,7 +275,7 @@
 "Auto-Quit Apps" = "Auto-Quit Apps";
 
 /* No comment provided by engineer. */
-"Available when window thumbnails are shown, either as the Thumbnails style or as the preview of the selected window in Windows mode." = "Available when window thumbnails are shown, either as the Thumbnails style or as the preview of the selected window in Windows mode.";
+"Available when thumbnails are shown." = "Available when thumbnails are shown.";
 
 /* No comment provided by engineer. */
 "Bind to current space" = "Bind to current space";
@@ -351,6 +351,9 @@
 
 /* No comment provided by engineer. */
 "Cleared %d notification(s)." = "Cleared %d notification(s).";
+
+/* No comment provided by engineer. */
+"Click the icon to unmute." = "Click the icon to unmute.";
 
 /* No comment provided by engineer. */
 "Clipboard cleared." = "Clipboard cleared.";
@@ -731,7 +734,10 @@
 "Keep window previews up to date in the background" = "Keep window previews up to date in the background";
 
 /* No comment provided by engineer. */
-"Keeps thumbnail and full-size previews current while the switcher is hidden. Turning this off avoids the screen-recording indicator and possible DRM interruptions; required previews refresh when the switcher opens." = "Keeps thumbnail and full-size previews current while the switcher is hidden. Turning this off avoids the screen-recording indicator and possible DRM interruptions; required previews refresh when the switcher opens.";
+"Keeps previews current while the switcher is hidden." = "Keeps previews current while the switcher is hidden.";
+
+/* No comment provided by engineer. */
+"Keeps thumbnail and full-size previews current while the switcher is hidden. Turning this off avoids the screen-recording indicator and possible DRM interruptions; required previews refresh when the switcher opens. Available when window thumbnails are shown, either as the Thumbnails style or as the preview of the selected window in Windows mode." = "Keeps thumbnail and full-size previews current while the switcher is hidden. Turning this off avoids the screen-recording indicator and possible DRM interruptions; required previews refresh when the switcher opens. Available when window thumbnails are shown, either as the Thumbnails style or as the preview of the selected window in Windows mode.";
 
 /* No comment provided by engineer. */
 "keys" = "keys";
@@ -1044,6 +1050,9 @@
 
 /* No comment provided by engineer. */
 "Other…" = "Other…";
+
+/* No comment provided by engineer. */
+"Overrides Dictation while AltTab+ runs." = "Overrides Dictation while AltTab+ runs.";
 
 /* No comment provided by engineer. */
 "Ownership" = "Ownership";
