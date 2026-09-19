@@ -30,6 +30,13 @@ enum SettingsSidebarLayout {
         (.actions, ["system-actions", "keep-awake", "apps-urls"]),
     ]
 
+    /// A 1-character query still filters pages (`SettingsSearch.match` keeps matching from length 1),
+    /// but highlighting every occurrence of a single letter across a page is just noise. Highlighting
+    /// only kicks in once the trimmed query reaches 2 characters.
+    static func shouldHighlightMatches(_ query: String) -> Bool {
+        query.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2
+    }
+
     /// Every section id registered in `SettingsWindow.sectionDefinitions()`. Kept in sync with that
     /// function so a missing entry here is caught by an assertion instead of silently falling back to
     /// `.actions`.

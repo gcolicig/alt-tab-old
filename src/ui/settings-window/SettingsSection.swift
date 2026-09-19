@@ -194,6 +194,7 @@ final class SettingsSection {
     }
 
     func highlightMatches(_ query: String) {
+        guard SettingsSidebarLayout.shouldHighlightMatches(query) else { return clearHighlights() }
         highlightTargets.forEach { $0.updateHighlight(query) }
     }
 
