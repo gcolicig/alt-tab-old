@@ -367,7 +367,10 @@ class SettingsWindow: NSWindow {
             if showsResetButton {
                 resetButton.target = self
                 resetButton.action = #selector(resetSectionToDefaults(_:))
-                resetButton.tag = sections.count
+                // Identifies the section by id rather than a positional index: this closure also runs
+                // from `reindexSearchContent()` long after `addSection` finishes, by which point
+                // `sections.count` is the total section count, not this section's index.
+                resetButton.identifier = NSUserInterfaceItemIdentifier(definition.id)
             }
         }
         let rebuildContent: ([String]) -> Void = { [weak self] changedKeys in
@@ -439,8 +442,7 @@ class SettingsWindow: NSWindow {
     }
 
     @objc private func resetSectionToDefaults(_ sender: NSButton) {
-        guard sections.indices.contains(sender.tag) else { return }
-        let section = sections[sender.tag]
+        guard let id = sender.identifier?.rawValue, let section = sections.first(where: { $0.id == id }) else { return }
         let alert = NSAlert()
         alert.messageText = String(format: NSLocalizedString("Reset %@ to defaults?", comment: ""), section.title)
         alert.informativeText = NSLocalizedString("This page's settings return to their default values.", comment: "")

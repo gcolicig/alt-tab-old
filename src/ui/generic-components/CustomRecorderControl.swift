@@ -18,6 +18,11 @@ class CustomRecorderControl: RecorderControl {
     /// the pod itself only draws a background bezel, no plain hover state.
     private var isHoveredControl = false
     private var hoverTrackingArea: NSTrackingArea?
+    /// Notified whenever this control's `objectValue` changes through a programmatic path (e.g.
+    /// `updateShortcut`, used when accepting a conflict clears another recorder) rather than through
+    /// `onAction`. Lets callers like the "Restore default" button keep their own UI (e.g. its visibility)
+    /// in sync even when the change did not originate from this control's own recording gesture.
+    var onProgrammaticChange: (() -> Void)?
 
     convenience init(_ shortcutString: String, _ clearable: Bool, _ id: String) {
         self.init(Shortcut(keyEquivalent: shortcutString), clearable, id)
@@ -145,6 +150,9 @@ class CustomRecorderControl: RecorderControl {
         control.objectValue = objectValue
         LabelAndControl.controlWasChanged(senderControl, id)
         ControlsTab.shortcutChangedCallback(senderControl)
+        // This bypasses `control`'s own `onAction`, so its extraAction (e.g. "Restore default"
+        // visibility) never runs on its own; notify it explicitly instead.
+        control.onProgrammaticChange?()
     }
 
     func alertIfShortcutReservedByMacos(_ candidateShortcut: Shortcut, _ shortcutReservedByMacos: String) {

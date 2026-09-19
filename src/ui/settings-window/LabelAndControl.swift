@@ -119,6 +119,12 @@ class LabelAndControl: NSObject {
               let index = views.firstIndex(where: { $0 === input }) else { return views }
         let button = makeRestoreDefaultButton(rawName, input)
         restoreButton = button
+        // Keeps the button in sync with programmatic objectValue changes too (e.g. accepting a
+        // conflict alert clears/reassigns a recorder outside of its own recording gesture).
+        input.onProgrammaticChange = { [weak button] in
+            guard let button else { return }
+            updateRestoreDefaultButtonVisibility(button, rawName, input)
+        }
         updateRestoreDefaultButtonVisibility(button, rawName, input)
         var result = views
         result[index] = wrapRecorderWithRestoreButton(input, button)
@@ -147,11 +153,38 @@ class LabelAndControl: NSObject {
 
     /// Restores `rawName` to its registered default and replays the same callback path an interactive
     /// recorder edit runs (`ControlsTab.shortcuts` / registration update), instead of only clearing the
-    /// preference underneath the recorder.
+    /// preference underneath the recorder. Routes the candidate default through the same
+    /// acceptability/conflict checks a live recording goes through
+    /// (`CustomRecorderControlTestable.isShortcutAcceptable`, `CustomRecorderControl`'s alert methods)
+    /// rather than writing it straight to preferences: a default can conflict with a shortcut the user
+    /// since assigned elsewhere, and this must offer the same "unassign and continue" choice, or leave
+    /// things untouched if declined or unacceptable.
     private static func restoreDefaultShortcut(_ rawName: String, _ input: CustomRecorderControl, _ button: NSButton) {
-        Preferences.remove(rawName)
-        input.objectValue = Preferences.defaultShortcut(forKey: rawName)
-        input.sendAction(input.action, to: input.target)
+        guard let defaultShortcut = Preferences.defaultShortcut(forKey: rawName) else {
+            Preferences.remove(rawName)
+            input.objectValue = nil
+            input.sendAction(input.action, to: input.target)
+            updateRestoreDefaultButtonVisibility(button, rawName, input)
+            return
+        }
+        switch CustomRecorderControlTestable.isShortcutAcceptable(rawName, defaultShortcut) {
+        case .accepted:
+            Preferences.remove(rawName)
+            input.objectValue = defaultShortcut
+            input.sendAction(input.action, to: input.target)
+        case .modifiersOnlyButContainsKeycode:
+            // The registered default is not acceptable for this control; leave it untouched rather
+            // than force an invalid value onto it.
+            break
+        case .conflictWithExistingShortcut(let shortcutAlreadyAssigned):
+            input.alertIfSameShortcutAlreadyAssigned(defaultShortcut, shortcutAlreadyAssigned)
+        case .reservedByMacos(let shortcutUsingEscape):
+            input.alertIfShortcutReservedByMacos(defaultShortcut, shortcutUsingEscape)
+        case .usedByGameOverlay(let shortcutUsingGameOverlay):
+            input.alertIfShortcutUsedByGameOverlay(defaultShortcut, shortcutUsingGameOverlay)
+        }
+        // Covers both a direct restore above and the no-op/declined alert paths; the conflict-clearing
+        // alert paths already refresh via `onProgrammaticChange` from `updateShortcut`.
         updateRestoreDefaultButtonVisibility(button, rawName, input)
     }
 
