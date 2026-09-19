@@ -44,7 +44,7 @@ class ExceptionsTab {
         let name = ExceptionsTestable.displayName(bundleIdentifier: entry.bundleIdentifier, resolvedName: appUrl.map(DefaultBrowser.displayName))
         let subtitle = isPrefix || appUrl != nil ? entry.bundleIdentifier : NSLocalizedString("Not installed", comment: "")
         table.addRow(
-            leftViews: [appView(iconView(appUrl: appUrl, isPrefix: isPrefix), nameStack(name, subtitle))],
+            leftViews: [AppListRows.appView(AppListRows.iconView(appUrl: appUrl, isPrefix: isPrefix), AppListRows.nameStack(name, subtitle))],
             rightViews: [switcherPopup(index, entry), shortcutsPopup(index, entry), removeButton(index)],
             secondaryViews: nil)
         // its own row: as a secondary view it would have to fit left of the two popups, which leaves no room
@@ -55,17 +55,6 @@ class ExceptionsTab {
 
     private static let popupWidth = CGFloat(170)
     private static let removeWidth = CGFloat(18)
-
-    /// Icon and name side by side in one view; as two left views the row stacked them vertically.
-    private static func appView(_ icon: NSView, _ names: NSView) -> NSView {
-        let stack = NSStackView(views: [icon, names])
-        stack.orientation = .horizontal
-        stack.alignment = .centerY
-        stack.spacing = 8
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        stack.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        return stack
-    }
 
     private static func columnTitle(_ text: String) -> NSView {
         let label = NSTextField(labelWithString: text)
@@ -81,39 +70,6 @@ class ExceptionsTab {
         spacer.translatesAutoresizingMaskIntoConstraints = false
         spacer.widthAnchor.constraint(equalToConstant: removeWidth).isActive = true
         return spacer
-    }
-
-    private static func iconView(appUrl: URL?, isPrefix: Bool) -> NSImageView {
-        let imageView = NSImageView()
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.widthAnchor.constraint(equalToConstant: 22).isActive = true
-        imageView.heightAnchor.constraint(equalToConstant: 22).isActive = true
-        if let appUrl {
-            imageView.image = NSWorkspace.shared.icon(forFile: appUrl.path)
-        } else if #available(macOS 11.0, *) {
-            let symbolName = isPrefix ? "square.stack.3d.up" : "app.dashed"
-            imageView.image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)
-        }
-        return imageView
-    }
-
-    private static func nameStack(_ name: String, _ subtitle: String) -> NSView {
-        let title = NSTextField(labelWithString: name)
-        title.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
-        // bundle IDs are long and their distinctive part is at both ends
-        title.lineBreakMode = .byTruncatingMiddle
-        title.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        let subLabel = NSTextField(labelWithString: subtitle)
-        subLabel.font = NSFont.systemFont(ofSize: 12)
-        subLabel.textColor = .gray
-        subLabel.lineBreakMode = .byTruncatingMiddle
-        subLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        let stack = NSStackView(views: [title, subLabel])
-        stack.orientation = .vertical
-        stack.alignment = .leading
-        stack.spacing = 2
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        return stack
     }
 
     private static func switcherPopup(_ index: Int, _ entry: ExceptionEntry) -> NSView {
@@ -165,25 +121,10 @@ class ExceptionsTab {
     }
 
     private static func removeButton(_ index: Int) -> NSButton {
-        let button = NSButton()
-        button.isBordered = false
-        button.bezelStyle = .regularSquare
-        if #available(macOS 11.0, *) {
-            button.image = NSImage(systemSymbolName: "minus.circle", accessibilityDescription: NSLocalizedString("Remove", comment: ""))
-        } else {
-            button.title = "−"
-        }
-        button.toolTip = NSLocalizedString("Remove", comment: "")
-        button.setAccessibilityLabel(NSLocalizedString("Remove", comment: ""))
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.widthAnchor.constraint(equalToConstant: removeWidth).isActive = true
-        button.target = ExceptionsRemoveTarget.shared
-        button.action = #selector(ExceptionsRemoveTarget.remove(_:))
-        button.tag = index
-        return button
+        AppListRows.removeButton { remove(at: index) }
     }
 
-    fileprivate static func remove(at index: Int) {
+    private static func remove(at index: Int) {
         save(ExceptionsTestable.remove(Preferences.exceptions, at: index))
         refresh()
     }
@@ -196,28 +137,10 @@ class ExceptionsTab {
 
     private static func addButtonsRow() -> TableGroupView {
         let table = TableGroupView(width: SettingsWindow.contentWidth)
-        let addButton = makeCircleButton(systemSymbolName: "plus")
+        let addButton = AppListRows.makeCircleButton(systemSymbolName: "plus")
         addButton.onAction = { _ in showAddMenu(sender: addButton) }
         table.addRow(TableGroupView.Row(leftTitle: "", rightViews: [addButton]))
         return table
-    }
-
-    private static func makeCircleButton(systemSymbolName: String) -> NSButton {
-        let button = NSButton()
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.isBordered = true
-        button.bezelStyle = .circular
-        button.showsBorderOnlyWhileMouseInside = false
-        if #available(macOS 11.0, *) {
-            button.image = NSImage(systemSymbolName: systemSymbolName, accessibilityDescription: nil)
-        } else {
-            button.image = NSImage(named: NSImage.addTemplateName)
-        }
-        button.imagePosition = .imageOnly
-        button.imageScaling = .scaleProportionallyDown
-        button.widthAnchor.constraint(equalToConstant: 22).isActive = true
-        button.heightAnchor.constraint(equalToConstant: 22).isActive = true
-        return button
     }
 
     private static func showAddMenu(sender: NSButton) {
@@ -316,14 +239,5 @@ class ExceptionsTab {
     @objc private static func addRunningApp(_ sender: NSMenuItem) {
         guard let bundleId = sender.representedObject as? String else { return }
         insert(bundleId)
-    }
-}
-
-/// Target for the per-row remove buttons; the row index travels in the button's tag.
-private final class ExceptionsRemoveTarget: NSObject {
-    static let shared = ExceptionsRemoveTarget()
-
-    @objc func remove(_ sender: NSButton) {
-        ExceptionsTab.remove(at: sender.tag)
     }
 }
