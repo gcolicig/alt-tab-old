@@ -565,9 +565,5 @@ class CachedUserDefaults {
     }
 }
 
-struct ExceptionEntry: Codable {
-    var bundleIdentifier: String
-    var hide: ExceptionHidePreference
-    var ignore: ExceptionIgnorePreference
-    var windowTitleContains: String?
-}
+// ExceptionEntry lives in ExceptionsTestable.swift (with ExceptionHidePreference/ExceptionIgnorePreference)
+// so the unit-tests target, which does not compile this file, can still see them.
