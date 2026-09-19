@@ -44,6 +44,9 @@
 "5 Hours" = "5 Hours";
 
 /* No comment provided by engineer. */
+"A bundle id, or a prefix ending with a dot to match every app that starts with it, such as com.parallels." = "A bundle id, or a prefix ending with a dot to match every app that starts with it, such as com.parallels.";
+
+/* No comment provided by engineer. */
 "A keyboard shortcut was changed in the system preferences. Restart the Dock or log in again for it to take effect." = "A keyboard shortcut was changed in the system preferences. Restart the Dock or log in again for it to take effect.";
 
 /* No comment provided by engineer. */
@@ -104,6 +107,12 @@
 "Add App…" = "Add App…";
 
 /* No comment provided by engineer. */
+"Add by bundle ID" = "Add by bundle ID";
+
+/* No comment provided by engineer. */
+"Add by bundle ID…" = "Add by bundle ID…";
+
+/* No comment provided by engineer. */
 "Add link" = "Add link";
 
 /* No comment provided by engineer. */
@@ -138,6 +147,9 @@
 
 /* No comment provided by engineer. */
 "All apps except the list" = "All apps except the list";
+
+/* No comment provided by engineer. */
+"All apps starting with \"%@\"" = "All apps starting with \"%@\"";
 
 /* No comment provided by engineer. */
 "All data from this form will be made public, as a ticket on github.com" = "All data from this form will be made public, as a ticket on github.com";
@@ -182,6 +194,9 @@
 "Always" = "Always";
 
 /* No comment provided by engineer. */
+"Always on" = "Always on";
+
+/* No comment provided by engineer. */
 "and %d more" = "and %d more";
 
 /* No comment provided by engineer. */
@@ -189,9 +204,6 @@
 
 /* No comment provided by engineer. */
 "Animations" = "Animations";
-
-/* No comment provided by engineer. */
-"App (BundleID starting with)" = "App (BundleID starting with)";
 
 /* No comment provided by engineer. */
 "App Icons" = "App Icons";
@@ -581,10 +593,10 @@
 "Hide app badges" = "Hide app badges";
 
 /* No comment provided by engineer. */
-"Hide colored circles on mouse hover" = "Hide colored circles on mouse hover";
+"Hide by title" = "Hide by title";
 
-/* %@ is AltTab */
-"Hide in %@" = "Hide in %@";
+/* No comment provided by engineer. */
+"Hide colored circles on mouse hover" = "Hide colored circles on mouse hover";
 
 /* No comment provided by engineer. */
 "Hide Other Apps" = "Hide Other Apps";
@@ -594,6 +606,12 @@
 
 /* No comment provided by engineer. */
 "Hide status icons" = "Hide status icons";
+
+/* No comment provided by engineer. */
+"Hide windows whose title contains" = "Hide windows whose title contains";
+
+/* No comment provided by engineer. */
+"Hide without windows" = "Hide without windows";
 
 /* No comment provided by engineer. */
 "Hide/Show app" = "Hide/Show app";
@@ -627,9 +645,6 @@
 
 /* No comment provided by engineer. */
 "I think the app could be improved with…" = "I think the app could be improved with…";
-
-/* No comment provided by engineer. */
-"Ignore shortcuts when active" = "Ignore shortcuts when active";
 
 /* No comment provided by engineer. */
 "Import…" = "Import…";
@@ -896,6 +911,9 @@
 "No eligible foreground application." = "No eligible foreground application.";
 
 /* No comment provided by engineer. */
+"No exceptions yet." = "No exceptions yet.";
+
+/* No comment provided by engineer. */
 "No installed app matches this entry." = "No installed app matches this entry.";
 
 /* No comment provided by engineer. */
@@ -959,7 +977,13 @@
 "Notifications" = "Notifications";
 
 /* No comment provided by engineer. */
+"Off" = "Off";
+
+/* No comment provided by engineer. */
 "Off by default. Every candidate collides with something, so pick one knowingly." = "Off by default. Every candidate collides with something, so pick one knowingly.";
+
+/* No comment provided by engineer. */
+"Off in full screen" = "Off in full screen";
 
 /* No comment provided by engineer. */
 "Off: only the Mac stays awake; the display may sleep and the screen saver may start." = "Off: only the Mac stays awake; the display may sleep and the screen saver may start.";
@@ -1270,6 +1294,9 @@
 /* No comment provided by engineer. */
 "Shortcuts when active" = "Shortcuts when active";
 
+/* No comment provided by engineer. */
+"Shortcuts:" = "Shortcuts:";
+
 /* Menubar option */
 "Show" = "Show";
 
@@ -1419,6 +1446,9 @@
 
 /* No comment provided by engineer. */
 "Switcher" = "Switcher";
+
+/* No comment provided by engineer. */
+"Switcher:" = "Switcher:";
 
 /* No comment provided by engineer. */
 "System" = "System";
@@ -1646,12 +1676,6 @@
 "Visible Spaces" = "Visible Spaces";
 
 /* No comment provided by engineer. */
-"When fullscreen" = "When fullscreen";
-
-/* No comment provided by engineer. */
-"When no open window" = "When no open window";
-
-/* No comment provided by engineer. */
 "Window is fullscreen" = "Window is fullscreen";
 
 /* No comment provided by engineer. */
@@ -1668,9 +1692,6 @@
 
 /* No comment provided by engineer. */
 "Window Title" = "Window Title";
-
-/* No comment provided by engineer. */
-"Window title contains" = "Window title contains";
 
 /* No comment provided by engineer. */
 "Windows" = "Windows";
