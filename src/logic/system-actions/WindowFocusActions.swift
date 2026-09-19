@@ -9,6 +9,7 @@ enum WindowFocusActions {
         switch action {
             case .hideOtherApps: hideApps(keeping: pid)
             case .hideAll: NSWorkspace.shared.hideOtherApplications()
+            case .focusThreeWindows: focusThreeForemostWindows()
             default: performWithFocusedWindow(action, pid)
         }
     }
@@ -21,6 +22,34 @@ enum WindowFocusActions {
             return .unavailable(NSLocalizedString("Accessibility permission is missing.", comment: ""))
         }
         return .available
+    }
+
+    /// The z-order is read live from the window server: `Windows.list` is only re-sorted when the switcher
+    /// opens, so its order can be stale when the action runs from the menu.
+    private static func focusThreeForemostWindows() {
+        let ownPid = ProcessInfo.processInfo.processIdentifier
+        var byId = [CGWindowID: Window]()
+        Windows.list.forEach { window in
+            guard let id = window.cgWindowId, byId[id] == nil else { return }
+            byId[id] = window
+        }
+        let foremost = Spaces.windowsInSpaces(Spaces.visibleSpaces).compactMap { byId[$0] }
+            .filter { isArrangeable($0, ownPid) }
+            .prefix(3)
+        let candidates = foremost.map { FocusThreeCandidate(id: $0.cgWindowId!, midX: $0.position!.x + $0.size!.width / 2) }
+        let plan = FocusThreePlan.assign(Array(candidates))
+        Logger.debug { "Focus three: listed:\(byId.count) foremost:\(candidates.count) plan:\(plan.map { "\($0.id):\($0.layout.rawValue)" })" }
+        guard !plan.isEmpty else { return NSSound.beep() }
+        let assignments = plan.compactMap { step -> (window: AXUIElement, pid: pid_t, layout: WindowLayoutAction)? in
+            guard let window = byId[step.id], let element = window.axUiElement else { return nil }
+            return (element, window.application.pid, step.layout)
+        }
+        WindowLayouts.arrange(assignments)
+    }
+
+    private static func isArrangeable(_ window: Window, _ ownPid: pid_t) -> Bool {
+        !window.isWindowlessApp && !window.isMinimized && !window.isHidden && !window.isFullscreen
+            && window.application.pid != ownPid && window.position != nil && window.size != nil && window.axUiElement != nil
     }
 
     /// The focused window is read off the main thread; an app without one gets a beep instead of a guess.

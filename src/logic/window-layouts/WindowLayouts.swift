@@ -29,6 +29,35 @@ class WindowLayouts {
         }
     }
 
+    /// Several windows, each with its own layout, all on the display of the last one. The caller orders
+    /// them so that the frontmost window comes last: it moves last and stays on top. One window that
+    /// refuses a frame does not stop the others.
+    static func arrange(_ assignments: [(window: AXUIElement, pid: pid_t, layout: WindowLayoutAction)]) {
+        guard !App.appIsBeingUsed, !Preferences.inputModulesSafeMode, let anchor = assignments.last else { return }
+        let screenFrames = quartzVisibleFrames()
+        operationQueue.addOperation {
+            guard let attributes = try? eligibleAttributes(anchor.window),
+                  let screenFrame = bestScreenFrame(for: CGRect(origin: attributes.position!, size: attributes.size!), screenFrames) else {
+                Logger.error { "Window arrangement failed: the frontmost window of pid \(anchor.pid) is not eligible" }
+                return
+            }
+            assignments.forEach { place($0, in: screenFrame) }
+        }
+    }
+
+    private static func place(_ assignment: (window: AXUIElement, pid: pid_t, layout: WindowLayoutAction), in screenFrame: CGRect) {
+        do {
+            let attributes = try eligibleAttributes(assignment.window)
+            guard let targetFrame = WindowLayoutGeometry.frame(assignment.layout, in: screenFrame) else { return }
+            if restoreFrames[assignment.window] == nil {
+                restoreFrames[assignment.window] = CGRect(origin: attributes.position!, size: attributes.size!)
+            }
+            try setAndVerify(targetFrame, on: assignment.window, pid: assignment.pid, action: assignment.layout)
+        } catch {
+            Logger.error { "Window layout \(assignment.layout.rawValue) failed for pid \(assignment.pid): \(error)" }
+        }
+    }
+
     private static func apply(_ action: DisplayMoveAction, to pid: pid_t, screenFrames: [CGRect]) {
         do {
             let window = try focusedWindow(pid)
@@ -40,7 +69,7 @@ class WindowLayouts {
                   let targetIndex = DisplayMoveGeometry.targetScreenIndex(action, currentIndex: currentIndex, screenCount: ordered.count),
                   let targetFrame = DisplayMoveGeometry.frame(currentFrame, from: sourceFrame, to: ordered[targetIndex]) else { return }
             // a display move is not a layout, so it does not become the frame that Restore returns to
-            try window.setFrame(targetFrame)
+            _ = try setWithoutAnimation(targetFrame, on: window, pid: pid)
             Logger.debug { "Display move \(action.rawValue) pid:\(pid) proposed:\(targetFrame)" }
         } catch {
             Logger.error { "Display move \(action.rawValue) failed for pid \(pid): \(error)" }
@@ -90,19 +119,52 @@ class WindowLayouts {
     }
 
     private static func setAndVerify(_ frame: CGRect, on window: AXUIElement, pid: pid_t, action: WindowLayoutAction) throws {
-        try window.setFrame(frame)
-        let result = try window.attributes([kAXPositionAttribute, kAXSizeAttribute])
-        guard let position = result.position, let size = result.size else { throw AxError.runtimeError }
-        let actual = CGRect(origin: position, size: size)
-        let matches = abs(actual.minX - frame.minX) <= frameTolerance &&
-            abs(actual.minY - frame.minY) <= frameTolerance &&
-            abs(actual.width - frame.width) <= frameTolerance &&
-            abs(actual.height - frame.height) <= frameTolerance
-        if matches {
+        var actual = try setWithoutAnimation(frame, on: window, pid: pid)
+        if !matches(actual, frame) {
+            // one more pass: a window constrained by its old position accepts the size once it has moved
+            actual = try setWithoutAnimation(frame, on: window, pid: pid)
+        }
+        if matches(actual, frame) {
             Logger.debug { "Window layout \(action.rawValue) pid:\(pid) proposed:\(frame) result:\(actual)" }
         } else {
             Logger.warning { "Window layout \(action.rawValue) pid:\(pid) proposed:\(frame) result:\(actual)" }
         }
+    }
+
+    /// Apps with `AXEnhancedUserInterface` on animate every frame change, and a set that arrives during
+    /// the animation is dropped. Measured 2026-09-18: all three apps in a test had it on, and Center focus
+    /// needed three attempts to land. The attribute is switched off for the change and restored after it.
+    private static func setWithoutAnimation(_ frame: CGRect, on window: AXUIElement, pid: pid_t) throws -> CGRect {
+        let application = AXUIElementCreateApplication(pid)
+        let wasEnhanced = enhancedUserInterface(pid) == true
+        if wasEnhanced {
+            AXUIElementSetAttributeValue(application, enhancedUserInterfaceAttribute, kCFBooleanFalse)
+        }
+        defer {
+            if wasEnhanced {
+                AXUIElementSetAttributeValue(application, enhancedUserInterfaceAttribute, kCFBooleanTrue)
+            }
+        }
+        try window.setFrame(frame)
+        let result = try window.attributes([kAXPositionAttribute, kAXSizeAttribute])
+        guard let position = result.position, let size = result.size else { throw AxError.runtimeError }
+        Logger.debug { "Window frame pid:\(pid) enhancedUserInterface:\(wasEnhanced) proposed:\(frame) result:\(CGRect(origin: position, size: size))" }
+        return CGRect(origin: position, size: size)
+    }
+
+    private static func matches(_ actual: CGRect, _ frame: CGRect) -> Bool {
+        abs(actual.minX - frame.minX) <= frameTolerance &&
+            abs(actual.minY - frame.minY) <= frameTolerance &&
+            abs(actual.width - frame.width) <= frameTolerance &&
+            abs(actual.height - frame.height) <= frameTolerance
+    }
+
+    private static let enhancedUserInterfaceAttribute = "AXEnhancedUserInterface" as CFString
+
+    private static func enhancedUserInterface(_ pid: pid_t) -> Bool? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(AXUIElementCreateApplication(pid), enhancedUserInterfaceAttribute, &value) == .success else { return nil }
+        return value as? Bool
     }
 
     private static func bestScreenFrame(for windowFrame: CGRect, _ screenFrames: [CGRect]) -> CGRect? {

@@ -63,3 +63,25 @@ enum FunctionKeys {
         return body(connection)
     }
 }
+
+/// The global `ApplePressAndHoldEnabled` preference: on (the macOS default) shows the accent popup while a
+/// letter key is held, off repeats the key instead. Apps read it once at launch, so a change only reaches
+/// apps started afterwards.
+enum PressAndHold {
+    private static let preferenceKey = "ApplePressAndHoldEnabled" as CFString
+
+    static func isEnabled() -> Bool {
+        CFPreferencesCopyValue(preferenceKey, kCFPreferencesAnyApplication, kCFPreferencesCurrentUser, kCFPreferencesAnyHost) as? Bool ?? true
+    }
+
+    static func toggle() {
+        let enabled = !isEnabled()
+        CFPreferencesSetValue(preferenceKey, enabled as CFBoolean, kCFPreferencesAnyApplication, kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
+        guard CFPreferencesSynchronize(kCFPreferencesAnyApplication, kCFPreferencesCurrentUser, kCFPreferencesAnyHost), isEnabled() == enabled else {
+            return TransientNotice.show(NSLocalizedString("Press and Hold could not be changed.", comment: ""))
+        }
+        TransientNotice.show(enabled
+            ? NSLocalizedString("Holding a key now shows accents. Restart an app to apply it there.", comment: "")
+            : NSLocalizedString("Holding a key now repeats it. Restart an app to apply it there.", comment: ""))
+    }
+}

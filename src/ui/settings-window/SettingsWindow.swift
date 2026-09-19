@@ -464,11 +464,6 @@ private final class SettingsFlippedView: NSView {
 class SettingsWindow: NSWindow {
     static let contentWidth = CGFloat(620)
     static let width = contentWidth
-    static let sidebarActionButtonHeight: CGFloat = {
-        let button = NSButton(title: " ", target: nil, action: nil)
-        button.bezelStyle = .rounded
-        return button.fittingSize.height
-    }()
     private static let sidebarWidth = CGFloat(210)
     private static let contentHorizontalPadding = CGFloat(20)
     private static let contentTopPadding = CGFloat(0)
@@ -508,11 +503,13 @@ class SettingsWindow: NSWindow {
     private let rightScrollView = NSScrollView()
     private let sectionsDocumentView = SettingsFlippedView(frame: .zero)
     private let sectionsStack = NSStackView()
-    private let creatorButton = NSButton(title: NSLocalizedString("Creator's settings…", comment: ""), target: nil, action: nil)
-    private let resetButton = NSButton(title: NSLocalizedString("Reset settings and restart…", comment: ""), target: nil, action: nil)
-    private let quitButton = NSButton(title: String(format: NSLocalizedString("Quit %@", comment: "%@ is AltTab"), App.name), target: nil, action: #selector(NSApplication.terminate(_:)))
     private var sections = [SettingsSection]()
     private var visibleSections = [SettingsSection]()
+    /// Story 16: without a query only the selected page is shown; with one, every match is stacked.
+    private var isSearching = false
+    /// The page the user picked; leaving the search returns to it.
+    private var chosenSectionId: String?
+    private var sidebarRows = [SettingsSidebarRow]()
     private var selectedSectionId: String?
     private var sheetHighlightTargets = [ObjectIdentifier: [SettingsSearchHighlightTarget]]()
     private var liveResizeOriginX: CGFloat?
@@ -530,6 +527,8 @@ class SettingsWindow: NSWindow {
         setupWindow()
         setupView()
         setFrameAutosaveName("SettingsWindow")
+        // a frame saved by a build whose content was wider must not keep the window stretched
+        if frame.width != windowWidth { setFrame(NSRect(x: frame.minX, y: frame.minY, width: windowWidth, height: frame.height), display: false) }
         Self.shared = self
     }
 
@@ -553,7 +552,8 @@ class SettingsWindow: NSWindow {
         setupSplitView()
         setupSidebar()
         setupContentPane()
-        sectionDefinitions().forEach { addSection($0) }
+        let definitions = sectionDefinitions()
+        SettingsSidebarLayout.order(definitions.map(\.id)).compactMap { id in definitions.first { $0.id == id } }.forEach { addSection($0) }
         refreshControlsFromSettings()
         applySearch("")
     }
@@ -575,9 +575,6 @@ class SettingsWindow: NSWindow {
 
     private func setupSidebar() {
         setupSearchField(sidebarContainer)
-        setupQuitButton(sidebarContainer)
-        setupResetButton(sidebarContainer)
-        setupCreatorButton(sidebarContainer)
         setupSidebarTable(sidebarContainer)
     }
 
@@ -622,6 +619,9 @@ class SettingsWindow: NSWindow {
 
     private func setupSearchField(_ parent: NSView) {
         searchField.delegate = self
+        // the clear button sends the action but no text-change notification
+        searchField.target = self
+        searchField.action = #selector(searchFieldActionFired)
         searchField.placeholderString = NSLocalizedString("Search", comment: "")
         searchField.sendsSearchStringImmediately = true
         searchField.sendsWholeSearchString = true
@@ -665,51 +665,7 @@ class SettingsWindow: NSWindow {
             sidebarScrollView.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 12),
             sidebarScrollView.leadingAnchor.constraint(equalTo: parent.leadingAnchor, constant: Self.sidebarHorizontalPadding - 2),
             sidebarScrollView.trailingAnchor.constraint(equalTo: parent.trailingAnchor, constant: -(Self.sidebarHorizontalPadding - 2)),
-            sidebarScrollView.bottomAnchor.constraint(equalTo: creatorButton.topAnchor, constant: -10),
-        ])
-    }
-
-    @objc private func resetPreferences() {
-        GeneralTab.resetPreferences()
-    }
-
-    private func setupResetButton(_ parent: NSView) {
-        resetButton.toolTip = resetButton.title
-        resetButton.bezelStyle = .rounded
-        if #available(macOS 11.0, *) { resetButton.hasDestructiveAction = true }
-        resetButton.target = self
-        resetButton.action = #selector(resetPreferences)
-        resetButton.translatesAutoresizingMaskIntoConstraints = false
-        parent.addSubview(resetButton)
-        NSLayoutConstraint.activate([
-            resetButton.centerXAnchor.constraint(equalTo: parent.centerXAnchor),
-            resetButton.bottomAnchor.constraint(equalTo: quitButton.topAnchor, constant: -20),
-            resetButton.widthAnchor.constraint(lessThanOrEqualTo: parent.widthAnchor, constant: -Self.sidebarHorizontalPadding * 2),
-        ])
-    }
-
-    private func setupCreatorButton(_ parent: NSView) {
-        creatorButton.toolTip = creatorButton.title
-        creatorButton.bezelStyle = .rounded
-        creatorButton.onAction = { _ in GeneralTab.applyCreatorSettings() }
-        creatorButton.translatesAutoresizingMaskIntoConstraints = false
-        parent.addSubview(creatorButton)
-        NSLayoutConstraint.activate([
-            creatorButton.centerXAnchor.constraint(equalTo: parent.centerXAnchor),
-            creatorButton.bottomAnchor.constraint(equalTo: resetButton.topAnchor, constant: -8),
-            creatorButton.widthAnchor.constraint(lessThanOrEqualTo: parent.widthAnchor, constant: -Self.sidebarHorizontalPadding * 2),
-        ])
-    }
-
-    private func setupQuitButton(_ parent: NSView) {
-        quitButton.toolTip = quitButton.title
-        quitButton.bezelStyle = .rounded
-        quitButton.translatesAutoresizingMaskIntoConstraints = false
-        parent.addSubview(quitButton)
-        NSLayoutConstraint.activate([
-            quitButton.centerXAnchor.constraint(equalTo: parent.centerXAnchor),
-            quitButton.bottomAnchor.constraint(equalTo: parent.bottomAnchor, constant: -10),
-            quitButton.widthAnchor.constraint(lessThanOrEqualTo: parent.widthAnchor, constant: -Self.sidebarHorizontalPadding * 2),
+            sidebarScrollView.bottomAnchor.constraint(equalTo: parent.bottomAnchor, constant: -10),
         ])
     }
 
@@ -733,7 +689,7 @@ class SettingsWindow: NSWindow {
             SettingsSectionDefinition(id: "profiles", title: NSLocalizedString("Profiles", comment: ""), description: NSLocalizedString("Group apps into a profile, optionally bound to a space, and filter the switcher to it.", comment: ""), imageName: "controls", systemSymbolName: "square.stack.3d.up", view: ProfilesTab.initTab()),
             SettingsSectionDefinition(id: "appearance", title: NSLocalizedString("Cmd-Tab", comment: ""), description: NSLocalizedString("Choose how the window switcher looks and where it appears.", comment: ""), imageName: "appearance", systemSymbolName: "paintpalette", view: AppearanceTab.initTab()),
             SettingsSectionDefinition(id: "controls", title: NSLocalizedString("Cmd-Tab Controls", comment: ""), description: NSLocalizedString("Set how you open and navigate the window switcher.", comment: ""), imageName: "controls", systemSymbolName: "command", view: ControlsTab.initTab()),
-            SettingsSectionDefinition(id: "menubar-menu", title: NSLocalizedString("Menu Actions", comment: ""), description: NSLocalizedString("Assign keyboard shortcuts to the actions of the menubar menu.", comment: ""), imageName: "controls", systemSymbolName: "menubar.rectangle", view: MenuBarMenuTab.initTab()),
+            SettingsSectionDefinition(id: ShortcutOverviewTab.sectionId, title: NSLocalizedString("Shortcuts", comment: ""), description: NSLocalizedString("Every action shortcut and its conflicts. Switcher triggers stay in Cmd-Tab Controls, the Leader key in Leader, and the FlickRing button in FlickRing.", comment: ""), imageName: "controls", systemSymbolName: "keyboard", view: ShortcutOverviewTab.initTab()),
             SettingsSectionDefinition(id: "system-actions", title: NSLocalizedString("System Actions", comment: ""), description: NSLocalizedString("Configure Auto-Quit, Cat Mode, and the function key mode.", comment: ""), imageName: "controls", systemSymbolName: "switch.2", view: SystemActionsTab.initTab()),
             SettingsSectionDefinition(id: "keep-awake", title: NSLocalizedString("Keep Awake", comment: ""), description: NSLocalizedString("Keep the Mac awake for a while, with battery protection.", comment: ""), imageName: "controls", systemSymbolName: "cup.and.saucer", view: KeepAwakeTab.initTab()),
             SettingsSectionDefinition(id: "apps-urls", title: NSLocalizedString("Apps & URLs", comment: ""), description: NSLocalizedString("Assign shortcuts to launch apps or open URLs.", comment: ""), imageName: "controls", systemSymbolName: "app.badge", view: AppsUrlsTab.initTab()),
@@ -762,6 +718,8 @@ class SettingsWindow: NSWindow {
         sectionDescription.textColor = .secondaryLabelColor
         sectionDescription.lineBreakMode = .byWordWrapping
         sectionDescription.maximumNumberOfLines = 0
+        // without a wrapping width a long description asks for its one-line width and stretches the window
+        sectionDescription.preferredMaxLayoutWidth = Self.contentWidth
         let container = NSView()
         let spacer = NSView()
         container.addSubview(sectionTitle)
@@ -808,10 +766,10 @@ class SettingsWindow: NSWindow {
         sections.append(section)
     }
 
-    private func updateVisibleSectionsSpacing() {
-        visibleSections.enumerated().forEach { index, section in
+    private func updateVisibleSectionsSpacing(_ displayed: [SettingsSection]) {
+        displayed.enumerated().forEach { index, section in
             let isFirst = index == 0
-            let isLast = index == visibleSections.count - 1
+            let isLast = index == displayed.count - 1
             section.titleTopConstraint.constant = isFirst ? Self.topSectionTitlePadding : 0
             section.interSectionSpacingConstraint.constant = isLast ? 0 : Self.sectionInterSectionSpacing
             section.bottomSpacingConstraint.constant = isLast ? 0 : Self.sectionBottomSpacing
@@ -1292,7 +1250,7 @@ class SettingsWindow: NSWindow {
 
     @objc private func contentViewBoundsDidChange(_ notification: Notification) {
         let currentY = rightScrollView.contentView.bounds.minY
-        guard !ignoresContentScrollSelection else {
+        guard isSearching, !ignoresContentScrollSelection else {
             lastContentScrollY = currentY
             return
         }
@@ -1327,11 +1285,28 @@ class SettingsWindow: NSWindow {
 
     private func selectSection(_ section: SettingsSection, scroll: Bool, selectInSidebar: Bool = true) {
         selectedSectionId = section.id
-        if selectInSidebar, let row = visibleSections.firstIndex(where: { $0.id == section.id }), sidebarTableView.selectedRow != row {
+        if selectInSidebar, let row = sidebarRows.firstIndex(of: .section(section.id)), sidebarTableView.selectedRow != row {
             sidebarTableView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
         }
+        if !isSearching { showDisplayedSections() }
+        if section.id == ShortcutOverviewTab.sectionId { ShortcutOverviewTab.pageShown() }
         guard scroll else { return }
-        scrollToSection(section)
+        isSearching ? scrollToSection(section) : scrollToTop()
+    }
+
+    private func showDisplayedSections() {
+        let ids = SettingsSidebarLayout.displayed(all: sections.map(\.id), matching: visibleSections.map(\.id),
+                                                  selected: selectedSectionId, searching: isSearching)
+        sections.forEach { $0.container.isHidden = !ids.contains($0.id) }
+        updateVisibleSectionsSpacing(sections.filter { ids.contains($0.id) })
+    }
+
+    private func scrollToTop() {
+        ignoresContentScrollSelection = true
+        rightScrollView.contentView.scroll(to: .zero)
+        rightScrollView.reflectScrolledClipView(rightScrollView.contentView)
+        lastContentScrollY = 0
+        ignoresContentScrollSelection = false
     }
 
     private func scrollToSection(_ section: SettingsSection) {
@@ -1349,36 +1324,68 @@ class SettingsWindow: NSWindow {
         }
     }
 
+    func isShowingSection(_ id: String) -> Bool {
+        isVisible && !isSearching && selectedSectionId == id
+    }
+
+    /// Opens a page from elsewhere in the window and briefly marks the row with this title.
+    func reveal(sectionId: String, rowTitle: String) {
+        searchField.stringValue = ""
+        chosenSectionId = sectionId
+        applySearch("")
+        guard let section = sections.first(where: { $0.id == sectionId }),
+              let label = Self.findLabel(rowTitle, in: section.container) else { return }
+        sectionsDocumentView.layoutSubtreeIfNeeded()
+        label.scrollToVisible(label.bounds.insetBy(dx: 0, dy: -80))
+        Self.flash(label)
+    }
+
+    private static func findLabel(_ title: String, in view: NSView) -> NSTextField? {
+        if let field = view as? NSTextField, field.stringValue == title { return field }
+        for subview in view.subviews {
+            if let found = findLabel(title, in: subview) { return found }
+        }
+        return nil
+    }
+
+    private static func flash(_ view: NSView) {
+        view.wantsLayer = true
+        view.layer?.cornerRadius = 4
+        view.layer?.backgroundColor = NSColor.findHighlightColor.withAlphaComponent(0.6).cgColor
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.4
+                view.layer?.backgroundColor = NSColor.clear.cgColor
+            }
+        }
+    }
+
+    @objc private func searchFieldActionFired() {
+        applySearch(searchField.stringValue)
+    }
+
     private func applySearch(_ query: String) {
         Popover.shared.updateSearchContext(query) { query, text in
             SettingsSearch.match(query, in: text)?.ranges ?? []
         }
-        let hasQuery = !SettingsSearch.isQueryEmpty(query)
-        let matchingSections = sections.filter { !hasQuery || $0.matches(query) }
-        visibleSections = matchingSections
-        let visibleSectionIds = Set(visibleSections.map(\.id))
-        sections.forEach {
-            let isVisible = visibleSectionIds.contains($0.id)
-            $0.container.isHidden = !isVisible
-            if isVisible && hasQuery {
-                $0.highlightMatches(query)
-            } else {
-                $0.clearHighlights()
-            }
+        isSearching = !SettingsSearch.isQueryEmpty(query)
+        visibleSections = sections.filter { !isSearching || $0.matches(query) }
+        let matchingIds = Set(visibleSections.map(\.id))
+        sections.forEach { section in
+            guard isSearching, matchingIds.contains(section.id) else { return section.clearHighlights() }
+            section.highlightMatches(query)
         }
         applySearchToVisibleSheets(query)
-        updateVisibleSectionsSpacing()
+        sidebarRows = SettingsSidebarLayout.rows(visibleSections.map(\.id))
         sidebarTableView.reloadData()
-        guard !visibleSections.isEmpty else {
-            selectedSectionId = nil
+        let preferred = isSearching ? selectedSectionId : (chosenSectionId ?? selectedSectionId)
+        selectedSectionId = SettingsSidebarLayout.selection(visible: visibleSections.map(\.id), preferred: preferred)
+        showDisplayedSections()
+        guard let selectedSectionId, let section = sections.first(where: { $0.id == selectedSectionId }) else {
             sidebarTableView.deselectAll(nil)
             return
         }
-        if let selectedSectionId, let row = visibleSections.firstIndex(where: { $0.id == selectedSectionId }) {
-            selectSection(visibleSections[row], scroll: true)
-            return
-        }
-        selectSection(visibleSections[0], scroll: true)
+        selectSection(section, scroll: true)
     }
 
     override func close() {
@@ -1410,16 +1417,29 @@ extension SettingsWindow: NSSearchFieldDelegate {
 }
 
 extension SettingsWindow: NSTableViewDataSource, NSTableViewDelegate {
+    private static let headerRowHeight = CGFloat(26)
+
     func numberOfRows(in tableView: NSTableView) -> Int {
-        visibleSections.count
+        sidebarRows.count
     }
 
     func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
-        30
+        sidebarRows[row].sectionId == nil ? Self.headerRowHeight : 30
+    }
+
+    func tableView(_ tableView: NSTableView, isGroupRow row: Int) -> Bool {
+        sidebarRows[row].sectionId == nil
+    }
+
+    func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool {
+        sidebarRows[row].sectionId != nil
     }
 
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        let section = visibleSections[row]
+        guard let id = sidebarRows[row].sectionId, let section = sections.first(where: { $0.id == id }) else {
+            guard case .header(let group) = sidebarRows[row] else { return nil }
+            return SettingsSidebarHeaderView(Self.groupTitle(group))
+        }
         let cell = tableView.makeView(withIdentifier: SettingsSidebarCellView.identifier, owner: self) as? SettingsSidebarCellView ?? {
             let view = SettingsSidebarCellView()
             view.identifier = SettingsSidebarCellView.identifier
@@ -1431,9 +1451,37 @@ extension SettingsWindow: NSTableViewDataSource, NSTableViewDelegate {
 
     func tableViewSelectionDidChange(_ notification: Notification) {
         let row = sidebarTableView.selectedRow
-        guard row >= 0, row < visibleSections.count else { return }
-        let section = visibleSections[row]
+        guard row >= 0, row < sidebarRows.count, let id = sidebarRows[row].sectionId,
+              let section = sections.first(where: { $0.id == id }) else { return }
+        chosenSectionId = section.id
         if selectedSectionId == section.id { return }
         selectSection(section, scroll: true, selectInSidebar: false)
+    }
+
+    private static func groupTitle(_ group: SettingsSidebarGroup) -> String {
+        switch group {
+            case .app: return App.name
+            case .switcher: return NSLocalizedString("Switcher", comment: "")
+            case .windows: return NSLocalizedString("Windows", comment: "")
+            case .triggers: return NSLocalizedString("Triggers", comment: "")
+            case .devices: return NSLocalizedString("Devices", comment: "")
+            case .actions: return NSLocalizedString("Actions", comment: "")
+        }
+    }
+}
+
+/// A non-selectable group heading in the sidebar.
+private final class SettingsSidebarHeaderView: NSTableCellView {
+    convenience init(_ title: String) {
+        self.init(frame: .zero)
+        let label = NSTextField(labelWithString: title)
+        label.font = NSFont.systemFont(ofSize: 11, weight: .semibold)
+        label.textColor = .tertiaryLabelColor
+        label.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(label)
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
+            label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -3),
+        ])
     }
 }

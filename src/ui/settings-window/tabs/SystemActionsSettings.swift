@@ -21,23 +21,6 @@ enum SettingsControls {
     }
 }
 
-/// Every menu action with its global shortcut, in the order and groups of the menu. The menu shows all
-/// entries since 2026-09-16, so there is nothing to switch on or off here.
-class MenuBarMenuTab {
-    static func initTab() -> NSView {
-        let tables = MenuGroup.allCases.compactMap(groupTable)
-        return TableGroupSetView(originalViews: tables, bottomPadding: 0)
-    }
-
-    private static func groupTable(_ group: MenuGroup) -> TableGroupView? {
-        let specs = SystemActions.all.filter { $0.group == group && !KeepAwakeTab.actions.contains($0.action) }
-        guard !specs.isEmpty else { return nil }
-        let table = TableGroupView(title: MenubarMenu.groupTitle(group), width: SettingsWindow.contentWidth)
-        specs.forEach { table.addRow(TableGroupView.Row(leftTitle: $0.title, rightViews: [SettingsControls.recorder($0.action, $0.title)])) }
-        return table
-    }
-}
-
 class SystemActionsTab {
     private static var appListStack: NSStackView?
     private static var menuBarExceptionStack: NSStackView?
@@ -71,8 +54,11 @@ class SystemActionsTab {
         catMode.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("End automatically after", comment: ""), rightViews: [SettingsControls.valuePopup("catModeMinutes", catModeOptions)]))
         let microphone = TableGroupView(title: NSLocalizedString("Microphone", comment: ""), width: SettingsWindow.contentWidth)
         microphone.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Show an icon in the menu bar while the microphone or the sound is muted", comment: ""),
-            subTitle: NSLocalizedString("The icons appear between the AltTab+ icon and the Spaces. macOS has no indicator for a muted microphone. Click an icon to unmute.", comment: ""),
+            subTitle: NSLocalizedString("The icons appear at the right end of the AltTab+ menu bar item, after the Spaces. macOS has no indicator for a muted microphone. Click an icon to unmute.", comment: ""),
             rightViews: [LabelAndControl.makeSwitch("micMuteIndicator")]))
+        microphone.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Microphone key mutes the microphone", comment: ""),
+            subTitle: NSLocalizedString("The microphone key in the F5 position toggles the mute instead of starting Dictation. After AltTab+ quits, the key starts Dictation again.", comment: ""),
+            rightViews: [LabelAndControl.makeSwitch("micKeyMutesMicrophone", extraAction: { _ in MicKey.settingChanged() })]))
         let keys = TableGroupView(title: NSLocalizedString("Function Keys", comment: ""), width: SettingsWindow.contentWidth)
         let restore = NSButton(title: NSLocalizedString("Restore Original Mode", comment: ""), target: nil, action: nil)
         restore.onAction = { _ in FunctionKeys.releaseOwnership() }

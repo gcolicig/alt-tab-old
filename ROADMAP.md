@@ -207,6 +207,15 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 - Alles immer sichtbar: Switcher, Fenster und AltTab+ im Hauptmenue, alle anderen Gruppen als Abschnitte in `Other…`. Kein Ein- und Ausblenden (entschieden 2026-09-16).
 - Waechst mit Story 10, 12, 13 und 14. Vollstaendige Spezifikation in `backlog.md` unter Story 15.
 
+## Phase 16: Einstellungsfenster umbauen
+
+- Umgesetzt 2026-09-16 in drei gestapelten Branches; darunter liegt der Fix `fix/system-action-shortcuts` (PR #57).
+
+- Stufe 1 (`feat/settings-pages`): eine Seite pro Bereich, Seitenleiste mit Gruppen inklusive Triggers und Devices, breitere Recorder, Seitenleiste unten aufgeraeumt, Texte.
+- Stufe 2 (`feat/settings-lists`): Apps & URLs und Profiles als Listen mit App-Auswahl per Dialog; Speicherformat bleibt, nur Aufraeumen leerer Slots.
+- Stufe 3 (`feat/settings-shortcut-overview`): Shortcut-Uebersicht mit Konflikten und `Show`; ein Recorder pro Shortcut.
+- Vollstaendige Spezifikation in `backlog.md` unter Story 16.
+
 ## Release-Gates
 
 Vor jeder oeffentlichen Version:

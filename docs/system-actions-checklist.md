@@ -13,8 +13,8 @@ Emergency shortcut: `Command+Control+Option+Shift+Escape`.
 |---|---|---|
 | 1 | Open the menubar menu | Main menu: `Settings…` on top, Switcher, Windows (four actions), `Other… >`, then About, Check permissions, Debug, Quit; headings on macOS 14+; no double or trailing separator |
 | 2 | Open `Other…` | Headed sections in order: Apps, Tools, Notifications, System, Toggles, Defaults; no further submenus except Keep Awake and Default Browser |
-| 3 | `Settings > Menu Actions` | Every action with a shortcut recorder, grouped like the menu; no visibility switches |
-| 4 | Assign a shortcut to `Isolate Window` in `Menu Actions` | The shortcut works outside the menu |
+| 3 | `Settings > Shortcuts` | Every action listed, grouped like the menu; menu actions have a recorder, the others a `Show` button |
+| 4 | Assign a shortcut to `Isolate Window` in `Shortcuts`, close the switcher, press it | The action runs without the switcher (PR #57) |
 | 5 | Bind `Clear Clipboard` to a Leader key and a FlickRing direction | Both run it |
 | 6 | Open `Other…` with a disabled entry (e.g. `Eject All Disks` with no disk) | Entry greyed out; tooltip names the reason |
 
@@ -39,7 +39,7 @@ Emergency shortcut: `Command+Control+Option+Shift+Escape`.
 | 16 | `Eject All Disks` with a USB stick, a disk image and a busy disk | First two ejected; the busy one named in the notice |
 | 17 | `Other… > Default Browser >` | Only real browsers (no ChatGPT, BetterTouchTool, cmux), with icons, current one checked; choosing one shows macOS' own confirmation |
 | 18 | `Function Keys` toggle (V-20) | F1–F12 switch between media and function keys at once; `Settings > System Actions > Restore Original Mode` gives back the earlier mode |
-| 19 | Open `Settings`, then every sidebar entry | No crash; `Menu Bar Menu` lists every group with its switches |
+| 19 | Open `Settings`, then every sidebar entry | No crash; the window keeps its width |
 
 ## Tools (story 14I)
 

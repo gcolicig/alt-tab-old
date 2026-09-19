@@ -34,9 +34,10 @@ enum SystemActions {
 
     private static let windowActions: [SystemActionSpec] = [
         make(.isolateWindow, NSLocalizedString("Isolate Window", comment: ""), "macwindow", .windows, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.isolateWindow) },
-        make(.minimizeAppOthers, NSLocalizedString("Minimize App Windows Except Frontmost", comment: ""), "macwindow.stack", .windows, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.minimizeAppOthers) },
-        make(.hideOtherApps, NSLocalizedString("Hide Other Apps", comment: ""), "eye.slash", .windows, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.hideOtherApps) },
-        make(.hideAll, NSLocalizedString("Hide All Windows", comment: ""), "eye.slash.circle", .windows, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.hideAll) },
+        make(.minimizeAppOthers, NSLocalizedString("Minimize App Windows Except Frontmost", comment: ""), "macwindow.stack", .windowsMore, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.minimizeAppOthers) },
+        make(.hideOtherApps, NSLocalizedString("Hide Other Apps", comment: ""), "eye.slash", .windowsMore, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.hideOtherApps) },
+        make(.hideAll, NSLocalizedString("Hide All Windows", comment: ""), "eye.slash.circle", .windowsMore, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.hideAll) },
+        make(.focusThreeWindows, NSLocalizedString("Focus on 3 Foremost Windows", comment: ""), "rectangle.split.3x1", .windows, availability: WindowFocusActions.availability) { WindowFocusActions.perform(.focusThreeWindows) },
     ]
 
     private static let appActions: [SystemActionSpec] = [
@@ -58,6 +59,8 @@ enum SystemActions {
     ]
 
     private static let systemActions: [SystemActionSpec] = [
+        make(.pasteAsPlainText, NSLocalizedString("Paste and Match Style", comment: ""), "doc.plaintext", .system,
+             availability: SystemUtilities.plainPasteAvailability) { SystemUtilities.pasteAsPlainText() },
         make(.clearClipboard, NSLocalizedString("Clear Clipboard", comment: ""), "clipboard", .system) { SystemUtilities.clearClipboard() },
         make(.ejectAllDisks, NSLocalizedString("Eject All Disks", comment: ""), "eject", .system, availability: ejectAvailability) { SystemUtilities.ejectAllDisks() },
         make(.sleepDisplays, NSLocalizedString("Sleep Displays", comment: ""), "moon", .system) { SystemUtilities.sleepDisplays() },
@@ -70,6 +73,8 @@ enum SystemActions {
              availability: { audioAvailability(input: true) }, isOn: { AudioMute.isMuted(input: true) }) { AudioMute.toggle(input: true) },
         make(.functionKeysToggle, NSLocalizedString("Function Keys", comment: ""), "fn", .toggles,
              availability: functionKeysAvailability, isOn: { FunctionKeys.isStandard() == true }) { FunctionKeys.toggle() },
+        make(.pressAndHoldToggle, NSLocalizedString("Press and Hold for Accents", comment: ""), "character.cursor.ibeam", .toggles,
+             isOn: { PressAndHold.isEnabled() }) { PressAndHold.toggle() },
         make(.autoQuitToggle, NSLocalizedString("Auto-Quit Apps", comment: ""), "power", .toggles, isOn: { Preferences.autoQuitEnabled }) { AutoQuit.toggle() },
         make(.catModeToggle, NSLocalizedString("Cat Mode", comment: ""), "cat", .toggles, availability: CatMode.availability, isOn: { CatMode.isOn }) { CatMode.toggle() },
     ]

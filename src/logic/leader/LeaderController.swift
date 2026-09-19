@@ -27,16 +27,22 @@ enum LeaderController {
 
     /// Returns true when Leader consumed the key. Idle: only the trigger arms a session. Collecting: every
     /// key belongs to Leader until it runs, aborts, or times out.
-    static func handleKeyDown(_ keyCode: UInt32, _ modifiers: NSEvent.ModifierFlags) -> Bool {
+    ///
+    /// Autorepeat never counts as a key. A trigger held past the repeat delay (225 ms at the shortest macOS
+    /// setting) sent a repeated trigger into the fresh session, which aborted it before the overlay was seen
+    /// (measured 2026-09-17). Repeats are absorbed instead.
+    static func handleKeyDown(_ keyCode: UInt32, _ modifiers: NSEvent.ModifierFlags, isAutorepeat: Bool = false) -> Bool {
         guard isEnabled else { return false }
         return lock.withLock {
             switch state {
                 case .idle:
                     guard matchesTrigger(keyCode, modifiers) else { return false }
-                    beginLocked()
+                    if !isAutorepeat { beginLocked() }
+                    return true
+                case .collecting where isAutorepeat:
                     return true
                 case .collecting(let sequence):
-                    let key = LeaderKey(keyCode: keyCode, modifiers: modifiers)
+                    let key = LeaderKey(keyCode: keyCode, modifiers: sequenceModifiers(modifiers))
                     switch LeaderSession.accept(.collecting(sequence), key: key, in: trie) {
                         case .keepCollecting(let next):
                             state = .collecting(next)
@@ -112,16 +118,46 @@ enum LeaderController {
             .map { key, node -> LeaderPanel.Option in
                 switch node {
                     case .action(let id):
-                        return LeaderPanel.Option(key: display(key), label: Actions.registry.action(id)?.title() ?? "", isGroup: false)
-                    case .group:
-                        return LeaderPanel.Option(key: display(key), label: NSLocalizedString("more…", comment: ""), isGroup: true)
+                        return LeaderPanel.Option(key: display(key), label: title(id), isGroup: false)
+                    case .group(let children):
+                        // "more…" said nothing about what waits behind the key; the actions do
+                        return LeaderPanel.Option(key: display(key), label: groupLabel(children), isGroup: true)
                 }
             }
             .sorted { $0.key.localizedCaseInsensitiveCompare($1.key) == .orderedAscending }
         LeaderPanel.show(options)
     }
 
+    /// What a key leads to, as far as it fits on one line: the actions below it, or how many there are.
+    private static func groupLabel(_ children: [LeaderKey: LeaderNode]) -> String {
+        let titles = actionTitles(children)
+        guard titles.count > 2 else { return titles.joined(separator: ", ") }
+        return String(format: NSLocalizedString("%d actions", comment: "Leader overlay"), titles.count)
+    }
+
+    private static func actionTitles(_ level: [LeaderKey: LeaderNode]) -> [String] {
+        level.values.flatMap { node -> [String] in
+            switch node {
+                case .action(let id): return [title(id)]
+                case .group(let children): return actionTitles(children)
+            }
+        }
+    }
+
+    private static func title(_ id: ActionIdentifier) -> String {
+        Actions.registry.action(id)?.title() ?? ""
+    }
+
     // MARK: - trigger matching and key display
+
+    /// Keys typed with the trigger's modifiers still held count as plain keys. With a Hyper trigger, Caps Lock
+    /// is easily still down when the first letter follows, and every such attempt aborted (measured 2026-09-17).
+    private static func sequenceModifiers(_ modifiers: NSEvent.ModifierFlags) -> NSEvent.ModifierFlags {
+        guard let trigger = Preferences.shortcut(triggerPreferenceKey) else { return modifiers }
+        let held = modifiers.intersection(LeaderKey.relevantModifiers)
+        let triggerModifiers = trigger.modifierFlags.intersection(LeaderKey.relevantModifiers)
+        return !triggerModifiers.isEmpty && held == triggerModifiers ? modifiers.subtracting(triggerModifiers) : modifiers
+    }
 
     private static func matchesTrigger(_ keyCode: UInt32, _ modifiers: NSEvent.ModifierFlags) -> Bool {
         guard let trigger = Preferences.shortcut(triggerPreferenceKey), trigger.keyCode != .none else { return false }

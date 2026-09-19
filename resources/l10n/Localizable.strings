@@ -7,6 +7,9 @@
 /* No comment provided by engineer. */
 "%@ scroll speed" = "%@ scroll speed";
 
+/* Leader overlay */
+"%d actions" = "%d actions";
+
 /* No comment provided by engineer. */
 "%d min" = "%d min";
 
@@ -47,10 +50,16 @@
 "A lost binding is shown, never repointed." = "A lost binding is shown, never repointed.";
 
 /* No comment provided by engineer. */
+"A profile shows only its apps in the switcher and can switch to its space." = "A profile shows only its apps in the switcher and can switch to its space.";
+
+/* No comment provided by engineer. */
 "A row is missing either its keys or its action." = "A row is missing either its keys or its action.";
 
 /* No comment provided by engineer. */
 "A sequence uses keys other than letters and digits." = "A sequence uses keys other than letters and digits.";
+
+/* No comment provided by engineer. */
+"A web address, or a link of another app such as mailto: or raycast://" = "A web address, or a link of another app such as mailto: or raycast://";
 
 /* No comment provided by engineer. */
 "A, W and D for left, center and right focus, and S for restore, on the Hyper key. Stays clear of Rectangle and Magnet. Requires the Hyper key to be enabled." = "A, W and D for left, center and right focus, and S for restore, on the Hyper key. Stays clear of Rectangle and Magnet. Requires the Hyper key to be enabled.";
@@ -74,10 +83,16 @@
 "Accessibility tree of %@ copied." = "Accessibility tree of %@ copied.";
 
 /* No comment provided by engineer. */
+"Actions" = "Actions";
+
+/* No comment provided by engineer. */
 "Active app" = "Active app";
 
 /* No comment provided by engineer. */
 "Active screen" = "Active screen";
+
+/* No comment provided by engineer. */
+"Add" = "Add";
 
 /* No comment provided by engineer. */
 "Add a running app" = "Add a running app";
@@ -87,6 +102,12 @@
 
 /* No comment provided by engineer. */
 "Add App…" = "Add App…";
+
+/* No comment provided by engineer. */
+"Add link" = "Add link";
+
+/* No comment provided by engineer. */
+"Add Link…" = "Add Link…";
 
 /* No comment provided by engineer. */
 "Additional controls" = "Additional controls";
@@ -105,6 +126,15 @@
 
 /* No comment provided by engineer. */
 "Align windows" = "Align windows";
+
+/* No comment provided by engineer. */
+"All" = "All";
+
+/* No comment provided by engineer. */
+"All %d profiles are in use. Delete one first." = "All %d profiles are in use. Delete one first.";
+
+/* No comment provided by engineer. */
+"All 9 places are in use. Remove an entry first." = "All 9 places are in use. Remove an entry first.";
 
 /* No comment provided by engineer. */
 "All apps" = "All apps";
@@ -149,6 +179,9 @@
 "AltTab+ needs accessibility permission to read the menus of other apps." = "AltTab+ needs accessibility permission to read the menus of other apps.";
 
 /* No comment provided by engineer. */
+"AltTab+ restarts afterwards." = "AltTab+ restarts afterwards.";
+
+/* No comment provided by engineer. */
 "Always" = "Always";
 
 /* No comment provided by engineer. */
@@ -162,9 +195,6 @@
 
 /* No comment provided by engineer. */
 "Animations…" = "Animations…";
-
-/* No comment provided by engineer. */
-"App %d" = "App %d";
 
 /* No comment provided by engineer. */
 "App (BundleID starting with)" = "App (BundleID starting with)";
@@ -200,6 +230,9 @@
 "Apply the creator's settings?" = "Apply the creator's settings?";
 
 /* No comment provided by engineer. */
+"Apply…" = "Apply…";
+
+/* No comment provided by engineer. */
 "Apps" = "Apps";
 
 /* No comment provided by engineer. */
@@ -215,13 +248,13 @@
 "Assign" = "Assign";
 
 /* No comment provided by engineer. */
-"Assign keyboard shortcuts to the actions of the menubar menu." = "Assign keyboard shortcuts to the actions of the menubar menu.";
-
-/* No comment provided by engineer. */
 "Assign shortcuts for arranging the focused window." = "Assign shortcuts for arranging the focused window.";
 
 /* No comment provided by engineer. */
 "Assign shortcuts to launch apps or open URLs." = "Assign shortcuts to launch apps or open URLs.";
+
+/* No comment provided by engineer. */
+"Assigned" = "Assigned";
 
 /* No comment provided by engineer. */
 "Assigns the Hyper presets for Spaces and Window Layouts: A, W and D for left, center and right focus, S for restore." = "Assigns the Hyper presets for Spaces and Window Layouts: A, W and D for left, center and right focus, S for restore.";
@@ -246,12 +279,6 @@
 
 /* No comment provided by engineer. */
 "Bound space is gone" = "Bound space is gone";
-
-/* No comment provided by engineer. */
-"Bundle ID or name" = "Bundle ID or name";
-
-/* No comment provided by engineer. */
-"Bundle IDs, one per line" = "Bundle IDs, one per line";
 
 /* No comment provided by engineer. */
 "Cancel" = "Cancel";
@@ -297,6 +324,9 @@
 
 /* No comment provided by engineer. */
 "Choose how the window switcher looks and where it appears." = "Choose how the window switcher looks and where it appears.";
+
+/* No comment provided by engineer. */
+"Choose…" = "Choose…";
 
 /* No comment provided by engineer. */
 "Clear" = "Clear";
@@ -350,6 +380,9 @@
 "Conflicting shortcut" = "Conflicting shortcut";
 
 /* No comment provided by engineer. */
+"Conflicts (%d)" = "Conflicts (%d)";
+
+/* No comment provided by engineer. */
 "Control and Option with D, G, E, T for thirds and two-thirds, and with Delete for restore, matching Rectangle and Magnet. Conflicts if one of those apps is running." = "Control and Option with D, G, E, T for thirds and two-thirds, and with Delete for restore, matching Rectangle and Magnet. Conflicts if one of those apps is running.";
 
 /* No comment provided by engineer. */
@@ -365,7 +398,7 @@
 "Copy Translation" = "Copy Translation";
 
 /* No comment provided by engineer. */
-"Creator's settings…" = "Creator's settings…";
+"Creator's settings" = "Creator's settings";
 
 /* No comment provided by engineer. */
 "Cursor follows focus" = "Cursor follows focus";
@@ -401,10 +434,19 @@
 "Default Browser" = "Default Browser";
 
 /* No comment provided by engineer. */
-"Defaults" = "Defaults";
+"Delay" = "Delay";
 
 /* No comment provided by engineer. */
-"Delay" = "Delay";
+"Delete" = "Delete";
+
+/* No comment provided by engineer. */
+"Delete %@?" = "Delete %@?";
+
+/* No comment provided by engineer. */
+"Delete…" = "Delete…";
+
+/* No comment provided by engineer. */
+"Devices" = "Devices";
 
 /* No comment provided by engineer. */
 "Disable input extensions (safe mode)" = "Disable input extensions (safe mode)";
@@ -452,10 +494,16 @@
 "Ends Cat Mode after 30 minutes. Keep Awake also keeps the display on, and ends on battery at 10%." = "Ends Cat Mode after 30 minutes. Keep Awake also keeps the display on, and ends on battery at 10%.";
 
 /* No comment provided by engineer. */
+"Every action shortcut and its conflicts. Switcher triggers stay in Cmd-Tab Controls, the Leader key in Leader, and the FlickRing button in FlickRing." = "Every action shortcut and its conflicts. Switcher triggers stay in Cmd-Tab Controls, the Leader key in Leader, and the FlickRing button in FlickRing.";
+
+/* No comment provided by engineer. */
 "Exceptions" = "Exceptions";
 
 /* No comment provided by engineer. */
-"Export settings…" = "Export settings…";
+"Export or import your settings" = "Export or import your settings";
+
+/* No comment provided by engineer. */
+"Export…" = "Export…";
 
 /* No comment provided by engineer. */
 "Extend by 1 Hour" = "Extend by 1 Hour";
@@ -483,6 +531,9 @@
 
 /* No comment provided by engineer. */
 "FlickRing" = "FlickRing";
+
+/* No comment provided by engineer. */
+"Focus on 3 Foremost Windows" = "Focus on 3 Foremost Windows";
 
 /* No comment provided by engineer. */
 "Focus selected window" = "Focus selected window";
@@ -542,6 +593,12 @@
 "Hold" = "Hold";
 
 /* No comment provided by engineer. */
+"Holding a key now repeats it. Restart an app to apply it there." = "Holding a key now repeats it. Restart an app to apply it there.";
+
+/* No comment provided by engineer. */
+"Holding a key now shows accents. Restart an app to apply it there." = "Holding a key now shows accents. Restart an app to apply it there.";
+
+/* No comment provided by engineer. */
 "Hyper could not access the physical Caps Lock key." = "Hyper could not access the physical Caps Lock key.";
 
 /* No comment provided by engineer. */
@@ -563,7 +620,7 @@
 "Ignore shortcuts when active" = "Ignore shortcuts when active";
 
 /* No comment provided by engineer. */
-"Import settings…" = "Import settings…";
+"Import…" = "Import…";
 
 /* No comment provided by engineer. */
 "Indefinitely" = "Indefinitely";
@@ -588,6 +645,9 @@
 
 /* No comment provided by engineer. */
 "Isolate Window" = "Isolate Window";
+
+/* No comment provided by engineer. */
+"Its apps, layout, bound space, and shortcut are removed too." = "Its apps, layout, bound space, and shortcut are removed too.";
 
 /* No comment provided by engineer. */
 "Keep Awake" = "Keep Awake";
@@ -674,6 +734,9 @@
 "Leader" = "Leader";
 
 /* No comment provided by engineer. */
+"Leader – press next key" = "Leader – press next key";
+
+/* No comment provided by engineer. */
 "Leading" = "Leading";
 
 /* No comment provided by engineer. */
@@ -690,6 +753,9 @@
 
 /* No comment provided by engineer. */
 "Light" = "Light";
+
+/* No comment provided by engineer. */
+"Links" = "Links";
 
 /* No comment provided by engineer. */
 "Lock search" = "Lock search";
@@ -710,13 +776,13 @@
 "Medium" = "Medium";
 
 /* No comment provided by engineer. */
-"Menu Actions" = "Menu Actions";
-
-/* No comment provided by engineer. */
 "Menubar icon" = "Menubar icon";
 
 /* No comment provided by engineer. */
 "Microphone" = "Microphone";
+
+/* No comment provided by engineer. */
+"Microphone key mutes the microphone" = "Microphone key mutes the microphone";
 
 /* No comment provided by engineer. */
 "Microphone muted" = "Microphone muted";
@@ -744,9 +810,6 @@
 
 /* No comment provided by engineer. */
 "More Spaces" = "More Spaces";
-
-/* No comment provided by engineer. */
-"more…" = "more…";
 
 /* No comment provided by engineer. */
 "Mouse button" = "Mouse button";
@@ -785,10 +848,19 @@
 "Name" = "Name";
 
 /* No comment provided by engineer. */
+"Needs attention" = "Needs attention";
+
+/* No comment provided by engineer. */
 "Never" = "Never";
 
 /* No comment provided by engineer. */
+"New" = "New";
+
+/* No comment provided by engineer. */
 "No application is configured." = "No application is configured.";
+
+/* No comment provided by engineer. */
+"No apps yet. Add one to open it with a shortcut." = "No apps yet. Add one to open it with a shortcut.";
 
 /* No comment provided by engineer. */
 "No browsers found" = "No browsers found";
@@ -797,10 +869,16 @@
 "No code was found." = "No code was found.";
 
 /* No comment provided by engineer. */
+"No conflicts." = "No conflicts.";
+
+/* No comment provided by engineer. */
 "No ejectable disks." = "No ejectable disks.";
 
 /* No comment provided by engineer. */
 "No eligible foreground application." = "No eligible foreground application.";
+
+/* No comment provided by engineer. */
+"No installed app matches this entry." = "No installed app matches this entry.";
 
 /* No comment provided by engineer. */
 "No installed application matches this bundle identifier or name." = "No installed application matches this bundle identifier or name.";
@@ -809,10 +887,19 @@
 "No Leader bindings configured." = "No Leader bindings configured.";
 
 /* No comment provided by engineer. */
+"No links yet. Add one to open it with a shortcut." = "No links yet. Add one to open it with a shortcut.";
+
+/* No comment provided by engineer. */
 "No notifications to clear." = "No notifications to clear.";
 
 /* No comment provided by engineer. */
 "No other app is in front." = "No other app is in front.";
+
+/* No comment provided by engineer. */
+"No profiles yet." = "No profiles yet.";
+
+/* No comment provided by engineer. */
+"No shortcuts assigned yet." = "No shortcuts assigned yet.";
 
 /* No comment provided by engineer. */
 "No text was found." = "No text was found.";
@@ -837,6 +924,9 @@
 
 /* No comment provided by engineer. */
 "Not bound" = "Not bound";
+
+/* No comment provided by engineer. */
+"Not installed on this Mac." = "Not installed on this Mac.";
 
 /* No comment provided by engineer. */
 "Not managed by AltTab+" = "Not managed by AltTab+";
@@ -911,6 +1001,9 @@
 "Ownership" = "Ownership";
 
 /* No comment provided by engineer. */
+"Paste and Match Style" = "Paste and Match Style";
+
+/* No comment provided by engineer. */
 "Pick Color" = "Pick Color";
 
 /* No comment provided by engineer. */
@@ -920,10 +1013,19 @@
 "Pointer & Scroll" = "Pointer & Scroll";
 
 /* No comment provided by engineer. */
+"Press and Hold could not be changed." = "Press and Hold could not be changed.";
+
+/* No comment provided by engineer. */
+"Press and Hold for Accents" = "Press and Hold for Accents";
+
+/* No comment provided by engineer. */
 "Press this, then a sequence of keys." = "Press this, then a sequence of keys.";
 
 /* No comment provided by engineer. */
 "Preview selected window" = "Preview selected window";
+
+/* No comment provided by engineer. */
+"Profile" = "Profile";
 
 /* No comment provided by engineer. */
 "Profile %d" = "Profile %d";
@@ -934,8 +1036,7 @@
 /* No comment provided by engineer. */
 "Quit" = "Quit";
 
-/* %@ is AltTab
-   Menubar option. %@ is AltTab */
+/* Menubar option. %@ is AltTab */
 "Quit %@" = "Quit %@";
 
 /* No comment provided by engineer. */
@@ -965,6 +1066,9 @@
 /* No comment provided by engineer. */
 "Recently Focused First" = "Recently Focused First";
 
+/* Placeholder of an empty shortcut recorder */
+"Record" = "Record";
+
 /* No comment provided by engineer. */
 "Rectangle-style layout shortcuts" = "Rectangle-style layout shortcuts";
 
@@ -975,10 +1079,16 @@
 "Remove and restore" = "Remove and restore";
 
 /* No comment provided by engineer. */
+"Replaces a macOS shortcut while assigned." = "Replaces a macOS shortcut while assigned.";
+
+/* No comment provided by engineer. */
 "Requires macOS 14 or later." = "Requires macOS 14 or later.";
 
 /* No comment provided by engineer. */
 "Requires macOS 26 or later." = "Requires macOS 26 or later.";
+
+/* No comment provided by engineer. */
+"Reset all settings" = "Reset all settings";
 
 /* No comment provided by engineer. */
 "Reset AltTab+ permissions?" = "Reset AltTab+ permissions?";
@@ -993,7 +1103,7 @@
 "Reset settings and restart" = "Reset settings and restart";
 
 /* No comment provided by engineer. */
-"Reset settings and restart…" = "Reset settings and restart…";
+"Reset…" = "Reset…";
 
 /* No comment provided by engineer. */
 "Resize the window under the cursor while holding" = "Resize the window under the cursor while holding";
@@ -1086,6 +1196,9 @@
 "Set how you open and navigate the window switcher." = "Set how you open and navigate the window switcher.";
 
 /* No comment provided by engineer. */
+"Settings file" = "Settings file";
+
+/* No comment provided by engineer. */
 "Settings imported" = "Settings imported";
 
 /* Menubar option */
@@ -1099,6 +1212,12 @@
 
 /* No comment provided by engineer. */
 "Shortcut already assigned to another action: %@" = "Shortcut already assigned to another action: %@";
+
+/* No comment provided by engineer. */
+"Shortcut Clues" = "Shortcut Clues";
+
+/* No comment provided by engineer. */
+"Shortcuts" = "Shortcuts";
 
 /* No comment provided by engineer. */
 "Shortcuts in %@" = "Shortcuts in %@";
@@ -1260,6 +1379,9 @@
 "Text copied." = "Text copied.";
 
 /* No comment provided by engineer. */
+"That is not a valid link. Try a web address such as github.com." = "That is not a valid link. Try a web address such as github.com.";
+
+/* No comment provided by engineer. */
 "The app in front has no focused window." = "The app in front has no focused window.";
 
 /* No comment provided by engineer. */
@@ -1281,6 +1403,9 @@
 "The clipboard holds no image." = "The clipboard holds no image.";
 
 /* No comment provided by engineer. */
+"The clipboard holds no text." = "The clipboard holds no text.";
+
+/* No comment provided by engineer. */
 "The code contains a link. It was copied." = "The code contains a link. It was copied.";
 
 /* No comment provided by engineer. */
@@ -1299,13 +1424,16 @@
 "The function key mode could not be changed." = "The function key mode could not be changed.";
 
 /* No comment provided by engineer. */
-"The icons appear between the AltTab+ icon and the Spaces. macOS has no indicator for a muted microphone. Click an icon to unmute." = "The icons appear between the AltTab+ icon and the Spaces. macOS has no indicator for a muted microphone. Click an icon to unmute.";
+"The icons appear at the right end of the AltTab+ menu bar item, after the Spaces. macOS has no indicator for a muted microphone. Click an icon to unmute." = "The icons appear at the right end of the AltTab+ menu bar item, after the Spaces. macOS has no indicator for a muted microphone. Click an icon to unmute.";
 
 /* No comment provided by engineer. */
 "The language of the text could not be detected." = "The language of the text could not be detected.";
 
 /* No comment provided by engineer. */
 "The macOS set on the Hyper key instead of Control, so no macOS shortcut has to be disabled. Requires the Hyper key to be enabled." = "The macOS set on the Hyper key instead of Control, so no macOS shortcut has to be disabled. Requires the Hyper key to be enabled.";
+
+/* No comment provided by engineer. */
+"The microphone key in the F5 position toggles the mute instead of starting Dictation. After AltTab+ quits, the key starts Dictation again." = "The microphone key in the F5 position toggles the mute instead of starting Dictation. After AltTab+ quits, the key starts Dictation again.";
 
 /* No comment provided by engineer. */
 "The permissions could not be reset." = "The permissions could not be reset.";
@@ -1389,6 +1517,9 @@
 "Trigger key" = "Trigger key";
 
 /* No comment provided by engineer. */
+"Triggers" = "Triggers";
+
+/* No comment provided by engineer. */
 "Turn Off" = "Turn Off";
 
 /* No comment provided by engineer. */
@@ -1414,12 +1545,6 @@
 
 /* No comment provided by engineer. */
 "Until…" = "Until…";
-
-/* No comment provided by engineer. */
-"URL" = "URL";
-
-/* No comment provided by engineer. */
-"URL %d" = "URL %d";
 
 /* No comment provided by engineer. */
 "Usage" = "Usage";
@@ -1486,6 +1611,15 @@
 
 /* No comment provided by engineer. */
 "You may need to disable some conflicting system gestures" = "You may need to disable some conflicting system gestures";
+
+/* No comment provided by engineer. */
+"⚠︎ Also used by %@." = "⚠︎ Also used by %@.";
+
+/* No comment provided by engineer. */
+"⚠︎ Reserved by macOS; it will not work." = "⚠︎ Reserved by macOS; it will not work.";
+
+/* No comment provided by engineer. */
+"⚠︎ Used by the macOS Game Overlay." = "⚠︎ Used by the macOS Game Overlay.";
 
 /* No comment provided by engineer. */
 "🐈 Cat Mode — the keyboard is locked. Click the menu or type “unlock”." = "🐈 Cat Mode — the keyboard is locked. Click the menu or type “unlock”.";

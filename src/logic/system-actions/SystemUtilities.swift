@@ -1,11 +1,60 @@
 import Cocoa
 import IOKit
+import Carbon.HIToolbox
 
 /// Story 14D, 14F, 14G: actions with no state of their own.
 enum SystemUtilities {
     static func clearClipboard() {
         NSPasteboard.general.clearContents()
         TransientNotice.show(NSLocalizedString("Clipboard cleared.", comment: ""))
+    }
+
+    // MARK: paste and match style
+
+    /// Apps differ in how they handle the system Paste and Match Style (some ignore it), so the clipboard
+    /// is reduced to its plain text, a Cmd-V goes to the frontmost app, and the original contents come back.
+    static func plainPasteAvailability() -> ActionAvailability {
+        NSPasteboard.general.string(forType: .string) == nil ? .unavailable(NSLocalizedString("The clipboard holds no text.", comment: "")) : .available
+    }
+
+    static func pasteAsPlainText() {
+        let pasteboard = NSPasteboard.general
+        guard let text = pasteboard.string(forType: .string) else { return NSSound.beep() }
+        let original = snapshot(pasteboard)
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+        let plainChangeCount = pasteboard.changeCount
+        // the delay lets the menubar menu close first, so the key event reaches the app behind it
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            postCommandV()
+            // restored late enough for the target app to read the plain text; skipped if anything else wrote
+            // to the clipboard meanwhile, so a newer copy is never overwritten
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                guard pasteboard.changeCount == plainChangeCount else { return }
+                pasteboard.clearContents()
+                pasteboard.writeObjects(original)
+            }
+        }
+    }
+
+    private static func snapshot(_ pasteboard: NSPasteboard) -> [NSPasteboardItem] {
+        (pasteboard.pasteboardItems ?? []).map { item in
+            let copy = NSPasteboardItem()
+            item.types.forEach { type in
+                if let data = item.data(forType: type) { copy.setData(data, forType: type) }
+            }
+            return copy
+        }
+    }
+
+    /// Explicit flags, so modifiers the user still holds from the triggering shortcut do not change the key.
+    private static func postCommandV() {
+        guard let source = CGEventSource(stateID: .hidSystemState) else { return NSSound.beep() }
+        for keyDown in [true, false] {
+            guard let event = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: keyDown) else { return NSSound.beep() }
+            event.flags = .maskCommand
+            event.post(tap: .cgSessionEventTap)
+        }
     }
 
     // MARK: eject

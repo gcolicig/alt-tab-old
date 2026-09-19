@@ -115,6 +115,7 @@ class Preferences {
             values[$0.shortcutPreferenceKey] = defaultShortcut("")
         }
         values["micMuteIndicator"] = "true"
+        values["micKeyMutesMicrophone"] = "false"
         values["autoQuitEnabled"] = "false"
         values["autoQuitDelaySeconds"] = "10"
         values["autoQuitMode"] = String(AutoQuitMode.onlyListed.rawValue)
@@ -190,6 +191,7 @@ class Preferences {
     static var scrollSpeedMouse: ScrollSpeedPreference { CachedUserDefaults.macroPref("scrollSpeedMouse", ScrollSpeedPreference.allCases) }
     static var scrollSpeedTrackpad: ScrollSpeedPreference { CachedUserDefaults.macroPref("scrollSpeedTrackpad", ScrollSpeedPreference.allCases) }
     static var micMuteIndicator: Bool { CachedUserDefaults.bool("micMuteIndicator") }
+    static var micKeyMutesMicrophone: Bool { CachedUserDefaults.bool("micKeyMutesMicrophone") }
     static var autoQuitEnabled: Bool { CachedUserDefaults.bool("autoQuitEnabled") }
     static var autoQuitDelaySeconds: Int { CachedUserDefaults.int("autoQuitDelaySeconds") }
     static var autoQuitMode: Int { CachedUserDefaults.int("autoQuitMode") }

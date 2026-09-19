@@ -68,7 +68,7 @@ Run the tests one at a time.
 Use this step when Step 2 changed nothing.
 
 - Quit other window managers one by one: Rectangle, yabai, AeroSpace, Magnet, BetterTouchTool, Hammerspoon.
-- Open the AltTab menu `Debug tools` and watch the log window.
+- Open the AltTab+ menu `Debug > Debug Tools…` and watch the log window. `Debug > Copy Debug Info` copies a report with the active input modules.
 - Expected result: The load returns to normal, or an event flood becomes visible.
 - Meaning: A flood of `AXTitleChanged`, `AXWindowMoved`, or `AXWindowResized` is an accessibility event storm or a conflict.
 

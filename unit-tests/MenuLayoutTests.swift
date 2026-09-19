@@ -14,13 +14,13 @@ class MenuLayoutTests: XCTestCase {
 
     func testOtherGroupsAppearOnceAsSectionsOfOther() {
         let items = MenuLayout.build(entries, headersSupported: true)
-        let otherGroups: [MenuGroupEntries] = [MenuGroupEntries(group: .apps, ids: ["quitAll"]), MenuGroupEntries(group: .tools, ids: ["pick"]),
-                                               MenuGroupEntries(group: .toggles, ids: ["cat"])]
+        let otherGroups: [MenuGroupEntries] = [MenuGroupEntries(group: .toggles, ids: ["cat"]), MenuGroupEntries(group: .tools, ids: ["pick"]),
+                                               MenuGroupEntries(group: .apps, ids: ["quitAll"])]
         let expected: [MenuLayoutItem] = [
-            .entry("settings"), .separator,
             .header(.switcher), .entry("show"), .separator,
             .header(.windows), .entry("isolate"), .separator,
             .other(otherGroups), .separator,
+            .entry("settings"), .separator,
             .entry("about"), .entry("quit"),
         ]
         XCTAssertEqual(items, expected)
@@ -52,7 +52,7 @@ class MenuLayoutTests: XCTestCase {
     func testWithoutHeaderSupportOnlySeparatorsRemain() {
         let items = MenuLayout.build(entries, headersSupported: false)
         XCTAssertFalse(items.contains { if case .header = $0 { return true } else { return false } })
-        XCTAssertEqual(Array(items.prefix(3)), [.entry("settings"), .separator, .entry("show")])
+        XCTAssertEqual(Array(items.prefix(3)), [.entry("show"), .separator, .entry("isolate")])
     }
 
     func testNoLeadingOrTrailingSeparator() {
@@ -62,10 +62,17 @@ class MenuLayoutTests: XCTestCase {
     }
 
     func testOnlySwitcherWindowsAndTheAppBlockStayInTheMainMenu() {
-        XCTAssertEqual(MenuGroup.allCases.filter { !$0.isInOther }, [.settings, .switcher, .windows, .app])
+        XCTAssertEqual(MenuGroup.allCases.filter { !$0.isInOther }, [.switcher, .windows, .settings, .app])
         XCTAssertFalse(MenuGroup.app.hasHeader)
         XCTAssertFalse(MenuGroup.settings.hasHeader)
-        XCTAssertEqual(MenuGroup.allCases.first, .settings)
+        XCTAssertEqual(MenuGroup.allCases.suffix(2), [.settings, .app])
+    }
+
+    func testTheRarerWindowActionsOpenFirstInOther() {
+        XCTAssertTrue(MenuGroup.windowsMore.isInOther)
+        XCTAssertTrue(MenuGroup.windowsMore.hasHeader)
+        XCTAssertEqual(MenuGroup.allCases.filter(\.isInOther),
+                       [.windowsMore, .toggles, .defaults, .tools, .system, .notifications, .apps])
     }
 
     func testRetiredVisibilityPreferencesAreRecognised() {

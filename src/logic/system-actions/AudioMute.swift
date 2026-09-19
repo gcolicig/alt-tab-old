@@ -1,5 +1,6 @@
 import CoreAudio
 import Foundation
+import IOKit.hidsystem
 
 /// Story 14E. Mute through CoreAudio on the default device. A microphone without a mute control is muted
 /// by its input volume instead; that simulated mute is the only state AltTab+ gives back on quit.
@@ -124,5 +125,42 @@ enum AudioMute {
     private static func report(_ status: OSStatus, _ selector: AudioObjectPropertySelector) {
         guard status != noErr else { return }
         Logger.warning { "CoreAudio write \(selector) failed: \(status)" }
+    }
+}
+
+/// The microphone key toggles the microphone mute when the setting is on. The remap lives in the HID
+/// system until logout, so it is released on quit and whenever the setting is turned off.
+enum MicKey {
+    private static let property = "UserKeyMapping" as NSString as CFString
+
+    static func settingChanged() {
+        Preferences.micKeyMutesMicrophone ? apply() : release()
+    }
+
+    static func release() {
+        let current = read()
+        let next = MicKeyMapping.removing(current)
+        guard next.count != current.count else { return }
+        write(next)
+    }
+
+    private static func apply() {
+        write(MicKeyMapping.adding(read()))
+    }
+
+    private static func read() -> [[String: UInt64]] {
+        let client = IOHIDEventSystemClientCreateSimpleClient(kCFAllocatorDefault)
+        guard let value = IOHIDEventSystemClientCopyProperty(client, property) as? [[String: Any]] else { return [] }
+        return value.map { $0.compactMapValues { ($0 as? NSNumber)?.uint64Value } }
+    }
+
+    private static func write(_ mappings: [[String: UInt64]]) {
+        let client = IOHIDEventSystemClientCreateSimpleClient(kCFAllocatorDefault)
+        let value = mappings.map { $0.mapValues { NSNumber(value: $0) } } as NSArray
+        guard IOHIDEventSystemClientSetProperty(client, property, value) else {
+            Logger.error { "Could not set the HID key mapping for the microphone key" }
+            return
+        }
+        Logger.debug { "Microphone key mapping: \(mappings.count) entries" }
     }
 }

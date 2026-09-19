@@ -103,4 +103,26 @@ class ScreenToolsFormatTests: XCTestCase {
         XCTAssertEqual(ScreenToolsFormat.selection(from: CGPoint(x: 50, y: 50), to: CGPoint(x: 10, y: 20)), CGRect(x: 10, y: 20, width: 40, height: 30))
         XCTAssertNil(ScreenToolsFormat.selection(from: CGPoint(x: 5, y: 5), to: CGPoint(x: 6, y: 6)))
     }
+
+    private let src = MicKeyMapping.sourceKey
+    private let dst = MicKeyMapping.destinationKey
+
+    func testMicKeyMappingIsAddedOnceAndKeepsOtherMappings() {
+        let capsToEscape: [String: UInt64] = [src: 0x700000039, dst: 0x700000029]
+        let once = MicKeyMapping.adding([capsToEscape])
+        XCTAssertEqual(once, [capsToEscape, [src: MicKeyMapping.microphoneKey, dst: MicKeyMapping.f17]])
+        XCTAssertEqual(MicKeyMapping.adding(once), once)
+    }
+
+    func testAnEarlierMicKeyMappingIsReplaced() {
+        let toF5: [String: UInt64] = [src: MicKeyMapping.microphoneKey, dst: 0x70000003E]
+        XCTAssertEqual(MicKeyMapping.adding([toF5]), [[src: MicKeyMapping.microphoneKey, dst: MicKeyMapping.f17]])
+    }
+
+    func testRemovingKeepsMappingsAltTabDidNotMake() {
+        let toF5: [String: UInt64] = [src: MicKeyMapping.microphoneKey, dst: 0x70000003E]
+        let ours: [String: UInt64] = [src: MicKeyMapping.microphoneKey, dst: MicKeyMapping.f17]
+        XCTAssertEqual(MicKeyMapping.removing([toF5, ours]), [toF5])
+        XCTAssertEqual(MicKeyMapping.removing([]), [])
+    }
 }

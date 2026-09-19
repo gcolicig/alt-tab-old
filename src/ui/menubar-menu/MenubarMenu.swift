@@ -98,13 +98,13 @@ final class MenubarMenu: NSObject, NSMenuDelegate {
     static func groupTitle(_ group: MenuGroup) -> String {
         switch group {
             case .switcher: return NSLocalizedString("Switcher", comment: "")
-            case .windows: return NSLocalizedString("Windows", comment: "")
+            case .windows, .windowsMore: return NSLocalizedString("Windows", comment: "")
             case .apps: return NSLocalizedString("Apps", comment: "")
             case .tools: return NSLocalizedString("Tools", comment: "")
             case .notifications: return NSLocalizedString("Notifications", comment: "")
             case .system: return NSLocalizedString("System", comment: "")
             case .toggles: return NSLocalizedString("Toggles", comment: "")
-            case .defaults: return NSLocalizedString("Defaults", comment: "")
+            case .defaults: return NSLocalizedString("Default Browser", comment: "")
             case .settings, .app: return App.name
         }
     }
@@ -136,8 +136,7 @@ final class MenubarMenu: NSObject, NSMenuDelegate {
     private static let appEntries: [MenubarEntry] = [
         MenubarEntry(id: "app.about", group: .app, title: { String(format: NSLocalizedString("About %@", comment: "Menubar option. %@ is AltTab"), App.name) },
             symbol: "info.circle") { App.showAboutWindow() },
-        // decided 2026-09-17: Settings… sits in the app block, between About and Check permissions
-        MenubarEntry(id: "app.settings", group: .app, title: { NSLocalizedString("Settings…", comment: "Menubar option") },
+        MenubarEntry(id: "app.settings", group: .settings, title: { NSLocalizedString("Settings…", comment: "Menubar option") },
             symbol: "gear", keyEquivalent: ",") { App.showSettingsWindow() },
         MenubarEntry(id: "app.permissions", group: .app, title: { NSLocalizedString("Check permissions…", comment: "Menubar option") },
             symbol: "hand.raised") { App.showPermissionsWindow() },

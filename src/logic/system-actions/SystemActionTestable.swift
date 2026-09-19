@@ -7,6 +7,7 @@ enum SystemAction: String, CaseIterable {
     case minimizeAppOthers = "windowFocus.minimizeAppOthers"
     case hideOtherApps = "windowFocus.hideOthers"
     case hideAll = "windowFocus.hideAll"
+    case focusThreeWindows = "windowFocus.focusThree"
     case quitAllApps = "apps.quitAll"
     case quitAllAppsExceptFrontmost = "apps.quitAllExceptFrontmost"
     case autoQuitToggle = "apps.autoQuit.toggle"
@@ -17,6 +18,7 @@ enum SystemAction: String, CaseIterable {
     case scanQrClipboard = "tools.scanQrClipboard"
     case clearVisibleNotifications = "notifications.clearVisible"
     case clearAllNotifications = "notifications.clearAll"
+    case pasteAsPlainText = "system.pasteAsPlainText"
     case clearClipboard = "system.clearClipboard"
     case ejectAllDisks = "system.ejectAllDisks"
     case sleepDisplays = "system.sleepDisplays"
@@ -24,6 +26,7 @@ enum SystemAction: String, CaseIterable {
     case muteOutputToggle = "audio.muteOutput.toggle"
     case muteInputToggle = "audio.muteInput.toggle"
     case functionKeysToggle = "keyboard.fnKeys.toggle"
+    case pressAndHoldToggle = "keyboard.pressAndHold.toggle"
     case keepAwakeToggle = "keepAwake.toggle"
     case keepAwakeStop = "keepAwake.stop"
     case keepAwakeIndefinitely = "keepAwake.start.indefinitely"
@@ -162,5 +165,27 @@ enum CatModePanic {
     /// level, so the tap recognises it itself (Q-01).
     static func isEmergencyShortcut(keyCode: Int64, flags: UInt64) -> Bool {
         keyCode == escapeKeyCode && flags & requiredFlags == requiredFlags
+    }
+}
+
+/// The microphone key sends a dictation usage that macOS handles before any event tap sees it. AltTab+
+/// remaps it to F17 through the HID `UserKeyMapping` property; no Apple keyboard has F17, so the remap takes
+/// no key away, and F17 then arrives in the event tap like any other key.
+enum MicKeyMapping {
+    static let sourceKey = "HIDKeyboardModifierMappingSrc"
+    static let destinationKey = "HIDKeyboardModifierMappingDst"
+    /// Consumer page 0x0C, usage 0xCF "Voice Command": the microphone key in the F5 position.
+    static let microphoneKey: UInt64 = 0xC000000CF
+    /// Keyboard page 0x07, usage 0x6C: F17.
+    static let f17: UInt64 = 0x70000006C
+
+    /// Other mappings stay; an earlier mapping of the microphone key is replaced, not duplicated.
+    static func adding(_ mappings: [[String: UInt64]]) -> [[String: UInt64]] {
+        mappings.filter { $0[sourceKey] != microphoneKey } + [[sourceKey: microphoneKey, destinationKey: f17]]
+    }
+
+    /// Removes only the mapping AltTab+ made, so a remap another tool made to some other key survives.
+    static func removing(_ mappings: [[String: UInt64]]) -> [[String: UInt64]] {
+        mappings.filter { !($0[sourceKey] == microphoneKey && $0[destinationKey] == f17) }
     }
 }

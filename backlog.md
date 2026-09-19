@@ -125,7 +125,7 @@ Vor Scope-Entscheidungen zu Snapping und Layouts am Zielgeraet klaeren:
 
 ### 0. Gemeinsamer Aktions- und Triggerkern
 
-Status: Teilweise umgesetzt; Dual-Role-Hyper und Apps/URLs-Register stehen, Leader und FlickRing sind offen
+Status: Umgesetzt; Dual-Role-Hyper, Apps/URLs-Register, Leader und FlickRing stehen (Leader und FlickRing seit 2026-08-18, Abnahme am Geraet offen)
 Prioritaet: Sehr hoch
 
 Beschreibung:
@@ -1712,6 +1712,7 @@ Nicht im Scope:
 ### 14. System-Aktionen und Werkzeuge aus dem Supercharge-Abgleich
 
 Status: Umgesetzt 2026-09-16, alle Bloecke; Geraetepruefung offen (`docs/system-actions-checklist.md`), dazu V-19, V-20 und V-21
+Nachtrag 2026-09-19: `Paste and Match Style` (`system.pasteAsPlainText`, Gruppe System) setzt die Zwischenablage auf reinen Text, sendet `Cmd+V` an die App im Vordergrund und stellt den Originalinhalt nach 0,5 s wieder her, wenn niemand sonst geschrieben hat. `Press and Hold for Accents` (`keyboard.pressAndHold.toggle`, Gruppe Toggles) schaltet die globale Einstellung `ApplePressAndHoldEnabled`; Apps lesen sie nur beim Start. Beide am Geraet noch nicht geprueft, insbesondere ob 50 ms reichen, bis das Menue geschlossen ist.
 Prioritaet: Niedrig bis mittel je Block; die Bloecke sind unabhaengig und einzeln umsetzbar
 
 Referenz: Supercharge-Menue, Einordnung unter `Supercharge-Abgleich`. Verhalten nur aus Namen und Menue abgeleitet (Art A). Am 2026-09-16 vom Nutzer zur Uebernahme bestimmt, auch fuer Eintraege, die der Abgleich zuerst als `ENTFERNEN` gefuehrt hatte (Bildschirm-Werkzeuge, Mitteilungen, Cat Mode). Die dort genannten Risiken bleiben und sind unten als Regeln gefasst.
@@ -1905,7 +1906,7 @@ Gruppen und Reihenfolge:
 | 6 | System | `Clear Clipboard`, `Eject All Disks`, `Sleep Displays` | Story 14D, 14F, 14G |
 | 7 | Schalter | `Keep Awake >`, `Mute Sound`, `Mute Microphone`, `Function Keys`, `Auto-Quit Apps`, `Cat Mode` | Story 10, 14C, 14E, 14J, 14K |
 | 8 | Standards | `Default Browser >` | Story 14L |
-| 9 | AltTab+ | `Settings…`, `Check Permissions…`, `About AltTab+`, `Debug >`, `Quit AltTab+` | vorhanden, Story 13 |
+| 9 | AltTab+ | `About AltTab+`, `Check Permissions…`, `Debug >`, `Quit AltTab+`; `Settings…` steht seit 2026-09-16 als eigene Gruppe ganz oben | vorhanden, Story 13 |
 
 Aufbau:
 
@@ -1923,12 +1924,12 @@ Sichtbarkeit (ersetzt am 2026-09-16):
 - **Entschieden 2026-09-16**: `Settings…` steht als eigener Eintrag ganz oben, vor `Switcher`. Im AltTab+-Block steht `About AltTab+` vor `Check permissions…`.
 - **Entschieden 2026-09-16**: Es gibt kein Ein- und Ausblenden mehr. Alle Eintraege sind immer sichtbar. Im Hauptmenue stehen nur `Switcher`, `Fenster` und der AltTab+-Block; alle anderen Gruppen (`Apps`, `Werkzeuge`, `Mitteilungen`, `System`, `Schalter`, `Standards`) sind Abschnitte mit Ueberschrift im Untermenue `Other… >`.
 - Die frueheren Schalter-Praeferenzen (`menuGroupVisible.*`, `menuEntryVisible.*`) entfernt eine Migration beim Start.
-- Der Settings-Tab heisst jetzt `Menu Actions` und vergibt nur noch globale Shortcuts fuer die Aktionen, gruppiert wie im Menue. Keep-Awake-Shortcuts bleiben im Tab `Keep Awake`, damit je Praeferenz genau ein Recorder existiert.
+- Der Settings-Tab hiess danach `Menu Actions` und vergab nur noch globale Shortcuts; seit Story 16, Stufe 3, ist er die Seite `Shortcuts`. Keep-Awake-Shortcuts bleiben im Tab `Keep Awake`, damit je Praeferenz genau ein Recorder existiert.
 
 Umsetzungsstand 2026-09-16:
 
 - `MenuLayout` (rein, unit-getestet) liefert die Struktur; `MenubarMenu` setzt sie um und aktualisiert Titel, Haekchen und Verfuegbarkeit in `menuNeedsUpdate`. Submenues bauen sich beim Oeffnen neu.
-- Der eigene Sidebar-Eintrag (zuerst `Menu Bar Menu`, jetzt `Menu Actions`) vergibt die Shortcuts der neuen Aktionen.
+- Der eigene Sidebar-Eintrag (zuerst `Menu Bar Menu`, dann `Menu Actions`, seit Story 16 `Shortcuts`) vergibt die Shortcuts der neuen Aktionen.
 - `Menubar.addMenuItem` ist entfallen; das Menue entsteht vollstaendig im Builder.
 
 Regeln:
@@ -1940,6 +1941,122 @@ Regeln:
 | MG-03 | `Settings…` und `Quit AltTab+` stehen immer im Hauptmenue | Ausweg aus jeder Einstellung |
 | MG-04 | Das Oeffnen des Menues loest keine AX-Arbeit und keinen Prozessstart aus | Menue muss sofort erscheinen |
 | MG-05 | Die bestehende Permission-Callout-Zeile bleibt ganz oben und wird wie heute ein- und ausgefuegt | Bestehendes Verhalten |
+
+### 16. Einstellungsfenster umbauen
+
+Status: Alle drei Stufen umgesetzt 2026-09-16 auf den gestapelten Branches; am Geraet angesehen (Seiten, Suche, Listen, Profil anlegen und loeschen, Uebersicht, `Show`). Offen: Konfliktanzeige mit einem absichtlich doppelten Shortcut
+Prioritaet: Mittel. Folgt aus der kritischen Pruefung des Einstellungsfensters vom 2026-09-16 und dem Mockup dazu
+
+Ausgangslage (gelesen 2026-09-16):
+
+- `SettingsWindow` baut alle Bereiche als eine einzige, lange Seite (`sectionsStack`). Die Seitenleiste scrollt nur zur gewaehlten Stelle; ein Scroll-Beobachter setzt die Markierung nach. Die Suche blendet nicht passende Bereiche aus und hebt Treffer hervor.
+- Unten in der Seitenleiste stehen `Creator's settings…`, `Reset settings and restart…` und `Quit AltTab+`.
+- Recorder (`CustomRecorderControl`) sind fest 100 pt breit; der Platzhalter `Record Shortcut` wird zu `Recor…rtcut` gekuerzt.
+- Apps & URLs sind je 9 feste Slots (`launchAppBundleIdentifier0…8`, `openUrlValue0…8`), Profile 5 feste Slots (`profileName0…4` und weitere Felder). Leader und FlickRing binden per `stableId` mit Slot-Nummer (`launchApp.3`, `activateProfile.1`).
+- `CustomRecorderControlTestable.isShortcutAcceptable` erkennt bereits Konflikte mit anderen AltTab+-Shortcuts, mit macOS-Reservierungen und mit dem Game Overlay.
+
+Aufbau der Branches:
+
+| Stufe | Branch | Basis |
+|---|---|---|
+| 1 | `feat/settings-pages` | `main` nach dem Merge von PR #56 |
+| 2 | `feat/settings-lists` | `feat/settings-pages` |
+| 3 | `feat/settings-shortcut-overview` | `feat/settings-lists` |
+
+Jede Stufe ist fuer sich baubar, getestet und als eigener PR mergebar; die naechste Stufe wird nach dem Merge der vorherigen auf `main` rebased.
+
+#### Stufe 1: Seiten, Seitenleiste, Recorder, Aufraeumen, Texte
+
+- **Eine Seite pro Bereich.** Ohne Suchbegriff ist nur der gewaehlte Bereich sichtbar; ein Klick in der Seitenleiste wechselt die Seite und scrollt nach oben. Der Scroll-Beobachter setzt die Markierung nur noch im Suchmodus.
+- **Suche.** Mit Suchbegriff werden, wie heute, alle passenden Bereiche untereinander gezeigt, mit Hervorhebung. Die Seitenleiste zeigt nur die Bereiche mit Treffern. Leeren der Suche kehrt zur zuletzt gewaehlten Seite zurueck.
+- **Gegliederte Seitenleiste** mit Ueberschriften (Gruppenzeilen der Tabelle, nicht auswaehlbar):
+
+  | Gruppe | Bereiche |
+  |---|---|
+  | App | General |
+  | Switcher | Cmd-Tab, Cmd-Tab Controls, Exceptions |
+  | Windows | Window Layouts, Spaces, Profiles |
+  | Triggers | Hyperkey, Leader, FlickRing |
+  | Devices | Pointer & Scroll |
+  | Actions | Menu Actions, System Actions, Keep Awake, Apps & URLs |
+
+  Eine Gruppe ohne sichtbaren Bereich (Suche) erscheint nicht. Die Bereichsnamen bleiben unveraendert (Story 6b).
+- **Recorder.** Breite 130 pt; Platzhalter `Record` statt `Record Shortcut`, damit nichts gekuerzt wird.
+- **Seitenleiste unten aufraeumen.** `Quit AltTab+` entfaellt (steht im Menue). `Creator's settings…` und `Reset settings and restart…` ziehen nach General in eine eigene Tabelle `Settings file` zu Export und Import. Die Seitenleiste reicht dann bis zum unteren Rand.
+- **Texte.** Button- und Menuetitel mit drei Punkten verwenden `…`. Zeilentitel beginnen gross, sonst klein (Satzanfang), soweit sie in den neuen Stories entstanden sind; aeltere Titel aus dem Fork-Ursprung bleiben, um den Abgleich mit Upstream nicht zu erschweren.
+- **Reine Logik** (`SettingsSidebarTestable`): aus Bereichen, Gruppen und Sichtbarkeit die Zeilenliste der Seitenleiste bilden (Ueberschriften, keine leeren Gruppen) und die Seitenauswahl nach Suche bestimmen. Unit-getestet.
+
+Exit: Jeder Bereich erscheint allein; Suche zeigt Treffer ueber alle Bereiche; keine gekuerzten Recorder; kein `Quit` in der Seitenleiste; alle Tests gruen.
+
+#### Stufe 2: Apps & URLs und Profiles als Listen
+
+- **Speicherung bleibt.** Die festen Slots bleiben das Speicherformat. Grund: Leader- und FlickRing-Bindungen, Shortcuts und exportierte Einstellungsdateien verweisen auf Slot-Nummern. Eine Umstellung auf neue IDs braucht eine Migration aller dieser Verweise und bringt fuer den Nutzer nichts Sichtbares. **Die im Auftrag genannte Migration beschraenkt sich deshalb auf das Aufraeumen der Slots** (siehe unten); das Format bleibt.
+- **Apps & URLs** zeigen nur belegte Slots als Liste: App-Symbol und Name bzw. die URL, der Shortcut-Recorder und `Remove`. Darunter `Add App…` (Dialog fuer Programme, Mehrfachauswahl) und `Add URL…` (Eingabedialog mit Pruefung ueber `OpenUrlTarget`). Neue Eintraege fuellen den ersten freien Slot. Sind alle 9 belegt, ist der Knopf deaktiviert und nennt den Grund.
+- **Profiles** als Liste links (Name, sonst `Profile n`) und Details rechts: Name, Apps, Layout, gebundener Space, Shortcut. `New` legt ein Profil im ersten freien Slot an, `Delete` leert den Slot.
+- **Apps eines Profils** werden als Liste mit App-Namen gezeigt, hinzugefuegt ueber `Choose…` (Programme-Dialog, Mehrfachauswahl) und je Zeile entfernt. Das Speicherformat (Bundle-IDs zeilenweise) bleibt; unbekannte IDs erscheinen mit ihrer ID und einem Hinweis.
+- **Aufraeumen beim Start (Migration).** Einmalig: Slots, die nur aus Leerzeichen bestehen, werden geleert, damit sie nicht als belegte leere Eintraege erscheinen. Bindungen und Shortcuts leerer Slots bleiben unangetastet.
+- **Entfernen** leert Wert, Shortcut und Slot-Felder, verschiebt aber keine anderen Slots. Leader- und FlickRing-Bindungen auf den geleerten Slot werden beim naechsten Ausloesen `unavailable`, wie heute.
+- **Leere Zustaende.** `No apps or links yet. Add one to open it with a shortcut.` bzw. `No profiles yet.`
+- **Reine Logik** (`SlotListTestable`): belegte Slots aus Werten ermitteln, ersten freien Slot finden, Grund bei voller Liste. Unit-getestet.
+
+Exit: keine leeren Slots sichtbar; Hinzufuegen, Entfernen und Shortcuts funktionieren; bestehende Bindungen zeigen weiter auf dieselben Eintraege; alle Tests gruen.
+
+#### Stufe 3: Shortcut-Uebersicht
+
+- Der Bereich `Menu Actions` wird zu `Shortcuts` (Gruppe App, direkt nach General).
+- **Uebersicht.** Eine Tabelle aller globalen Aktions-Shortcuts: Aktion, Shortcut, Ort, Status. Quelle ist dieselbe Liste wie die globalen Shortcut-IDs (`KeyboardEventsTestable.globalShortcutsIds`), ohne die Switcher-Ausloeser `holdShortcut*` und `nextWindowShortcut*`; diese bleiben in Cmd-Tab Controls, die Leader-Taste bei Leader, die FlickRing-Taste bei FlickRing. Die Seite sagt das in ihrer Beschreibung.
+- **Ein Recorder pro Shortcut.** Wo ein Shortcut eine eigene Seite hat (Window Layouts, Spaces, Apps & URLs, Profiles, Keep Awake), zeigt die Uebersicht ihn nur an, mit `Show`: Klick wechselt auf die Seite und hebt die Zeile hervor. Nur Menue-Aktionen ohne eigene Seite (Story 12 und 14 ausser Keep Awake) haben ihren Recorder direkt in der Uebersicht.
+- **Konflikte.** Status je Zeile aus `CustomRecorderControlTestable.isShortcutAcceptable` fuer den gespeicherten Shortcut: doppelt belegt (mit Name der anderen Aktion), von macOS reserviert, vom Game Overlay belegt. Konfliktzeilen stehen oben und sind markiert. Die Pruefung laeuft beim Oeffnen der Seite und nach jeder Aenderung eines Shortcuts, nicht dauernd.
+- **Filter.** Ein Umschalter `All`, `Assigned`, `Conflicts`; die globale Suche der Seitenleiste bleibt die einzige Textsuche.
+- **Reine Logik** (`ShortcutOverviewTestable`): Zeilen aus Schluessel, Titel, Ort und Shortcut bilden, Konflikte paaren, sortieren (Konflikte zuerst, dann Gruppe, dann Titel). Unit-getestet.
+
+Checkliste: `docs/settings-window-checklist.md`.
+
+Exit: jeder Aktions-Shortcut erscheint genau einmal in der Uebersicht und genau einmal als Recorder; `Show` springt richtig; ein absichtlich doppelt vergebener Shortcut erscheint als Konflikt; alle Tests gruen.
+
+Umsetzungsstand 2026-09-16:
+
+- Stufe 1: Seitenmodus mit `chosenSectionId`, damit das Leeren der Suche zur gewaehlten Seite zurueckfuehrt; der Loesch-Knopf des Suchfelds loest jetzt ebenfalls eine Aktualisierung aus (er sendet keine Textaenderung). Der Recorder-Platzhalter kommt aus einer eigenen `RecorderControlStyle`-Unterklasse. Beschreibungen erhalten eine feste Umbruchbreite; ohne sie zog die lange Beschreibung der Shortcut-Seite das Fenster auf 1141 pt. Eine gespeicherte breitere Fensterposition wird beim Oeffnen auf die feste Breite zurueckgesetzt.
+- Stufe 2: `RebuildableSettingsView` baut die Listen bei jeder Aenderung neu. Profile werden ueber eine Auswahl oben gewechselt statt ueber eine Liste links; `New` gibt dem Profil sofort einen Namen, damit der Slot als belegt gilt. Links heissen in der Oberflaeche `Links` statt `URLs`.
+- Stufe 3: Der Bereich heisst `Shortcuts` (id `shortcuts`) und steht in der Gruppe App. Shortcuts werden in derselben Symbolschreibweise wie die Recorder angezeigt. Ein gleichlautender macOS-Shortcut gilt nicht als Konflikt, weil AltTab+ ihn waehrend der Zuweisung uebernimmt und danach zurueckgibt (`NativeSystemShortcuts`); die Zeile nennt das als Hinweis.
+- **Fund dabei**: Die Shortcuts der System-Aktionen aus Story 12 und 14 fehlten in `ControlsTab.globalActionShortcutPreferences` und wirkten deshalb nur bei offenem Switcher. Behoben in `fix/system-action-shortcuts` (PR #57), das unter den drei Stufen liegt.
+
+Nicht im Scope aller Stufen:
+
+- Neue Bereichsnamen fuer Cmd-Tab und Cmd-Tab Controls.
+- Aenderungen an der Aktionsauswahl von Leader und FlickRing und an den Ownership-Zeilen von Pointer & Scroll (Befunde der Pruefung, eigene Story).
+- Kuerzen der Keep-Awake-Shortcuts.
+
+### 17. URL-Scheme fuer das Aktionsregister
+
+Status: Spezifiziert 2026-09-19, nicht umgesetzt
+Prioritaet: Mittel. Klein, weil jede Aktion schon eine stabile ID hat
+
+Ausgangslage:
+
+- Das Aktionsregister (Story 0) hat sechs Einstiege: globale Shortcuts, Hyper, Leader, FlickRing, Space-Segmente und Menue. Von aussen, aus Skripten, Raycast, Shortcuts oder Keyboard Maestro, ist keine Aktion erreichbar.
+- Jede Aktion hat eine `ActionIdentifier.stableId`; `Actions.identifier(forStableId:)` loest sie auf. Die App hat noch keinen `CFBundleURLTypes`-Eintrag.
+- Eine eigene CLI und eine Command Palette sind nicht Teil dieser Story (Palette: siehe `Nicht-Ziele`). `open "<scheme>://run/<stableId>"` deckt die CLI ab.
+
+Beschreibung:
+
+- Ein URL-Scheme in `Info.plist`; der Name ist vor der Umsetzung festzulegen und auf Kollisionen zu pruefen (Vorschlag `alttabplus`, unverifiziert).
+- Einzige Form: `<scheme>://run/<stableId>`. Keine Parameter, keine Rueckgabewerte, keine Verkettung.
+- Der Handler loest die ID ueber das Register auf und fuehrt die Aktion ueber denselben Pfad aus wie die anderen Trigger, inklusive `availability`.
+- Unbekannte, nicht verfuegbare oder gesperrte IDs zeigen eine `TransientNotice` und tun sonst nichts.
+
+Sicherheit:
+
+- Jeder lokale Prozess und nach Bestaetigung im Browser auch jede Webseite kann eine URL oeffnen. Das Scheme ist deshalb standardmaessig aus und wird in den Settings eingeschaltet.
+- Allowlist statt Blocklist: nur Aktionen ohne Datenverlust und ohne Wirkung ausserhalb des Fensterzustands sind erlaubt (Window Layouts, Display-Wechsel, Spaces, Fenster-Fokus-Aktionen, Keep Awake, Profile, Werkzeuge).
+- Gesperrt: `Quit All Apps`, `Quit All Apps Except Frontmost`, `Clear Clipboard`, `Eject All Disks`, `Cat Mode`, `Auto-Quit`, Standardbrowser, Funktionstasten, `Press and Hold`, `Paste and Match Style` und die Slots `launchApp`/`openUrl`. Eine spaetere Freigabe einzelner Eintraege braucht eine Bestaetigung je Ausfuehrung.
+- Keine Protokollierung des vollstaendigen URL-Texts mit Nutzerdaten; nur die aufgeloeste `stableId`.
+
+Akzeptanzideen:
+
+- `open "<scheme>://run/windowLayout.leftThird"` setzt das fokussierte Fenster aufs linke Drittel.
+- Bei ausgeschaltetem Scheme und bei einer gesperrten ID passiert ausser der Meldung nichts.
+- Unit-Tests fuer das Parsen der URL und fuer die Allowlist; die Ausfuehrung selbst ist schon ueber die anderen Trigger getestet.
 
 ## Distribution und Migration
 
@@ -2092,7 +2209,7 @@ Default-Settings, Reset-Verhalten und Migration werden nach jedem neuen Modul ge
 | V-02 | Versions-Policy nach Tahoe-only | Klaeren: nur aktuelle Major-Version `N` oder `N und N-1` |
 | V-03 | Private Symbolbindung | `_AXUIElementGetWindow` ist optional zur Laufzeit gebunden; weitere private Symbole vor ihrer ersten neuen Modulnutzung gleichwertig degradierbar machen |
 | V-04 | Provenienz-Register | `THIRD-PARTY.md` ist fuer die bisher ausgewerteten Quellen angelegt; Pflege im PR-Prozess bleibt zu erzwingen |
-| V-05 | Modul- und App-Klassen-Checklisten | `docs/input-safety-checklist.md`, `docs/window-layout-checklist.md`, `docs/window-drag-checklist.md`, `docs/shortcut-clues-checklist.md` `docs/spaces-menubar-checklist.md` und `docs/system-actions-checklist.md` vor jeder oeffentlichen Version und nach jedem unterstuetzten macOS-Major-Update ausfuehren |
+| V-05 | Modul- und App-Klassen-Checklisten | `docs/input-safety-checklist.md`, `docs/window-layout-checklist.md`, `docs/window-drag-checklist.md`, `docs/shortcut-clues-checklist.md` `docs/spaces-menubar-checklist.md`, `docs/system-actions-checklist.md` und `docs/settings-window-checklist.md` vor jeder oeffentlichen Version und nach jedem unterstuetzten macOS-Major-Update ausfuehren |
 | V-06 | Energie-Baseline | Idle- und Aktivmessungen auf dem Tahoe-/Apple-Silicon-Zielgeraet dokumentieren |
 | V-07 | Distribution | Signing, Notarisierung, Vertriebskanal und Update-Strategie vor erster oeffentlicher Version abschliessen; Sparkle bleibt optional |
 | V-08 | Safe Start und Circuit Breaker | Vor dem ersten ausgelieferten Input-Modul mit Login-Start, verbliebenem Arming-Marker und wiederholtem Tap-Timeout pruefen |
@@ -2245,5 +2362,7 @@ Die drei Debug-Eintraege sind fuer die Entwicklung dieses Forks wertvoller als a
 - Abfangen oder Ersetzen nativer Space-Trackpad-Swipes im Instant-Spaces-MVP.
 - Dock-Klick-Logik nach Supercharge-Vorbild (Klick minimiert, wechselt durch Fenster oder holt minimierte zurueck; Mittelklick-Aktionen). Entschieden 2026-09-16: braucht einen Maus-Tap mit Dock-Trefferpruefung, das Durchwechseln leistet der Switcher, und V-16 ist ungeklaert.
 - Aktionen direkt in Mission Control (Schliessen, Ausblenden, Beenden, Minimieren). Entschieden 2026-09-16: keine oeffentliche Schnittstelle; der Switcher bietet dieselben Aktionen je Kachel.
+- Always on Top fuer fremde Fenster. Entschieden 2026-09-19: macOS hat keine oeffentliche Schnittstelle, um die Fensterebene einer fremden App zu setzen; AX kann es nicht. Bekannte Umsetzungen (etwa yabai) brauchen eine Scripting Addition bei teilweise deaktiviertem SIP. Unverifiziert fuer Tahoe; eine Reaktivierung beginnt mit einem Spike, der einen Weg ohne SIP-Eingriff belegt.
+- Command Palette als weiterer Einstieg ins Aktionsregister. Entschieden 2026-09-19: das Register (Story 0) hat mit Shortcuts, Hyper, Leader, FlickRing, Space-Segmenten und Menue schon sechs Einstiege; eine Palette ergaenzt nur einen weiteren und oeffnet den Launcher-Scope, der ebenfalls Nicht-Ziel ist. Reaktivierung, wenn die Zahl der Aktionen Menue, Leader und Shortcuts unuebersichtlich macht; dann neu bewerten.
 - Intel-Support.
 - Support fuer macOS-Versionen vor Tahoe.

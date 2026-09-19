@@ -3,19 +3,24 @@ import Foundation
 /// Groups of the menubar menu, in display order. The groups follow what the entries do (story 15); a new
 /// entry joins an existing group unless none fits.
 enum MenuGroup: String, CaseIterable {
-    case settings
     case switcher
     case windows
-    case apps
-    case tools
-    case notifications
-    case system
+    /// The window actions used less often (decided 2026-09-18): the main menu keeps Isolate Window and
+    /// Focus on 3 Foremost Windows, the rest opens the `Other…` submenu under the same heading.
+    case windowsMore
+    // order inside `Other…` decided 2026-09-18: the toggles right after the window actions, then the default
+    // browser; notifications and apps last, with Quit All Apps at the very bottom
     case toggles
     case defaults
+    case tools
+    case system
+    case notifications
+    case apps
+    case settings
     case app
 
-    /// `settings` is kept for a menu that opens with `Settings…` on its own (decided 2026-09-16); since
-    /// 2026-09-17 the entry sits in the app group instead, so the group stays empty. Neither needs a heading.
+    /// `Settings…` has a section of its own, right above the app block (decided 2026-09-17; it opened the
+    /// menu before). Neither needs a heading.
     var hasHeader: Bool { ![.settings, .app].contains(self) }
 
     /// Decided 2026-09-16: every group except the switcher, the window actions and the app block becomes a

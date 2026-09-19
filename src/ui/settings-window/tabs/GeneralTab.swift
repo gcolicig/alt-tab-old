@@ -19,9 +19,10 @@ class GeneralTab {
             ])
         let language = TableGroupView.Row(leftTitle: NSLocalizedString("Language", comment: ""),
             rightViews: [LabelAndControl.makeDropdown("language", LanguagePreference.allCases, extraAction: setLanguageCallback)])
+        // 0 is the two-tone glyph the status item draws, 1 the same glyph as a template
         for i in 0..<MenubarIconPreference.allCases.count {
-            let image = NSImage.initCopy("menubar-\(i)")
-            image.isTemplate = i < 2
+            let image = i == 0 ? Menubar.focusGlyph(dark: NSApp.effectiveAppearance.getThemeName() == .dark) : NSImage.initCopy("menubar-\(i)")
+            image.isTemplate = i == 1
             menubarIconDropdown!.item(at: i)!.image = image
         }
         let cell = menubarIconDropdown!.cell! as! NSPopUpButtonCell
@@ -39,13 +40,26 @@ class GeneralTab {
         updateCaptureWindowsInBackgroundState()
         table.addNewTable()
         table.addRow(language)
-        let exportButton = NSButton(title: NSLocalizedString("Export settings…", comment: ""), target: nil, action: nil)
+        return TableGroupSetView(originalViews: [table, settingsFileTable()], bottomPadding: 0)
+    }
+
+    /// Story 16: moved here from the bottom of the sidebar, next to export and import.
+    private static func settingsFileTable() -> TableGroupView {
+        let table = TableGroupView(title: NSLocalizedString("Settings file", comment: ""), width: SettingsWindow.contentWidth)
+        let exportButton = NSButton(title: NSLocalizedString("Export…", comment: ""), target: nil, action: nil)
         exportButton.onAction = { _ in exportSettings() }
-        let importButton = NSButton(title: NSLocalizedString("Import settings…", comment: ""), target: nil, action: nil)
+        let importButton = NSButton(title: NSLocalizedString("Import…", comment: ""), target: nil, action: nil)
         importButton.onAction = { _ in importSettings() }
-        let tools = StackView([exportButton, importButton], .horizontal)
-        let view = TableGroupSetView(originalViews: [table, tools], bottomPadding: 0)
-        return view
+        table.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Export or import your settings", comment: ""), rightViews: [exportButton, importButton]))
+        let creatorButton = NSButton(title: NSLocalizedString("Apply…", comment: ""), target: nil, action: nil)
+        creatorButton.onAction = { _ in applyCreatorSettings() }
+        table.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Creator's settings", comment: ""), rightViews: [creatorButton]))
+        let resetButton = NSButton(title: NSLocalizedString("Reset…", comment: ""), target: nil, action: nil)
+        if #available(macOS 11.0, *) { resetButton.hasDestructiveAction = true }
+        resetButton.onAction = { _ in resetPreferences() }
+        table.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Reset all settings", comment: ""),
+            subTitle: NSLocalizedString("AltTab+ restarts afterwards.", comment: ""), rightViews: [resetButton]))
+        return table
     }
 
     /// Overwrites shortcut assignments and appearance, so it asks first. The summary names every input
