@@ -7,6 +7,9 @@
 /* No comment provided by engineer. */
 "%@ scroll speed" = "%@ scroll speed";
 
+/* No comment provided by engineer. */
+"%@ — not installed" = "%@ — not installed";
+
 /* Leader overlay */
 "%d actions" = "%d actions";
 
@@ -147,9 +150,6 @@
 
 /* No comment provided by engineer. */
 "All apps except the list" = "All apps except the list";
-
-/* No comment provided by engineer. */
-"All apps starting with \"%@\"" = "All apps starting with \"%@\"";
 
 /* No comment provided by engineer. */
 "All data from this form will be made public, as a ticket on github.com" = "All data from this form will be made public, as a ticket on github.com";
@@ -966,9 +966,6 @@
 
 /* No comment provided by engineer. */
 "Not granted" = "Not granted";
-
-/* No comment provided by engineer. */
-"Not installed" = "Not installed";
 
 /* No comment provided by engineer. */
 "Not installed on this Mac." = "Not installed on this Mac.";
