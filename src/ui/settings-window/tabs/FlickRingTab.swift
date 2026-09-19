@@ -11,6 +11,9 @@ class FlickRingTab {
             subTitle: NSLocalizedString("The chosen button is reserved while the ring is on.", comment: ""),
             rightViews: [makeButtonPopup()]))
         let directions = TableGroupView(width: SettingsWindow.contentWidth)
+        // Shares one action-popup template (menu + widest-title width) across all directions built in
+        // this pass; see `LabelAndControl.beginActionPopupBatch`.
+        LabelAndControl.beginActionPopupBatch()
         FlickDirection.allCases.forEach { direction in
             directions.addRow(TableGroupView.Row(
                 leftTitle: title(direction),
@@ -18,6 +21,7 @@ class FlickRingTab {
                     FlickRingBindingsStore.set(direction, stableId)
                 }]))
         }
+        LabelAndControl.endActionPopupBatch()
         return TableGroupSetView(originalViews: [table, directions], padding: 0, bottomPadding: 0)
     }
 

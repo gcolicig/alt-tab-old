@@ -193,8 +193,8 @@ class TableGroupView: ClickHoverStackView {
     var subTitle: String?
 
     var width: CGFloat = 500
-    /// Space above and below each row's content; long lists such as Exceptions use less to stay compact.
-    var rowVerticalPadding = TableGroupView.padding
+    /// Space above and below each row's content, kept tight so long lists stay compact (first tuned on Exceptions).
+    var rowVerticalPadding = CGFloat(5)
     let titleLabel = NSTextField(labelWithString: "")
     let subTitleLabel = NSTextField(labelWithString: "")
     let titleStackView = NSStackView()

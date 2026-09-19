@@ -113,6 +113,10 @@ private class ShortcutSidebarRow: ClickHoverStackView {
 }
 
 class ControlsTab {
+    /// Set while settings pages are being built so shortcut recorders can run their normal change
+    /// callback (for UI sync) without re-registering global shortcuts that are already registered
+    /// at launch by `initializePreferencesDependentState()`.
+    static var isBuildingUI = false
     static var shortcuts = [String: ATShortcut]()
     static var shortcutControls = [String: (CustomRecorderControl, String)]()
     static var shortcutsActions: [String: () -> Void] = {
@@ -167,8 +171,12 @@ class ControlsTab {
         }
         return actions
     }()
-    static var arrowKeysCheckbox: Switch!
-    static var vimKeysCheckbox: Switch!
+    /// `nil` until the Cmd-Tab Controls page has been built (settings pages are now built on
+    /// demand); a shortcut conflict on another, already-built page can still need to turn these
+    /// off, so callers go through `disableArrowKeys()`/`disableVimKeys()` instead of touching the
+    /// checkbox directly.
+    static var arrowKeysCheckbox: Switch?
+    static var vimKeysCheckbox: Switch?
 
     static var shortcutsWhenActiveDisclosure: DisclosureSection!
     static var additionalControlsDisclosure: DisclosureSection!
@@ -236,7 +244,10 @@ class ControlsTab {
     private static var selectedShortcutIndex = 0
     private static var shortcutRowsStackView: NSStackView?
     private static var shortcutRows = [ShortcutSidebarRow]()
-    private static var shortcutEditorViews = [TableGroupView]()
+    /// One slot per possible shortcut; built lazily the first time its index is selected
+    /// (`ensureShortcutEditorBuilt`), since only the selected editor is ever visible.
+    private static var shortcutEditorViews = [TableGroupView?]()
+    private static var editorsStack: NSStackView?
     private static var gestureSidebarRow: ShortcutSidebarRow?
     private static var gestureEditorView: TableGroupView?
     private static var shortcutCountButtons: NSSegmentedControl?
@@ -285,7 +296,7 @@ class ControlsTab {
     }
 
     static func initTab() -> NSView {
-        shortcutEditorViews = (0..<Preferences.maxShortcutCount).map { shortcutTab($0) }
+        shortcutEditorViews = Array(repeating: nil, count: Preferences.maxShortcutCount)
         gestureEditorView = gestureTab(Preferences.gestureIndex)
         let shortcutsView = makeShortcutsView()
         additionalControlsDisclosure = DisclosureSection(id: "controls.additionalControls",
@@ -326,7 +337,7 @@ class ControlsTab {
         let pane = NSView()
         pane.translatesAutoresizingMaskIntoConstraints = false
         pane.widthAnchor.constraint(equalToConstant: shortcutEditorWidth).isActive = true
-        var views = shortcutEditorViews
+        var views = shortcutEditorViews.compactMap { $0 }
         if let gestureEditorView {
             views.append(gestureEditorView)
         }
@@ -335,6 +346,7 @@ class ControlsTab {
         editorsStack.alignment = .leading
         editorsStack.spacing = 0
         editorsStack.translatesAutoresizingMaskIntoConstraints = false
+        self.editorsStack = editorsStack
         pane.addSubview(editorsStack)
         NSLayoutConstraint.activate([
             editorsStack.topAnchor.constraint(equalTo: pane.topAnchor, constant: shortcutEditorTopBottomPadding),
@@ -538,11 +550,43 @@ class ControlsTab {
 
     private static func refreshShortcutSelection() {
         shortcutRows.enumerated().forEach { $1.setSelected($0 == selectedShortcutIndex) }
+        if selectedShortcutIndex != gestureSelectionIndex, (0..<Preferences.shortcutCount).contains(selectedShortcutIndex) {
+            _ = ensureShortcutEditorBuilt(selectedShortcutIndex)
+        }
         shortcutEditorViews.enumerated().forEach { index, view in
-            view.isHidden = index != selectedShortcutIndex || index >= Preferences.shortcutCount
+            view?.isHidden = index != selectedShortcutIndex || index >= Preferences.shortcutCount
         }
         gestureSidebarRow?.setSelected(selectedShortcutIndex == gestureSelectionIndex)
         gestureEditorView?.isHidden = selectedShortcutIndex != gestureSelectionIndex
+    }
+
+    /// Builds every shortcut slot's editor, not just the selected one — used by "Reset to Defaults"
+    /// so `SettingsResetKeysCollector` can find every slot's controls, since only the selected slot's
+    /// editor is normally built (see `ensureShortcutEditorBuilt`).
+    static func ensureAllShortcutEditorsBuilt() {
+        (0..<Preferences.shortcutCount).forEach { ensureShortcutEditorBuilt($0) }
+    }
+
+    /// Builds the editor for `index` the first time it is selected, since only the selected
+    /// editor is ever visible; a no-op once it already exists.
+    @discardableResult
+    private static func ensureShortcutEditorBuilt(_ index: Int) -> TableGroupView? {
+        guard shortcutEditorViews.indices.contains(index) else { return nil }
+        if let existing = shortcutEditorViews[index] { return existing }
+        let wasBuildingUI = isBuildingUI
+        isBuildingUI = true
+        let view = shortcutTab(index)
+        isBuildingUI = wasBuildingUI
+        shortcutEditorViews[index] = view
+        if let editorsStack {
+            if let gestureEditorView, let gestureIndex = editorsStack.arrangedSubviews.firstIndex(of: gestureEditorView) {
+                editorsStack.insertArrangedSubview(view, at: gestureIndex)
+            } else {
+                editorsStack.addArrangedSubview(view)
+            }
+        }
+        initializeShortcutRecorderState(index)
+        return view
     }
 
     private static func refreshShortcutCountButtons() {
@@ -644,8 +688,8 @@ class ControlsTab {
 
     private static func syncShortcutDropdownControlValue(_ controlId: String) {
         let index = Preferences.nameToIndex(controlId)
-        guard index < shortcutEditorViews.count else { return }
-        guard let dropdown = findDropdownControl(shortcutEditorViews[index], controlId) else { return }
+        guard shortcutEditorViews.indices.contains(index), let editorView = shortcutEditorViews[index] else { return }
+        guard let dropdown = findDropdownControl(editorView, controlId) else { return }
         guard dropdown.numberOfItems > 0 else { return }
         let selectedIndex = UserDefaults.standard.string(forKey: controlId).flatMap(Int.init) ?? 0
         dropdown.selectItem(at: min(max(0, selectedIndex), dropdown.numberOfItems - 1))
@@ -761,7 +805,9 @@ class ControlsTab {
         let atShortcut = ATShortcut(shortcut, controlId, scope, triggerPhase, index)
         removeShortcutIfExists(controlId)
         shortcuts[controlId] = atShortcut
-        if scope == .global {
+        // building settings pages just re-applies preferences that were already registered at
+        // launch; skip the actual (CGS) registration work, keep the in-memory model in sync
+        if scope == .global && !isBuildingUI {
             KeyboardEvents.addGlobalShortcut(controlId, atShortcut.shortcut)
             ControlsTab.toggleNativeCommandTabIfNeeded()
             NativeSystemShortcuts.apply()
@@ -839,6 +885,30 @@ class ControlsTab {
         applyArrowKeysPreference()
     }
 
+    /// Turns arrow-key window selection off from a conflicting-shortcut alert, whether or not the
+    /// Cmd-Tab Controls page (and its checkbox) has been built yet.
+    static func disableArrowKeys() {
+        guard let arrowKeysCheckbox else {
+            Preferences.set("arrowKeysEnabled", "false")
+            return
+        }
+        arrowKeysCheckbox.state = .off
+        arrowKeysEnabledCallback(arrowKeysCheckbox)
+        LabelAndControl.controlWasChanged(arrowKeysCheckbox, nil)
+    }
+
+    /// Turns vim-key window selection off from a conflicting-shortcut alert, whether or not the
+    /// Cmd-Tab Controls page (and its checkbox) has been built yet.
+    static func disableVimKeys() {
+        guard let vimKeysCheckbox else {
+            Preferences.set("vimKeysEnabled", "false")
+            return
+        }
+        vimKeysCheckbox.state = .off
+        vimKeysEnabledCallback(vimKeysCheckbox)
+        LabelAndControl.controlWasChanged(vimKeysCheckbox, nil)
+    }
+
     @objc static func vimKeysEnabledCallback(_ sender: NSControl) {
         if (sender as! Switch).state == .on {
             if isClearVimKeysSuccessful() {
@@ -907,13 +977,32 @@ class ControlsTab {
         return userChoice == .alertFirstButtonReturn
     }
 
+    /// Clears `controlId`'s shortcut from preferences and the in-memory model, the same way an
+    /// interactive clear does, whether or not that slot's editor page has been built yet. Used by a
+    /// conflict alert (always raised from a different, always-built recorder) to unassign a shortcut
+    /// that belongs to a slot nobody has opened — `shortcutControls` has no recorder for it, so the
+    /// interactive path (which mutates a recorder's `objectValue` to trigger the change) cannot apply.
+    static func clearShortcutNonInteractively(_ controlId: String) {
+        if let existingControl = shortcutControls[controlId]?.0 {
+            existingControl.objectValue = nil
+            LabelAndControl.controlWasChanged(existingControl, controlId)
+            shortcutChangedCallback(existingControl)
+            existingControl.onProgrammaticChange?()
+        } else {
+            // No recorder to update; clear the preference and the registered shortcut directly, the
+            // page will read the cleared preference the first time it is built.
+            Preferences.remove(controlId)
+            removeShortcutIfExists(controlId)
+        }
+    }
+
     private static func removeShortcutIfExists(_ controlId: String) {
         if let atShortcut = shortcuts[controlId] {
-            if atShortcut.scope == .global {
+            if atShortcut.scope == .global && !isBuildingUI {
                 KeyboardEvents.removeGlobalShortcut(controlId, atShortcut.shortcut)
             }
             shortcuts.removeValue(forKey: controlId)
-            if atShortcut.scope == .global {
+            if atShortcut.scope == .global && !isBuildingUI {
                 ControlsTab.toggleNativeCommandTabIfNeeded()
                 NativeSystemShortcuts.apply()
             }

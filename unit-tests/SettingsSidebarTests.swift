@@ -74,4 +74,16 @@ class SettingsSidebarTests: XCTestCase {
         XCTAssertEqual(SettingsSidebarLayout.searchPath(groupTitle: "Switcher", pageTitle: "Cmd-Tab", sectionTitles: ["Animations", "Style", "Position"]),
                        "Switcher › Cmd-Tab › Animations › Style › …")
     }
+
+    func testHighlightingStaysOffBelowTwoCharacters() {
+        XCTAssertFalse(SettingsSidebarLayout.shouldHighlightMatches(""))
+        XCTAssertFalse(SettingsSidebarLayout.shouldHighlightMatches("t"))
+        XCTAssertFalse(SettingsSidebarLayout.shouldHighlightMatches(" t "))
+    }
+
+    func testHighlightingStartsAtTwoCharacters() {
+        XCTAssertTrue(SettingsSidebarLayout.shouldHighlightMatches("th"))
+        XCTAssertTrue(SettingsSidebarLayout.shouldHighlightMatches("theme"))
+        XCTAssertTrue(SettingsSidebarLayout.shouldHighlightMatches("  th  "))
+    }
 }

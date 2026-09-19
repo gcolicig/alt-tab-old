@@ -6,10 +6,11 @@ struct SettingsSectionDefinition {
     let description: String
     let imageName: String
     let systemSymbolName: String
-    let view: NSView
-    /// Rebuilds this page's content view from scratch. Used by "Reset to defaults" to redraw a
-    /// page's controls after their backing preferences are restored, since a control's initial
-    /// state is read once at construction and does not observe later preference changes.
+    /// Builds this page's content view. Called once, on demand — the first time the page is
+    /// selected, reached via search, or reached by the after-show idle chain — and again by
+    /// "Reset to defaults" to redraw a page's controls after their backing preferences are
+    /// restored, since a control's initial state is read once at construction and does not
+    /// observe later preference changes.
     let builder: () -> NSView
     /// Preference keys this page writes through a control with no `identifier` for
     /// `SettingsResetKeysCollector` to find (e.g. Leader's per-slot action popup, FlickRing's
@@ -102,8 +103,22 @@ final class SettingsSection {
     private let pathLabel: NSTextField
     private let pathLabelHeightConstraint: NSLayoutConstraint
     private let pathToTitleSpacingConstraint: NSLayoutConstraint
+    /// Builds this page's content view into its (already-placed) slot. `nil` once `isBuilt` is
+    /// true; pages are built once, on demand.
+    private let buildContentAction: () -> Void
+    /// Settings pages are built on demand rather than all at once (see `SettingsWindow`). `false`
+    /// until this page's content view has actually been constructed and pinned into its slot.
+    private(set) var isBuilt = false
 
     var canResetToDefaults: Bool { rebuildContent != nil && !hidesResetButton && !resettableKeys.isEmpty }
+
+    /// Builds this page's content view the first time it is needed: selection, a search that
+    /// matches it, a reveal/jump into it, or the after-show idle chain. A no-op once built.
+    func ensureBuilt() {
+        guard !isBuilt else { return }
+        isBuilt = true
+        buildContentAction()
+    }
 
     /// Restores `resettableKeys` to their defaults, redraws the page's controls to reflect it, and
     /// replays the change-action of every rebuilt control whose key was actually explicitly set
@@ -111,6 +126,7 @@ final class SettingsSection {
     /// edit would. Keys already at their default are left out of the replay so e.g. the language
     /// page's restart prompt does not fire when nothing on the page had been changed.
     func resetToDefaults() {
+        guard isBuilt else { return }
         let keys = resettableKeys
         let changedKeys = keys.filter { Preferences.all[$0] != nil }
         Preferences.reset(keys: keys)
@@ -148,7 +164,9 @@ final class SettingsSection {
          _ hidesResetButton: Bool,
          _ rebuildContent: (([String]) -> Void)?,
          _ reindex: @escaping () -> Void,
+         _ buildContentAction: @escaping () -> Void,
          _ refreshResetButtonVisibility: @escaping () -> Void = {}) {
+        self.buildContentAction = buildContentAction
         self.id = id
         self.title = title
         self.icon = icon
@@ -176,6 +194,7 @@ final class SettingsSection {
     }
 
     func highlightMatches(_ query: String) {
+        guard SettingsSidebarLayout.shouldHighlightMatches(query) else { return clearHighlights() }
         highlightTargets.forEach { $0.updateHighlight(query) }
     }
 

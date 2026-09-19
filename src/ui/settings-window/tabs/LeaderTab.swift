@@ -2,15 +2,10 @@ import Cocoa
 
 class LeaderTab {
     private static var warningLabel: NSTextField?
-    /// All slots share the same action list, so the widest item only needs measuring once; every popup is
-    /// then pinned to it so the column stays aligned regardless of which action a slot has picked.
-    private static var cachedActionPopupWidth: CGFloat?
 
     static func initTab() -> NSView {
         let warning = makeWarningLabel()
         warningLabel = warning
-        // Recomputed per tab build: the registry (e.g. default-browser actions) can change between opens.
-        cachedActionPopupWidth = nil
 
         let top = TableGroupView(width: SettingsWindow.contentWidth)
         top.addRow(TableGroupView.Row(
@@ -28,9 +23,13 @@ class LeaderTab {
         // Added to `top` itself (instead of a second TableGroupView) so the two tables get the normal
         // inter-table gap; two separate TableGroupViews next to each other get no gap at all.
         top.addNewTable()
+        // Shares one action-popup template (menu + widest-title width) across all slots built in this
+        // pass; see `LabelAndControl.beginActionPopupBatch`.
+        LabelAndControl.beginActionPopupBatch()
         (0..<Preferences.maxLeaderSlotCount).forEach { slot in
             top.addRow(makeSlotRow(slot))
         }
+        LabelAndControl.endActionPopupBatch()
 
         let hint = LabelAndControl.makeDependencyNote(
             NSLocalizedString("Sequences use letters and digits, e.g. \"wl\". Escape and timeout cancel.", comment: ""))
@@ -65,21 +64,8 @@ class LeaderTab {
     /// the whole right-hand column (anchored to the row's trailing edge) jump left or right per slot. Pinning
     /// every popup to the widest title's width keeps the column, and the key field before it, aligned.
     private static func fixActionPopupWidth(_ popup: NSPopUpButton) {
-        let selectedIndex = popup.indexOfSelectedItem
-        let width = cachedActionPopupWidth ?? measureWidestItemWidth(popup)
-        cachedActionPopupWidth = width
-        popup.selectItem(at: selectedIndex)
         popup.setContentHuggingPriority(.required, for: .horizontal)
-        popup.widthAnchor.constraint(equalToConstant: width).isActive = true
-    }
-
-    private static func measureWidestItemWidth(_ popup: NSPopUpButton) -> CGFloat {
-        var maxWidth = CGFloat(0)
-        for index in 0..<popup.numberOfItems {
-            popup.selectItem(at: index)
-            maxWidth = max(maxWidth, popup.intrinsicContentSize.width)
-        }
-        return maxWidth
+        popup.widthAnchor.constraint(equalToConstant: LabelAndControl.actionPopupWidestItemWidth()).isActive = true
     }
 
     private static func changed() {

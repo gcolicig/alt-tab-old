@@ -318,20 +318,70 @@ class LabelAndControl: NSObject {
     /// through `onChange` (nil for "None"), so callers persist by stableId, not by menu index.
     static func makeActionPopup(_ currentStableId: String, _ onChange: @escaping (String?) -> Void) -> NSPopUpButton {
         let popup = PopupButtonLikeSystemSettings()
-        popup.addItem(withTitle: NSLocalizedString("None", comment: ""))
-        popup.lastItem?.representedObject = ""
-        var selectedIndex = 0
-        for (offset, action) in Actions.registry.registeredActions.enumerated() {
-            popup.addItem(withTitle: action.title())
-            popup.lastItem?.representedObject = action.id.stableId
-            if action.id.stableId == currentStableId { selectedIndex = offset + 1 }
-        }
+        let template = actionPopupBatchTemplate ?? buildActionPopupTemplate()
+        popup.menu = (template.menu.copy() as! NSMenu)
+        let selectedIndex = popup.itemArray.firstIndex { ($0.representedObject as? String ?? "") == currentStableId } ?? 0
         popup.selectItem(at: selectedIndex)
         popup.onAction = { control in
             let stableId = (control as? NSPopUpButton)?.selectedItem?.representedObject as? String
             onChange((stableId?.isEmpty ?? true) ? nil : stableId)
         }
         return popup
+    }
+
+    /// The widest action title, in points; every action popup shares this so their column stays aligned
+    /// regardless of which action each one has picked.
+    static func actionPopupWidestItemWidth() -> CGFloat {
+        return (actionPopupBatchTemplate ?? buildActionPopupTemplate()).width
+    }
+
+    private static var actionPopupBatchTemplate: (menu: NSMenu, width: CGFloat)?
+
+    /// Opens a template shared by every action popup built while composing a single page (Leader's slots,
+    /// FlickRing's directions). Unlike a process-wide cache, this cannot go stale across page rebuilds:
+    /// `RegisteredAction.title()` closures can change (e.g. a launch-app/URL/profile action gets renamed),
+    /// so the template is rebuilt fresh at the start of each page build and discarded at the end.
+    static func beginActionPopupBatch() {
+        actionPopupBatchTemplate = buildActionPopupTemplate()
+    }
+
+    static func endActionPopupBatch() {
+        actionPopupBatchTemplate = nil
+    }
+
+    /// One menu (copied per popup) and one width measurement, instead of each popup re-adding N items
+    /// (N calls to `action.title()`) and re-measuring them live.
+    private static func buildActionPopupTemplate() -> (menu: NSMenu, width: CGFloat) {
+        let font = NSFont.menuFont(ofSize: 0)
+        func titleWidth(_ title: String) -> CGFloat {
+            NSAttributedString(string: title, attributes: [.font: font]).size().width
+        }
+        let menu = NSMenu()
+        let noneTitle = NSLocalizedString("None", comment: "")
+        let noneItem = NSMenuItem(title: noneTitle, action: nil, keyEquivalent: "")
+        noneItem.representedObject = ""
+        menu.addItem(noneItem)
+        var widestTitle = noneTitle
+        var maxTitleWidth = titleWidth(noneTitle)
+        for action in Actions.registry.registeredActions {
+            let title = action.title()
+            let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+            item.representedObject = action.id.stableId
+            menu.addItem(item)
+            let width = titleWidth(title)
+            if width > maxTitleWidth {
+                maxTitleWidth = width
+                widestTitle = title
+            }
+        }
+        // The raw text width under-reports the popup's actual footprint (the control adds its own
+        // chrome/padding around the title), which clipped the widest title. Measure the real control
+        // instead: a scratch popup of the same class and control size, selected to the widest title.
+        let scratchPopup = PopupButtonLikeSystemSettings()
+        scratchPopup.menu = (menu.copy() as! NSMenu)
+        let widestIndex = scratchPopup.itemArray.firstIndex { $0.title == widestTitle } ?? 0
+        scratchPopup.selectItem(at: widestIndex)
+        return (menu, scratchPopup.intrinsicContentSize.width)
     }
 
     // periphery:ignore
