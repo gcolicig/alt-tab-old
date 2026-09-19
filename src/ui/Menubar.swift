@@ -18,15 +18,12 @@ class Menubar {
     /// of hitting a live NSButton.
     private struct SegmentTarget {
         let rect: CGRect
-        let displayUuid: String
-        let spaceIndex: Int
-        let overflowIndexes: [Int]?
     }
     private static var segmentTargets = [SegmentTarget]()
     private static var muteTargets = [(rect: CGRect, icon: MuteIcon)]()
     private static let muteIconWidth = CGFloat(22)
 
-    private struct SpaceGroup {
+    struct SpaceGroup {
         let displayUuid: ScreenUuid
         let spaceIds: [CGSSpaceID]
         let activeSpaceId: CGSSpaceID?
@@ -88,34 +85,35 @@ class Menubar {
             MicMuteIndicator.unmute(mute.icon)
             return true
         }
-        guard let target = segmentTargets.first(where: { $0.rect.contains(point) }) else { return false }
-        // a synthetic Space switch reaches only the display the cursor is on, so a click on another display's
-        // group is refused with the same notice the live buttons showed
-        if let cursorUuid = NSScreen.withMouse()?.cachedUuid(),
-           !MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: target.displayUuid == cursorUuid as String,
-                                             separateSpaces: NSScreen.screensHaveSeparateSpaces) {
-            TransientNotice.show(crossDisplayTooltip())
-            return true
-        }
-        if let overflowIndexes = target.overflowIndexes {
-            showOverflowMenu(overflowIndexes, atX: point.x)
-        } else if target.spaceIndex <= 9 {
-            Actions.perform(.space(.index(target.spaceIndex)))
-        } else {
-            InstantSpaces.perform(.index(target.spaceIndex))
-        }
+        guard segmentTargets.contains(where: { $0.rect.contains(point) }) else { return false }
+        // a segment opens the Spaces preview, where every display's Spaces are shown in place; the switch
+        // itself happens on a tile click (switchToSpace)
+        SpacesPreviewPanel.toggle(anchoredTo: button)
         return true
     }
 
-    private static func showOverflowMenu(_ indexes: [Int], atX x: CGFloat) {
-        guard let button = statusItem?.button else { return }
-        let menu = NSMenu()
-        indexes.forEach { index in
-            let item = menu.addItem(withTitle: String(format: NSLocalizedString("Space %d", comment: ""), index), action: #selector(spaceOverflowItemOnClick(_:)), keyEquivalent: "")
-            item.target = self
-            item.tag = index
+    /// The Space groups the menu bar row shows, for the Spaces preview.
+    static func previewGroups() -> [SpaceGroup] {
+        spaceGroups()
+    }
+
+    /// Switches the display's Space to `index` (1-based within the display). A synthetic Space switch reaches only
+    /// the display the cursor is on, so for another display the cursor moves to its centre first.
+    static func switchToSpace(index: Int, displayUuid: ScreenUuid, screen: NSScreen) {
+        SpacesPreviewPanel.hide()
+        let cursorUuid = NSScreen.withMouse()?.cachedUuid()
+        let reachable = MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: cursorUuid.map { $0 as String == displayUuid as String } ?? true,
+                                                         separateSpaces: NSScreen.screensHaveSeparateSpaces)
+        if !reachable {
+            let primaryHeight = NSScreen.screens.first?.frame.height ?? screen.frame.height
+            let quartz = SpacesPreviewLayout.quartzFrame(cocoaFrame: screen.frame, primaryScreenHeight: primaryHeight)
+            CGWarpMouseCursorPosition(CGPoint(x: quartz.midX, y: quartz.midY))
         }
-        menu.popUp(positioning: nil, at: NSPoint(x: x, y: button.bounds.height), in: button)
+        if index <= 9 {
+            Actions.perform(.space(.index(index)))
+        } else {
+            InstantSpaces.perform(.index(index))
+        }
     }
 
     @objc static func statusItemOnClick() {
@@ -285,9 +283,9 @@ class Menubar {
     /// flattened to an image. The container sits at `iconWidth`, so each button's row x adds that offset.
     private static func collectSegmentTargets(_ container: NSView) -> [SegmentTarget] {
         container.subviews.compactMap { subview in
-            guard let button = subview as? NSButton, let uuid = button.identifier?.rawValue else { return nil }
+            guard let button = subview as? NSButton, button.identifier != nil else { return nil }
             let rect = CGRect(x: container.frame.minX + button.frame.minX, y: button.frame.minY, width: button.frame.width, height: button.frame.height)
-            return SegmentTarget(rect: rect, displayUuid: uuid, spaceIndex: button.tag, overflowIndexes: overflowIndexesByButton[ObjectIdentifier(button)])
+            return SegmentTarget(rect: rect)
         }
     }
 

@@ -14,6 +14,7 @@ class ScreensEvents {
             Spaces.refresh()
             InstantSpaces.synchronize()
             Menubar.refreshSpaces()
+            SpacesPreviewPanel.hide()
             Screens.refresh()
             // a screen added or removed, or screen resolution change can mess up layout; we reset components
             App.resetPreferencesDependentComponents()
