@@ -208,7 +208,7 @@
 "Shortcut 4" = "คำสั่งลัดที่ 4";
 "Shortcut 5" = "คำสั่งลัดที่ 5";
 "Shortcut already assigned to another action: %@" = "คำสั่งลัดถูกกําหนดให้กับการดําเนินการอื่นแล้ว: %@";
-"Shortcuts When Active" = "คำสั่งลัดเมื่อใช้งาน";
+"Shortcuts when active" = "คำสั่งลัดเมื่อใช้งาน";
 "Shortcuts when active…" = "ทางลัดเมื่อใช้งาน...";
 "Show" = "แสดง";
 "Show & Hide" = "แสดงและซ่อน";

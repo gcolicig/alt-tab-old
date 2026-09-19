@@ -208,7 +208,7 @@
 "Shortcut 4" = "Комбинация 4";
 "Shortcut 5" = "Комбинация 5";
 "Shortcut already assigned to another action: %@" = "Комбинация уже назначена к другом действие: %@";
-"Shortcuts When Active" = "Комбинации, когда активно";
+"Shortcuts when active" = "Комбинации, когда активно";
 "Shortcuts when active…" = "Комбинации, когда активно…";
 "Show" = "Показать";
 "Show & Hide" = "Показать/Скрыть";

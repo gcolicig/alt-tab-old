@@ -208,7 +208,7 @@
 "Shortcut 4" = "Pikanäppäin 4";
 "Shortcut 5" = "Pikanäppäin 5";
 "Shortcut already assigned to another action: %@" = "Pikanäppäin on jo määritetty toiseen toimintoon: %@";
-"Shortcuts When Active" = "Pikakomennot aktiivisena";
+"Shortcuts when active" = "Pikakomennot aktiivisena";
 "Shortcuts when active…" = "Pikakomennot aktiivisena…";
 "Show" = "Näytä";
 "Show & Hide" = "Näytä ja piilota";

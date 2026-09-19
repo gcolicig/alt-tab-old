@@ -208,7 +208,7 @@
 "Shortcut 4" = "Snarveg 4";
 "Shortcut 5" = "Snarveg 5";
 "Shortcut already assigned to another action: %@" = "Snarveg allereide tildelt ei anna handling: %@";
-"Shortcuts When Active" = "Snarvegar når AltTab er aktiv";
+"Shortcuts when active" = "Snarvegar når AltTab er aktiv";
 "Shortcuts when active…" = "Snarvegar når AltTab er aktiv …";
 "Show" = "Vis";
 "Show & Hide" = "Vis og gøym";

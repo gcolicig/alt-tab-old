@@ -824,9 +824,6 @@
 "Miscellaneous" = "Miscellaneous";
 
 /* No comment provided by engineer. */
-"Modified" = "Modified";
-
-/* No comment provided by engineer. */
 "More Spaces" = "More Spaces";
 
 /* No comment provided by engineer. */
@@ -1025,6 +1022,9 @@
 "Ownership" = "Ownership";
 
 /* No comment provided by engineer. */
+"Partly changed" = "Partly changed";
+
+/* No comment provided by engineer. */
 "Paste and Match Style" = "Paste and Match Style";
 
 /* No comment provided by engineer. */
@@ -1103,6 +1103,9 @@
 "Remove" = "Remove";
 
 /* No comment provided by engineer. */
+"Remove \"%@\" first; only one set can be assigned at a time." = "Remove \"%@\" first; only one set can be assigned at a time.";
+
+/* No comment provided by engineer. */
 "Remove and restore" = "Remove and restore";
 
 /* No comment provided by engineer. */
@@ -1154,7 +1157,7 @@
 "Restore default" = "Restore default";
 
 /* No comment provided by engineer. */
-"Restore Original Mode" = "Restore Original Mode";
+"Restore original mode" = "Restore original mode";
 
 /* No comment provided by engineer. */
 "Reverse %@ vertical scrolling" = "Reverse %@ vertical scrolling";
@@ -1265,7 +1268,7 @@
 "Shortcuts in %@" = "Shortcuts in %@";
 
 /* No comment provided by engineer. */
-"Shortcuts When Active" = "Shortcuts When Active";
+"Shortcuts when active" = "Shortcuts when active";
 
 /* Menubar option */
 "Show" = "Show";
@@ -1290,6 +1293,9 @@
 
 /* No comment provided by engineer. */
 "Show hidden windows" = "Show hidden windows";
+
+/* No comment provided by engineer. */
+"Show in settings" = "Show in settings";
 
 /* No comment provided by engineer. */
 "Show in switcher" = "Show in switcher";
@@ -1359,6 +1365,9 @@
 
 /* No comment provided by engineer. */
 "Some apps like Finder or Preview use standard tabs which act like independent windows. Some other apps like web browsers use custom tabs which act in unique ways and are not actual windows. AltTab can't list those separately." = "Some apps like Finder or Preview use standard tabs which act like independent windows. Some other apps like web browsers use custom tabs which act in unique ways and are not actual windows. AltTab can't list those separately.";
+
+/* No comment provided by engineer. */
+"Some of this set's shortcuts were changed since it was assigned. Removing it restores what those shortcuts were before, discarding the changes." = "Some of this set's shortcuts were changed since it was assigned. Removing it restores what those shortcuts were before, discarding the changes.";
 
 /* No comment provided by engineer. */
 "Sound muted" = "Sound muted";
@@ -1619,10 +1628,10 @@
 "Version" = "Version";
 
 /* No comment provided by engineer. */
-"Very Long" = "Very Long";
+"Very long" = "Very long";
 
 /* No comment provided by engineer. */
-"Very Short" = "Very Short";
+"Very short" = "Very short";
 
 /* No comment provided by engineer. */
 "View existing discussions" = "View existing discussions";

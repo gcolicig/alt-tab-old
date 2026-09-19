@@ -208,7 +208,7 @@
 "Shortcut 4" = "快捷键 4";
 "Shortcut 5" = "快捷键 5";
 "Shortcut already assigned to another action: %@" = "快捷键已经分配给了另一个动作：%@";
-"Shortcuts When Active" = "活跃时的快捷键";
+"Shortcuts when active" = "活跃时的快捷键";
 "Shortcuts when active…" = "活跃时的快捷键…";
 "Show" = "显示";
 "Show & Hide" = "显示与隐藏";

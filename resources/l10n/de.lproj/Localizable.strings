@@ -208,7 +208,7 @@
 "Shortcut 4" = "Kurzbefehl 4";
 "Shortcut 5" = "Kurzbefehl 5";
 "Shortcut already assigned to another action: %@" = "Der Kurzbefehl ist bereits einer anderen Aktion zugewiesen: %@";
-"Shortcuts When Active" = "Kurzbefehle, wenn aktiv";
+"Shortcuts when active" = "Kurzbefehle, wenn aktiv";
 "Shortcuts when active…" = "Kurzbefehle, wenn aktiv…";
 "Show" = "Anzeigen";
 "Show & Hide" = "Anzeigen und Ausblenden";

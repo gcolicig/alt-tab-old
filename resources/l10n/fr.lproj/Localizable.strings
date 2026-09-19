@@ -208,7 +208,7 @@
 "Shortcut 4" = "Raccourci 4";
 "Shortcut 5" = "Raccourci 5";
 "Shortcut already assigned to another action: %@" = "Raccourci déjà affecté à une autre action : %@";
-"Shortcuts When Active" = "Raccourcis lorsqu'il est actif";
+"Shortcuts when active" = "Raccourcis lorsqu'il est actif";
 "Shortcuts when active…" = "Raccourcis lorsqu'il est actif…";
 "Show" = "Afficher";
 "Show & Hide" = "Afficher / Masquer";

@@ -4,8 +4,13 @@ import Cocoa
 class PresetRow {
     private static var buttons = [String: NSButton]()
     private static var stateLabels = [String: NSTextField]()
+    private static var dependencyNotes = [String: NSTextField]()
 
-    static func make(_ preset: ShortcutPreset) -> TableGroupView.Row {
+    /// Adds the row directly to `table` (instead of returning a `Row`) because the disabled-Assign
+    /// explanation needs a second secondary view alongside the summary, which the plain `Row` struct
+    /// cannot carry.
+    @discardableResult
+    static func make(_ table: TableGroupView, _ preset: ShortcutPreset) -> TableGroupView.RowInfo {
         let button = NSButton(title: "", target: self, action: #selector(onClick(_:)))
         button.bezelStyle = .rounded
         button.identifier = NSUserInterfaceItemIdentifier(preset.id)
@@ -14,8 +19,15 @@ class PresetRow {
         stateLabel.font = NSFont.systemFont(ofSize: 12)
         stateLabel.textColor = .secondaryLabelColor
         stateLabels[preset.id] = stateLabel
+        let summary = NSTextField(wrappingLabelWithString: preset.summary)
+        summary.font = NSFont.systemFont(ofSize: 12)
+        summary.textColor = .gray
+        let note = LabelAndControl.makeDependencyNote("")
+        dependencyNotes[preset.id] = note
+        let rowInfo = table.addRow(leftViews: [TableGroupView.makeText(preset.title)], rightViews: [stateLabel, button],
+            secondaryViews: [summary, note], secondaryViewsOrientation: .vertical)
         update(preset)
-        return TableGroupView.Row(leftTitle: preset.title, subTitle: preset.summary, rightViews: [stateLabel, button])
+        return rowInfo
     }
 
     /// One active preset per domain, so assigning one disables the others of that domain.
@@ -51,11 +63,25 @@ class PresetRow {
 
     private static func update(_ preset: ShortcutPreset) {
         // says that the shortcuts no longer are what the preset assigned, which is what removing undoes
-        stateLabels[preset.id]?.stringValue = preset.hasCustomChanges ? NSLocalizedString("Modified", comment: "") : ""
+        if let stateLabel = stateLabels[preset.id] {
+            stateLabel.stringValue = preset.hasCustomChanges ? NSLocalizedString("Partly changed", comment: "") : ""
+            stateLabel.toolTip = preset.hasCustomChanges
+                ? NSLocalizedString("Some of this set's shortcuts were changed since it was assigned. Removing it restores what those shortcuts were before, discarding the changes.", comment: "")
+                : nil
+        }
         guard let button = buttons[preset.id] else { return }
         button.title = preset.isActive
             ? NSLocalizedString("Remove", comment: "")
             : NSLocalizedString("Assign", comment: "")
-        button.isEnabled = preset.isActive || ShortcutPresets.isAssignable(preset)
+        let isAssignable = ShortcutPresets.isAssignable(preset)
+        button.isEnabled = preset.isActive || isAssignable
+        if let note = dependencyNotes[preset.id] {
+            if !preset.isActive, !isAssignable, let blocking = ShortcutPresets.blockingPreset(for: preset) {
+                note.stringValue = String(format: NSLocalizedString("Remove \"%@\" first; only one set can be assigned at a time.", comment: ""), blocking.title)
+                note.isHidden = false
+            } else {
+                note.isHidden = true
+            }
+        }
     }
 }

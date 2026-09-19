@@ -208,7 +208,7 @@
 "Shortcut 4" = "4. parancsikon";
 "Shortcut 5" = "Parancsikon 5";
 "Shortcut already assigned to another action: %@" = "A parancs már hozzá van rendelve egy másik művelethez: %@";
-"Shortcuts When Active" = "Parancsikonok aktív esetén";
+"Shortcuts when active" = "Parancsikonok aktív esetén";
 "Shortcuts when active…" = "Parancs amikor aktív...";
 "Show" = "Mutat";
 "Show & Hide" = "Mutatás és Elrejtés";

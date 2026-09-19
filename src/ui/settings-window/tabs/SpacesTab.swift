@@ -7,7 +7,7 @@ class SpacesTab {
             leftTitle: NSLocalizedString("Show Spaces next to the menubar icon", comment: ""),
             rightViews: [LabelAndControl.makeSwitch("spacesInMenubarShown")]))
         table.addNewTable()
-        ShortcutPresets.spaces.forEach { table.addRow(PresetRow.make($0)) }
+        ShortcutPresets.spaces.forEach { PresetRow.make(table, $0) }
 
         let navigate = TableGroupView(title: NSLocalizedString("Navigate", comment: ""), width: SettingsWindow.contentWidth)
         [SpaceAction.left, .right, .last].forEach {

@@ -588,10 +588,10 @@ extension ScrollSpeedPreference: MacroPreference {
 extension SmoothScrollDuration: MacroPreference {
     var localizedString: LocalizedString {
         switch self {
-            case .veryShort: return NSLocalizedString("Very Short", comment: "")
+            case .veryShort: return NSLocalizedString("Very short", comment: "")
             case .short: return NSLocalizedString("Short", comment: "")
             case .long: return NSLocalizedString("Long", comment: "")
-            case .veryLong: return NSLocalizedString("Very Long", comment: "")
+            case .veryLong: return NSLocalizedString("Very long", comment: "")
         }
     }
 }
