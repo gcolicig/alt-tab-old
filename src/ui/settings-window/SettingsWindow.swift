@@ -751,6 +751,11 @@ extension SettingsWindow: NSWindowDelegate {
 extension SettingsWindow: NSSearchFieldDelegate {
     func controlTextDidChange(_ notification: Notification) {
         applySearch(searchField.stringValue)
+        // The cell was created at frame .zero (before Auto Layout resolved its real bounds) and its
+        // cancel button only appears once the field is non-empty, shrinking the text area on the first
+        // keystroke. Without an explicit redraw here, AppKit doesn't always invalidate the placeholder
+        // glyphs it drew at the old (wider) bounds, leaving a leftover fragment behind the typed text.
+        searchField.needsDisplay = true
     }
 
     // `sendsSearchStringImmediately` fires the field's action on every keystroke, so Return can't be
