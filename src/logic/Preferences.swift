@@ -94,7 +94,7 @@ class Preferences {
             "scrollSpeedMouse": ScrollSpeedPreference.normal.indexAsString,
             "scrollSpeedTrackpad": ScrollSpeedPreference.normal.indexAsString,
             "smoothScrollMouse": "false",
-            "smoothScrollDuration": SmoothScrollDuration.smooth.indexAsString,
+            "smoothScrollDuration": SmoothScrollDuration.short.indexAsString,
         ]
         (0..<maxShortcutCount).forEach { index in
             // Shortcut 1 mirrors Command-Tab, Shortcut 2 the native Command plus key above Tab

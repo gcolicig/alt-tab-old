@@ -8,7 +8,7 @@ final class SmoothScrollTests: XCTestCase {
         var total = 0
         var iterations = 0
         while remaining != 0 && iterations < 10_000 {
-            let step = SmoothScrollStep.next(remaining: remaining, dt: 1.0 / 120, duration: SmoothScrollDuration.smooth.seconds, carry: carry)
+            let step = SmoothScrollStep.next(remaining: remaining, dt: 1.0 / 120, duration: SmoothScrollDuration.short.seconds, carry: carry)
             total += step.emit
             remaining = step.remaining
             carry = step.carry
@@ -18,7 +18,7 @@ final class SmoothScrollTests: XCTestCase {
     }
 
     func testEndsWithinRoughlyOneDurationOfFrames() {
-        let duration = SmoothScrollDuration.quick.seconds
+        let duration = SmoothScrollDuration.veryShort.seconds
         let dt = 1.0 / 120
         var remaining = 100.0
         var carry = 0.0
