@@ -1,7 +1,4 @@
 {
-  "fill": {
-    "automatic-gradient": "extended-srgb:0.96863,0.96863,0.96863,1.00000"
-  },
   "groups": [
     {
       "layers": [
@@ -9,20 +6,20 @@
           "fill-specializations": [
             {
               "value": {
-                "solid": "extended-srgb:0.43137,0.43137,0.43137,1.00000"
+                "solid": "extended-srgb:1.00000,0.37255,0.34118,1.00000"
               }
             },
             {
               "appearance": "dark",
               "value": {
-                "solid": "extended-srgb:0.43137,0.43137,0.43137,1.00000"
+                "solid": "extended-srgb:1.00000,0.37255,0.34118,1.00000"
               }
             }
           ],
           "glass": false,
           "hidden": false,
-          "image-name": "04-traffic-lights.png",
-          "name": "Traffic lights",
+          "image-name": "04-traffic-light-red.png",
+          "name": "Traffic light red",
           "position": {
             "scale": 1.0,
             "translation-in-points": [
@@ -35,13 +32,65 @@
           "fill-specializations": [
             {
               "value": {
-                "solid": "extended-srgb:0.27059,0.27059,0.27059,1.00000"
+                "solid": "extended-srgb:0.99608,0.73725,0.18039,1.00000"
               }
             },
             {
               "appearance": "dark",
               "value": {
-                "solid": "extended-srgb:0.60392,0.60392,0.60392,1.00000"
+                "solid": "extended-srgb:0.99608,0.73725,0.18039,1.00000"
+              }
+            }
+          ],
+          "glass": false,
+          "hidden": false,
+          "image-name": "05-traffic-light-yellow.png",
+          "name": "Traffic light yellow",
+          "position": {
+            "scale": 1.0,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "extended-srgb:0.15686,0.78431,0.25098,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "extended-srgb:0.15686,0.78431,0.25098,1.00000"
+              }
+            }
+          ],
+          "glass": false,
+          "hidden": false,
+          "image-name": "06-traffic-light-green.png",
+          "name": "Traffic light green",
+          "position": {
+            "scale": 1.0,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "extended-srgb:0.84000,0.84000,0.84000,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "extended-srgb:0.84000,0.84000,0.84000,1.00000"
               }
             }
           ],
@@ -61,13 +110,13 @@
           "fill-specializations": [
             {
               "value": {
-                "solid": "extended-srgb:0.43137,0.43137,0.43137,1.00000"
+                "solid": "extended-srgb:0.30000,0.30000,0.30000,1.00000"
               }
             },
             {
               "appearance": "dark",
               "value": {
-                "solid": "extended-srgb:0.43137,0.43137,0.43137,1.00000"
+                "solid": "extended-srgb:0.30000,0.30000,0.30000,1.00000"
               }
             }
           ],
@@ -99,13 +148,13 @@
           "fill-specializations": [
             {
               "value": {
-                "solid": "extended-srgb:0.35294,0.35294,0.35294,1.00000"
+                "solid": "extended-srgb:0.44000,0.44000,0.44000,1.00000"
               }
             },
             {
               "appearance": "dark",
               "value": {
-                "solid": "extended-srgb:0.51765,0.51765,0.51765,1.00000"
+                "solid": "extended-srgb:0.44000,0.44000,0.44000,1.00000"
               }
             }
           ],
@@ -137,5 +186,18 @@
       "watchOS"
     ],
     "squares": "shared"
-  }
+  },
+  "fill-specializations": [
+    {
+      "value": {
+        "solid": "extended-srgb:0.61569,0.61176,0.61176,1.00000"
+      }
+    },
+    {
+      "appearance": "dark",
+      "value": {
+        "solid": "extended-srgb:0.61569,0.61176,0.61176,1.00000"
+      }
+    }
+  ]
 }
