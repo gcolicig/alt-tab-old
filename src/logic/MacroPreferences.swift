@@ -583,6 +583,16 @@ extension ScrollSpeedPreference: MacroPreference {
     }
 }
 
+extension SmoothScrollDuration: MacroPreference {
+    var localizedString: LocalizedString {
+        switch self {
+            case .short: return NSLocalizedString("Short", comment: "")
+            case .medium: return NSLocalizedString("Medium", comment: "")
+            case .long: return NSLocalizedString("Long", comment: "")
+        }
+    }
+}
+
 extension DragModifierPreference: MacroPreference {
     var localizedString: LocalizedString {
         switch self {

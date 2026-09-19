@@ -93,6 +93,8 @@ class Preferences {
             "reverseScrollTrackpad": "false",
             "scrollSpeedMouse": ScrollSpeedPreference.normal.indexAsString,
             "scrollSpeedTrackpad": ScrollSpeedPreference.normal.indexAsString,
+            "smoothScrollMouse": "false",
+            "smoothScrollDuration": SmoothScrollDuration.medium.indexAsString,
         ]
         (0..<maxShortcutCount).forEach { index in
             // Shortcut 1 mirrors Command-Tab, Shortcut 2 the native Command plus key above Tab
@@ -190,6 +192,8 @@ class Preferences {
     static var reverseScrollTrackpad: Bool { CachedUserDefaults.bool("reverseScrollTrackpad") }
     static var scrollSpeedMouse: ScrollSpeedPreference { CachedUserDefaults.macroPref("scrollSpeedMouse", ScrollSpeedPreference.allCases) }
     static var scrollSpeedTrackpad: ScrollSpeedPreference { CachedUserDefaults.macroPref("scrollSpeedTrackpad", ScrollSpeedPreference.allCases) }
+    static var smoothScrollMouse: Bool { CachedUserDefaults.bool("smoothScrollMouse") }
+    static var smoothScrollDuration: SmoothScrollDuration { CachedUserDefaults.macroPref("smoothScrollDuration", SmoothScrollDuration.allCases) }
     static var micMuteIndicator: Bool { CachedUserDefaults.bool("micMuteIndicator") }
     static var micKeyMutesMicrophone: Bool { CachedUserDefaults.bool("micKeyMutesMicrophone") }
     static var autoQuitEnabled: Bool { CachedUserDefaults.bool("autoQuitEnabled") }
