@@ -127,16 +127,23 @@ class KeepAwakeTab {
             rightViews: [LabelAndControl.makeSwitch("keepAwakeDisplay")]))
         table.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("End on battery at", comment: ""),
             rightViews: [SettingsControls.valuePopup("keepAwakeBatteryThreshold", batteryOptions)]))
-        table.addNewTable()
-        actions.forEach { action in
+        let startAndStop = TableGroupView(title: NSLocalizedString("Start and stop", comment: ""), width: SettingsWindow.contentWidth)
+        startAndStopActions.forEach { action in
             guard let spec = SystemActions.spec(action) else { return }
-            table.addRow(TableGroupView.Row(leftTitle: spec.title, rightViews: [SettingsControls.recorder(action, spec.title)]))
+            startAndStop.addRow(TableGroupView.Row(leftTitle: spec.title, rightViews: [SettingsControls.recorder(action, spec.title)]))
         }
-        return TableGroupSetView(originalViews: [table], padding: 0, bottomPadding: 0)
+        let durations = TableGroupView(title: NSLocalizedString("Durations", comment: ""), width: SettingsWindow.contentWidth)
+        durationActions.forEach { action in
+            guard let spec = SystemActions.spec(action) else { return }
+            durations.addRow(TableGroupView.Row(leftTitle: spec.title, rightViews: [SettingsControls.recorder(action, spec.title)]))
+        }
+        return TableGroupSetView(originalViews: [table, startAndStop, durations], padding: 0, bottomPadding: 0)
     }
 
     /// Their shortcuts are assigned here only; one recorder per preference keeps the two tabs from fighting.
     static let actions: [SystemAction] = [.keepAwakeToggle, .keepAwakeIndefinitely, .keepAwake15Minutes, .keepAwake1Hour, .keepAwake2Hours, .keepAwake5Hours, .keepAwakeStop]
+    static let startAndStopActions: [SystemAction] = [.keepAwakeToggle, .keepAwakeIndefinitely, .keepAwakeStop]
+    static let durationActions: [SystemAction] = [.keepAwake15Minutes, .keepAwake1Hour, .keepAwake2Hours, .keepAwake5Hours]
 
     private static let batteryOptions: [(String, Int)] = [(NSLocalizedString("Never", comment: ""), 0)] + [10, 20, 30, 50].map { ("\($0) %", $0) }
 }

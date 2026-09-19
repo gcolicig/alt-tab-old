@@ -8,11 +8,17 @@ class SpacesTab {
             rightViews: [LabelAndControl.makeSwitch("spacesInMenubarShown")]))
         table.addNewTable()
         ShortcutPresets.spaces.forEach { table.addRow(PresetRow.make($0)) }
-        table.addNewTable()
-        SpaceAction.all.forEach {
+
+        let navigate = TableGroupView(title: NSLocalizedString("Navigate", comment: ""), width: SettingsWindow.contentWidth)
+        [SpaceAction.left, .right, .last].forEach {
             let views = LabelAndControl.makeLabelWithRecorder($0.localizedTitle, $0.shortcutPreferenceKey, Preferences.shortcut($0.shortcutPreferenceKey))
-            table.addRow(TableGroupView.Row(leftTitle: $0.localizedTitle, rightViews: [views[1]]))
+            navigate.addRow(TableGroupView.Row(leftTitle: $0.localizedTitle, rightViews: [views[1]]))
         }
-        return TableGroupSetView(originalViews: [table], padding: 0, bottomPadding: 0)
+        let goToSpace = TableGroupView(title: NSLocalizedString("Go to Space", comment: ""), width: SettingsWindow.contentWidth)
+        (1...9).map { SpaceAction.index($0) }.forEach {
+            let views = LabelAndControl.makeLabelWithRecorder($0.localizedTitle, $0.shortcutPreferenceKey, Preferences.shortcut($0.shortcutPreferenceKey))
+            goToSpace.addRow(TableGroupView.Row(leftTitle: $0.localizedTitle, rightViews: [views[1]]))
+        }
+        return TableGroupSetView(originalViews: [table, navigate, goToSpace], padding: 0, bottomPadding: 0)
     }
 }
