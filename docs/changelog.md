@@ -19,6 +19,8 @@
 * add actions to move the focused window to the next or previous display, keeping its relative placement
 * add shortcut presets that assign and remove a named set in one step, for Spaces and layouts, each in a macOS-near and a Hyper variant
 * take the matching system shortcuts over only while a preset is assigned, and restore them when it is removed or after a crash
+* add `Paste and Match Style` to the menu, which pastes the clipboard as plain text into any app and restores the clipboard afterwards
+* add a `Press and Hold for Accents` toggle for the macOS accent popup on held letter keys
 
 ### Defaults
 
