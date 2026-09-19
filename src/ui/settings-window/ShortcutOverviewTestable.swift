@@ -31,6 +31,9 @@ struct ShortcutOverviewRow: Equatable {
     let groupTitle: String
     /// The settings section that owns the recorder; nil when the overview itself shows the recorder.
     let ownerSectionId: String?
+    /// The profile slot this shortcut belongs to, when `ownerSectionId` is "profiles". Profiles shows
+    /// one profile at a time picked from a popup, so revealing the row must first select this slot.
+    let profileIndex: Int?
     let status: ShortcutStatus
 }
 

@@ -18,6 +18,15 @@ class ProfilesTab {
         return container
     }
 
+    /// Selects a profile slot and rebuilds, so the details table (and its "Shortcut" row) shows this
+    /// profile. Used when revealing a profile shortcut from the Shortcuts overview, where Profiles
+    /// otherwise still shows whichever profile the user last picked.
+    static func select(_ index: Int) {
+        guard occupiedSlots().contains(index) else { return }
+        selected = index
+        refresh()
+    }
+
     private static func refresh() {
         let slots = occupiedSlots()
         if selected.map({ !slots.contains($0) }) ?? true { selected = slots.first }
