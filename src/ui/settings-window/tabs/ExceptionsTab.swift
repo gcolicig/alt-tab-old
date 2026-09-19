@@ -42,10 +42,9 @@ class ExceptionsTab {
         let appUrl = NSWorkspace.shared.urlForApplication(withBundleIdentifier: entry.bundleIdentifier)
         let isPrefix = ExceptionsTestable.isPrefix(entry.bundleIdentifier)
         let name = ExceptionsTestable.displayName(bundleIdentifier: entry.bundleIdentifier, resolvedName: appUrl.map(DefaultBrowser.displayName))
-        let isInstalled = isPrefix || appUrl != nil
-        let toolTip = isInstalled ? entry.bundleIdentifier : String(format: NSLocalizedString("%@ — not installed", comment: ""), entry.bundleIdentifier)
+        let subtitle = isPrefix || appUrl != nil ? entry.bundleIdentifier : NSLocalizedString("Not installed", comment: "")
         table.addRow(
-            leftViews: [appView(iconView(appUrl: appUrl, isPrefix: isPrefix), nameLabel(name, isInstalled: isInstalled, toolTip: toolTip))],
+            leftViews: [appView(iconView(appUrl: appUrl, isPrefix: isPrefix), nameStack(name, subtitle))],
             rightViews: [switcherPopup(index, entry), shortcutsPopup(index, entry), removeButton(index)],
             secondaryViews: nil)
         // its own row: as a secondary view it would have to fit left of the two popups, which leaves no room
@@ -54,8 +53,7 @@ class ExceptionsTab {
         }
     }
 
-    private static let popupWidth = CGFloat(165)
-    private static let iconSize = CGFloat(16)
+    private static let popupWidth = CGFloat(150)
     private static let removeWidth = CGFloat(18)
 
     /// Icon and name side by side in one view; as two left views the row stacked them vertically.
@@ -88,8 +86,8 @@ class ExceptionsTab {
     private static func iconView(appUrl: URL?, isPrefix: Bool) -> NSImageView {
         let imageView = NSImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.widthAnchor.constraint(equalToConstant: iconSize).isActive = true
-        imageView.heightAnchor.constraint(equalToConstant: iconSize).isActive = true
+        imageView.widthAnchor.constraint(equalToConstant: 22).isActive = true
+        imageView.heightAnchor.constraint(equalToConstant: 22).isActive = true
         if let appUrl {
             imageView.image = NSWorkspace.shared.icon(forFile: appUrl.path)
         } else if #available(macOS 11.0, *) {
@@ -99,16 +97,23 @@ class ExceptionsTab {
         return imageView
     }
 
-    /// One line per entry keeps the list compact; the bundle id and the install state live in the tooltip,
-    /// and an app that is not installed is drawn in the secondary color.
-    private static func nameLabel(_ name: String, isInstalled: Bool, toolTip: String) -> NSView {
-        let label = NSTextField(labelWithString: name)
+    private static func nameStack(_ name: String, _ subtitle: String) -> NSView {
+        let title = NSTextField(labelWithString: name)
+        title.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
         // bundle IDs are long and their distinctive part is at both ends
-        label.lineBreakMode = .byTruncatingMiddle
-        label.textColor = isInstalled ? .labelColor : .secondaryLabelColor
-        label.toolTip = toolTip
-        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        return label
+        title.lineBreakMode = .byTruncatingMiddle
+        title.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        let subLabel = NSTextField(labelWithString: subtitle)
+        subLabel.font = NSFont.systemFont(ofSize: 12)
+        subLabel.textColor = .gray
+        subLabel.lineBreakMode = .byTruncatingMiddle
+        subLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        let stack = NSStackView(views: [title, subLabel])
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 2
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
     }
 
     private static func switcherPopup(_ index: Int, _ entry: ExceptionEntry) -> NSView {

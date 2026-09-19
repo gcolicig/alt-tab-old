@@ -12,7 +12,7 @@ class ExceptionsTests: XCTestCase {
     func testDisplayNameForPrefixEntry() {
         XCTAssertTrue(ExceptionsTestable.isPrefix("com.parallels."))
         XCTAssertEqual(ExceptionsTestable.displayName(bundleIdentifier: "com.parallels.", resolvedName: nil),
-            "com.parallels.*")
+            "All apps starting with \"com.parallels.\"")
     }
 
     func testDisplayNameForUnresolvedApp() {

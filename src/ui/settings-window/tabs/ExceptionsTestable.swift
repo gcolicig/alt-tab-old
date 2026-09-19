@@ -50,8 +50,7 @@ enum ExceptionsTestable {
     /// app name when one was found, otherwise the raw bundle id as a fallback.
     static func displayName(bundleIdentifier: String, resolvedName: String?) -> String {
         if isPrefix(bundleIdentifier) {
-            // a trailing "*" reads as "any app starting with" and stays short enough for one line
-            return bundleIdentifier + "*"
+            return String(format: NSLocalizedString("All apps starting with \"%@\"", comment: ""), bundleIdentifier)
         }
         return resolvedName ?? bundleIdentifier
     }
