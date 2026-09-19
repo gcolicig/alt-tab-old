@@ -1154,7 +1154,7 @@
 "Restore default" = "Restore default";
 
 /* No comment provided by engineer. */
-"Restore Original Mode" = "Restore Original Mode";
+"Restore original mode" = "Restore original mode";
 
 /* No comment provided by engineer. */
 "Reverse %@ vertical scrolling" = "Reverse %@ vertical scrolling";
@@ -1265,7 +1265,7 @@
 "Shortcuts in %@" = "Shortcuts in %@";
 
 /* No comment provided by engineer. */
-"Shortcuts When Active" = "Shortcuts When Active";
+"Shortcuts when active" = "Shortcuts when active";
 
 /* Menubar option */
 "Show" = "Show";
@@ -1619,10 +1619,10 @@
 "Version" = "Version";
 
 /* No comment provided by engineer. */
-"Very Long" = "Very Long";
+"Very long" = "Very long";
 
 /* No comment provided by engineer. */
-"Very Short" = "Very Short";
+"Very short" = "Very short";
 
 /* No comment provided by engineer. */
 "View existing discussions" = "View existing discussions";

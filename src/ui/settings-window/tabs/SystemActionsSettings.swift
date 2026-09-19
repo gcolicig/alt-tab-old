@@ -60,7 +60,7 @@ class SystemActionsTab {
             subTitle: NSLocalizedString("The microphone key in the F5 position toggles the mute instead of starting Dictation. After AltTab+ quits, the key starts Dictation again.", comment: ""),
             rightViews: [LabelAndControl.makeSwitch("micKeyMutesMicrophone", extraAction: { _ in MicKey.settingChanged() })]))
         let keys = TableGroupView(title: NSLocalizedString("Function Keys", comment: ""), width: SettingsWindow.contentWidth)
-        let restore = NSButton(title: NSLocalizedString("Restore Original Mode", comment: ""), target: nil, action: nil)
+        let restore = NSButton(title: NSLocalizedString("Restore original mode", comment: ""), target: nil, action: nil)
         restore.onAction = { _ in FunctionKeys.releaseOwnership() }
         keys.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Give back the function key mode from before AltTab+ changed it", comment: ""), rightViews: [restore]))
         return TableGroupSetView(originalViews: [autoQuit, catMode, microphone, keys], padding: 0, bottomPadding: 0)

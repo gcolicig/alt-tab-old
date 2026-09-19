@@ -291,7 +291,7 @@ class ControlsTab {
         additionalControlsDisclosure = DisclosureSection(id: "controls.additionalControls",
             title: NSLocalizedString("Additional controls", comment: ""), content: AdditionalControlsSection.makeView())
         shortcutsWhenActiveDisclosure = DisclosureSection(id: "controls.shortcutsWhenActive",
-            title: NSLocalizedString("Shortcuts When Active", comment: ""), content: ShortcutsWhenActiveSection.makeView())
+            title: NSLocalizedString("Shortcuts when active", comment: ""), content: ShortcutsWhenActiveSection.makeView())
         let view = TableGroupSetView(originalViews: [shortcutsView, additionalControlsDisclosure, shortcutsWhenActiveDisclosure],
             padding: 0, bottomPadding: 0, othersAlignment: .leading)
         refreshShortcutUi()
