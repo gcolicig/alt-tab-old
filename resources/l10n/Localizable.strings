@@ -4,9 +4,6 @@
 /* No comment provided by engineer. */
 "%@ lists no keyboard shortcuts in its menus." = "%@ lists no keyboard shortcuts in its menus.";
 
-/* No comment provided by engineer. */
-"%@ scroll speed" = "%@ scroll speed";
-
 /* Leader overlay */
 "%d actions" = "%d actions";
 
@@ -845,13 +842,10 @@
 "More Spaces" = "More Spaces";
 
 /* No comment provided by engineer. */
+"Mouse" = "Mouse";
+
+/* No comment provided by engineer. */
 "Mouse button" = "Mouse button";
-
-/* No comment provided by engineer. */
-"Mouse pointer acceleration" = "Mouse pointer acceleration";
-
-/* No comment provided by engineer. */
-"Mouse pointer speed" = "Mouse pointer speed";
 
 /* No comment provided by engineer. */
 "Move the cursor to this screen to switch its Spaces." = "Move the cursor to this screen to switch its Spaces.";
@@ -1070,6 +1064,12 @@
 "Pointer & Scroll" = "Pointer & Scroll";
 
 /* No comment provided by engineer. */
+"Pointer acceleration" = "Pointer acceleration";
+
+/* No comment provided by engineer. */
+"Pointer speed" = "Pointer speed";
+
+/* No comment provided by engineer. */
 "Press and Hold could not be changed." = "Press and Hold could not be changed.";
 
 /* No comment provided by engineer. */
@@ -1190,7 +1190,7 @@
 "Restore original mode" = "Restore original mode";
 
 /* No comment provided by engineer. */
-"Reverse %@ vertical scrolling" = "Reverse %@ vertical scrolling";
+"Reverse vertical scrolling" = "Reverse vertical scrolling";
 
 /* No comment provided by engineer. */
 "Right focus" = "Right focus";
@@ -1227,6 +1227,9 @@
 
 /* No comment provided by engineer. */
 "Screen showing AltTab" = "Screen showing AltTab";
+
+/* No comment provided by engineer. */
+"Scroll speed" = "Scroll speed";
 
 /* No comment provided by engineer. */
 "Search" = "Search";
@@ -1598,13 +1601,10 @@
 "Tools" = "Tools";
 
 /* No comment provided by engineer. */
+"Trackpad" = "Trackpad";
+
+/* No comment provided by engineer. */
 "Trackpad haptic feedback" = "Trackpad haptic feedback";
-
-/* No comment provided by engineer. */
-"Trackpad pointer acceleration" = "Trackpad pointer acceleration";
-
-/* No comment provided by engineer. */
-"Trackpad pointer speed" = "Trackpad pointer speed";
 
 /* No comment provided by engineer. */
 "Translation" = "Translation";

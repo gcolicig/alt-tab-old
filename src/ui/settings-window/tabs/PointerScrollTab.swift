@@ -19,25 +19,29 @@ class PointerScrollTab {
     }
 
     static func initTab() -> NSView {
-        let table = TableGroupView(width: SettingsWindow.contentWidth)
-        addCategory(table, .mouse, NSLocalizedString("Mouse pointer acceleration", comment: ""), NSLocalizedString("Mouse pointer speed", comment: ""))
-        table.addNewTable()
-        addCategory(table, .trackpad, NSLocalizedString("Trackpad pointer acceleration", comment: ""), NSLocalizedString("Trackpad pointer speed", comment: ""))
-        let scroll = TableGroupView(width: SettingsWindow.contentWidth)
-        addScroll(scroll, "Mouse", "reverseScrollMouse", "scrollSpeedMouse")
-        addSmoothScroll(scroll)
-        scroll.addNewTable()
-        addScroll(scroll, "Trackpad", "reverseScrollTrackpad", "scrollSpeedTrackpad")
-        return TableGroupSetView(originalViews: [table, scroll], padding: 0, bottomPadding: 0)
+        // Grouped by device (Mouse / Trackpad) instead of by kind (pointer / scroll): a titled
+        // `TableGroupView` gets the 20 pt spacer from its neighbor, so the two groups no longer touch.
+        let mouse = TableGroupView(title: NSLocalizedString("Mouse", comment: ""), width: SettingsWindow.contentWidth)
+        addCategory(mouse, .mouse, NSLocalizedString("Pointer acceleration", comment: ""), NSLocalizedString("Pointer speed", comment: ""))
+        mouse.addNewTable()
+        addScroll(mouse, "reverseScrollMouse", "scrollSpeedMouse")
+        addSmoothScroll(mouse)
+        let trackpad = TableGroupView(title: NSLocalizedString("Trackpad", comment: ""), width: SettingsWindow.contentWidth)
+        addCategory(trackpad, .trackpad, NSLocalizedString("Pointer acceleration", comment: ""), NSLocalizedString("Pointer speed", comment: ""))
+        trackpad.addNewTable()
+        addScroll(trackpad, "reverseScrollTrackpad", "scrollSpeedTrackpad")
+        return TableGroupSetView(originalViews: [mouse, trackpad], padding: 0, bottomPadding: 0)
     }
 
     /// Reverse direction and speed run through a scrollWheel tap, which exists only while one of these is on.
-    private static func addScroll(_ table: TableGroupView, _ device: String, _ reverseKey: String, _ speedKey: String) {
+    /// The device word is dropped from the row titles: the enclosing "Mouse"/"Trackpad" group title already
+    /// says it, and search still finds the row through its group.
+    private static func addScroll(_ table: TableGroupView, _ reverseKey: String, _ speedKey: String) {
         table.addRow(TableGroupView.Row(
-            leftTitle: String(format: NSLocalizedString("Reverse %@ vertical scrolling", comment: ""), device),
+            leftTitle: NSLocalizedString("Reverse vertical scrolling", comment: ""),
             rightViews: [LabelAndControl.makeSwitch(reverseKey) { _ in scrollSettingsChanged() }]))
         table.addRow(TableGroupView.Row(
-            leftTitle: String(format: NSLocalizedString("%@ scroll speed", comment: ""), device),
+            leftTitle: NSLocalizedString("Scroll speed", comment: ""),
             rightViews: [LabelAndControl.makeDropdown(speedKey, ScrollSpeedPreference.allCases) { _ in scrollSettingsChanged() }]))
     }
 
