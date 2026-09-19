@@ -78,7 +78,7 @@ class PointerScrollTab {
     }
 
     private static func scrollSettingsModify() -> Bool {
-        ScrollTransform.anyModifies(
+        Preferences.smoothScrollMouse || ScrollTransform.anyModifies(
             mouse: ScrollAxisSettings(reverseVertical: Preferences.reverseScrollMouse, speed: Preferences.scrollSpeedMouse.factor),
             trackpad: ScrollAxisSettings(reverseVertical: Preferences.reverseScrollTrackpad, speed: Preferences.scrollSpeedTrackpad.factor))
     }

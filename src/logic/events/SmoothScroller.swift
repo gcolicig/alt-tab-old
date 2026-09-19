@@ -32,6 +32,9 @@ class SmoothScroller {
     func add(dx: Double, dy: Double, flags: CGEventFlags) {
         queue.async { [self] in
             self.flags = flags
+            // a reversal drops the fractional carry too, or it would eat into the first pixels of the new direction
+            if remainingX * dx < 0 { carryX = 0 }
+            if remainingY * dy < 0 { carryY = 0 }
             remainingX = Self.combine(remainingX, dx)
             remainingY = Self.combine(remainingY, dy)
             if timerIsSuspended {
