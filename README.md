@@ -153,8 +153,8 @@ Windows         Isolate Window · Minimize App Windows Except Frontmost · Hide 
 Other…      >   Apps           Quit All Apps… · Quit All Apps Except Frontmost…
                 Tools          Pick Color · Capture Text · Capture & Translate · Scan QR Code · Scan QR Code from Clipboard
                 Notifications  Clear Visible Notifications · Clear All Notifications
-                System         Clear Clipboard · Eject All Disks · Sleep Displays
-                Toggles        Mute Sound · Mute Microphone · Function Keys · Auto-Quit Apps · Cat Mode · Keep Awake >
+                System         Paste and Match Style · Clear Clipboard · Eject All Disks · Sleep Displays
+                Toggles        Mute Sound · Mute Microphone · Function Keys · Press and Hold for Accents · Auto-Quit Apps · Cat Mode · Keep Awake >
                 Defaults       Default Browser >
 About AltTab+ · Check permissions… · Debug > · Quit AltTab+
 ```
@@ -167,7 +167,9 @@ Every action can also get a global shortcut in `Settings > Shortcuts`, and Leade
 - The screen tools work locally: captures stay in memory, text recognition uses Vision, translation uses the macOS Translation framework (macOS 26 and later). A scanned link is copied and only opened after you confirm.
 - `Clear … Notifications` remote-controls Notification Center through accessibility and is only enabled on macOS versions whose structure is known.
 - `Mute Microphone` shows a crossed-out microphone in the menu bar while the default input is muted, also when another app muted it. Click it to unmute. Turn the icon off in `Settings > System Actions`.
+- `Paste and Match Style` pastes the clipboard as plain text into the front app, in any app, and puts the original clipboard back half a second later unless something else was copied meanwhile.
 - `Function Keys` switches F1–F12 between media and standard function keys; `Settings > System Actions` can give the earlier mode back.
+- `Press and Hold for Accents` switches between the accent popup and key repeat for a held letter key. Apps read the setting when they start, so restart an app to see the change there. AltTab+ does not give the earlier value back.
 - `Cat Mode` locks the keyboard. It ends from the menu, by typing `unlock`, with the emergency shortcut, after a configurable time, and on sleep or screen lock.
 - `Keep Awake` uses public power assertions only, never persists them, ends on low battery if configured, and releases everything when AltTab+ quits. Configure it in `Settings > Keep Awake`.
 - `Default Browser >` lists apps that open both web links and HTML files; macOS asks for confirmation when you switch.
@@ -263,6 +265,7 @@ AltTab+ changes system settings only on request:
 - the keyboard shortcuts a preset or an assigned shortcut needs, which it gives back when the shortcut is removed
 - pointer acceleration and speed, handed back when you pick `System default` or quit
 - the function key mode, when you use `Function Keys`
+- the press-and-hold setting (`ApplePressAndHoldEnabled`), when you use `Press and Hold for Accents`
 - mute of the default audio devices, when you use `Mute Sound` or `Mute Microphone`; a microphone without a mute control is muted through its volume, which AltTab+ restores when it quits
 - the default browser, through the macOS confirmation dialog
 
