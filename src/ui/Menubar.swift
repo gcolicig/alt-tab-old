@@ -92,9 +92,11 @@ class Menubar {
         return true
     }
 
-    /// The Space groups the menu bar row shows, for the Spaces preview.
+    /// Every display's Space group, for the Spaces preview. Unlike the menu bar row, the preview keeps the
+    /// displays that hold a single Space: the row drops them to stay narrow, but the preview is a map of the
+    /// desk and would otherwise leave a display out.
     static func previewGroups() -> [SpaceGroup] {
-        spaceGroups()
+        spaceGroups(hidingSingleSpaceDisplays: false)
     }
 
     /// Switches the display's Space to `index` (1-based within the display). A synthetic Space switch reaches only
@@ -418,7 +420,7 @@ class Menubar {
     /// Displays are ordered left to right, then top to bottom. Groups with separate Spaces collapse to a
     /// single shared group when the system setting `Displays have separate Spaces` is off, since macOS
     /// then reports one shared display identifier for all screens.
-    private static func spaceGroups() -> [SpaceGroup] {
+    private static func spaceGroups(hidingSingleSpaceDisplays: Bool = true) -> [SpaceGroup] {
         guard !Spaces.screenSpacesMap.isEmpty else { return [] }
         // The screen carrying the menubar leads, the rest follow by physical position. Sorting purely by
         // `origin.x` put a display stacked *above* the main one first, because a wider screen centred over
@@ -438,6 +440,7 @@ class Menubar {
             guard let spaceIds = Spaces.screenSpacesMap[key], !spaceIds.isEmpty else { return nil }
             return SpaceGroup(displayUuid: key, spaceIds: spaceIds, activeSpaceId: spaceIds.first { Spaces.visibleSpaces.contains($0) })
         }
+        guard hidingSingleSpaceDisplays else { return groups }
         let visible = MenubarSpaceRow.visibleGroupIndexes(spaceCounts: groups.map { $0.spaceIds.count },
                                                           separateSpaces: NSScreen.screensHaveSeparateSpaces)
         return visible.map { groups[$0] }

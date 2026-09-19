@@ -6,6 +6,7 @@ import Cocoa
 class SpacesPreviewPanel: NSPanel {
     private static var shared: SpacesPreviewPanel?
     private static var outsideClickMonitor: Any?
+    private static var localClickMonitor: Any?
     private static let preferredTileHeight = CGFloat(190)
     private static let minimumTileHeight = CGFloat(80)
     private static let padding = CGFloat(12)
@@ -21,6 +22,7 @@ class SpacesPreviewPanel: NSPanel {
         }
         let panel = SpacesPreviewPanel()
         shared = panel
+        panel.anchorScreen = button.window?.screen
         panel.rebuild()
         panel.position(under: button)
         // the status item is still inside its own mouse-down tracking here; ordering the panel front from
@@ -36,14 +38,19 @@ class SpacesPreviewPanel: NSPanel {
             outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { _ in
                 handleClick(at: NSEvent.mouseLocation)
             }
+            // a global monitor never sees the app's own clicks, so a click on the status item or on another
+            // AltTab+ window would leave the panel standing next to the menu it opened
+            localClickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { event in
+                handleClick(at: NSEvent.mouseLocation)
+                return event
+            }
         }
     }
 
     static func hide() {
-        if let monitor = outsideClickMonitor {
-            NSEvent.removeMonitor(monitor)
-            outsideClickMonitor = nil
-        }
+        [outsideClickMonitor, localClickMonitor].compactMap { $0 }.forEach { NSEvent.removeMonitor($0) }
+        outsideClickMonitor = nil
+        localClickMonitor = nil
         shared?.orderOut(nil)
         shared = nil
     }
@@ -87,13 +94,18 @@ class SpacesPreviewPanel: NSPanel {
     // MARK: - Content
 
     private var tileHeight = SpacesPreviewPanel.preferredTileHeight
+    /// The display the status item was clicked on. The panel is sized and placed against this one.
+    private var anchorScreen: NSScreen?
 
     /// Builds at the preferred tile size, then once more with smaller tiles when the panel is wider than the
     /// menu bar screen, so every Space stays on screen.
     private func rebuild() {
         tileHeight = SpacesPreviewPanel.preferredTileHeight
         let size = build()
-        guard let maxWidth = NSScreen.screens.first.map({ $0.visibleFrame.width - 8 }), size.width > maxWidth else { return }
+        // the status item can sit on a narrower secondary display, so the limit comes from the display the
+        // panel is anchored to, not from the primary one
+        guard let maxWidth = (anchorScreen ?? NSScreen.screens.first).map({ $0.visibleFrame.width - 8 }),
+              size.width > maxWidth else { return }
         tileHeight = max(SpacesPreviewPanel.minimumTileHeight, (tileHeight * maxWidth / size.width).rounded(.down))
         build()
     }
@@ -189,11 +201,12 @@ class SpacesPreviewPanel: NSPanel {
     }
 
     private func position(under button: NSStatusBarButton) {
-        guard let buttonWindow = button.window, let screen = buttonWindow.screen ?? NSScreen.main else { return }
+        guard let buttonWindow = button.window, let screen = anchorScreen ?? NSScreen.main else { return }
         let buttonFrame = buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
         let visible = screen.visibleFrame
-        var x = buttonFrame.midX - frame.width / 2
-        x = min(max(x, visible.minX + 4), visible.maxX - frame.width - 4)
+        // clamp against the left edge last, so a panel still wider than the display stays reachable there
+        // instead of being pushed off to the left by an inverted upper bound
+        let x = max(min(buttonFrame.midX - frame.width / 2, visible.maxX - frame.width - 4), visible.minX + 4)
         setFrameTopLeftPoint(NSPoint(x: x, y: buttonFrame.minY - 4))
     }
 }
