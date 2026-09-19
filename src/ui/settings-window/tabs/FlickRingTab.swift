@@ -10,19 +10,21 @@ class FlickRingTab {
             leftTitle: NSLocalizedString("Mouse button", comment: ""),
             subTitle: NSLocalizedString("The chosen button is reserved while the ring is on.", comment: ""),
             rightViews: [makeButtonPopup()]))
-        let directions = TableGroupView(width: SettingsWindow.contentWidth)
+        // Added to `table` itself (instead of a second TableGroupView) so the two tables get the normal
+        // inter-table gap; two separate, untitled TableGroupViews next to each other get no gap at all.
+        table.addNewTable()
         // Shares one action-popup template (menu + widest-title width) across all directions built in
         // this pass; see `LabelAndControl.beginActionPopupBatch`.
         LabelAndControl.beginActionPopupBatch()
         FlickDirection.allCases.forEach { direction in
-            directions.addRow(TableGroupView.Row(
+            table.addRow(TableGroupView.Row(
                 leftTitle: title(direction),
                 rightViews: [LabelAndControl.makeActionPopup(FlickRingBindingsStore.stableId(for: direction)) { stableId in
                     FlickRingBindingsStore.set(direction, stableId)
                 }]))
         }
         LabelAndControl.endActionPopupBatch()
-        return TableGroupSetView(originalViews: [table, directions], padding: 0, bottomPadding: 0)
+        return TableGroupSetView(originalViews: [table], padding: 0, bottomPadding: 0)
     }
 
     private static func makeButtonPopup() -> NSPopUpButton {

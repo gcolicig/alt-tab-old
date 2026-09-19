@@ -4,9 +4,6 @@
 /* No comment provided by engineer. */
 "%@ lists no keyboard shortcuts in its menus." = "%@ lists no keyboard shortcuts in its menus.";
 
-/* No comment provided by engineer. */
-"%@ scroll speed" = "%@ scroll speed";
-
 /* Leader overlay */
 "%d actions" = "%d actions";
 
@@ -149,9 +146,6 @@
 "All apps except the list" = "All apps except the list";
 
 /* No comment provided by engineer. */
-"All apps starting with \"%@\"" = "All apps starting with \"%@\"";
-
-/* No comment provided by engineer. */
 "All data from this form will be made public, as a ticket on github.com" = "All data from this form will be made public, as a ticket on github.com";
 
 /* No comment provided by engineer. */
@@ -278,7 +272,7 @@
 "Auto-Quit Apps" = "Auto-Quit Apps";
 
 /* No comment provided by engineer. */
-"Available when window thumbnails are shown, either as the Thumbnails style or as the preview of the selected window in Windows mode." = "Available when window thumbnails are shown, either as the Thumbnails style or as the preview of the selected window in Windows mode.";
+"Available when thumbnails are shown." = "Available when thumbnails are shown.";
 
 /* No comment provided by engineer. */
 "Bind to current space" = "Bind to current space";
@@ -354,6 +348,9 @@
 
 /* No comment provided by engineer. */
 "Cleared %d notification(s)." = "Cleared %d notification(s).";
+
+/* No comment provided by engineer. */
+"Click the icon to unmute." = "Click the icon to unmute.";
 
 /* No comment provided by engineer. */
 "Clipboard cleared." = "Clipboard cleared.";
@@ -734,7 +731,10 @@
 "Keep window previews up to date in the background" = "Keep window previews up to date in the background";
 
 /* No comment provided by engineer. */
-"Keeps thumbnail and full-size previews current while the switcher is hidden. Turning this off avoids the screen-recording indicator and possible DRM interruptions; required previews refresh when the switcher opens." = "Keeps thumbnail and full-size previews current while the switcher is hidden. Turning this off avoids the screen-recording indicator and possible DRM interruptions; required previews refresh when the switcher opens.";
+"Keeps previews current while the switcher is hidden." = "Keeps previews current while the switcher is hidden.";
+
+/* No comment provided by engineer. */
+"Keeps thumbnail and full-size previews current while the switcher is hidden. Turning this off avoids the screen-recording indicator and possible DRM interruptions; required previews refresh when the switcher opens. Available when window thumbnails are shown, either as the Thumbnails style or as the preview of the selected window in Windows mode." = "Keeps thumbnail and full-size previews current while the switcher is hidden. Turning this off avoids the screen-recording indicator and possible DRM interruptions; required previews refresh when the switcher opens. Available when window thumbnails are shown, either as the Thumbnails style or as the preview of the selected window in Windows mode.";
 
 /* No comment provided by engineer. */
 "keys" = "keys";
@@ -845,13 +845,10 @@
 "More Spaces" = "More Spaces";
 
 /* No comment provided by engineer. */
+"Mouse" = "Mouse";
+
+/* No comment provided by engineer. */
 "Mouse button" = "Mouse button";
-
-/* No comment provided by engineer. */
-"Mouse pointer acceleration" = "Mouse pointer acceleration";
-
-/* No comment provided by engineer. */
-"Mouse pointer speed" = "Mouse pointer speed";
 
 /* No comment provided by engineer. */
 "Move the cursor to this screen to switch its Spaces." = "Move the cursor to this screen to switch its Spaces.";
@@ -894,6 +891,9 @@
 
 /* No comment provided by engineer. */
 "No application is configured." = "No application is configured.";
+
+/* No comment provided by engineer. */
+"No apps yet." = "No apps yet.";
 
 /* No comment provided by engineer. */
 "No apps yet. Add one to open it with a shortcut." = "No apps yet. Add one to open it with a shortcut.";
@@ -1049,6 +1049,9 @@
 "Other…" = "Other…";
 
 /* No comment provided by engineer. */
+"Overrides Dictation while AltTab+ runs." = "Overrides Dictation while AltTab+ runs.";
+
+/* No comment provided by engineer. */
 "Ownership" = "Ownership";
 
 /* No comment provided by engineer. */
@@ -1068,6 +1071,12 @@
 
 /* No comment provided by engineer. */
 "Pointer & Scroll" = "Pointer & Scroll";
+
+/* No comment provided by engineer. */
+"Pointer acceleration" = "Pointer acceleration";
+
+/* No comment provided by engineer. */
+"Pointer speed" = "Pointer speed";
 
 /* No comment provided by engineer. */
 "Press and Hold could not be changed." = "Press and Hold could not be changed.";
@@ -1190,7 +1199,7 @@
 "Restore original mode" = "Restore original mode";
 
 /* No comment provided by engineer. */
-"Reverse %@ vertical scrolling" = "Reverse %@ vertical scrolling";
+"Reverse vertical scrolling" = "Reverse vertical scrolling";
 
 /* No comment provided by engineer. */
 "Right focus" = "Right focus";
@@ -1227,6 +1236,9 @@
 
 /* No comment provided by engineer. */
 "Screen showing AltTab" = "Screen showing AltTab";
+
+/* No comment provided by engineer. */
+"Scroll speed" = "Scroll speed";
 
 /* No comment provided by engineer. */
 "Search" = "Search";
@@ -1598,13 +1610,10 @@
 "Tools" = "Tools";
 
 /* No comment provided by engineer. */
+"Trackpad" = "Trackpad";
+
+/* No comment provided by engineer. */
 "Trackpad haptic feedback" = "Trackpad haptic feedback";
-
-/* No comment provided by engineer. */
-"Trackpad pointer acceleration" = "Trackpad pointer acceleration";
-
-/* No comment provided by engineer. */
-"Trackpad pointer speed" = "Trackpad pointer speed";
 
 /* No comment provided by engineer. */
 "Translation" = "Translation";

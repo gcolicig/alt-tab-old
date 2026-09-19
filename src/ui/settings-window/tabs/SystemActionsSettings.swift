@@ -22,48 +22,58 @@ enum SettingsControls {
 }
 
 class SystemActionsTab {
-    private static var appListStack: NSStackView?
-    private static var menuBarExceptionStack: NSStackView?
+    static let sectionId = "system-actions"
+    private static let container = RebuildableSettingsView(sectionId: sectionId)
 
     static func initTab() -> NSView {
+        container.rebuild(makeViews)
+        return container
+    }
+
+    private static func refresh() {
+        container.rebuild(makeViews)
+    }
+
+    private static func makeViews() -> [NSView] {
         let autoQuit = TableGroupView(title: NSLocalizedString("Auto-Quit Apps", comment: ""),
             subTitle: NSLocalizedString("Quits an app some time after its last window closed, unless it opened a new window or came to the front meanwhile. Finder, menu bar apps and apps with their own menu bar item keep running.", comment: ""),
             width: SettingsWindow.contentWidth)
         autoQuit.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Enable Auto-Quit", comment: ""), rightViews: [LabelAndControl.makeSwitch("autoQuitEnabled")]))
         autoQuit.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Delay", comment: ""), rightViews: [SettingsControls.valuePopup("autoQuitDelaySeconds", delayOptions)]))
         autoQuit.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Apps affected", comment: ""), rightViews: [SettingsControls.valuePopup("autoQuitMode", modeOptions)]))
-        // the lists live in the secondary part of a row, which grows with its content; the main part has a
-        // fixed height and let a growing list spill over the next row
-        appListStack = verticalStack()
-        refreshAppList()
-        autoQuit.addRow(leftViews: [TableGroupView.makeText(NSLocalizedString("App list", comment: ""))],
-            rightViews: [addButton { AutoQuit.addApps($0); refreshAppList() }],
-            secondaryViews: [appListStack!], secondaryViewsOrientation: .vertical)
-        menuBarExceptionStack = verticalStack()
-        refreshMenuBarExceptionList()
-        let exceptionHint = NSTextField(wrappingLabelWithString: NSLocalizedString("These apps quit although they keep an item in the menu bar, which then disappears too.", comment: ""))
-        exceptionHint.font = NSFont.systemFont(ofSize: 12)
-        exceptionHint.textColor = .gray
-        exceptionHint.preferredMaxLayoutWidth = SettingsWindow.contentWidth - 2 * TableGroupView.padding
-        autoQuit.addRow(leftViews: [TableGroupView.makeText(NSLocalizedString("Quit even with a menu bar item", comment: ""))],
-            rightViews: [addButton { AutoQuit.addMenuBarExceptions($0); refreshMenuBarExceptionList() }],
-            secondaryViews: [exceptionHint, menuBarExceptionStack!], secondaryViewsOrientation: .vertical)
+        let appList = appListTable(
+            title: NSLocalizedString("App list", comment: ""),
+            entries: AutoQuitPolicy.decodeList(Preferences.autoQuitBundleIds),
+            onAdd: { AutoQuit.addApps($0); refresh() },
+            onRemove: { AutoQuit.removeApp($0); refresh() })
+        let menuBarExceptions = appListTable(
+            title: NSLocalizedString("Quit even with a menu bar item", comment: ""),
+            subTitle: NSLocalizedString("These apps quit although they keep an item in the menu bar, which then disappears too.", comment: ""),
+            entries: AutoQuit.menuBarExceptions.sorted(),
+            onAdd: { AutoQuit.addMenuBarExceptions($0); refresh() },
+            onRemove: { AutoQuit.removeMenuBarException($0); refresh() })
         let catMode = TableGroupView(title: NSLocalizedString("Cat Mode", comment: ""),
             subTitle: NSLocalizedString("Locks the keyboard. End it from the menu, by typing “unlock”, or with the emergency shortcut ⌃⌥⇧⌘⎋.", comment: ""),
             width: SettingsWindow.contentWidth)
         catMode.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("End automatically after", comment: ""), rightViews: [SettingsControls.valuePopup("catModeMinutes", catModeOptions)]))
         let microphone = TableGroupView(title: NSLocalizedString("Microphone", comment: ""), width: SettingsWindow.contentWidth)
+        let micMuteIndicatorFullText = NSLocalizedString("The icons appear at the right end of the AltTab+ menu bar item, after the Spaces. macOS has no indicator for a muted microphone. Click an icon to unmute.", comment: "")
         microphone.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Show an icon in the menu bar while the microphone or the sound is muted", comment: ""),
-            subTitle: NSLocalizedString("The icons appear at the right end of the AltTab+ menu bar item, after the Spaces. macOS has no indicator for a muted microphone. Click an icon to unmute.", comment: ""),
-            rightViews: [LabelAndControl.makeSwitch("micMuteIndicator")]))
+            subTitle: NSLocalizedString("Click the icon to unmute.", comment: ""),
+            rightViews: [LabelAndControl.makeInfoButton(searchableTooltipTexts: [micMuteIndicatorFullText], onMouseEntered: { event, view in
+                Popover.shared.show(event: event, positioningView: view, message: micMuteIndicatorFullText)
+            }, onMouseExited: { _, _ in Popover.shared.hide() }), LabelAndControl.makeSwitch("micMuteIndicator")]))
+        let micKeyFullText = NSLocalizedString("The microphone key in the F5 position toggles the mute instead of starting Dictation. After AltTab+ quits, the key starts Dictation again.", comment: "")
         microphone.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Microphone key mutes the microphone", comment: ""),
-            subTitle: NSLocalizedString("The microphone key in the F5 position toggles the mute instead of starting Dictation. After AltTab+ quits, the key starts Dictation again.", comment: ""),
-            rightViews: [LabelAndControl.makeSwitch("micKeyMutesMicrophone", extraAction: { _ in MicKey.settingChanged() })]))
+            subTitle: NSLocalizedString("Overrides Dictation while AltTab+ runs.", comment: ""),
+            rightViews: [LabelAndControl.makeInfoButton(searchableTooltipTexts: [micKeyFullText], onMouseEntered: { event, view in
+                Popover.shared.show(event: event, positioningView: view, message: micKeyFullText)
+            }, onMouseExited: { _, _ in Popover.shared.hide() }), LabelAndControl.makeSwitch("micKeyMutesMicrophone", extraAction: { _ in MicKey.settingChanged() })]))
         let keys = TableGroupView(title: NSLocalizedString("Function Keys", comment: ""), width: SettingsWindow.contentWidth)
         let restore = NSButton(title: NSLocalizedString("Restore original mode", comment: ""), target: nil, action: nil)
         restore.onAction = { _ in FunctionKeys.releaseOwnership() }
         keys.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Give back the function key mode from before AltTab+ changed it", comment: ""), rightViews: [restore]))
-        return TableGroupSetView(originalViews: [autoQuit, catMode, microphone, keys], padding: 0, bottomPadding: 0)
+        return [autoQuit, appList, menuBarExceptions, catMode, microphone, keys]
     }
 
     private static let delayOptions: [(String, Int)] = [0, 5, 10, 30, 60, 120, 300].map { (String(format: NSLocalizedString("%d s", comment: ""), $0), $0) }
@@ -73,38 +83,22 @@ class SystemActionsTab {
         (NSLocalizedString("All apps except the list", comment: ""), AutoQuitMode.allExceptListed.rawValue),
     ]
 
-    private static func verticalStack() -> NSStackView {
-        let stack = NSStackView()
-        stack.orientation = .vertical
-        stack.alignment = .leading
-        return stack
-    }
-
-    private static func addButton(_ add: @escaping ([String]) -> Void) -> NSButton {
-        let button = NSButton(title: NSLocalizedString("Add App…", comment: ""), target: nil, action: nil)
-        button.onAction = { _ in chooseApps().map(add) }
-        return button
-    }
-
-    static func refreshAppList() {
-        fill(appListStack, AutoQuitPolicy.decodeList(Preferences.autoQuitBundleIds)) { AutoQuit.removeApp($0); refreshAppList() }
-    }
-
-    static func refreshMenuBarExceptionList() {
-        fill(menuBarExceptionStack, AutoQuit.menuBarExceptions.sorted()) { AutoQuit.removeMenuBarException($0); refreshMenuBarExceptionList() }
-    }
-
-    private static func fill(_ stack: NSStackView?, _ bundleIds: [String], remove: @escaping (String) -> Void) {
-        guard let stack else { return }
-        stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        bundleIds.forEach { stack.addArrangedSubview(appRow($0, remove)) }
-    }
-
-    private static func appRow(_ bundleId: String, _ remove: @escaping (String) -> Void) -> NSView {
-        let name = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId).map(DefaultBrowser.displayName) ?? bundleId
-        let removeButton = NSButton(title: NSLocalizedString("Remove", comment: ""), target: nil, action: nil)
-        removeButton.onAction = { _ in remove(bundleId) }
-        return StackView([TableGroupView.makeText(name), removeButton])
+    /// One titled list per Auto-Quit app set: a row per app (icon, name, bundle id, ⊖), an empty-state
+    /// row when there is nothing yet, and a "+" button that opens the same `chooseApps()` panel Exceptions uses.
+    private static func appListTable(title: String, subTitle: String? = nil, entries: [String],
+                                      onAdd: @escaping ([String]) -> Void, onRemove: @escaping (String) -> Void) -> TableGroupView {
+        let table = TableGroupView(title: title, subTitle: subTitle, width: SettingsWindow.contentWidth)
+        if entries.isEmpty {
+            table.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("No apps yet.", comment: ""), rightViews: []))
+        }
+        entries.forEach { bundleId in
+            table.addRow(leftViews: [AppListRows.appView(bundleId: bundleId)],
+                rightViews: [AppListRows.removeButton { onRemove(bundleId) }], secondaryViews: nil)
+        }
+        let addButton = AppListRows.makeCircleButton(systemSymbolName: "plus")
+        addButton.onAction = { _ in chooseApps().map(onAdd) }
+        table.addRow(TableGroupView.Row(leftTitle: "", rightViews: [addButton]))
+        return table
     }
 
     private static func chooseApps() -> [String]? {

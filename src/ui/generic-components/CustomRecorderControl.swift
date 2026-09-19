@@ -75,6 +75,58 @@ class CustomRecorderControl: RecorderControl {
         return attributes
     }
 
+    /// Right-aligns the label like a system settings shortcut row, instead of the pod's centered
+    /// text (SRRecorderControl.m:784-824, `SRRecorderControl.h:372`). Drawn against
+    /// `style.alignmentGuide.frame` (the control's full width) rather than the pod's own
+    /// `labelDrawingGuide.frame`, which autolayout already shrinks to the label's own size and
+    /// centers — right-aligning text inside a frame that already equals the text's width would look
+    /// identical to centered. While recording, the pod's own centered drawing is kept: it doubles as
+    /// the recording indicator and is the only state that actually draws the cancel/clear buttons.
+    /// The pod invalidates only `labelDrawingGuide`'s frame on a value change, but `drawLabel` draws at the
+    /// right edge of `alignmentGuide`, outside that frame, so the whole control is redrawn instead.
+    override var objectValue: Shortcut? {
+        didSet { needsDisplay = true }
+    }
+
+    override func drawLabel(_ aDirtyRect: NSRect) {
+        guard !isRecording else {
+            super.drawLabel(aDirtyRect)
+            return
+        }
+        // The pod's own label frame (SRRecorderControl.m:786, `labelDrawingGuide.frame`): used only
+        // for vertical placement, so the right-aligned text sits on the exact same baseline as the
+        // pod's centered text would (e.g. while recording).
+        let podLabelFrame = style.labelDrawingGuide.frame
+        guard !podLabelFrame.isEmpty else { return }
+        // `alignmentGuide.frame` (the control's full width) instead of the pod's own
+        // `labelDrawingGuide.frame`, which autolayout already shrinks to the label's own size and
+        // centers — right-aligning text inside a frame that already equals the text's width would look
+        // identical to centered.
+        var labelFrame = style.alignmentGuide.frame
+        guard !labelFrame.isEmpty, needsToDraw(labelFrame) else { return }
+        // Defensive: the clear/cancel guides are documented as valid only while recording, so this
+        // is normally a no-op here, but keeps the right-aligned text from sitting under them if a
+        // future style ever draws one outside recording too.
+        let clearFrame = style.clearButtonDrawingGuide?.frame ?? .zero
+        if clearable, objectValue != nil, !clearFrame.isEmpty {
+            labelFrame.size.width -= max(0, NSMaxX(labelFrame) - clearFrame.minX)
+        }
+        guard var attributes = drawingLabelAttributes else { return }
+        let paragraphStyle = (attributes[.paragraphStyle] as? NSParagraphStyle)?.mutableCopy() as? NSMutableParagraphStyle ?? NSMutableParagraphStyle()
+        paragraphStyle.alignment = .right
+        attributes[.paragraphStyle] = paragraphStyle
+        // Same baseline offset and vertical extent the pod itself uses (SRRecorderControl.m:799-800),
+        // taken from its own `labelDrawingGuide` rather than the wider `alignmentGuide` used above for
+        // x/width — those two guides share the same top/bottom in the pod's own constraints, but
+        // reusing the pod's frame directly (instead of re-deriving it) keeps this exactly in sync with
+        // any future style change to that offset.
+        labelFrame.origin.y = NSMaxY(podLabelFrame) - style.baselineDrawingOffsetFromBottom
+        labelFrame.size.height = podLabelFrame.size.height
+        let minWidth = (attributes[NSAttributedString.Key.SRMinimalDrawableWidthAttributeName] as? NSNumber)?.doubleValue ?? 0
+        guard labelFrame.width >= CGFloat(minWidth) else { return }
+        drawingLabel.draw(with: labelFrame, options: [], attributes: attributes, context: nil)
+    }
+
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
         if let hoverTrackingArea {

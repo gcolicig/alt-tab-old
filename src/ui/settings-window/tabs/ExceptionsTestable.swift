@@ -46,11 +46,12 @@ enum ExceptionsTestable {
         bundleIdentifier.hasSuffix(".")
     }
 
-    /// The name shown on the left of a row: the prefix wording for a prefix entry, the resolved
-    /// app name when one was found, otherwise the raw bundle id as a fallback.
+    /// The name shown on the left of a row: `<prefix>*` for a prefix entry (short enough to survive
+    /// the shared row helpers' middle-truncation instead of wording that gets swallowed by it), the
+    /// resolved app name when one was found, otherwise the raw bundle id as a fallback.
     static func displayName(bundleIdentifier: String, resolvedName: String?) -> String {
         if isPrefix(bundleIdentifier) {
-            return String(format: NSLocalizedString("All apps starting with \"%@\"", comment: ""), bundleIdentifier)
+            return bundleIdentifier + "*"
         }
         return resolvedName ?? bundleIdentifier
     }
