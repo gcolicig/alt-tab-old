@@ -87,6 +87,15 @@ class CustomRecorderControl: RecorderControl {
             super.drawLabel(aDirtyRect)
             return
         }
+        // The pod's own label frame (SRRecorderControl.m:786, `labelDrawingGuide.frame`): used only
+        // for vertical placement, so the right-aligned text sits on the exact same baseline as the
+        // pod's centered text would (e.g. while recording).
+        let podLabelFrame = style.labelDrawingGuide.frame
+        guard !podLabelFrame.isEmpty else { return }
+        // `alignmentGuide.frame` (the control's full width) instead of the pod's own
+        // `labelDrawingGuide.frame`, which autolayout already shrinks to the label's own size and
+        // centers — right-aligning text inside a frame that already equals the text's width would look
+        // identical to centered.
         var labelFrame = style.alignmentGuide.frame
         guard !labelFrame.isEmpty, needsToDraw(labelFrame) else { return }
         // Defensive: the clear/cancel guides are documented as valid only while recording, so this
@@ -100,8 +109,13 @@ class CustomRecorderControl: RecorderControl {
         let paragraphStyle = (attributes[.paragraphStyle] as? NSParagraphStyle)?.mutableCopy() as? NSMutableParagraphStyle ?? NSMutableParagraphStyle()
         paragraphStyle.alignment = .right
         attributes[.paragraphStyle] = paragraphStyle
-        // Same baseline offset the pod itself uses.
-        labelFrame.origin.y = NSMaxY(labelFrame) - style.baselineDrawingOffsetFromBottom
+        // Same baseline offset and vertical extent the pod itself uses (SRRecorderControl.m:799-800),
+        // taken from its own `labelDrawingGuide` rather than the wider `alignmentGuide` used above for
+        // x/width — those two guides share the same top/bottom in the pod's own constraints, but
+        // reusing the pod's frame directly (instead of re-deriving it) keeps this exactly in sync with
+        // any future style change to that offset.
+        labelFrame.origin.y = NSMaxY(podLabelFrame) - style.baselineDrawingOffsetFromBottom
+        labelFrame.size.height = podLabelFrame.size.height
         let minWidth = (attributes[NSAttributedString.Key.SRMinimalDrawableWidthAttributeName] as? NSNumber)?.doubleValue ?? 0
         guard labelFrame.width >= CGFloat(minWidth) else { return }
         drawingLabel.draw(with: labelFrame, options: [], attributes: attributes, context: nil)
