@@ -278,7 +278,11 @@ class SettingsWindow: NSWindow {
             SettingsSectionDefinition(id: ProfilesTab.sectionId, title: NSLocalizedString("Profiles", comment: ""), description: NSLocalizedString("Group apps into a profile, optionally bound to a space, and filter the switcher to it.", comment: ""), imageName: "controls", systemSymbolName: "square.stack.3d.up", builder: { ProfilesTab.initTab() },
                 hidesResetButton: true),
             SettingsSectionDefinition(id: "appearance", title: NSLocalizedString("Cmd-Tab", comment: ""), description: NSLocalizedString("Choose how the window switcher looks and where it appears.", comment: ""), imageName: "appearance", systemSymbolName: "paintpalette", builder: { AppearanceTab.initTab() }),
-            SettingsSectionDefinition(id: "controls", title: NSLocalizedString("Cmd-Tab Controls", comment: ""), description: NSLocalizedString("Set how you open and navigate the window switcher.", comment: ""), imageName: "controls", systemSymbolName: "command", builder: { ControlsTab.initTab() }),
+            // Only the selected shortcut slot's editor is normally built (see
+            // `ControlsTab.ensureShortcutEditorBuilt`); `extraResettableKeys` builds every slot's editor
+            // first so "Reset to Defaults" can find and restore controls in slots nobody has opened.
+            SettingsSectionDefinition(id: "controls", title: NSLocalizedString("Cmd-Tab Controls", comment: ""), description: NSLocalizedString("Set how you open and navigate the window switcher.", comment: ""), imageName: "controls", systemSymbolName: "command", builder: { ControlsTab.initTab() },
+                extraResettableKeys: { ControlsTab.ensureAllShortcutEditorsBuilt(); return [] }),
             SettingsSectionDefinition(id: ShortcutOverviewTab.sectionId, title: NSLocalizedString("Shortcuts", comment: ""), description: NSLocalizedString("Every action shortcut and its conflicts. Switcher triggers stay in Cmd-Tab Controls, the Leader key in Leader, and the FlickRing button in FlickRing.", comment: ""), imageName: "controls", systemSymbolName: "keyboard", builder: { ShortcutOverviewTab.initTab() }),
             SettingsSectionDefinition(id: "system-actions", title: NSLocalizedString("System Actions", comment: ""), description: NSLocalizedString("Configure Auto-Quit, Cat Mode, and the function key mode.", comment: ""), imageName: "controls", systemSymbolName: "switch.2", builder: { SystemActionsTab.initTab() }),
             SettingsSectionDefinition(id: "keep-awake", title: NSLocalizedString("Keep Awake", comment: ""), description: NSLocalizedString("Keep the Mac awake for a while, with battery protection.", comment: ""), imageName: "controls", systemSymbolName: "cup.and.saucer", builder: { KeepAwakeTab.initTab() }),
@@ -394,8 +398,12 @@ class SettingsWindow: NSWindow {
         let knownDefaultKeys = Set(Preferences.defaultValues.keys)
         let resettableKeysProvider: () -> [String] = {
             guard let currentContentView else { return [] }
+            // `extraResettableKeys` runs first: for "controls" it also builds every shortcut slot's
+            // editor (normally only the selected slot is built) as a side effect, so the collector
+            // below can find their controls too.
+            let extraKeys = definition.extraResettableKeys()
             var seen = Set<String>()
-            return (SettingsResetKeysCollector.collectResettableKeys(in: currentContentView) + definition.extraResettableKeys())
+            return (extraKeys + SettingsResetKeysCollector.collectResettableKeys(in: currentContentView))
                 .filter { knownDefaultKeys.contains($0) && seen.insert($0).inserted }
         }
         var section: SettingsSection!

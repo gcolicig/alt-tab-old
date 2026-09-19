@@ -23,9 +23,13 @@ class LeaderTab {
         // Added to `top` itself (instead of a second TableGroupView) so the two tables get the normal
         // inter-table gap; two separate TableGroupViews next to each other get no gap at all.
         top.addNewTable()
+        // Shares one action-popup template (menu + widest-title width) across all slots built in this
+        // pass; see `LabelAndControl.beginActionPopupBatch`.
+        LabelAndControl.beginActionPopupBatch()
         (0..<Preferences.maxLeaderSlotCount).forEach { slot in
             top.addRow(makeSlotRow(slot))
         }
+        LabelAndControl.endActionPopupBatch()
 
         let hint = LabelAndControl.makeDependencyNote(
             NSLocalizedString("Sequences use letters and digits, e.g. \"wl\". Escape and timeout cancel.", comment: ""))

@@ -136,7 +136,9 @@ class CustomRecorderControl: RecorderControl {
             } else if let existingShortcut {
                 updateShortcut(existingShortcut.0, nil, existingShortcut.0, shortcutAlreadyAssigned)
             } else {
-                return
+                // The conflicting shortcut's own slot may not be built (see `shortcutControls`
+                // above); clear it through the non-UI path instead of skipping the unassign.
+                ControlsTab.clearShortcutNonInteractively(shortcutAlreadyAssigned)
             }
             // `self` (the control recording this shortcut) is always on a built, interactive page,
             // so it is always registered.
@@ -169,13 +171,7 @@ class CustomRecorderControl: RecorderControl {
         let userChoice = alert.runModal()
         if userChoice == .alertFirstButtonReturn {
             guard id != shortcutReservedByMacos else { return }
-            if let existingShortcut = ControlsTab.shortcutControls[shortcutReservedByMacos] {
-                updateShortcut(existingShortcut.0, nil, existingShortcut.0, shortcutReservedByMacos)
-            } else {
-                // Its page isn't built; only the preference needs clearing, the page will read it
-                // from `Preferences` (already cleared) the first time it is built.
-                Preferences.remove(shortcutReservedByMacos)
-            }
+            ControlsTab.clearShortcutNonInteractively(shortcutReservedByMacos)
             guard let selfControl = ControlsTab.shortcutControls[id] else { return }
             updateShortcut(selfControl.0, candidateShortcut, self, id)
         }

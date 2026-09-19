@@ -560,6 +560,13 @@ class ControlsTab {
         gestureEditorView?.isHidden = selectedShortcutIndex != gestureSelectionIndex
     }
 
+    /// Builds every shortcut slot's editor, not just the selected one — used by "Reset to Defaults"
+    /// so `SettingsResetKeysCollector` can find every slot's controls, since only the selected slot's
+    /// editor is normally built (see `ensureShortcutEditorBuilt`).
+    static func ensureAllShortcutEditorsBuilt() {
+        (0..<Preferences.shortcutCount).forEach { ensureShortcutEditorBuilt($0) }
+    }
+
     /// Builds the editor for `index` the first time it is selected, since only the selected
     /// editor is ever visible; a no-op once it already exists.
     @discardableResult
@@ -968,6 +975,25 @@ class ControlsTab {
         cancelButton.keyEquivalent = "\u{1b}"
         let userChoice = alert.runModal()
         return userChoice == .alertFirstButtonReturn
+    }
+
+    /// Clears `controlId`'s shortcut from preferences and the in-memory model, the same way an
+    /// interactive clear does, whether or not that slot's editor page has been built yet. Used by a
+    /// conflict alert (always raised from a different, always-built recorder) to unassign a shortcut
+    /// that belongs to a slot nobody has opened — `shortcutControls` has no recorder for it, so the
+    /// interactive path (which mutates a recorder's `objectValue` to trigger the change) cannot apply.
+    static func clearShortcutNonInteractively(_ controlId: String) {
+        if let existingControl = shortcutControls[controlId]?.0 {
+            existingControl.objectValue = nil
+            LabelAndControl.controlWasChanged(existingControl, controlId)
+            shortcutChangedCallback(existingControl)
+            existingControl.onProgrammaticChange?()
+        } else {
+            // No recorder to update; clear the preference and the registered shortcut directly, the
+            // page will read the cleared preference the first time it is built.
+            Preferences.remove(controlId)
+            removeShortcutIfExists(controlId)
+        }
     }
 
     private static func removeShortcutIfExists(_ controlId: String) {
