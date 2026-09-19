@@ -74,7 +74,8 @@ class ImageTextButtonView: NSStackView {
         imageContainer.translatesAutoresizingMaskIntoConstraints = false
         // TODO: The appearance theme functionality has not been implemented yet.
         // We will implement it later; for now, use the light theme.
-        let imageView = NSImageView(image: NSImage(named: image.name + "_light")!)
+        // greyscale like the other settings illustrations (#60), so the wallpaper does not draw the eye
+        let imageView = NSImageView(image: IllustratedImageThemeView.greyscaleImage(image.name + "_light")!)
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.imageScaling = .scaleProportionallyUpOrDown
         imageView.wantsLayer = true
