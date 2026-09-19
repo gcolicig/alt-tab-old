@@ -7,6 +7,8 @@ enum ScrollSpeedPreference: String, CaseIterable {
     case normal
     case double
     case triple
+    case quadruple
+    case quintuple
 
     var factor: Double {
         switch self {
@@ -14,6 +16,8 @@ enum ScrollSpeedPreference: String, CaseIterable {
             case .normal: return 1.0
             case .double: return 2.0
             case .triple: return 3.0
+            case .quadruple: return 4.0
+            case .quintuple: return 5.0
         }
     }
 }

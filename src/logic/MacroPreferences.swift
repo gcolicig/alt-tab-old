@@ -579,6 +579,8 @@ extension ScrollSpeedPreference: MacroPreference {
             case .normal: return NSLocalizedString("1× (default)", comment: "")
             case .double: return "2×"
             case .triple: return "3×"
+            case .quadruple: return "4×"
+            case .quintuple: return "5×"
         }
     }
 }
