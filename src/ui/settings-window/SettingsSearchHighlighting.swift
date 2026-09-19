@@ -54,13 +54,6 @@ extension SettingsWindow {
             if let target = highlightTarget(popUpButton) {
                 highlightTargets.append(target)
             }
-        } else if let tableView = root as? TableView {
-            SettingsWindow.searchStrings(tableView).forEach {
-                textValues.append($0)
-            }
-            if let target = highlightTarget(tableView) {
-                highlightTargets.append(target)
-            }
         } else if let button = root as? NSButton {
             let value = button.title.trimmingCharacters(in: .whitespacesAndNewlines)
             if !value.isEmpty {
@@ -132,13 +125,6 @@ extension SettingsWindow {
     func highlightTarget(_ popUpButton: NSPopUpButton) -> SettingsSearchHighlightTarget? {
         controlHighlightTarget(popUpButton) {
             SettingsWindow.searchStrings(popUpButton)
-        }
-    }
-
-    private func highlightTarget(_ tableView: TableView) -> SettingsSearchHighlightTarget? {
-        let targetView = tableView.enclosingScrollView ?? tableView
-        return controlHighlightTarget(targetView) {
-            SettingsWindow.searchStrings(tableView)
         }
     }
 
@@ -349,17 +335,4 @@ extension SettingsWindow {
         return Array(Set(values))
     }
 
-    static func searchStrings(_ tableView: TableView) -> [String] {
-        var values = [String]()
-        tableView.tableColumns.forEach {
-            appendTrimmed($0.headerCell.stringValue, &values)
-            appendTrimmed($0.headerToolTip ?? "", &values)
-        }
-        tableView.items.forEach {
-            appendTrimmed($0.bundleIdentifier, &values)
-            appendTrimmed($0.hide.localizedString, &values)
-            appendTrimmed($0.ignore.localizedString, &values)
-        }
-        return Array(Set(values))
-    }
 }

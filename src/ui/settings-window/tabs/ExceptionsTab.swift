@@ -1,36 +1,151 @@
 import Cocoa
 import UniformTypeIdentifiers
 
+/// One row per app instead of the old 4-column table: name, icon, and two labelled popups
+/// (Switcher / Shortcuts), mirroring `AppsUrlsTab`'s row style. Entries still live in
+/// `Preferences.exceptions` (same JSON storage as before); only the presentation changed.
 class ExceptionsTab {
+    static let sectionId = "exceptions"
+    private static let container = RebuildableSettingsView(sectionId: sectionId)
+
     static func initTab() -> NSView {
-        let exceptions = ExceptionsView(width: SettingsWindow.contentWidth - 2 * TableGroupView.padding)
-        let tableView = exceptions.documentView as! TableView
-        let addButton = makeAddButton(tableView)
-        let removeButton = makeRemoveButton(tableView)
-        let buttonsStack = NSStackView(views: [addButton, removeButton])
-        buttonsStack.orientation = .horizontal
-        buttonsStack.spacing = 2
+        container.rebuild(makeViews)
+        return container
+    }
+
+    private static func refresh() {
+        container.rebuild(makeViews)
+    }
+
+    private static func makeViews() -> [NSView] {
+        [exceptionsTable(), addButtonsRow()]
+    }
+
+    // MARK: table
+
+    private static func exceptionsTable() -> TableGroupView {
         let table = TableGroupView(width: SettingsWindow.contentWidth)
-        _ = table.addRow(leftViews: [exceptions], secondaryViews: [buttonsStack])
-        let view = TableGroupSetView(originalViews: [table], padding: 0, bottomPadding: 0)
-        return view
+        let entries = Preferences.exceptions
+        if entries.isEmpty {
+            table.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("No exceptions yet.", comment: ""), rightViews: []))
+        }
+        entries.indices.forEach { addExceptionRow(table, $0, entries[$0]) }
+        return table
     }
 
-    private static func makeAddButton(_ tableView: TableView) -> NSButton {
-        let button = makeCircleButton(systemSymbolName: "plus")
-        button.onAction = { [weak tableView] _ in
-            guard let tableView else { return }
-            showAddMenu(tableView, sender: button)
-        }
-        return button
+    private static func addExceptionRow(_ table: TableGroupView, _ index: Int, _ entry: ExceptionEntry) {
+        let appUrl = NSWorkspace.shared.urlForApplication(withBundleIdentifier: entry.bundleIdentifier)
+        let isPrefix = ExceptionsTestable.isPrefix(entry.bundleIdentifier)
+        let name = ExceptionsTestable.displayName(bundleIdentifier: entry.bundleIdentifier, resolvedName: appUrl.map(DefaultBrowser.displayName))
+        let subtitle = isPrefix || appUrl != nil ? entry.bundleIdentifier : NSLocalizedString("No installed app matches this entry.", comment: "")
+        let secondary = entry.hide == .windowTitleContains ? [titleField(index, entry)] : []
+        table.addRow(
+            leftViews: [iconView(appUrl: appUrl, isPrefix: isPrefix), nameStack(name, subtitle)],
+            rightViews: [switcherPopup(index, entry), shortcutsPopup(index, entry), removeButton(index)],
+            secondaryViews: secondary.isEmpty ? nil : secondary)
     }
 
-    private static func makeRemoveButton(_ tableView: TableView) -> NSButton {
-        let button = makeCircleButton(systemSymbolName: "minus")
-        button.onAction = { [weak tableView] _ in
-            tableView?.removeSelectedRows()
+    private static func iconView(appUrl: URL?, isPrefix: Bool) -> NSImageView {
+        let imageView = NSImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.widthAnchor.constraint(equalToConstant: 22).isActive = true
+        imageView.heightAnchor.constraint(equalToConstant: 22).isActive = true
+        if let appUrl {
+            imageView.image = NSWorkspace.shared.icon(forFile: appUrl.path)
+        } else if #available(macOS 11.0, *) {
+            let symbolName = isPrefix ? "square.stack.3d.up" : "app.dashed"
+            imageView.image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)
         }
-        return button
+        return imageView
+    }
+
+    private static func nameStack(_ name: String, _ subtitle: String) -> NSView {
+        let title = TableGroupView.makeText(name, bold: true)
+        let subLabel = NSTextField(labelWithString: subtitle)
+        subLabel.font = NSFont.systemFont(ofSize: 12)
+        subLabel.textColor = .gray
+        subLabel.lineBreakMode = .byTruncatingTail
+        let stack = NSStackView(views: [title, subLabel])
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 2
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }
+
+    private static func switcherPopup(_ index: Int, _ entry: ExceptionEntry) -> NSView {
+        let button = PopupButtonLikeSystemSettings()
+        ExceptionHidePreference.allCases.forEach { button.addItem(withTitle: $0.localizedString) }
+        button.selectItem(at: entry.hide.index)
+        button.onAction = { _ in
+            let newValue = ExceptionHidePreference.allCases[button.indexOfSelectedItem]
+            save(ExceptionsTestable.update(Preferences.exceptions, at: index, hide: newValue))
+            refresh()
+        }
+        return labelledControl(NSLocalizedString("Switcher:", comment: ""), button)
+    }
+
+    private static func shortcutsPopup(_ index: Int, _ entry: ExceptionEntry) -> NSView {
+        let button = PopupButtonLikeSystemSettings()
+        ExceptionIgnorePreference.allCases.forEach { button.addItem(withTitle: $0.localizedString) }
+        button.selectItem(at: entry.ignore.index)
+        button.onAction = { _ in
+            let newValue = ExceptionIgnorePreference.allCases[button.indexOfSelectedItem]
+            save(ExceptionsTestable.update(Preferences.exceptions, at: index, ignore: newValue))
+        }
+        return labelledControl(NSLocalizedString("Shortcuts:", comment: ""), button)
+    }
+
+    private static func labelledControl(_ label: String, _ control: NSView) -> NSView {
+        let labelView = NSTextField(labelWithString: label)
+        labelView.font = NSFont.systemFont(ofSize: 12)
+        labelView.textColor = .gray
+        control.widthAnchor.constraint(equalToConstant: 170).isActive = true
+        let stack = NSStackView(views: [labelView, control])
+        stack.orientation = .horizontal
+        stack.spacing = 4
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }
+
+    private static func titleField(_ index: Int, _ entry: ExceptionEntry) -> NSView {
+        let label = NSTextField(labelWithString: NSLocalizedString("Hide windows whose title contains", comment: ""))
+        label.font = NSFont.systemFont(ofSize: 12)
+        label.textColor = .gray
+        let field = TextField(entry.windowTitleContains ?? "")
+        field.isEditable = true
+        field.drawsBackground = true
+        field.isBordered = true
+        field.usesSingleLineMode = true
+        field.widthAnchor.constraint(equalToConstant: 220).isActive = true
+        field.cell!.sendsActionOnEndEditing = true
+        field.onAction = { _ in save(ExceptionsTestable.update(Preferences.exceptions, at: index, title: field.stringValue)) }
+        let stack = NSStackView(views: [label, field])
+        stack.orientation = .horizontal
+        stack.spacing = 4
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }
+
+    private static func removeButton(_ index: Int) -> NSButton {
+        AppsUrlsTab.removeButton {
+            save(ExceptionsTestable.remove(Preferences.exceptions, at: index))
+            refresh()
+        }
+    }
+
+    private static func save(_ entries: [ExceptionEntry]) {
+        Preferences.set("exceptions", entries)
+    }
+
+    // MARK: add
+
+    private static func addButtonsRow() -> TableGroupView {
+        let table = TableGroupView(width: SettingsWindow.contentWidth)
+        let addButton = makeCircleButton(systemSymbolName: "plus")
+        addButton.onAction = { _ in showAddMenu(sender: addButton) }
+        table.addRow(TableGroupView.Row(leftTitle: "", rightViews: [addButton]))
+        return table
     }
 
     private static func makeCircleButton(systemSymbolName: String) -> NSButton {
@@ -42,8 +157,7 @@ class ExceptionsTab {
         if #available(macOS 11.0, *) {
             button.image = NSImage(systemSymbolName: systemSymbolName, accessibilityDescription: nil)
         } else {
-            let templateName = systemSymbolName == "plus" ? NSImage.addTemplateName : NSImage.removeTemplateName
-            button.image = NSImage(named: templateName)
+            button.image = NSImage(named: NSImage.addTemplateName)
         }
         button.imagePosition = .imageOnly
         button.imageScaling = .scaleProportionallyDown
@@ -52,40 +166,62 @@ class ExceptionsTab {
         return button
     }
 
-    private static func showAddMenu(_ tableView: TableView, sender: NSButton) {
+    private static func showAddMenu(sender: NSButton) {
         let menu = NSMenu()
         let runningAppsItem = NSMenuItem(title: NSLocalizedString("Add a running app", comment: ""), action: nil, keyEquivalent: "")
-        runningAppsItem.submenu = buildRunningAppsSubmenu(tableView)
+        runningAppsItem.submenu = buildRunningAppsSubmenu()
         menu.addItem(runningAppsItem)
         let diskItem = NSMenuItem(title: NSLocalizedString("Add an app from disk", comment: ""), action: nil, keyEquivalent: "")
-        diskItem.representedObject = tableView
         diskItem.target = ExceptionsTab.self
-        diskItem.action = #selector(addFromDisk(_:))
+        diskItem.action = #selector(addFromDisk)
         menu.addItem(diskItem)
+        let bundleIdItem = NSMenuItem(title: NSLocalizedString("Add by bundle ID…", comment: ""), action: nil, keyEquivalent: "")
+        bundleIdItem.target = ExceptionsTab.self
+        bundleIdItem.action = #selector(addByBundleId)
+        menu.addItem(bundleIdItem)
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height + 2), in: sender)
     }
 
-    @objc private static func addFromDisk(_ sender: NSMenuItem) {
-        guard let tableView = sender.representedObject as? TableView else { return }
+    @objc private static func addFromDisk() {
         let dialog = NSOpenPanel()
         dialog.allowsMultipleSelection = false
         dialog.allowedContentTypes = [.applicationBundle]
         dialog.canChooseDirectories = false
         dialog.beginSheetModal(for: SettingsWindow.shared) {
             if $0 == .OK, let url = dialog.url, let bundleId = Bundle(url: url)?.bundleIdentifier {
-                tableView.insertRow(bundleId)
+                insert(bundleId)
             }
         }
     }
 
-    private static func buildRunningAppsSubmenu(_ tableView: TableView) -> NSMenu {
+    @objc private static func addByBundleId() {
+        let field = NSTextField(frame: CGRect(x: 0, y: 0, width: 300, height: 24))
+        field.placeholderString = "com.example.app"
+        let alert = NSAlert()
+        alert.messageText = NSLocalizedString("Add by bundle ID", comment: "")
+        alert.informativeText = NSLocalizedString("A bundle id, or a prefix ending with a dot to match every app that starts with it, such as com.parallels.", comment: "")
+        alert.accessoryView = field
+        alert.addButton(withTitle: NSLocalizedString("Add", comment: ""))
+        alert.addButton(withTitle: NSLocalizedString("Cancel", comment: ""))
+        alert.window.initialFirstResponder = field
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        insert(field.stringValue)
+    }
+
+    private static func insert(_ bundleId: String) {
+        guard let updated = ExceptionsTestable.insert(Preferences.exceptions, bundleIdentifier: bundleId) else { return }
+        save(updated)
+        refresh()
+    }
+
+    private static func buildRunningAppsSubmenu() -> NSMenu {
         let submenu = NSMenu()
-        runningAppsForMenu(tableView).forEach { submenu.addItem(makeRunningAppItem(tableView, $0.app, $0.bundleId)) }
+        runningAppsForMenu().forEach { submenu.addItem(makeRunningAppItem($0.app, $0.bundleId)) }
         return submenu
     }
 
-    private static func runningAppsForMenu(_ tableView: TableView) -> [(app: NSRunningApplication, bundleId: String)] {
-        let existingIds = Set(tableView.items.map { $0.bundleIdentifier })
+    private static func runningAppsForMenu() -> [(app: NSRunningApplication, bundleId: String)] {
+        let existingIds = Set(Preferences.exceptions.map { $0.bundleIdentifier })
         var appsByBundleId = [String: NSRunningApplication]()
         runningAppCandidates().forEach {
             guard let bundleId = $0.bundleIdentifier, !existingIds.contains(bundleId), appsByBundleId[bundleId] == nil else { return }
@@ -106,14 +242,14 @@ class ExceptionsTab {
         NSWorkspace.shared.runningApplications.filter { $0.activationPolicy == .regular }
     }
 
-    private static func makeRunningAppItem(_ tableView: TableView, _ app: NSRunningApplication, _ bundleId: String) -> NSMenuItem {
+    private static func makeRunningAppItem(_ app: NSRunningApplication, _ bundleId: String) -> NSMenuItem {
         let item = NSMenuItem(title: appMenuTitle(app), action: nil, keyEquivalent: "")
         if let path = app.bundleURL?.path {
             let icon = NSWorkspace.shared.icon(forFile: path)
             icon.size = NSSize(width: 16, height: 16)
             item.image = icon
         }
-        item.representedObject = (tableView, bundleId)
+        item.representedObject = bundleId
         item.target = ExceptionsTab.self
         item.action = #selector(addRunningApp(_:))
         return item
@@ -124,27 +260,7 @@ class ExceptionsTab {
     }
 
     @objc private static func addRunningApp(_ sender: NSMenuItem) {
-        guard let (tableView, bundleId) = sender.representedObject as? (TableView, String) else { return }
-        tableView.insertRow(bundleId)
-    }
-}
-
-class ExceptionsView: ForwardingVerticalScrollView {
-    convenience init(width: CGFloat = 500, height: CGFloat = 378) {
-        self.init(frame: .zero)
-        translatesAutoresizingMaskIntoConstraints = false
-        borderType = .noBorder
-        hasHorizontalScroller = false
-        hasVerticalScroller = true
-        verticalScrollElasticity = .none
-        usesPredominantAxisScrolling = true
-        documentView = TableView(nil)
-        fit(width, height)
-        wantsLayer = true
-        layer!.cornerRadius = TableGroupView.cornerRadius
-        layer!.masksToBounds = true
-        contentView.wantsLayer = true
-        contentView.layer!.cornerRadius = TableGroupView.cornerRadius
-        contentView.layer!.masksToBounds = true
+        guard let bundleId = sender.representedObject as? String else { return }
+        insert(bundleId)
     }
 }
