@@ -12,10 +12,12 @@ enum AdditionalControlsSection {
             rightViews: [LabelAndControl.makeDropdown("cursorFollowFocus", CursorFollowFocus.allCases)])
         let enableTrackpadHapticFeedback = TableGroupView.Row(leftTitle: NSLocalizedString("Trackpad haptic feedback", comment: ""),
             rightViews: [LabelAndControl.makeSwitch("trackpadHapticFeedbackEnabled")])
-        ControlsTab.arrowKeysCheckbox = enableArrows.rightViews[0] as? Switch
-        ControlsTab.vimKeysCheckbox = enableVimKeys.rightViews[0] as? Switch
-        ControlsTab.arrowKeysEnabledCallback(ControlsTab.arrowKeysCheckbox)
-        ControlsTab.vimKeysEnabledCallback(ControlsTab.vimKeysCheckbox)
+        let arrowKeysCheckbox = enableArrows.rightViews[0] as? Switch
+        let vimKeysCheckbox = enableVimKeys.rightViews[0] as? Switch
+        ControlsTab.arrowKeysCheckbox = arrowKeysCheckbox
+        ControlsTab.vimKeysCheckbox = vimKeysCheckbox
+        if let arrowKeysCheckbox { ControlsTab.arrowKeysEnabledCallback(arrowKeysCheckbox) }
+        if let vimKeysCheckbox { ControlsTab.vimKeysEnabledCallback(vimKeysCheckbox) }
         let table1 = TableGroupView(width: SettingsWindow.width)
         _ = table1.addRow(enableArrows)
         _ = table1.addRow(enableVimKeys)

@@ -130,19 +130,18 @@ class CustomRecorderControl: RecorderControl {
         let userChoice = alert.runModal()
         if !id.starts(with: "holdShortcut") && userChoice == .alertFirstButtonReturn {
             if isArrowKeys {
-                ControlsTab.arrowKeysCheckbox.state = .off
-                ControlsTab.arrowKeysEnabledCallback(ControlsTab.arrowKeysCheckbox)
-                LabelAndControl.controlWasChanged(ControlsTab.arrowKeysCheckbox, nil)
+                ControlsTab.disableArrowKeys()
             } else if isVimKeys {
-                ControlsTab.vimKeysCheckbox.state = .off
-                ControlsTab.vimKeysEnabledCallback(ControlsTab.vimKeysCheckbox)
-                LabelAndControl.controlWasChanged(ControlsTab.vimKeysCheckbox, nil)
+                ControlsTab.disableVimKeys()
             } else if let existingShortcut {
                 updateShortcut(existingShortcut.0, nil, existingShortcut.0, shortcutAlreadyAssigned)
             } else {
                 return
             }
-            updateShortcut(ControlsTab.shortcutControls[id]!.0, candidateShortcut, self, id)
+            // `self` (the control recording this shortcut) is always on a built, interactive page,
+            // so it is always registered.
+            guard let selfControl = ControlsTab.shortcutControls[id] else { return }
+            updateShortcut(selfControl.0, candidateShortcut, self, id)
         }
     }
 
@@ -156,7 +155,9 @@ class CustomRecorderControl: RecorderControl {
     }
 
     func alertIfShortcutReservedByMacos(_ candidateShortcut: Shortcut, _ shortcutReservedByMacos: String) {
-        let existingShortcutLabel = ControlsTab.shortcutControls[shortcutReservedByMacos]!.1
+        // The owning control's page may not be built yet; fall back to the raw preference key so
+        // the alert still reads sensibly instead of crashing.
+        let existingShortcutLabel = ControlsTab.shortcutControls[shortcutReservedByMacos]?.1 ?? shortcutReservedByMacos
         let alert = NSAlert()
         alert.alertStyle = .warning
         alert.messageText = NSLocalizedString("Conflicting shortcut", comment: "")
@@ -168,15 +169,23 @@ class CustomRecorderControl: RecorderControl {
         let userChoice = alert.runModal()
         if userChoice == .alertFirstButtonReturn {
             guard id != shortcutReservedByMacos else { return }
-            let existingShortcut = ControlsTab.shortcutControls[shortcutReservedByMacos]!
-            updateShortcut(existingShortcut.0, nil, existingShortcut.0, shortcutReservedByMacos)
-            updateShortcut(ControlsTab.shortcutControls[id]!.0, candidateShortcut, self, id)
+            if let existingShortcut = ControlsTab.shortcutControls[shortcutReservedByMacos] {
+                updateShortcut(existingShortcut.0, nil, existingShortcut.0, shortcutReservedByMacos)
+            } else {
+                // Its page isn't built; only the preference needs clearing, the page will read it
+                // from `Preferences` (already cleared) the first time it is built.
+                Preferences.remove(shortcutReservedByMacos)
+            }
+            guard let selfControl = ControlsTab.shortcutControls[id] else { return }
+            updateShortcut(selfControl.0, candidateShortcut, self, id)
         }
     }
 
     // @available(macOS 26.0, *)
     func alertIfShortcutUsedByGameOverlay(_ candidateShortcut: Shortcut, _ shortcutUsingGameOverlay: String) {
-        let existingShortcutLabel = ControlsTab.shortcutControls[shortcutUsingGameOverlay]!.1
+        // The owning control's page may not be built yet; fall back to the raw preference key so
+        // the alert still reads sensibly instead of crashing.
+        let existingShortcutLabel = ControlsTab.shortcutControls[shortcutUsingGameOverlay]?.1 ?? shortcutUsingGameOverlay
         let alert = NSAlert()
         alert.alertStyle = .warning
         alert.messageText = NSLocalizedString("Conflicting shortcut", comment: "")
@@ -188,7 +197,8 @@ class CustomRecorderControl: RecorderControl {
         let userChoice = alert.runModal()
         if userChoice == .alertFirstButtonReturn {
             NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.keyboard?Shortcuts")!)
-            updateShortcut(ControlsTab.shortcutControls[id]!.0, candidateShortcut, self, id)
+            guard let selfControl = ControlsTab.shortcutControls[id] else { return }
+            updateShortcut(selfControl.0, candidateShortcut, self, id)
         }
     }
 

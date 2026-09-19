@@ -171,8 +171,12 @@ class ControlsTab {
         }
         return actions
     }()
-    static var arrowKeysCheckbox: Switch!
-    static var vimKeysCheckbox: Switch!
+    /// `nil` until the Cmd-Tab Controls page has been built (settings pages are now built on
+    /// demand); a shortcut conflict on another, already-built page can still need to turn these
+    /// off, so callers go through `disableArrowKeys()`/`disableVimKeys()` instead of touching the
+    /// checkbox directly.
+    static var arrowKeysCheckbox: Switch?
+    static var vimKeysCheckbox: Switch?
 
     static var shortcutsWhenActiveDisclosure: DisclosureSection!
     static var additionalControlsDisclosure: DisclosureSection!
@@ -872,6 +876,30 @@ class ControlsTab {
 
     @objc static func arrowKeysEnabledCallback(_ sender: NSControl) {
         applyArrowKeysPreference()
+    }
+
+    /// Turns arrow-key window selection off from a conflicting-shortcut alert, whether or not the
+    /// Cmd-Tab Controls page (and its checkbox) has been built yet.
+    static func disableArrowKeys() {
+        guard let arrowKeysCheckbox else {
+            Preferences.set("arrowKeysEnabled", "false")
+            return
+        }
+        arrowKeysCheckbox.state = .off
+        arrowKeysEnabledCallback(arrowKeysCheckbox)
+        LabelAndControl.controlWasChanged(arrowKeysCheckbox, nil)
+    }
+
+    /// Turns vim-key window selection off from a conflicting-shortcut alert, whether or not the
+    /// Cmd-Tab Controls page (and its checkbox) has been built yet.
+    static func disableVimKeys() {
+        guard let vimKeysCheckbox else {
+            Preferences.set("vimKeysEnabled", "false")
+            return
+        }
+        vimKeysCheckbox.state = .off
+        vimKeysEnabledCallback(vimKeysCheckbox)
+        LabelAndControl.controlWasChanged(vimKeysCheckbox, nil)
     }
 
     @objc static func vimKeysEnabledCallback(_ sender: NSControl) {

@@ -94,16 +94,46 @@ class SettingsWindow: NSWindow {
         setupSplitView()
         setupSidebar()
         setupContentPane()
-        // shortcut recorders built below run their normal change callback for UI sync; this flag
-        // keeps them from re-registering shortcuts that are already registered at launch
-        ControlsTab.isBuildingUI = true
         let definitions = sectionDefinitions()
-        ControlsTab.isBuildingUI = false
         assert(definitions.allSatisfy { SettingsSidebarLayout.allSectionIds.contains($0.id) },
                "a section id is missing from SettingsSidebarLayout.allSectionIds and would silently fall back to .actions")
         SettingsSidebarLayout.order(definitions.map(\.id)).compactMap { id in definitions.first { $0.id == id } }.forEach { addSection($0) }
         refreshControlsFromSettings()
+        // Builds only the page that opens (the chosen one, or the first) synchronously, so first
+        // show is not gated on all 15 pages. The rest build one per main-queue turn afterwards.
         applySearch("")
+        scheduleIdleSectionBuilds()
+    }
+
+    /// Builds `section`'s content view if it has not been built yet — the page is about to become
+    /// visible (selection, search, reveal) or its turn in the idle chain has come up. Shortcut
+    /// recorders built here run their normal change callback for UI sync only: this flag keeps
+    /// them from re-registering shortcuts that are already registered at launch.
+    private func buildSectionIfNeeded(_ section: SettingsSection) {
+        guard !section.isBuilt else { return }
+        ControlsTab.isBuildingUI = true
+        section.ensureBuilt()
+        ControlsTab.isBuildingUI = false
+    }
+
+    private func buildAllSectionsIfNeeded() {
+        sections.forEach { buildSectionIfNeeded($0) }
+    }
+
+    /// Builds every page that is still unbuilt after first show, one per main-queue turn, so a
+    /// long idle chain never blocks user interaction with the (already visible) selected page.
+    private func scheduleIdleSectionBuilds() {
+        var remaining = sections.filter { !$0.isBuilt }
+        func buildNext() {
+            guard !remaining.isEmpty else { return }
+            let next = remaining.removeFirst()
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.buildSectionIfNeeded(next)
+                buildNext()
+            }
+        }
+        buildNext()
     }
 
     private func setupSplitView() {
@@ -225,41 +255,41 @@ class SettingsWindow: NSWindow {
             //
             // The grouping runs from what applies to the whole machine down to what applies to single apps:
             // General, then the three system-wide modules, then the window switcher, then per-app lists.
-            SettingsSectionDefinition(id: "general", title: NSLocalizedString("General", comment: ""), description: NSLocalizedString("Manage startup, menu bar, language, and settings files.", comment: ""), imageName: "general", systemSymbolName: "gearshape", view: GeneralTab.initTab(), builder: { GeneralTab.initTab() }),
-            SettingsSectionDefinition(id: "hyperkey", title: NSLocalizedString("Hyperkey", comment: ""), description: NSLocalizedString("Use Caps Lock as a system-wide combination of modifier keys.", comment: ""), imageName: "controls", systemSymbolName: "capslock", view: HyperkeyTab.initTab(), builder: { HyperkeyTab.initTab() }),
-            SettingsSectionDefinition(id: "pointer-scroll", title: NSLocalizedString("Pointer & Scroll", comment: ""), description: NSLocalizedString("Adjust pointer acceleration and speed, and the direction of the mouse wheel.", comment: ""), imageName: "controls", systemSymbolName: "cursorarrow", view: PointerScrollTab.initTab(), builder: { PointerScrollTab.initTab() }),
-            SettingsSectionDefinition(id: "spaces", title: NSLocalizedString("Spaces", comment: ""), description: NSLocalizedString("Show, activate, and move between macOS Spaces.", comment: ""), imageName: "controls", systemSymbolName: "square.grid.2x2", view: SpacesTab.initTab(), builder: { SpacesTab.initTab() }),
+            SettingsSectionDefinition(id: "general", title: NSLocalizedString("General", comment: ""), description: NSLocalizedString("Manage startup, menu bar, language, and settings files.", comment: ""), imageName: "general", systemSymbolName: "gearshape", builder: { GeneralTab.initTab() }),
+            SettingsSectionDefinition(id: "hyperkey", title: NSLocalizedString("Hyperkey", comment: ""), description: NSLocalizedString("Use Caps Lock as a system-wide combination of modifier keys.", comment: ""), imageName: "controls", systemSymbolName: "capslock", builder: { HyperkeyTab.initTab() }),
+            SettingsSectionDefinition(id: "pointer-scroll", title: NSLocalizedString("Pointer & Scroll", comment: ""), description: NSLocalizedString("Adjust pointer acceleration and speed, and the direction of the mouse wheel.", comment: ""), imageName: "controls", systemSymbolName: "cursorarrow", builder: { PointerScrollTab.initTab() }),
+            SettingsSectionDefinition(id: "spaces", title: NSLocalizedString("Spaces", comment: ""), description: NSLocalizedString("Show, activate, and move between macOS Spaces.", comment: ""), imageName: "controls", systemSymbolName: "square.grid.2x2", builder: { SpacesTab.initTab() }),
             // not named in the requested order; placed next to Spaces because both arrange windows across
             // the system rather than inside the switcher
-            SettingsSectionDefinition(id: "window-layouts", title: NSLocalizedString("Window Layouts", comment: ""), description: NSLocalizedString("Assign shortcuts for arranging the focused window.", comment: ""), imageName: "controls", systemSymbolName: "rectangle.split.3x1", view: WindowLayoutsTab.initTab(), builder: { WindowLayoutsTab.initTab() }),
+            SettingsSectionDefinition(id: "window-layouts", title: NSLocalizedString("Window Layouts", comment: ""), description: NSLocalizedString("Assign shortcuts for arranging the focused window.", comment: ""), imageName: "controls", systemSymbolName: "rectangle.split.3x1", builder: { WindowLayoutsTab.initTab() }),
             // `leaderSlotAction*` is written by a custom popup with no `identifier` (see LeaderTab), so
             // the view-tree collector cannot find it; declared here instead. Resetting it does not by
             // itself rebuild the cached lookup trie those actions run through, hence `afterReset`.
-            SettingsSectionDefinition(id: "leader", title: NSLocalizedString("Leader", comment: ""), description: NSLocalizedString("Run actions from nested key sequences after a trigger key.", comment: ""), imageName: "controls", systemSymbolName: "keyboard", view: LeaderTab.initTab(), builder: { LeaderTab.initTab() },
+            SettingsSectionDefinition(id: "leader", title: NSLocalizedString("Leader", comment: ""), description: NSLocalizedString("Run actions from nested key sequences after a trigger key.", comment: ""), imageName: "controls", systemSymbolName: "keyboard", builder: { LeaderTab.initTab() },
                 extraResettableKeys: { PreferencesResetLogic.keysWithPrefix("leaderSlotAction", in: Preferences.defaultValues) },
                 afterReset: { LeaderController.rebuildTrie() }),
             // `flickRing{Up,Right,Down,Left}` are written by custom popups with no `identifier` (see
             // FlickRingTab); declared here instead. Unlike Leader's trie, bindings are read live from
             // `CachedUserDefaults` on every flick, so no extra rebuild step is needed after a reset.
-            SettingsSectionDefinition(id: "flick-ring", title: NSLocalizedString("FlickRing", comment: ""), description: NSLocalizedString("Open a four-direction action ring on a mouse button.", comment: ""), imageName: "controls", systemSymbolName: "circle.grid.cross", view: FlickRingTab.initTab(), builder: { FlickRingTab.initTab() },
+            SettingsSectionDefinition(id: "flick-ring", title: NSLocalizedString("FlickRing", comment: ""), description: NSLocalizedString("Open a four-direction action ring on a mouse button.", comment: ""), imageName: "controls", systemSymbolName: "circle.grid.cross", builder: { FlickRingTab.initTab() },
                 extraResettableKeys: { PreferencesResetLogic.keysWithPrefix("flickRing", in: Preferences.defaultValues) }),
             // No reset button: a profile is user-created content (name, apps, layout, space), not a
             // setting, so "Reset to Defaults" must not delete it.
-            SettingsSectionDefinition(id: ProfilesTab.sectionId, title: NSLocalizedString("Profiles", comment: ""), description: NSLocalizedString("Group apps into a profile, optionally bound to a space, and filter the switcher to it.", comment: ""), imageName: "controls", systemSymbolName: "square.stack.3d.up", view: ProfilesTab.initTab(), builder: { ProfilesTab.initTab() },
+            SettingsSectionDefinition(id: ProfilesTab.sectionId, title: NSLocalizedString("Profiles", comment: ""), description: NSLocalizedString("Group apps into a profile, optionally bound to a space, and filter the switcher to it.", comment: ""), imageName: "controls", systemSymbolName: "square.stack.3d.up", builder: { ProfilesTab.initTab() },
                 hidesResetButton: true),
-            SettingsSectionDefinition(id: "appearance", title: NSLocalizedString("Cmd-Tab", comment: ""), description: NSLocalizedString("Choose how the window switcher looks and where it appears.", comment: ""), imageName: "appearance", systemSymbolName: "paintpalette", view: AppearanceTab.initTab(), builder: { AppearanceTab.initTab() }),
-            SettingsSectionDefinition(id: "controls", title: NSLocalizedString("Cmd-Tab Controls", comment: ""), description: NSLocalizedString("Set how you open and navigate the window switcher.", comment: ""), imageName: "controls", systemSymbolName: "command", view: ControlsTab.initTab(), builder: { ControlsTab.initTab() }),
-            SettingsSectionDefinition(id: ShortcutOverviewTab.sectionId, title: NSLocalizedString("Shortcuts", comment: ""), description: NSLocalizedString("Every action shortcut and its conflicts. Switcher triggers stay in Cmd-Tab Controls, the Leader key in Leader, and the FlickRing button in FlickRing.", comment: ""), imageName: "controls", systemSymbolName: "keyboard", view: ShortcutOverviewTab.initTab(), builder: { ShortcutOverviewTab.initTab() }),
-            SettingsSectionDefinition(id: "system-actions", title: NSLocalizedString("System Actions", comment: ""), description: NSLocalizedString("Configure Auto-Quit, Cat Mode, and the function key mode.", comment: ""), imageName: "controls", systemSymbolName: "switch.2", view: SystemActionsTab.initTab(), builder: { SystemActionsTab.initTab() }),
-            SettingsSectionDefinition(id: "keep-awake", title: NSLocalizedString("Keep Awake", comment: ""), description: NSLocalizedString("Keep the Mac awake for a while, with battery protection.", comment: ""), imageName: "controls", systemSymbolName: "cup.and.saucer", view: KeepAwakeTab.initTab(), builder: { KeepAwakeTab.initTab() }),
+            SettingsSectionDefinition(id: "appearance", title: NSLocalizedString("Cmd-Tab", comment: ""), description: NSLocalizedString("Choose how the window switcher looks and where it appears.", comment: ""), imageName: "appearance", systemSymbolName: "paintpalette", builder: { AppearanceTab.initTab() }),
+            SettingsSectionDefinition(id: "controls", title: NSLocalizedString("Cmd-Tab Controls", comment: ""), description: NSLocalizedString("Set how you open and navigate the window switcher.", comment: ""), imageName: "controls", systemSymbolName: "command", builder: { ControlsTab.initTab() }),
+            SettingsSectionDefinition(id: ShortcutOverviewTab.sectionId, title: NSLocalizedString("Shortcuts", comment: ""), description: NSLocalizedString("Every action shortcut and its conflicts. Switcher triggers stay in Cmd-Tab Controls, the Leader key in Leader, and the FlickRing button in FlickRing.", comment: ""), imageName: "controls", systemSymbolName: "keyboard", builder: { ShortcutOverviewTab.initTab() }),
+            SettingsSectionDefinition(id: "system-actions", title: NSLocalizedString("System Actions", comment: ""), description: NSLocalizedString("Configure Auto-Quit, Cat Mode, and the function key mode.", comment: ""), imageName: "controls", systemSymbolName: "switch.2", builder: { SystemActionsTab.initTab() }),
+            SettingsSectionDefinition(id: "keep-awake", title: NSLocalizedString("Keep Awake", comment: ""), description: NSLocalizedString("Keep the Mac awake for a while, with battery protection.", comment: ""), imageName: "controls", systemSymbolName: "cup.and.saucer", builder: { KeepAwakeTab.initTab() }),
             // No reset button: the launch-app/open-URL entries are user-created content, not settings.
-            SettingsSectionDefinition(id: AppsUrlsTab.sectionId, title: NSLocalizedString("Apps & URLs", comment: ""), description: NSLocalizedString("Assign shortcuts to launch apps or open URLs.", comment: ""), imageName: "controls", systemSymbolName: "app.badge", view: AppsUrlsTab.initTab(), builder: { AppsUrlsTab.initTab() },
+            SettingsSectionDefinition(id: AppsUrlsTab.sectionId, title: NSLocalizedString("Apps & URLs", comment: ""), description: NSLocalizedString("Assign shortcuts to launch apps or open URLs.", comment: ""), imageName: "controls", systemSymbolName: "app.badge", builder: { AppsUrlsTab.initTab() },
                 hidesResetButton: true),
             // `exceptions` is stored as one JSON blob (see `Preferences.exceptions`), not through
             // individually identified controls, so `SettingsResetKeysCollector` cannot find it; declared
             // here instead. `afterReset` is implicit: `builder` already rebuilds the page from the
             // restored default list.
-            SettingsSectionDefinition(id: ExceptionsTab.sectionId, title: NSLocalizedString("Exceptions", comment: ""), description: NSLocalizedString("Choose apps whose windows should not appear in the switcher.", comment: ""), imageName: "exceptions", systemSymbolName: "hand.raised", view: ExceptionsTab.initTab(), builder: { ExceptionsTab.initTab() },
+            SettingsSectionDefinition(id: ExceptionsTab.sectionId, title: NSLocalizedString("Exceptions", comment: ""), description: NSLocalizedString("Choose apps whose windows should not appear in the switcher.", comment: ""), imageName: "exceptions", systemSymbolName: "hand.raised", builder: { ExceptionsTab.initTab() },
                 extraResettableKeys: { ["exceptions"] }),
         ]
     }
@@ -324,7 +354,7 @@ class SettingsWindow: NSWindow {
         contentSlot.translatesAutoresizingMaskIntoConstraints = false
         spacer.translatesAutoresizingMaskIntoConstraints = false
         container.translatesAutoresizingMaskIntoConstraints = false
-        pinContentView(definition.view, into: contentSlot)
+        // Content is built on demand (see `buildContent` below); `contentSlot` starts empty.
         // `titleTopConstraint` now anchors the breadcrumb (the topmost element); the isFirst/spacing
         // logic in updateVisibleSectionsSpacing is unaffected since it only changes this constant.
         let titleTopConstraint = pathLabel.topAnchor.constraint(equalTo: container.topAnchor)
@@ -356,13 +386,14 @@ class SettingsWindow: NSWindow {
         ])
         sectionsStack.addArrangedSubview(container)
         container.widthAnchor.constraint(equalTo: sectionsStack.widthAnchor).isActive = true
-        let (searchableStrings, highlightTargets) = collectSearchContent(sectionTitle, sectionDescription, definition.view)
         // Tracks whichever view is currently pinned into `contentSlot`, so both a reset (which swaps it
         // for a freshly built one) and an in-place mutation (e.g. AppearanceTab's CustomizeStyle
         // disclosure) walk/index the view that is actually on screen, not the one from construction time.
-        var currentContentView = definition.view
+        // `nil` until the page is built (see `buildContent` below).
+        var currentContentView: NSView?
         let knownDefaultKeys = Set(Preferences.defaultValues.keys)
         let resettableKeysProvider: () -> [String] = {
+            guard let currentContentView else { return [] }
             var seen = Set<String>()
             return (SettingsResetKeysCollector.collectResettableKeys(in: currentContentView) + definition.extraResettableKeys())
                 .filter { knownDefaultKeys.contains($0) && seen.insert($0).inserted }
@@ -383,7 +414,8 @@ class SettingsWindow: NSWindow {
             }
         }
         let rebuildContent: ([String]) -> Void = { [weak self] changedKeys in
-            guard let self, let section else { return }
+            // "Reset to Defaults" is only reachable once the page (and its resettable keys) exist.
+            guard let self, let section, section.isBuilt else { return }
             contentSlot.subviews.forEach { $0.removeFromSuperview() }
             let newContentView = definition.builder()
             currentContentView = newContentView
@@ -404,17 +436,26 @@ class SettingsWindow: NSWindow {
             refreshResetButtonVisibility()
         }
         let reindex: () -> Void = { [weak self] in
-            guard let self, let section else { return }
+            guard let self, let section, let currentContentView else { return }
             let (searchableStrings, highlightTargets) = self.collectSearchContent(sectionTitle, sectionDescription, currentContentView)
             section.updateSearchContent(searchableStrings, highlightTargets)
+        }
+        let buildContent: () -> Void = { [weak self] in
+            guard let self, let section else { return }
+            let newContentView = definition.builder()
+            currentContentView = newContentView
+            self.pinContentView(newContentView, into: contentSlot)
+            let (searchableStrings, highlightTargets) = self.collectSearchContent(sectionTitle, sectionDescription, newContentView)
+            section.updateSearchContent(searchableStrings, highlightTargets)
+            refreshResetButtonVisibility()
         }
         section = SettingsSection(definition.id,
                                       definition.title,
                                       sidebarImage(definition),
                                       container,
                                       sectionTitle,
-                                      searchableStrings,
-                                      highlightTargets,
+                                      [],
+                                      [],
                                       interSectionSpacingConstraint,
                                       spacerHeightConstraint,
                                       titleTopConstraint,
@@ -425,6 +466,7 @@ class SettingsWindow: NSWindow {
                                       definition.hidesResetButton,
                                       rebuildContent,
                                       reindex,
+                                      buildContent,
                                       refreshResetButtonVisibility)
         refreshResetButtonVisibility()
         sections.append(section)
@@ -520,6 +562,7 @@ class SettingsWindow: NSWindow {
     }
 
     func selectSection(_ section: SettingsSection, scroll: Bool, selectInSidebar: Bool = true) {
+        buildSectionIfNeeded(section)
         selectedSectionId = section.id
         if selectInSidebar, let row = sidebarRows.firstIndex(of: .section(section.id)), sidebarTableView.selectedRow != row {
             sidebarTableView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
@@ -657,6 +700,10 @@ class SettingsWindow: NSWindow {
             SettingsSearch.match(query, in: text)?.ranges ?? []
         }
         isSearching = !SettingsSearch.isQueryEmpty(query)
+        // The search "waits": build every page still missing before matching against it, so a
+        // query typed right after the window opens still finds pages the idle chain has not
+        // reached yet.
+        if isSearching { buildAllSectionsIfNeeded() }
         visibleSections = sections.filter { !isSearching || $0.matches(query) }
         let matchingIds = Set(visibleSections.map(\.id))
         sections.forEach { section in
