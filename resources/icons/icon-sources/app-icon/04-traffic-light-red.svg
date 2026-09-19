@@ -1,7 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <g id="traffic-lights">
+  <g id="04-traffic-light-red">
     <circle cx="311" cy="288" r="19"/>
-    <circle cx="369" cy="288" r="19"/>
-    <circle cx="427" cy="288" r="19"/>
   </g>
 </svg>
