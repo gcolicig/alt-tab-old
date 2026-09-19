@@ -206,6 +206,9 @@
 "Animations" = "Animations";
 
 /* No comment provided by engineer. */
+"App" = "App";
+
+/* No comment provided by engineer. */
 "App Icons" = "App Icons";
 
 /* No comment provided by engineer. */
@@ -965,6 +968,9 @@
 "Not granted" = "Not granted";
 
 /* No comment provided by engineer. */
+"Not installed" = "Not installed";
+
+/* No comment provided by engineer. */
 "Not installed on this Mac." = "Not installed on this Mac.";
 
 /* No comment provided by engineer. */
@@ -1294,9 +1300,6 @@
 /* No comment provided by engineer. */
 "Shortcuts when active" = "Shortcuts when active";
 
-/* No comment provided by engineer. */
-"Shortcuts:" = "Shortcuts:";
-
 /* Menubar option */
 "Show" = "Show";
 
@@ -1446,9 +1449,6 @@
 
 /* No comment provided by engineer. */
 "Switcher" = "Switcher";
-
-/* No comment provided by engineer. */
-"Switcher:" = "Switcher:";
 
 /* No comment provided by engineer. */
 "System" = "System";

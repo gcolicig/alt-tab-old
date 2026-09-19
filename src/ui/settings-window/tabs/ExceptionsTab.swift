@@ -1,8 +1,8 @@
 import Cocoa
 import UniformTypeIdentifiers
 
-/// One row per app instead of the old 4-column table: name, icon, and two labelled popups
-/// (Switcher / Shortcuts), mirroring `AppsUrlsTab`'s row style. Entries still live in
+/// One row per app instead of the old 4-column table: icon and name, then two popups under
+/// shared column titles (Switcher / Shortcuts). Entries still live in
 /// `Preferences.exceptions` (same JSON storage as before); only the presentation changed.
 class ExceptionsTab {
     static let sectionId = "exceptions"
@@ -29,6 +29,11 @@ class ExceptionsTab {
         if entries.isEmpty {
             table.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("No exceptions yet.", comment: ""), rightViews: []))
         }
+        if !entries.isEmpty {
+            // column titles once, instead of a label in front of every popup
+            table.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("App", comment: ""),
+                rightViews: [columnTitle(NSLocalizedString("Switcher", comment: "")), columnTitle(NSLocalizedString("Shortcuts", comment: "")), removeColumnSpacer()]))
+        }
         entries.indices.forEach { addExceptionRow(table, $0, entries[$0]) }
         return table
     }
@@ -37,15 +42,45 @@ class ExceptionsTab {
         let appUrl = NSWorkspace.shared.urlForApplication(withBundleIdentifier: entry.bundleIdentifier)
         let isPrefix = ExceptionsTestable.isPrefix(entry.bundleIdentifier)
         let name = ExceptionsTestable.displayName(bundleIdentifier: entry.bundleIdentifier, resolvedName: appUrl.map(DefaultBrowser.displayName))
-        let subtitle = isPrefix || appUrl != nil ? entry.bundleIdentifier : NSLocalizedString("No installed app matches this entry.", comment: "")
+        let subtitle = isPrefix || appUrl != nil ? entry.bundleIdentifier : NSLocalizedString("Not installed", comment: "")
         table.addRow(
-            leftViews: [iconView(appUrl: appUrl, isPrefix: isPrefix), nameStack(name, subtitle)],
+            leftViews: [appView(iconView(appUrl: appUrl, isPrefix: isPrefix), nameStack(name, subtitle))],
             rightViews: [switcherPopup(index, entry), shortcutsPopup(index, entry), removeButton(index)],
             secondaryViews: nil)
         // its own row: as a secondary view it would have to fit left of the two popups, which leaves no room
         if entry.hide == .windowTitleContains {
             table.addRow(leftViews: [titleField(index, entry)], rightViews: [], secondaryViews: nil)
         }
+    }
+
+    private static let popupWidth = CGFloat(150)
+    private static let removeWidth = CGFloat(18)
+
+    /// Icon and name side by side in one view; as two left views the row stacked them vertically.
+    private static func appView(_ icon: NSView, _ names: NSView) -> NSView {
+        let stack = NSStackView(views: [icon, names])
+        stack.orientation = .horizontal
+        stack.alignment = .centerY
+        stack.spacing = 8
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        return stack
+    }
+
+    private static func columnTitle(_ text: String) -> NSView {
+        let label = NSTextField(labelWithString: text)
+        label.font = NSFont.systemFont(ofSize: 11)
+        label.textColor = .secondaryLabelColor
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.widthAnchor.constraint(equalToConstant: popupWidth).isActive = true
+        return label
+    }
+
+    private static func removeColumnSpacer() -> NSView {
+        let spacer = NSView()
+        spacer.translatesAutoresizingMaskIntoConstraints = false
+        spacer.widthAnchor.constraint(equalToConstant: removeWidth).isActive = true
+        return spacer
     }
 
     private static func iconView(appUrl: URL?, isPrefix: Bool) -> NSImageView {
@@ -63,11 +98,16 @@ class ExceptionsTab {
     }
 
     private static func nameStack(_ name: String, _ subtitle: String) -> NSView {
-        let title = TableGroupView.makeText(name, bold: true)
+        let title = NSTextField(labelWithString: name)
+        title.font = NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)
+        // bundle IDs are long and their distinctive part is at both ends
+        title.lineBreakMode = .byTruncatingMiddle
+        title.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         let subLabel = NSTextField(labelWithString: subtitle)
         subLabel.font = NSFont.systemFont(ofSize: 12)
         subLabel.textColor = .gray
-        subLabel.lineBreakMode = .byTruncatingTail
+        subLabel.lineBreakMode = .byTruncatingMiddle
+        subLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         let stack = NSStackView(views: [title, subLabel])
         stack.orientation = .vertical
         stack.alignment = .leading
@@ -85,7 +125,7 @@ class ExceptionsTab {
             save(ExceptionsTestable.update(Preferences.exceptions, at: index, hide: newValue))
             refresh()
         }
-        return labelledControl(NSLocalizedString("Switcher:", comment: ""), button)
+        return fixedWidth(button)
     }
 
     private static func shortcutsPopup(_ index: Int, _ entry: ExceptionEntry) -> NSView {
@@ -96,19 +136,13 @@ class ExceptionsTab {
             let newValue = ExceptionIgnorePreference.allCases[button.indexOfSelectedItem]
             save(ExceptionsTestable.update(Preferences.exceptions, at: index, ignore: newValue))
         }
-        return labelledControl(NSLocalizedString("Shortcuts:", comment: ""), button)
+        return fixedWidth(button)
     }
 
-    private static func labelledControl(_ label: String, _ control: NSView) -> NSView {
-        let labelView = NSTextField(labelWithString: label)
-        labelView.font = NSFont.systemFont(ofSize: 12)
-        labelView.textColor = .gray
-        control.widthAnchor.constraint(equalToConstant: 170).isActive = true
-        let stack = NSStackView(views: [labelView, control])
-        stack.orientation = .horizontal
-        stack.spacing = 4
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        return stack
+    private static func fixedWidth(_ control: NSView) -> NSView {
+        control.translatesAutoresizingMaskIntoConstraints = false
+        control.widthAnchor.constraint(equalToConstant: popupWidth).isActive = true
+        return control
     }
 
     private static func titleField(_ index: Int, _ entry: ExceptionEntry) -> NSView {
@@ -131,10 +165,27 @@ class ExceptionsTab {
     }
 
     private static func removeButton(_ index: Int) -> NSButton {
-        AppsUrlsTab.removeButton {
-            save(ExceptionsTestable.remove(Preferences.exceptions, at: index))
-            refresh()
+        let button = NSButton()
+        button.isBordered = false
+        button.bezelStyle = .regularSquare
+        if #available(macOS 11.0, *) {
+            button.image = NSImage(systemSymbolName: "minus.circle", accessibilityDescription: NSLocalizedString("Remove", comment: ""))
+        } else {
+            button.title = "−"
         }
+        button.toolTip = NSLocalizedString("Remove", comment: "")
+        button.setAccessibilityLabel(NSLocalizedString("Remove", comment: ""))
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.widthAnchor.constraint(equalToConstant: removeWidth).isActive = true
+        button.target = ExceptionsRemoveTarget.shared
+        button.action = #selector(ExceptionsRemoveTarget.remove(_:))
+        button.tag = index
+        return button
+    }
+
+    fileprivate static func remove(at index: Int) {
+        save(ExceptionsTestable.remove(Preferences.exceptions, at: index))
+        refresh()
     }
 
     private static func save(_ entries: [ExceptionEntry]) {
@@ -265,5 +316,14 @@ class ExceptionsTab {
     @objc private static func addRunningApp(_ sender: NSMenuItem) {
         guard let bundleId = sender.representedObject as? String else { return }
         insert(bundleId)
+    }
+}
+
+/// Target for the per-row remove buttons; the row index travels in the button's tag.
+private final class ExceptionsRemoveTarget: NSObject {
+    static let shared = ExceptionsRemoveTarget()
+
+    @objc func remove(_ sender: NSButton) {
+        ExceptionsTab.remove(at: sender.tag)
     }
 }
