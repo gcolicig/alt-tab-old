@@ -432,7 +432,10 @@ class AppearanceTab: NSObject {
         let multipleScreensView = makeMultipleScreensView()
         let view = TableGroupSetView(originalViews: [appearanceView, multipleScreensView, customizeStyleDisclosure, animationsDisclosure], titleTableGroupSpacing: 15, padding: 0, bottomPadding: 0)
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.widthAnchor.constraint(equalToConstant: view.fittingSize.width).isActive = true
+        // Width is already fully determined by the padding: 0 leading/trailing pins on each wrapped
+        // table (down to their own fixed contentWidth). A redundant equalToConstant here, taken from
+        // fittingSize before the view is even in the hierarchy, could go stale and fight that chain
+        // once layout actually resolves -- every other tab relies on the chain alone, so do the same here.
         return view
     }
 
