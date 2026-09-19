@@ -432,11 +432,23 @@ class ControlsTab {
 
     private static func shortcutTab(_ index: Int) -> TableGroupView {
         let holdName = Preferences.indexToName("holdShortcut", index)
-        var holdShortcut = LabelAndControl.makeLabelWithRecorder(NSLocalizedString("Hold", comment: ""), holdName, Preferences.shortcut(holdName), false, labelPosition: .leftWithoutSeparator)
-        holdShortcut.append(LabelAndControl.makeLabel(NSLocalizedString("and press", comment: "")))
+        let holdShortcut = LabelAndControl.makeLabelWithRecorder(NSLocalizedString("Hold", comment: ""), holdName, Preferences.shortcut(holdName), false, labelPosition: .leftWithoutSeparator)
+        // "and press" must never be the view Auto Layout shrinks to resolve a tight row: pin it to its
+        // full intrinsic width so the restore-default button (which reserves space even while hidden)
+        // squeezes elsewhere instead of truncating this label.
+        let andPressLabel = LabelAndControl.makeLabel(NSLocalizedString("and press", comment: ""))
+        andPressLabel.setContentHuggingPriority(.required, for: .horizontal)
+        andPressLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        // Group the hold recorder with "and press" in their own tightly-spaced stack so this row has one
+        // fewer TableGroupView.spacing gap to fit, freeing the width the restore buttons now take up.
+        let holdAndPressGroup = NSStackView(views: [holdShortcut[1], andPressLabel])
+        holdAndPressGroup.orientation = .horizontal
+        holdAndPressGroup.alignment = .centerY
+        holdAndPressGroup.spacing = 6
+        holdAndPressGroup.translatesAutoresizingMaskIntoConstraints = false
         let nextName = Preferences.indexToName("nextWindowShortcut", index)
         let nextWindowShortcut = LabelAndControl.makeLabelWithRecorder(NSLocalizedString("Select next window", comment: ""), nextName, Preferences.shortcut(nextName), labelPosition: .right)
-        return controlTab(index, holdShortcut + [nextWindowShortcut[0]], shortcutEditorContentWidth)
+        return controlTab(index, [holdShortcut[0], holdAndPressGroup, nextWindowShortcut[0]], shortcutEditorContentWidth)
     }
 
     private static func gestureTab(_ index: Int) -> TableGroupView {
