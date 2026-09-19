@@ -25,7 +25,6 @@ class ExceptionsTab {
 
     private static func exceptionsTable() -> TableGroupView {
         let table = TableGroupView(width: SettingsWindow.contentWidth)
-        table.rowVerticalPadding = 5
         let entries = Preferences.exceptions
         if entries.isEmpty {
             table.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("No exceptions yet.", comment: ""), rightViews: []))
