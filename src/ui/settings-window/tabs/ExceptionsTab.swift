@@ -54,7 +54,7 @@ class ExceptionsTab {
         }
     }
 
-    private static let popupWidth = CGFloat(150)
+    private static let popupWidth = CGFloat(170)
     private static let removeWidth = CGFloat(18)
 
     /// Icon and name side by side in one view; as two left views the row stacked them vertically.
