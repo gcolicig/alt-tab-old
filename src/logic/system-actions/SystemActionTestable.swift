@@ -88,6 +88,16 @@ extension SystemAction {
     }
 }
 
+/// The menu bar, Shortcuts overview and action popups all show `SystemActions` titles in Title Case
+/// ("Keep Awake for 15 Minutes"); the Keep Awake settings page shows the same titles in sentence case
+/// instead ("Keep awake for 15 minutes") without touching the shared titles themselves.
+enum SentenceCase {
+    static func fromTitleCase(_ title: String) -> String {
+        guard let first = title.first else { return title }
+        return String(first) + title.dropFirst().lowercased()
+    }
+}
+
 // MARK: auto-quit (story 14C)
 
 enum AutoQuitMode: Int {

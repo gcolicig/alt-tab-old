@@ -125,4 +125,10 @@ class ScreenToolsFormatTests: XCTestCase {
         XCTAssertEqual(MicKeyMapping.removing([toF5, ours]), [toF5])
         XCTAssertEqual(MicKeyMapping.removing([]), [])
     }
+
+    func testSentenceCaseKeepsFirstLetterAndLowersTheRest() {
+        XCTAssertEqual(SentenceCase.fromTitleCase("Keep Awake for 15 Minutes"), "Keep awake for 15 minutes")
+        XCTAssertEqual(SentenceCase.fromTitleCase("Keep Awake"), "Keep awake")
+        XCTAssertEqual(SentenceCase.fromTitleCase(""), "")
+    }
 }

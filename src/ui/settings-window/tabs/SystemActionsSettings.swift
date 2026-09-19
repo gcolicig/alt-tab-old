@@ -130,12 +130,12 @@ class KeepAwakeTab {
         let startAndStop = TableGroupView(title: NSLocalizedString("Start and stop", comment: ""), width: SettingsWindow.contentWidth)
         startAndStopActions.forEach { action in
             guard let spec = SystemActions.spec(action) else { return }
-            startAndStop.addRow(TableGroupView.Row(leftTitle: spec.title, rightViews: [SettingsControls.recorder(action, spec.title)]))
+            startAndStop.addRow(TableGroupView.Row(leftTitle: SentenceCase.fromTitleCase(spec.title), rightViews: [SettingsControls.recorder(action, spec.title)]))
         }
         let durations = TableGroupView(title: NSLocalizedString("Durations", comment: ""), width: SettingsWindow.contentWidth)
         durationActions.forEach { action in
             guard let spec = SystemActions.spec(action) else { return }
-            durations.addRow(TableGroupView.Row(leftTitle: spec.title, rightViews: [SettingsControls.recorder(action, spec.title)]))
+            durations.addRow(TableGroupView.Row(leftTitle: SentenceCase.fromTitleCase(spec.title), rightViews: [SettingsControls.recorder(action, spec.title)]))
         }
         return TableGroupSetView(originalViews: [table, startAndStop, durations], padding: 0, bottomPadding: 0)
     }
