@@ -240,7 +240,10 @@ class ControlsTab {
     private static var selectedShortcutIndex = 0
     private static var shortcutRowsStackView: NSStackView?
     private static var shortcutRows = [ShortcutSidebarRow]()
-    private static var shortcutEditorViews = [TableGroupView]()
+    /// One slot per possible shortcut; built lazily the first time its index is selected
+    /// (`ensureShortcutEditorBuilt`), since only the selected editor is ever visible.
+    private static var shortcutEditorViews = [TableGroupView?]()
+    private static var editorsStack: NSStackView?
     private static var gestureSidebarRow: ShortcutSidebarRow?
     private static var gestureEditorView: TableGroupView?
     private static var shortcutCountButtons: NSSegmentedControl?
@@ -289,7 +292,7 @@ class ControlsTab {
     }
 
     static func initTab() -> NSView {
-        shortcutEditorViews = (0..<Preferences.maxShortcutCount).map { shortcutTab($0) }
+        shortcutEditorViews = Array(repeating: nil, count: Preferences.maxShortcutCount)
         gestureEditorView = gestureTab(Preferences.gestureIndex)
         let shortcutsView = makeShortcutsView()
         additionalControlsDisclosure = DisclosureSection(id: "controls.additionalControls",
@@ -330,7 +333,7 @@ class ControlsTab {
         let pane = NSView()
         pane.translatesAutoresizingMaskIntoConstraints = false
         pane.widthAnchor.constraint(equalToConstant: shortcutEditorWidth).isActive = true
-        var views = shortcutEditorViews
+        var views = shortcutEditorViews.compactMap { $0 }
         if let gestureEditorView {
             views.append(gestureEditorView)
         }
@@ -339,6 +342,7 @@ class ControlsTab {
         editorsStack.alignment = .leading
         editorsStack.spacing = 0
         editorsStack.translatesAutoresizingMaskIntoConstraints = false
+        self.editorsStack = editorsStack
         pane.addSubview(editorsStack)
         NSLayoutConstraint.activate([
             editorsStack.topAnchor.constraint(equalTo: pane.topAnchor, constant: shortcutEditorTopBottomPadding),
@@ -542,11 +546,36 @@ class ControlsTab {
 
     private static func refreshShortcutSelection() {
         shortcutRows.enumerated().forEach { $1.setSelected($0 == selectedShortcutIndex) }
+        if selectedShortcutIndex != gestureSelectionIndex, (0..<Preferences.shortcutCount).contains(selectedShortcutIndex) {
+            _ = ensureShortcutEditorBuilt(selectedShortcutIndex)
+        }
         shortcutEditorViews.enumerated().forEach { index, view in
-            view.isHidden = index != selectedShortcutIndex || index >= Preferences.shortcutCount
+            view?.isHidden = index != selectedShortcutIndex || index >= Preferences.shortcutCount
         }
         gestureSidebarRow?.setSelected(selectedShortcutIndex == gestureSelectionIndex)
         gestureEditorView?.isHidden = selectedShortcutIndex != gestureSelectionIndex
+    }
+
+    /// Builds the editor for `index` the first time it is selected, since only the selected
+    /// editor is ever visible; a no-op once it already exists.
+    @discardableResult
+    private static func ensureShortcutEditorBuilt(_ index: Int) -> TableGroupView? {
+        guard shortcutEditorViews.indices.contains(index) else { return nil }
+        if let existing = shortcutEditorViews[index] { return existing }
+        let wasBuildingUI = isBuildingUI
+        isBuildingUI = true
+        let view = shortcutTab(index)
+        isBuildingUI = wasBuildingUI
+        shortcutEditorViews[index] = view
+        if let editorsStack {
+            if let gestureEditorView, let gestureIndex = editorsStack.arrangedSubviews.firstIndex(of: gestureEditorView) {
+                editorsStack.insertArrangedSubview(view, at: gestureIndex)
+            } else {
+                editorsStack.addArrangedSubview(view)
+            }
+        }
+        initializeShortcutRecorderState(index)
+        return view
     }
 
     private static func refreshShortcutCountButtons() {
@@ -648,8 +677,8 @@ class ControlsTab {
 
     private static func syncShortcutDropdownControlValue(_ controlId: String) {
         let index = Preferences.nameToIndex(controlId)
-        guard index < shortcutEditorViews.count else { return }
-        guard let dropdown = findDropdownControl(shortcutEditorViews[index], controlId) else { return }
+        guard shortcutEditorViews.indices.contains(index), let editorView = shortcutEditorViews[index] else { return }
+        guard let dropdown = findDropdownControl(editorView, controlId) else { return }
         guard dropdown.numberOfItems > 0 else { return }
         let selectedIndex = UserDefaults.standard.string(forKey: controlId).flatMap(Int.init) ?? 0
         dropdown.selectItem(at: min(max(0, selectedIndex), dropdown.numberOfItems - 1))
