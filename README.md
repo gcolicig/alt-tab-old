@@ -55,7 +55,7 @@ remaining behaviour predictable.
 - **Switcher**: open windows with previews, titles, fuzzy search and mouse hover.
 - **Window layouts**: thirds, two-thirds, three-quarters, focus layouts, moves between displays, and a
   restore step, on shortcuts you assign yourself.
-- **Spaces**: switch Spaces by shortcut, and read them next to the menu bar icon.
+- **Spaces**: switch Spaces by shortcut, read them next to the menu bar icon, and open a preview of every display's Spaces from that row.
 - **Hyper key**: Caps Lock acts as ⌃⌥⇧⌘ while held, and still toggles Caps Lock on a short tap.
 - **Leader sequences**: a trigger, then a short sequence of letters; an overlay shows what may follow.
 - **FlickRing**: hold a mouse button, flick in a direction, run the action bound to it.
@@ -108,6 +108,7 @@ what was left out.
 - An optional dual-role Caps Lock key provides system-wide Hyper shortcuts while preserving normal Caps Lock toggling on a short tap.
 - Leader sequences, a mouse-button action ring (FlickRing), modifier-drag move and resize with snapping, profiles, and separate scroll direction and speed for mouse and trackpad are built in.
 - The menubar menu carries window focus actions, system actions, screen tools, Keep Awake, and a Debug submenu (see below).
+- A click on a Space segment in the menu bar opens a preview of the Spaces of every display, laid out the way the displays stand on the desk. Each Space is a miniature of its windows; a click on one switches to it.
 - The settings window shows one section at a time, grouped in the sidebar, with a `Shortcuts` page that lists every action shortcut and its conflicts.
 
 ## Window Layouts
