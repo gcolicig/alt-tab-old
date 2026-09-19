@@ -88,11 +88,28 @@ class ShortcutOverviewTab {
             views.append(shortcutLabel(row.key))
         }
         if let owner = row.ownerSectionId {
-            let show = NSButton(title: NSLocalizedString("Show", comment: ""), target: nil, action: nil)
-            show.onAction = { _ in reveal(owner, row) }
-            views.append(show)
+            views.append(makeShowButton(owner, row))
         }
         return TableGroupView.Row(leftTitle: row.title, subTitle: statusText(row.status), rightViews: views)
+    }
+
+    /// A small borderless chevron, matching the recorder's own restore-default button, instead of a
+    /// text button, since every row in the list repeats it.
+    private static func makeShowButton(_ owner: String, _ row: ShortcutOverviewRow) -> NSButton {
+        let title = NSLocalizedString("Show in settings", comment: "")
+        let config = NSImage.SymbolConfiguration(pointSize: 11, weight: .medium)
+        let button = NSButton(image: NSImage(systemSymbolName: "chevron.right", accessibilityDescription: title)?
+            .withSymbolConfiguration(config) ?? NSImage(), target: nil, action: nil)
+        button.isBordered = false
+        button.imagePosition = .imageOnly
+        button.setButtonType(.momentaryChange)
+        button.toolTip = title
+        button.setAccessibilityLabel(title)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.widthAnchor.constraint(equalToConstant: 16).isActive = true
+        button.heightAnchor.constraint(equalToConstant: 16).isActive = true
+        button.onAction = { _ in reveal(owner, row) }
+        return button
     }
 
     /// Opens the owning page and flashes the shortcut's recorder row. Profiles shows only its
