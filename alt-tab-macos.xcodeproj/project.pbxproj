@@ -302,7 +302,7 @@
 		BF0C8D610C93D48F572937F8 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = BF0C8FBA6B0F4DEB510C71CB /* Localizable.strings */; };
 		BF0C8DD7EBC3BA1E86BF4BDB /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = BF0C841E403C1C6E8C65727E /* InfoPlist.strings */; };
 		BF0C8DF4207B0BDC2178277B /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = BF0C8FA077BB185496B4CAE8 /* Localizable.strings */; };
-		BF0C8E16F38203AEC71E062B /* TableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0C8343C1F6FCA82552DCB7 /* TableView.swift */; };
+		BF0C8E16F38203AEC71E062B /* ForwardingScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0C8343C1F6FCA82552DCB7 /* ForwardingScrollView.swift */; };
 		BF0C8E366BC25171C0A3881C /* ApplicationServices.HIServices.framework.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0C8C5C0FF5D567BF190DE5 /* ApplicationServices.HIServices.framework.swift */; };
 		BF0C8E441C550291B1EC7EDA /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = BF0C8B82128C43A4315B4455 /* InfoPlist.strings */; };
 		BF0C8E5F4E4D5F7DAEE07C20 /* TilesPanelBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0C82817AEE4AF34D03CA9D /* TilesPanelBackgroundView.swift */; };
@@ -450,6 +450,9 @@
 		C0DE100000000000000000D7 /* SystemActionsSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000CD /* SystemActionsSettings.swift */; };
 		C0DE100000000000000000D8 /* MicMuteIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000CE /* MicMuteIndicator.swift */; };
 		C0DE100000000000000000D9 /* SettingsSidebarTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000CF /* SettingsSidebarTestable.swift */; };
+		4530348C5FD65800269A9842 /* ExceptionsTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0B6381698104760878F9CD3 /* ExceptionsTestable.swift */; };
+		143D43BC5BB45F3D6D78CDBD /* ExceptionsTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0B6381698104760878F9CD3 /* ExceptionsTestable.swift */; };
+		FDB2030CA12DA4FD5972667A /* ExceptionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C42FCC016117FFC0045E02B0 /* ExceptionsTests.swift */; };
 		468E776ADE034172B4316914 /* PreferencesResetTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AC597FDBC9C498C9C0C6283 /* PreferencesResetTestable.swift */; };
 		C0DE100000000000000000DA /* SettingsSidebarTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000CF /* SettingsSidebarTestable.swift */; };
 		18351C13428142E794664853 /* PreferencesResetTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AC597FDBC9C498C9C0C6283 /* PreferencesResetTestable.swift */; };
@@ -689,7 +692,7 @@
 		BF0C83258B2873D9CDC74EA5 /* preferences-controls.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "preferences-controls.jpg"; sourceTree = "<group>"; };
 		BF0C832DEED422648209CCD2 /* unit-tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "unit-tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		BF0C833D471343CEA3DEFE56 /* icon_512x512@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon_512x512@2x.png"; sourceTree = "<group>"; };
-		BF0C8343C1F6FCA82552DCB7 /* TableView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TableView.swift; sourceTree = "<group>"; };
+		BF0C8343C1F6FCA82552DCB7 /* ForwardingScrollView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ForwardingScrollView.swift; sourceTree = "<group>"; };
 		BF0C8353097840D7DB1E0E2E /* Markdown.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Markdown.swift; sourceTree = "<group>"; };
 		BF0C8363D45FECB8D6F8DCD5 /* LightweightTimer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LightweightTimer.swift; sourceTree = "<group>"; };
 		BF0C83D645B6BB523E50670A /* hr */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = hr; path = InfoPlist.strings; sourceTree = "<group>"; };
@@ -1027,6 +1030,8 @@
 		C0DE200000000000000000CD /* SystemActionsSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemActionsSettings.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000CE /* MicMuteIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicMuteIndicator.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000CF /* SettingsSidebarTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSidebarTestable.swift; sourceTree = "<group>"; };
+		E0B6381698104760878F9CD3 /* ExceptionsTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExceptionsTestable.swift; sourceTree = "<group>"; };
+		C42FCC016117FFC0045E02B0 /* ExceptionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExceptionsTests.swift; sourceTree = "<group>"; };
 		8AC597FDBC9C498C9C0C6283 /* PreferencesResetTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesResetTestable.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000D0 /* SettingsSidebarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSidebarTests.swift; sourceTree = "<group>"; };
 		3E1699A2D69849C483898542 /* PreferencesResetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesResetTests.swift; sourceTree = "<group>"; };
@@ -1437,6 +1442,7 @@
 				C0DE200000000000000000D4 /* ShortcutOverviewTests.swift */,
 				C0DE200000000000000000D2 /* SlotListTests.swift */,
 				C0DE200000000000000000D0 /* SettingsSidebarTests.swift */,
+				C42FCC016117FFC0045E02B0 /* ExceptionsTests.swift */,
 				3E1699A2D69849C483898542 /* PreferencesResetTests.swift */,
 				C0DE200000000000000000CA /* DebugToolsTests.swift */,
 				C0DE200000000000000000C3 /* KeepAwakeTests.swift */,
@@ -1893,7 +1899,7 @@
 				D04BA8AC77465E1B2BC947CF /* StackView.swift */,
 				BF0C8DF400A1AF64EB0CD0B3 /* TrafficLightButton.swift */,
 				BF0C8B2C057099EDABE46779 /* Button.swift */,
-				BF0C8343C1F6FCA82552DCB7 /* TableView.swift */,
+				BF0C8343C1F6FCA82552DCB7 /* ForwardingScrollView.swift */,
 				1C961FB3DCF4906FEEF4A23D /* TableGroupView.swift */,
 				44543B60411B28C7659EAF94 /* DisclosureSection.swift */,
 				BF0C8A479D2B7FB80531F037 /* PopupButtonLikeSystemSettings.swift */,
@@ -1948,6 +1954,7 @@
 				D04BACE22DC907F03D193075 /* GeneralTab.swift */,
 				D04BA788228BA86D9EFBD1ED /* AcknowledgmentsTab.swift */,
 				D04BA27695D9A5824720BD7B /* ExceptionsTab.swift */,
+				E0B6381698104760878F9CD3 /* ExceptionsTestable.swift */,
 			);
 			path = tabs;
 			sourceTree = "<group>";
@@ -3042,6 +3049,8 @@
 				C0DE100000000000000000DE /* SlotListTests.swift in Sources */,
 				C0DE100000000000000000DD /* SlotListTestable.swift in Sources */,
 				C0DE100000000000000000DB /* SettingsSidebarTests.swift in Sources */,
+				FDB2030CA12DA4FD5972667A /* ExceptionsTests.swift in Sources */,
+				143D43BC5BB45F3D6D78CDBD /* ExceptionsTestable.swift in Sources */,
 				3889619E19FD4D7FA5E146AE /* PreferencesResetTests.swift in Sources */,
 				C0DE100000000000000000DA /* SettingsSidebarTestable.swift in Sources */,
 				18351C13428142E794664853 /* PreferencesResetTestable.swift in Sources */,
@@ -3122,6 +3131,7 @@
 				C0DE100000000000000000DF /* ShortcutOverviewTestable.swift in Sources */,
 				C0DE100000000000000000DC /* SlotListTestable.swift in Sources */,
 				C0DE100000000000000000D9 /* SettingsSidebarTestable.swift in Sources */,
+				4530348C5FD65800269A9842 /* ExceptionsTestable.swift in Sources */,
 				468E776ADE034172B4316914 /* PreferencesResetTestable.swift in Sources */,
 				C0DE100000000000000000D8 /* MicMuteIndicator.swift in Sources */,
 				C0DE100000000000000000D7 /* SystemActionsSettings.swift in Sources */,
@@ -3275,7 +3285,7 @@
 				BF0C8CC5057406014FD612CC /* ATShortcut.swift in Sources */,
 				BF0C8C7E96DB48120462DA00 /* TrafficLightButton.swift in Sources */,
 				BF0C898511686611E4D7D81E /* Button.swift in Sources */,
-				BF0C8E16F38203AEC71E062B /* TableView.swift in Sources */,
+				BF0C8E16F38203AEC71E062B /* ForwardingScrollView.swift in Sources */,
 				BF0C832C5BF4C8E9C95F7767 /* MissionControl.swift in Sources */,
 				1C96108A0CB2565233FE100B /* TableGroupView.swift in Sources */,
 				75609128DAA60B4B066C2C98 /* DisclosureSection.swift in Sources */,

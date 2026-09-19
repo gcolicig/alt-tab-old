@@ -485,35 +485,8 @@ enum UpdatePolicyPreference: CaseIterable, MacroPreference {
     }
 }
 
-enum ExceptionHidePreference: String/* required for jsonEncode */, CaseIterable, MacroPreference, Codable {
-    case none = "0"
-    case always = "1"
-    case whenNoOpenWindow = "2"
-    case windowTitleContains = "3"
-
-    var localizedString: LocalizedString {
-        switch self {
-            case .none: return ""
-            case .always: return NSLocalizedString("Always", comment: "")
-            case .whenNoOpenWindow: return NSLocalizedString("When no open window", comment: "")
-            case .windowTitleContains: return NSLocalizedString("Window title contains", comment: "")
-        }
-    }
-}
-
-enum ExceptionIgnorePreference: String/* required for jsonEncode */, CaseIterable, MacroPreference, Codable {
-    case none = "0"
-    case always = "1"
-    case whenFullscreen = "2"
-
-    var localizedString: LocalizedString {
-        switch self {
-            case .none: return ""
-            case .always: return NSLocalizedString("Always", comment: "")
-            case .whenFullscreen: return NSLocalizedString("When fullscreen", comment: "")
-        }
-    }
-}
+// ExceptionHidePreference/ExceptionIgnorePreference live in ExceptionsTestable.swift (with
+// ExceptionEntry) so the unit-tests target, which does not compile this file, can still see them.
 
 // MacroPreference are collection of values derived from a single key
 // we don't want to store every value in UserDefaults as the user could change them and contradict the macro

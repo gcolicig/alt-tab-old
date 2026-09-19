@@ -193,6 +193,8 @@ class TableGroupView: ClickHoverStackView {
     var subTitle: String?
 
     var width: CGFloat = 500
+    /// Space above and below each row's content; long lists such as Exceptions use less to stay compact.
+    var rowVerticalPadding = TableGroupView.padding
     let titleLabel = NSTextField(labelWithString: "")
     let subTitleLabel = NSTextField(labelWithString: "")
     let titleStackView = NSStackView()
@@ -383,7 +385,7 @@ class TableGroupView: ClickHoverStackView {
             let subLabel = createSubLabel(with: subText)
             setSecondaryRow([subLabel], rowView: rowView, mainRow: mainRow)
         } else {
-            mainRow.bottomAnchor.constraint(equalTo: rowView.bottomAnchor, constant: -TableGroupView.padding).isActive = true
+            mainRow.bottomAnchor.constraint(equalTo: rowView.bottomAnchor, constant: -rowVerticalPadding).isActive = true
         }
         let rowInfo = RowInfo(view: rowView)
         rowInfo.leftViews = leftViews
@@ -410,7 +412,7 @@ class TableGroupView: ClickHoverStackView {
         if let secondaryViews {
             setSecondaryRow(secondaryViews, rowView: rowView, mainRow: mainRow, orientation: secondaryViewsOrientation, alignment: secondaryViewsAlignment)
         } else {
-            mainRow.bottomAnchor.constraint(equalTo: rowView.bottomAnchor, constant: -TableGroupView.padding).isActive = true
+            mainRow.bottomAnchor.constraint(equalTo: rowView.bottomAnchor, constant: -rowVerticalPadding).isActive = true
         }
         let rowInfo = RowInfo(view: rowView)
         rowInfo.leftViews = leftViews
@@ -483,7 +485,7 @@ class TableGroupView: ClickHoverStackView {
     private func setMainRow(_ mainRow: NSStackView, in rowView: ClickHoverStackView) {
         rowView.addArrangedSubview(mainRow)
         mainRow.translatesAutoresizingMaskIntoConstraints = false
-        mainRow.topAnchor.constraint(equalTo: rowView.topAnchor, constant: TableGroupView.padding).isActive = true
+        mainRow.topAnchor.constraint(equalTo: rowView.topAnchor, constant: rowVerticalPadding).isActive = true
         mainRow.leadingAnchor.constraint(equalTo: rowView.leadingAnchor, constant: TableGroupView.padding).isActive = true
         mainRow.trailingAnchor.constraint(equalTo: rowView.trailingAnchor, constant: -TableGroupView.padding).isActive = true
         mainRow.heightAnchor.constraint(equalToConstant: mainRow.fittingSize.height).isActive = true
@@ -517,7 +519,7 @@ class TableGroupView: ClickHoverStackView {
         rowView.addSubview(secondaryRow)
         secondaryRow.translatesAutoresizingMaskIntoConstraints = false
         secondaryRow.topAnchor.constraint(equalTo: mainRow.bottomAnchor, constant: 2).isActive = true
-        secondaryRow.bottomAnchor.constraint(equalTo: rowView.bottomAnchor, constant: -TableGroupView.padding).isActive = true
+        secondaryRow.bottomAnchor.constraint(equalTo: rowView.bottomAnchor, constant: -rowVerticalPadding).isActive = true
         // constrain trailing to the right views' leading so subtitle wraps before the toggle
         let rightStackView = mainRow.arrangedSubviews[2]
         switch alignment {

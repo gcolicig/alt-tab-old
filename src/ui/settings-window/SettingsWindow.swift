@@ -251,7 +251,12 @@ class SettingsWindow: NSWindow {
             // No reset button: the launch-app/open-URL entries are user-created content, not settings.
             SettingsSectionDefinition(id: AppsUrlsTab.sectionId, title: NSLocalizedString("Apps & URLs", comment: ""), description: NSLocalizedString("Assign shortcuts to launch apps or open URLs.", comment: ""), imageName: "controls", systemSymbolName: "app.badge", view: AppsUrlsTab.initTab(), builder: { AppsUrlsTab.initTab() },
                 hidesResetButton: true),
-            SettingsSectionDefinition(id: "exceptions", title: NSLocalizedString("Exceptions", comment: ""), description: NSLocalizedString("Choose apps whose windows should not appear in the switcher.", comment: ""), imageName: "exceptions", systemSymbolName: "hand.raised", view: ExceptionsTab.initTab(), builder: { ExceptionsTab.initTab() }),
+            // `exceptions` is stored as one JSON blob (see `Preferences.exceptions`), not through
+            // individually identified controls, so `SettingsResetKeysCollector` cannot find it; declared
+            // here instead. `afterReset` is implicit: `builder` already rebuilds the page from the
+            // restored default list.
+            SettingsSectionDefinition(id: ExceptionsTab.sectionId, title: NSLocalizedString("Exceptions", comment: ""), description: NSLocalizedString("Choose apps whose windows should not appear in the switcher.", comment: ""), imageName: "exceptions", systemSymbolName: "hand.raised", view: ExceptionsTab.initTab(), builder: { ExceptionsTab.initTab() },
+                extraResettableKeys: { ["exceptions"] }),
         ]
     }
 
