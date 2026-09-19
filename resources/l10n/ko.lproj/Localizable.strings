@@ -208,7 +208,7 @@
 "Shortcut 4" = "단축키 4";
 "Shortcut 5" = "단축키 5";
 "Shortcut already assigned to another action: %@" = "단축키가 이미 다른 동작에 할당되어 있습니다: %@";
-"Shortcuts When Active" = "활성 시 단축키";
+"Shortcuts when active" = "활성 시 단축키";
 "Shortcuts when active…" = "활성 시 단축키…";
 "Show" = "보기";
 "Show & Hide" = "표시 & 숨기기";

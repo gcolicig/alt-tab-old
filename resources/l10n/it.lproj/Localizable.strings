@@ -208,7 +208,7 @@
 "Shortcut 4" = "Comando 4";
 "Shortcut 5" = "Comando 5";
 "Shortcut already assigned to another action: %@" = "Comando già assegnato a: %@";
-"Shortcuts When Active" = "Scorciatoie aggiuntive (solo per la vista anteprima finestre)";
+"Shortcuts when active" = "Scorciatoie aggiuntive (solo per la vista anteprima finestre)";
 "Shortcuts when active…" = "Scorciatoie aggiuntive (solo per la vista anteprima finestre)";
 "Show" = "Mostra";
 "Show & Hide" = "Mostra/Nascondi";

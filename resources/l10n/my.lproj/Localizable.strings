@@ -208,7 +208,7 @@
 "Shortcut 4" = "ရှော့ခ်ကတ် ၄";
 "Shortcut 5" = "ရှော့ခ်ကတ် ၅";
 "Shortcut already assigned to another action: %@" = "ရှော့ခ်ကတ်ကို အခြားလုပ်ဆောင်ချက်တစ်ခုဖြစ်သည့် %@ သို့ ပေးအပ်ထားပြီးဖြစ်သည်။";
-"Shortcuts When Active" = "အလုပ်လုပ်နေချိန် ဖြတ်လမ်းများ";
+"Shortcuts when active" = "အလုပ်လုပ်နေချိန် ဖြတ်လမ်းများ";
 "Shortcuts when active…" = "အလုပ်လုပ်နေချိန် ဖြတ်လမ်းများ…";
 "Show" = "ပြသမည်";
 "Show & Hide" = "ပြသရန်နှင့် ဝှက်ထားရန်";

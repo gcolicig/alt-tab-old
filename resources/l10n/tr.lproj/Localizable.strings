@@ -208,7 +208,7 @@
 "Shortcut 4" = "Kestirme 4";
 "Shortcut 5" = "Kestirme 5";
 "Shortcut already assigned to another action: %@" = "Kestirme hâlihazırda başka bir eylem için atanmış: %@";
-"Shortcuts When Active" = "Aktif olduğunda kısayollar";
+"Shortcuts when active" = "Aktif olduğunda kısayollar";
 "Shortcuts when active…" = "Aktif olduğunda kısayollar…";
 "Show" = "Göster";
 "Show & Hide" = "Gösteri ve Sakla";

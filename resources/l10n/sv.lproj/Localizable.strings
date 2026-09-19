@@ -208,7 +208,7 @@
 "Shortcut 4" = "4";
 "Shortcut 5" = "5";
 "Shortcut already assigned to another action: %@" = "Kommandot är redan kopplat till en annan funktion: %@";
-"Shortcuts When Active" = "Genvägar när AltTab visas";
+"Shortcuts when active" = "Genvägar när AltTab visas";
 "Shortcuts when active…" = "Genvägar när AltTab visas…";
 "Show" = "Visa";
 "Show & Hide" = "Visa och dölj";

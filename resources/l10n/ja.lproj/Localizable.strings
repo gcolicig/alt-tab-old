@@ -208,7 +208,7 @@
 "Shortcut 4" = "ショートカット４";
 "Shortcut 5" = "ショートカット５";
 "Shortcut already assigned to another action: %@" = "既に：%@に割り当てられたショートカット";
-"Shortcuts When Active" = "アクティブ時のショートカット";
+"Shortcuts when active" = "アクティブ時のショートカット";
 "Shortcuts when active…" = "アクティブ時のショートカット…";
 "Show" = "アプリを表示";
 "Show & Hide" = "表示設定";

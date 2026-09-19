@@ -208,7 +208,7 @@
 "Shortcut 4" = "Клавишна комбинация 4";
 "Shortcut 5" = "Клавишна комбинация 5";
 "Shortcut already assigned to another action: %@" = "Този шорткът вече се използва за %@";
-"Shortcuts When Active" = "Преки пътища, когато са активни";
+"Shortcuts when active" = "Преки пътища, когато са активни";
 "Shortcuts when active…" = "Преки пътища, когато са активни ...";
 "Show" = "покажи";
 "Show & Hide" = "Покажи скрий";
