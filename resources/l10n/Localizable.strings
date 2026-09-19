@@ -593,6 +593,12 @@
 "Hold" = "Hold";
 
 /* No comment provided by engineer. */
+"Holding a key now repeats it. Restart an app to apply it there." = "Holding a key now repeats it. Restart an app to apply it there.";
+
+/* No comment provided by engineer. */
+"Holding a key now shows accents. Restart an app to apply it there." = "Holding a key now shows accents. Restart an app to apply it there.";
+
+/* No comment provided by engineer. */
 "Hyper could not access the physical Caps Lock key." = "Hyper could not access the physical Caps Lock key.";
 
 /* No comment provided by engineer. */
@@ -995,6 +1001,9 @@
 "Ownership" = "Ownership";
 
 /* No comment provided by engineer. */
+"Paste and Match Style" = "Paste and Match Style";
+
+/* No comment provided by engineer. */
 "Pick Color" = "Pick Color";
 
 /* No comment provided by engineer. */
@@ -1002,6 +1011,12 @@
 
 /* No comment provided by engineer. */
 "Pointer & Scroll" = "Pointer & Scroll";
+
+/* No comment provided by engineer. */
+"Press and Hold could not be changed." = "Press and Hold could not be changed.";
+
+/* No comment provided by engineer. */
+"Press and Hold for Accents" = "Press and Hold for Accents";
 
 /* No comment provided by engineer. */
 "Press this, then a sequence of keys." = "Press this, then a sequence of keys.";
@@ -1386,6 +1401,9 @@
 
 /* No comment provided by engineer. */
 "The clipboard holds no image." = "The clipboard holds no image.";
+
+/* No comment provided by engineer. */
+"The clipboard holds no text." = "The clipboard holds no text.";
 
 /* No comment provided by engineer. */
 "The code contains a link. It was copied." = "The code contains a link. It was copied.";
