@@ -38,11 +38,14 @@ class ExceptionsTab {
         let isPrefix = ExceptionsTestable.isPrefix(entry.bundleIdentifier)
         let name = ExceptionsTestable.displayName(bundleIdentifier: entry.bundleIdentifier, resolvedName: appUrl.map(DefaultBrowser.displayName))
         let subtitle = isPrefix || appUrl != nil ? entry.bundleIdentifier : NSLocalizedString("No installed app matches this entry.", comment: "")
-        let secondary = entry.hide == .windowTitleContains ? [titleField(index, entry)] : []
         table.addRow(
             leftViews: [iconView(appUrl: appUrl, isPrefix: isPrefix), nameStack(name, subtitle)],
             rightViews: [switcherPopup(index, entry), shortcutsPopup(index, entry), removeButton(index)],
-            secondaryViews: secondary.isEmpty ? nil : secondary)
+            secondaryViews: nil)
+        // its own row: as a secondary view it would have to fit left of the two popups, which leaves no room
+        if entry.hide == .windowTitleContains {
+            table.addRow(leftViews: [titleField(index, entry)], rightViews: [], secondaryViews: nil)
+        }
     }
 
     private static func iconView(appUrl: URL?, isPrefix: Bool) -> NSImageView {
