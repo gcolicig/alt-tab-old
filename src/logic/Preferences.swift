@@ -351,6 +351,15 @@ class Preferences {
         CachedUserDefaults.shortcut(key)
     }
 
+    /// The registered default for a shortcut key, decoded the same way a stored value would be.
+    /// `nil` both when the key has no registered default and when its default is "unassigned" —
+    /// callers that need to tell those apart check `defaultValues[key] != nil` themselves.
+    static func defaultShortcut(forKey key: String) -> Shortcut? {
+        guard let stored = defaultValues[key] else { return nil }
+        let (isValid, shortcut) = decodeShortcutStorage(stored)
+        return isValid ? shortcut : nil
+    }
+
     static func set<T>(_ key: String, _ value: T, _ notify: Bool = true) where T: Encodable {
         UserDefaults.standard.set(key == "exceptions" ? jsonEncode(value) : value, forKey: key)
         CachedUserDefaults.removeFromCache(key)

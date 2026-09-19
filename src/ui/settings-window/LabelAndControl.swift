@@ -108,10 +108,66 @@ class LabelAndControl: NSObject {
 
     static func makeLabelWithRecorder(_ labelText: String, _ rawName: String, _ shortcut: Shortcut?, _ clearable: Bool = true, labelPosition: LabelPosition = .leftWithSeparator) -> [NSView] {
         let input = CustomRecorderControl(shortcut, clearable, rawName)
-        let views = makeLabelWithProvidedControl(labelText, rawName, input, labelPosition: labelPosition, extraAction: { _ in ControlsTab.shortcutChangedCallback(input) })
+        var restoreButton: NSButton?
+        let views = makeLabelWithProvidedControl(labelText, rawName, input, labelPosition: labelPosition, extraAction: { _ in
+            ControlsTab.shortcutChangedCallback(input)
+            if let restoreButton { updateRestoreDefaultButtonVisibility(restoreButton, rawName, input) }
+        })
         ControlsTab.shortcutChangedCallback(input)
         ControlsTab.shortcutControls[rawName] = (input, labelText)
-        return views
+        guard Preferences.defaultValues[rawName] != nil,
+              let index = views.firstIndex(where: { $0 === input }) else { return views }
+        let button = makeRestoreDefaultButton(rawName, input)
+        restoreButton = button
+        updateRestoreDefaultButtonVisibility(button, rawName, input)
+        var result = views
+        result[index] = wrapRecorderWithRestoreButton(input, button)
+        return result
+    }
+
+    /// A small borderless button that restores a cleared/changed shortcut to its registered default,
+    /// placed right next to the recorder. Reserves its width even while hidden (alpha 0, disabled,
+    /// never `isHidden`) so the recorder column never shifts as it appears and disappears.
+    private static func makeRestoreDefaultButton(_ rawName: String, _ input: CustomRecorderControl) -> NSButton {
+        let title = NSLocalizedString("Restore default", comment: "")
+        let config = NSImage.SymbolConfiguration(pointSize: 11, weight: .medium)
+        let button = NSButton(image: NSImage(systemSymbolName: "arrow.uturn.backward", accessibilityDescription: title)?
+            .withSymbolConfiguration(config) ?? NSImage(), target: nil, action: nil)
+        button.isBordered = false
+        button.imagePosition = .imageOnly
+        button.setButtonType(.momentaryChange)
+        button.toolTip = title
+        button.setAccessibilityLabel(title)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.widthAnchor.constraint(equalToConstant: 16).isActive = true
+        button.heightAnchor.constraint(equalToConstant: 16).isActive = true
+        button.onAction = { _ in restoreDefaultShortcut(rawName, input, button) }
+        return button
+    }
+
+    /// Restores `rawName` to its registered default and replays the same callback path an interactive
+    /// recorder edit runs (`ControlsTab.shortcuts` / registration update), instead of only clearing the
+    /// preference underneath the recorder.
+    private static func restoreDefaultShortcut(_ rawName: String, _ input: CustomRecorderControl, _ button: NSButton) {
+        Preferences.remove(rawName)
+        input.objectValue = Preferences.defaultShortcut(forKey: rawName)
+        input.sendAction(input.action, to: input.target)
+        updateRestoreDefaultButtonVisibility(button, rawName, input)
+    }
+
+    private static func updateRestoreDefaultButtonVisibility(_ button: NSButton, _ rawName: String, _ input: CustomRecorderControl) {
+        let differs = ShortcutDefault.differsFromDefault(input.objectValue, Preferences.defaultShortcut(forKey: rawName))
+        button.alphaValue = differs ? 1 : 0
+        button.isEnabled = differs
+    }
+
+    private static func wrapRecorderWithRestoreButton(_ input: CustomRecorderControl, _ button: NSButton) -> NSView {
+        let stack = NSStackView(views: [input, button])
+        stack.orientation = .horizontal
+        stack.alignment = .centerY
+        stack.spacing = 4
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
     }
 
     static func makeLabelWithCheckbox(_ labelText: String, _ rawName: String, extraAction: ActionClosure? = nil, labelPosition: LabelPosition = .leftWithSeparator) -> [NSView] {
