@@ -1712,6 +1712,7 @@ Nicht im Scope:
 ### 14. System-Aktionen und Werkzeuge aus dem Supercharge-Abgleich
 
 Status: Umgesetzt 2026-09-16, alle Bloecke; Geraetepruefung offen (`docs/system-actions-checklist.md`), dazu V-19, V-20 und V-21
+Nachtrag 2026-09-19: `Paste and Match Style` (`system.pasteAsPlainText`, Gruppe System) setzt die Zwischenablage auf reinen Text, sendet `Cmd+V` an die App im Vordergrund und stellt den Originalinhalt nach 0,5 s wieder her, wenn niemand sonst geschrieben hat. `Press and Hold for Accents` (`keyboard.pressAndHold.toggle`, Gruppe Toggles) schaltet die globale Einstellung `ApplePressAndHoldEnabled`; Apps lesen sie nur beim Start. Beide am Geraet noch nicht geprueft, insbesondere ob 50 ms reichen, bis das Menue geschlossen ist.
 Prioritaet: Niedrig bis mittel je Block; die Bloecke sind unabhaengig und einzeln umsetzbar
 
 Referenz: Supercharge-Menue, Einordnung unter `Supercharge-Abgleich`. Verhalten nur aus Namen und Menue abgeleitet (Art A). Am 2026-09-16 vom Nutzer zur Uebernahme bestimmt, auch fuer Eintraege, die der Abgleich zuerst als `ENTFERNEN` gefuehrt hatte (Bildschirm-Werkzeuge, Mitteilungen, Cat Mode). Die dort genannten Risiken bleiben und sind unten als Regeln gefasst.
@@ -2026,6 +2027,37 @@ Nicht im Scope aller Stufen:
 - Aenderungen an der Aktionsauswahl von Leader und FlickRing und an den Ownership-Zeilen von Pointer & Scroll (Befunde der Pruefung, eigene Story).
 - Kuerzen der Keep-Awake-Shortcuts.
 
+### 17. URL-Scheme fuer das Aktionsregister
+
+Status: Spezifiziert 2026-09-19, nicht umgesetzt
+Prioritaet: Mittel. Klein, weil jede Aktion schon eine stabile ID hat
+
+Ausgangslage:
+
+- Das Aktionsregister (Story 0) hat sechs Einstiege: globale Shortcuts, Hyper, Leader, FlickRing, Space-Segmente und Menue. Von aussen, aus Skripten, Raycast, Shortcuts oder Keyboard Maestro, ist keine Aktion erreichbar.
+- Jede Aktion hat eine `ActionIdentifier.stableId`; `Actions.identifier(forStableId:)` loest sie auf. Die App hat noch keinen `CFBundleURLTypes`-Eintrag.
+- Eine eigene CLI und eine Command Palette sind nicht Teil dieser Story (Palette: siehe `Nicht-Ziele`). `open "<scheme>://run/<stableId>"` deckt die CLI ab.
+
+Beschreibung:
+
+- Ein URL-Scheme in `Info.plist`; der Name ist vor der Umsetzung festzulegen und auf Kollisionen zu pruefen (Vorschlag `alttabplus`, unverifiziert).
+- Einzige Form: `<scheme>://run/<stableId>`. Keine Parameter, keine Rueckgabewerte, keine Verkettung.
+- Der Handler loest die ID ueber das Register auf und fuehrt die Aktion ueber denselben Pfad aus wie die anderen Trigger, inklusive `availability`.
+- Unbekannte, nicht verfuegbare oder gesperrte IDs zeigen eine `TransientNotice` und tun sonst nichts.
+
+Sicherheit:
+
+- Jeder lokale Prozess und nach Bestaetigung im Browser auch jede Webseite kann eine URL oeffnen. Das Scheme ist deshalb standardmaessig aus und wird in den Settings eingeschaltet.
+- Allowlist statt Blocklist: nur Aktionen ohne Datenverlust und ohne Wirkung ausserhalb des Fensterzustands sind erlaubt (Window Layouts, Display-Wechsel, Spaces, Fenster-Fokus-Aktionen, Keep Awake, Profile, Werkzeuge).
+- Gesperrt: `Quit All Apps`, `Quit All Apps Except Frontmost`, `Clear Clipboard`, `Eject All Disks`, `Cat Mode`, `Auto-Quit`, Standardbrowser, Funktionstasten, `Press and Hold`, `Paste and Match Style` und die Slots `launchApp`/`openUrl`. Eine spaetere Freigabe einzelner Eintraege braucht eine Bestaetigung je Ausfuehrung.
+- Keine Protokollierung des vollstaendigen URL-Texts mit Nutzerdaten; nur die aufgeloeste `stableId`.
+
+Akzeptanzideen:
+
+- `open "<scheme>://run/windowLayout.leftThird"` setzt das fokussierte Fenster aufs linke Drittel.
+- Bei ausgeschaltetem Scheme und bei einer gesperrten ID passiert ausser der Meldung nichts.
+- Unit-Tests fuer das Parsen der URL und fuer die Allowlist; die Ausfuehrung selbst ist schon ueber die anderen Trigger getestet.
+
 ## Distribution und Migration
 
 - Produktname und Bundle-ID bleiben fork-spezifisch: AltTab+ und `com.gcolicig.alttab-plus`.
@@ -2330,5 +2362,7 @@ Die drei Debug-Eintraege sind fuer die Entwicklung dieses Forks wertvoller als a
 - Abfangen oder Ersetzen nativer Space-Trackpad-Swipes im Instant-Spaces-MVP.
 - Dock-Klick-Logik nach Supercharge-Vorbild (Klick minimiert, wechselt durch Fenster oder holt minimierte zurueck; Mittelklick-Aktionen). Entschieden 2026-09-16: braucht einen Maus-Tap mit Dock-Trefferpruefung, das Durchwechseln leistet der Switcher, und V-16 ist ungeklaert.
 - Aktionen direkt in Mission Control (Schliessen, Ausblenden, Beenden, Minimieren). Entschieden 2026-09-16: keine oeffentliche Schnittstelle; der Switcher bietet dieselben Aktionen je Kachel.
+- Always on Top fuer fremde Fenster. Entschieden 2026-09-19: macOS hat keine oeffentliche Schnittstelle, um die Fensterebene einer fremden App zu setzen; AX kann es nicht. Bekannte Umsetzungen (etwa yabai) brauchen eine Scripting Addition bei teilweise deaktiviertem SIP. Unverifiziert fuer Tahoe; eine Reaktivierung beginnt mit einem Spike, der einen Weg ohne SIP-Eingriff belegt.
+- Command Palette als weiterer Einstieg ins Aktionsregister. Entschieden 2026-09-19: das Register (Story 0) hat mit Shortcuts, Hyper, Leader, FlickRing, Space-Segmenten und Menue schon sechs Einstiege; eine Palette ergaenzt nur einen weiteren und oeffnet den Launcher-Scope, der ebenfalls Nicht-Ziel ist. Reaktivierung, wenn die Zahl der Aktionen Menue, Leader und Shortcuts unuebersichtlich macht; dann neu bewerten.
 - Intel-Support.
 - Support fuer macOS-Versionen vor Tahoe.
