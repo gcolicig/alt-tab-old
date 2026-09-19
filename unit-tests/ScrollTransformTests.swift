@@ -31,7 +31,7 @@ final class ScrollTransformTests: XCTestCase {
     }
 
     func testSpeedFactorsAreStable() {
-        XCTAssertEqual(ScrollSpeedPreference.allCases.map { $0.factor }, [0.5, 1.0, 2.0, 3.0])
+        XCTAssertEqual(ScrollSpeedPreference.allCases.map { $0.factor }, [0.5, 1.0, 2.0, 3.0, 4.0, 5.0])
         XCTAssertEqual(ScrollSpeedPreference.normal.factor, 1.0)
     }
 }
