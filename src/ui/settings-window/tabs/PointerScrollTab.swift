@@ -5,6 +5,8 @@ class PointerScrollTab {
     /// the value, or a crash recovery relinquishes it. Without this the tab would keep claiming
     /// "Managed by AltTab+" indefinitely, the same silent lie safe mode used to tell about the drag module.
     private static var ownershipLabels = [PointerCategory: NSTextField]()
+    private static var smoothScrollDurationDropdown: NSPopUpButton?
+    private static var smoothScrollDependencyNote: NSTextField?
 
     /// The record is checked against the system first: the label is only as truthful as what it reads, and
     /// `PointerOwnership.state` reads the record alone.
@@ -13,6 +15,7 @@ class PointerScrollTab {
             PointerOwnership.reconcileWithSystem($0)
             ownershipLabels[$0]?.stringValue = ownershipDescription($0)
         }
+        updateSmoothScrollDurationState()
     }
 
     static func initTab() -> NSView {
@@ -22,6 +25,7 @@ class PointerScrollTab {
         addCategory(table, .trackpad, NSLocalizedString("Trackpad pointer acceleration", comment: ""), NSLocalizedString("Trackpad pointer speed", comment: ""))
         let scroll = TableGroupView(width: SettingsWindow.contentWidth)
         addScroll(scroll, "Mouse", "reverseScrollMouse", "scrollSpeedMouse")
+        addSmoothScroll(scroll)
         scroll.addNewTable()
         addScroll(scroll, "Trackpad", "reverseScrollTrackpad", "scrollSpeedTrackpad")
         return TableGroupSetView(originalViews: [table, scroll], padding: 0, bottomPadding: 0)
@@ -35,6 +39,32 @@ class PointerScrollTab {
         table.addRow(TableGroupView.Row(
             leftTitle: String(format: NSLocalizedString("%@ scroll speed", comment: ""), device),
             rightViews: [LabelAndControl.makeDropdown(speedKey, ScrollSpeedPreference.allCases) { _ in scrollSettingsChanged() }]))
+    }
+
+    /// Smoothing only makes sense for a classic (discrete) wheel: trackpad and Magic Mouse scrolling is
+    /// already continuous, so this row only appears under "Mouse".
+    private static func addSmoothScroll(_ table: TableGroupView) {
+        let dropdown = LabelAndControl.makeDropdown("smoothScrollDuration", SmoothScrollDuration.allCases) { _ in scrollSettingsChanged() }
+        smoothScrollDurationDropdown = dropdown
+        let note = LabelAndControl.makeDependencyNote(
+            NSLocalizedString("Enable smooth scrolling to choose its duration.", comment: ""))
+        smoothScrollDependencyNote = note
+        table.addRow(TableGroupView.Row(
+            leftTitle: NSLocalizedString("Smooth scrolling", comment: ""),
+            rightViews: [LabelAndControl.makeSwitch("smoothScrollMouse") { _ in
+                updateSmoothScrollDurationState()
+                scrollSettingsChanged()
+            }]))
+        table.addRow(leftViews: [TableGroupView.makeText(NSLocalizedString("Smoothness", comment: ""))],
+            rightViews: [dropdown],
+            secondaryViews: [note])
+        updateSmoothScrollDurationState()
+    }
+
+    private static func updateSmoothScrollDurationState() {
+        let isEnabled = Preferences.smoothScrollMouse
+        smoothScrollDurationDropdown?.isEnabled = isEnabled
+        smoothScrollDependencyNote?.isHidden = isEnabled
     }
 
     /// Scrolling owns no system value, so it has no ownership row: it rewrites events on their way to the
