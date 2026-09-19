@@ -140,9 +140,7 @@ class Menubar {
             statusItem.isVisible = false
         }
         refreshSpaces()
-        if let menubarIconDropdown = GeneralTab.menubarIconDropdown {
-            menubarIconDropdown.isEnabled = Preferences.menubarIconShown
-        }
+        GeneralTab.updateMenubarIconDropdownState()
     }
 
     static private func loadPreferredIcon() {

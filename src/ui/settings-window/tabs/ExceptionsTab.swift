@@ -12,7 +12,7 @@ class ExceptionsTab {
         buttonsStack.spacing = 2
         let table = TableGroupView(width: SettingsWindow.contentWidth)
         _ = table.addRow(leftViews: [exceptions], secondaryViews: [buttonsStack])
-        let view = TableGroupSetView(originalViews: [table], bottomPadding: 0)
+        let view = TableGroupSetView(originalViews: [table], padding: 0, bottomPadding: 0)
         return view
     }
 

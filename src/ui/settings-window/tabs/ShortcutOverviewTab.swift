@@ -6,7 +6,7 @@ import ShortcutRecorder
 /// recorded here. One recorder per shortcut, so the two places can never disagree.
 class ShortcutOverviewTab {
     static let sectionId = "shortcuts"
-    private static let container = RebuildableSettingsView()
+    private static let container = RebuildableSettingsView(sectionId: sectionId)
     private static var filter = ShortcutOverviewFilter.all
     private static var isStale = true
     private static var refreshScheduled = false
@@ -89,10 +89,22 @@ class ShortcutOverviewTab {
         }
         if let owner = row.ownerSectionId {
             let show = NSButton(title: NSLocalizedString("Show", comment: ""), target: nil, action: nil)
-            show.onAction = { _ in SettingsWindow.shared?.reveal(sectionId: owner, rowTitle: row.title) }
+            show.onAction = { _ in reveal(owner, row) }
             views.append(show)
         }
         return TableGroupView.Row(leftTitle: row.title, subTitle: statusText(row.status), rightViews: views)
+    }
+
+    /// Opens the owning page and flashes the shortcut's recorder row. Profiles shows only its
+    /// selected profile at a time (picked from a popup, not by name), so a profile shortcut must
+    /// first select its slot before the generic "Shortcut" row can be found and revealed.
+    private static func reveal(_ owner: String, _ row: ShortcutOverviewRow) {
+        if let index = row.profileIndex {
+            ProfilesTab.select(index)
+            SettingsWindow.shared?.reveal(sectionId: owner, rowTitle: NSLocalizedString("Shortcut", comment: ""))
+        } else {
+            SettingsWindow.shared?.reveal(sectionId: owner, rowTitle: row.title)
+        }
     }
 
     private static func shortcutLabel(_ key: String) -> NSTextField {
@@ -127,6 +139,15 @@ enum ShortcutCatalog {
         let title: String
         let group: String
         let owner: String?
+        let profileIndex: Int?
+
+        init(key: String, title: String, group: String, owner: String?, profileIndex: Int? = nil) {
+            self.key = key
+            self.title = title
+            self.group = group
+            self.owner = owner
+            self.profileIndex = profileIndex
+        }
     }
 
     static func rows() -> [ShortcutOverviewRow] {
@@ -135,7 +156,8 @@ enum ShortcutCatalog {
         let groups = orderedGroups(entries)
         return entries.map { entry in
             ShortcutOverviewRow(key: entry.key, title: entry.title, groupOrder: groups.firstIndex(of: entry.group) ?? 0,
-                                groupTitle: entry.group, ownerSectionId: entry.owner, status: status(entry.key, titles))
+                                groupTitle: entry.group, ownerSectionId: entry.owner, profileIndex: entry.profileIndex,
+                                status: status(entry.key, titles))
         }
     }
 
@@ -177,7 +199,7 @@ enum ShortcutCatalog {
         return (0..<Preferences.maxProfileCount).filter { ProfileStore.profile($0) != nil }.map { index in
             let name = CachedUserDefaults.string(ProfileStore.nameKey(index))
             let title = name.isEmpty ? String(format: NSLocalizedString("Profile %d", comment: ""), index + 1) : name
-            return Entry(key: ProfileStore.shortcutPreferenceKey(index), title: title, group: group, owner: "profiles")
+            return Entry(key: ProfileStore.shortcutPreferenceKey(index), title: title, group: group, owner: "profiles", profileIndex: index)
         }
     }
 

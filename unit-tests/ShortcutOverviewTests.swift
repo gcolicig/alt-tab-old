@@ -1,8 +1,8 @@
 import XCTest
 
 class ShortcutOverviewTests: XCTestCase {
-    private func row(_ key: String, _ title: String, group: Int, _ status: ShortcutStatus, owner: String? = nil) -> ShortcutOverviewRow {
-        ShortcutOverviewRow(key: key, title: title, groupOrder: group, groupTitle: "G\(group)", ownerSectionId: owner, status: status)
+    private func row(_ key: String, _ title: String, group: Int, _ status: ShortcutStatus, owner: String? = nil, profileIndex: Int? = nil) -> ShortcutOverviewRow {
+        ShortcutOverviewRow(key: key, title: title, groupOrder: group, groupTitle: "G\(group)", ownerSectionId: owner, profileIndex: profileIndex, status: status)
     }
 
     private var rows: [ShortcutOverviewRow] {
@@ -31,6 +31,14 @@ class ShortcutOverviewTests: XCTestCase {
         XCTAssertEqual(groups.map(\.0), ["G0", "G1"])
         XCTAssertEqual(groups[0].1.map(\.title), ["Delta", "Gamma"])
         XCTAssertEqual(groups[1].1.map(\.title), ["Alpha", "Beta"])
+    }
+
+    /// The catalog row for a profile's shortcut keeps the profile's slot, so revealing it can select
+    /// that profile before looking for its recorder row (Profiles shows only one at a time).
+    func testAProfileShortcutRowCarriesItsProfileIndex() {
+        let profileRow = row("e", "Research", group: 0, .ok, owner: "profiles", profileIndex: 3)
+        XCTAssertEqual(profileRow.profileIndex, 3)
+        XCTAssertNil(row("d", "Delta", group: 0, .replacesMacosShortcut, owner: "spaces").profileIndex)
     }
 
     func testSwitcherTriggersAreNotActionShortcuts() {

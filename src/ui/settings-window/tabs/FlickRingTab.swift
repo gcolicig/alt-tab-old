@@ -18,7 +18,7 @@ class FlickRingTab {
                     FlickRingBindingsStore.set(direction, stableId)
                 }]))
         }
-        return TableGroupSetView(originalViews: [table, directions], bottomPadding: 0)
+        return TableGroupSetView(originalViews: [table, directions], padding: 0, bottomPadding: 0)
     }
 
     private static func makeButtonPopup() -> NSPopUpButton {

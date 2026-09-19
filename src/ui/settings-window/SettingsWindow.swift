@@ -1,462 +1,5 @@
 import Cocoa
 
-private struct SettingsSearchToken {
-    let normalized: [Character]
-    let normalizedToOriginal: [Int]
-}
-
-private struct SettingsSearchResult {
-    let score: Double
-    let ranges: [Range<Int>]
-}
-
-private enum SettingsSearch {
-    private struct TokenMatch {
-        let score: Double
-        let ranges: [Range<Int>]
-    }
-
-    static func isQueryEmpty(_ query: String) -> Bool {
-        tokens(query).flatMap { $0.normalized }.isEmpty
-    }
-
-    static func match(_ query: String, in text: String) -> SettingsSearchResult? {
-        let mergeAcrossSeparators = hasInterTermSeparator(query)
-        let queryTokens = tokens(query).map(\.normalized)
-        guard !queryTokens.isEmpty else { return nil }
-        let textTokens = tokens(text)
-        guard !textTokens.isEmpty else { return nil }
-        var tokenScores = [Double]()
-        var matchedRanges = [Range<Int>]()
-        for queryToken in queryTokens {
-            guard let bestMatch = bestMatch(for: queryToken, in: textTokens) else { return nil }
-            tokenScores.append(bestMatch.score)
-            matchedRanges.append(contentsOf: bestMatch.ranges)
-        }
-        let averageScore = tokenScores.reduce(0, +) / Double(tokenScores.count)
-        guard averageScore >= minimumScore(queryTokens.map { $0.count }.max() ?? 0) else { return nil }
-        if mergeAcrossSeparators && matchedRanges.count > 1 {
-            return SettingsSearchResult(score: averageScore, ranges: mergeRangesAcrossSeparators(matchedRanges, in: Array(text)))
-        }
-        return SettingsSearchResult(score: averageScore, ranges: mergeRanges(matchedRanges))
-    }
-
-    private static func bestMatch(for queryToken: [Character], in textTokens: [SettingsSearchToken]) -> TokenMatch? {
-        var best: TokenMatch?
-        textTokens.forEach { token in
-            guard let candidate = scoreTokenMatch(queryToken, token) else { return }
-            if best == nil || candidate.score > best!.score {
-                best = candidate
-            }
-        }
-        return best
-    }
-
-    private static func scoreTokenMatch(_ query: [Character], _ token: SettingsSearchToken) -> TokenMatch? {
-        let tokenChars = token.normalized
-        let queryLength = query.count
-        let tokenLength = tokenChars.count
-        guard queryLength > 0, tokenLength > 0 else { return nil }
-        if queryLength <= 2 {
-            guard let exactRange = firstExactRange(of: query, in: tokenChars) else { return nil }
-            return TokenMatch(score: 1, ranges: [originalRange(from: exactRange, using: token)])
-        }
-        let maxLength = max(queryLength, tokenLength)
-        let minLength = min(queryLength, tokenLength)
-        let distance = damerauLevenshteinDistance(query, tokenChars)
-        let distanceScore = 1 - Double(distance) / Double(maxLength)
-        let prefixLength = commonPrefixLength(query, tokenChars)
-        let prefixScore = Double(prefixLength) / Double(minLength)
-        let lcsIndexes = lcsTokenIndexes(query, tokenChars)
-        let coverageScore = Double(lcsIndexes.count) / Double(queryLength)
-        var score = distanceScore * 0.64 + prefixScore * 0.23 + coverageScore * 0.13
-        if tokenChars.starts(with: query) {
-            score = max(score, 0.92 - Double(max(0, tokenLength - queryLength)) * 0.015)
-        }
-        if let exactRange = firstExactRange(of: query, in: tokenChars) {
-            score = max(score, 0.86 - Double(max(0, tokenLength - queryLength)) * 0.01)
-            guard score >= minimumScore(queryLength) else { return nil }
-            return TokenMatch(score: score, ranges: [originalRange(from: exactRange, using: token)])
-        }
-        guard lcsIndexes.count >= minimumLcsLength(queryLength) else { return nil }
-        guard score >= minimumScore(queryLength) else { return nil }
-        let ranges = originalRanges(from: lcsIndexes, using: token)
-        guard !ranges.isEmpty else { return nil }
-        return TokenMatch(score: score, ranges: ranges)
-    }
-
-    private static func minimumScore(_ queryLength: Int) -> Double {
-        switch queryLength {
-        case 0...2: return 1
-        case 3: return 0.74
-        case 4: return 0.68
-        case 5: return 0.64
-        case 6...7: return 0.60
-        default: return 0.56
-        }
-    }
-
-    private static func minimumLcsLength(_ queryLength: Int) -> Int {
-        if queryLength <= 2 { return queryLength }
-        if queryLength == 3 { return 2 }
-        if queryLength <= 5 { return Int(ceil(Double(queryLength) * 0.6)) }
-        return Int(ceil(Double(queryLength) * 0.55))
-    }
-
-    private static func mergeRanges(_ ranges: [Range<Int>]) -> [Range<Int>] {
-        mergeRanges(ranges) { _, _ in false }
-    }
-
-    private static func mergeRangesAcrossSeparators(_ ranges: [Range<Int>], in textCharacters: [Character]) -> [Range<Int>] {
-        mergeRanges(ranges) {
-            onlySeparatorsBetween($0, $1, in: textCharacters)
-        }
-    }
-
-    private static func mergeRanges(_ ranges: [Range<Int>], _ shouldMergeGap: (Int, Int) -> Bool) -> [Range<Int>] {
-        if ranges.isEmpty { return [] }
-        let sorted = ranges.sorted {
-            if $0.lowerBound == $1.lowerBound {
-                return $0.upperBound < $1.upperBound
-            }
-            return $0.lowerBound < $1.lowerBound
-        }
-        var merged = [sorted[0]]
-        sorted.dropFirst().forEach { range in
-            let lastIndex = merged.count - 1
-            let lastRange = merged[lastIndex]
-            if range.lowerBound <= lastRange.upperBound || shouldMergeGap(lastRange.upperBound, range.lowerBound) {
-                merged[lastIndex] = lastRange.lowerBound..<max(lastRange.upperBound, range.upperBound)
-            } else {
-                merged.append(range)
-            }
-        }
-        return merged
-    }
-
-    private static func onlySeparatorsBetween(_ start: Int, _ end: Int, in textCharacters: [Character]) -> Bool {
-        guard start < end else { return true }
-        guard start >= 0, end <= textCharacters.count else { return false }
-        for index in start..<end {
-            if !normalizedCharacters(textCharacters[index]).isEmpty { return false }
-        }
-        return true
-    }
-
-    private static func firstExactRange(of query: [Character], in token: [Character]) -> Range<Int>? {
-        if query.isEmpty || query.count > token.count { return nil }
-        for start in 0...(token.count - query.count) {
-            if Array(token[start..<(start + query.count)]) == query {
-                return start..<(start + query.count)
-            }
-        }
-        return nil
-    }
-
-    private static func commonPrefixLength(_ lhs: [Character], _ rhs: [Character]) -> Int {
-        let commonLength = min(lhs.count, rhs.count)
-        if commonLength == 0 { return 0 }
-        for i in 0..<commonLength where lhs[i] != rhs[i] {
-            return i
-        }
-        return commonLength
-    }
-
-    private static func damerauLevenshteinDistance(_ lhs: [Character], _ rhs: [Character]) -> Int {
-        let n = lhs.count
-        let m = rhs.count
-        if n == 0 { return m }
-        if m == 0 { return n }
-        var matrix = Array(repeating: Array(repeating: 0, count: m + 1), count: n + 1)
-        for i in 0...n { matrix[i][0] = i }
-        for j in 0...m { matrix[0][j] = j }
-        if n == 0 || m == 0 { return matrix[n][m] }
-        for i in 1...n {
-            for j in 1...m {
-                let cost = lhs[i - 1] == rhs[j - 1] ? 0 : 1
-                let deletion = matrix[i - 1][j] + 1
-                let insertion = matrix[i][j - 1] + 1
-                let substitution = matrix[i - 1][j - 1] + cost
-                var value = min(deletion, insertion, substitution)
-                if i > 1, j > 1, lhs[i - 1] == rhs[j - 2], lhs[i - 2] == rhs[j - 1] {
-                    value = min(value, matrix[i - 2][j - 2] + 1)
-                }
-                matrix[i][j] = value
-            }
-        }
-        return matrix[n][m]
-    }
-
-    private static func lcsTokenIndexes(_ query: [Character], _ token: [Character]) -> [Int] {
-        let n = query.count
-        let m = token.count
-        if n == 0 || m == 0 { return [] }
-        var dp = Array(repeating: Array(repeating: 0, count: m + 1), count: n + 1)
-        for i in stride(from: n - 1, through: 0, by: -1) {
-            for j in stride(from: m - 1, through: 0, by: -1) {
-                if query[i] == token[j] {
-                    dp[i][j] = 1 + dp[i + 1][j + 1]
-                } else {
-                    dp[i][j] = max(dp[i + 1][j], dp[i][j + 1])
-                }
-            }
-        }
-        var i = 0
-        var j = 0
-        var matchedIndexes = [Int]()
-        while i < n && j < m {
-            if query[i] == token[j] {
-                matchedIndexes.append(j)
-                i += 1
-                j += 1
-            } else if dp[i + 1][j] >= dp[i][j + 1] {
-                i += 1
-            } else {
-                j += 1
-            }
-        }
-        return matchedIndexes
-    }
-
-    private static func originalRange(from normalizedRange: Range<Int>, using token: SettingsSearchToken) -> Range<Int> {
-        let start = token.normalizedToOriginal[normalizedRange.lowerBound]
-        let end = token.normalizedToOriginal[normalizedRange.upperBound - 1] + 1
-        return start..<end
-    }
-
-    private static func originalRanges(from normalizedIndexes: [Int], using token: SettingsSearchToken) -> [Range<Int>] {
-        if normalizedIndexes.isEmpty { return [] }
-        var ranges = [Range<Int>]()
-        var runStart = normalizedIndexes[0]
-        var runEnd = normalizedIndexes[0]
-        normalizedIndexes.dropFirst().forEach { index in
-            if index == runEnd + 1 {
-                runEnd = index
-            } else {
-                ranges.append(originalRange(from: runStart..<(runEnd + 1), using: token))
-                runStart = index
-                runEnd = index
-            }
-        }
-        ranges.append(originalRange(from: runStart..<(runEnd + 1), using: token))
-        return mergeRanges(ranges)
-    }
-
-    private static func tokens(_ text: String) -> [SettingsSearchToken] {
-        let characters = Array(text)
-        var tokens = [SettingsSearchToken]()
-        var normalized = [Character]()
-        var normalizedToOriginal = [Int]()
-        func flushCurrentToken() {
-            guard !normalized.isEmpty else { return }
-            tokens.append(SettingsSearchToken(normalized: normalized, normalizedToOriginal: normalizedToOriginal))
-            normalized.removeAll(keepingCapacity: true)
-            normalizedToOriginal.removeAll(keepingCapacity: true)
-        }
-        for (originalIndex, character) in characters.enumerated() {
-            let normalizedChars = normalizedCharacters(character)
-            if normalizedChars.isEmpty {
-                flushCurrentToken()
-                continue
-            }
-            normalizedChars.forEach {
-                normalized.append($0)
-                normalizedToOriginal.append(originalIndex)
-            }
-        }
-        flushCurrentToken()
-        return tokens
-    }
-
-    private static func hasInterTermSeparator(_ query: String) -> Bool {
-        var sawSearchCharacter = false
-        var sawSeparatorAfterSearchCharacter = false
-        for character in query {
-            if normalizedCharacters(character).isEmpty {
-                if sawSearchCharacter {
-                    sawSeparatorAfterSearchCharacter = true
-                }
-                continue
-            }
-            if sawSearchCharacter && sawSeparatorAfterSearchCharacter {
-                return true
-            }
-            sawSearchCharacter = true
-            sawSeparatorAfterSearchCharacter = false
-        }
-        return false
-    }
-
-    private static func normalizedCharacters(_ character: Character) -> [Character] {
-        let folded = String(character).folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: nil).lowercased()
-        var chars = [Character]()
-        folded.unicodeScalars.forEach {
-            if isSearchScalar($0) {
-                chars.append(Character(String($0)))
-            }
-        }
-        return chars
-    }
-
-    private static func isSearchScalar(_ scalar: UnicodeScalar) -> Bool {
-        if CharacterSet.whitespacesAndNewlines.contains(scalar) { return false }
-        if CharacterSet.punctuationCharacters.contains(scalar) { return false }
-        if CharacterSet.symbols.contains(scalar) { return false }
-        return true
-    }
-}
-
-private struct SettingsSectionDefinition {
-    let id: String
-    let title: String
-    let description: String
-    let imageName: String
-    let systemSymbolName: String
-    let view: NSView
-}
-
-private final class SettingsSearchHighlightTarget {
-    private let matchRanges: (String) -> [Range<Int>]
-    private let applyHighlight: ([Range<Int>]) -> Void
-    private let clearHighlight: () -> Void
-
-    init(_ matchRanges: @escaping (String) -> [Range<Int>], _ applyHighlight: @escaping ([Range<Int>]) -> Void, _ clearHighlight: @escaping () -> Void) {
-        self.matchRanges = matchRanges
-        self.applyHighlight = applyHighlight
-        self.clearHighlight = clearHighlight
-    }
-
-    convenience init(_ hasMatch: @escaping (String) -> Bool, _ applyHighlight: @escaping () -> Void, _ clearHighlight: @escaping () -> Void) {
-        self.init({ query in
-            hasMatch(query) ? [0..<1] : []
-        }, { _ in
-            applyHighlight()
-        }, clearHighlight)
-    }
-
-    func hasMatch(_ query: String) -> Bool {
-        !matchRanges(query).isEmpty
-    }
-
-    func updateHighlight(_ query: String) {
-        let ranges = matchRanges(query)
-        if ranges.isEmpty {
-            clearHighlight()
-        } else {
-            applyHighlight(ranges)
-        }
-    }
-
-    func clear() {
-        clearHighlight()
-    }
-}
-
-private final class SettingsSection {
-    let id: String
-    let title: String
-    let icon: NSImage
-    let container: NSView
-    let anchor: NSView
-    let searchableStrings: [String]
-    let highlightTargets: [SettingsSearchHighlightTarget]
-    let interSectionSpacingConstraint: NSLayoutConstraint
-    let bottomSpacingConstraint: NSLayoutConstraint
-    let titleTopConstraint: NSLayoutConstraint
-
-    init(_ id: String,
-         _ title: String,
-         _ icon: NSImage,
-         _ container: NSView,
-         _ anchor: NSView,
-         _ searchableStrings: [String],
-         _ highlightTargets: [SettingsSearchHighlightTarget],
-         _ interSectionSpacingConstraint: NSLayoutConstraint,
-         _ bottomSpacingConstraint: NSLayoutConstraint,
-         _ titleTopConstraint: NSLayoutConstraint) {
-        self.id = id
-        self.title = title
-        self.icon = icon
-        self.container = container
-        self.anchor = anchor
-        self.searchableStrings = searchableStrings
-        self.highlightTargets = highlightTargets
-        self.interSectionSpacingConstraint = interSectionSpacingConstraint
-        self.bottomSpacingConstraint = bottomSpacingConstraint
-        self.titleTopConstraint = titleTopConstraint
-    }
-
-    func matches(_ query: String) -> Bool {
-        if SettingsSearch.isQueryEmpty(query) { return true }
-        if searchableStrings.contains(where: { SettingsSearch.match(query, in: $0) != nil }) { return true }
-        return highlightTargets.contains { $0.hasMatch(query) }
-    }
-
-    func highlightMatches(_ query: String) {
-        highlightTargets.forEach { $0.updateHighlight(query) }
-    }
-
-    func clearHighlights() {
-        highlightTargets.forEach { $0.clear() }
-    }
-}
-
-private final class SettingsSidebarCellView: NSTableCellView {
-    static let identifier = NSUserInterfaceItemIdentifier(rawValue: "SettingsSidebarCell")
-    private let iconView = NSImageView()
-    private let titleLabel = NSTextField(labelWithString: "")
-
-    override var backgroundStyle: NSView.BackgroundStyle {
-        didSet { refreshStyle() }
-    }
-
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        setupView()
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("Class only supports programmatic initialization")
-    }
-
-    private func setupView() {
-        iconView.imageScaling = .scaleProportionallyDown
-        iconView.setContentHuggingPriority(.required, for: .horizontal)
-        titleLabel.lineBreakMode = .byTruncatingTail
-        titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        iconView.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(iconView)
-        addSubview(titleLabel)
-        NSLayoutConstraint.activate([
-            iconView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
-            iconView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            iconView.widthAnchor.constraint(equalToConstant: 16),
-            iconView.heightAnchor.constraint(equalToConstant: 16),
-            titleLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 9),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -10),
-            titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
-        ])
-        refreshStyle()
-    }
-
-    func configure(_ section: SettingsSection) {
-        titleLabel.stringValue = section.title
-        iconView.image = section.icon
-        iconView.image?.isTemplate = true
-        refreshStyle()
-    }
-
-    private func refreshStyle() {
-        let selected = backgroundStyle == .emphasized
-        titleLabel.font = NSFont.systemFont(ofSize: 13.5, weight: .medium)
-        titleLabel.textColor = selected ? .white : .labelColor
-        if #available(macOS 10.14, *) {
-            iconView.contentTintColor = selected ? .white : .secondaryLabelColor
-        }
-    }
-}
-
 private final class SettingsFlippedView: NSView {
     override var isFlipped: Bool { true }
 }
@@ -479,16 +22,16 @@ class SettingsWindow: NSWindow {
     private static let minWindowHeight = CGFloat(500)
     private static let sidebarTopInset = CGFloat(40)
     private static let sidebarHorizontalPadding = CGFloat(10)
-    private static let roundedHighlightLayerName = "settingsSearchRoundedHighlight"
-    private static let roundedHighlightCornerRadius = CGFloat(4)
-    private static let roundedHighlightHorizontalInset = CGFloat(1.5)
-    private static let roundedHighlightVerticalInset = CGFloat(0.8)
-    private static let roundedHighlightLeadingTrim = CGFloat(1.4)
-    private static let controlHighlightLayerName = "settingsSearchControlHighlight"
-    private static let segmentedControlHighlightLayerName = "settingsSearchSegmentHighlight"
-    private static let controlHighlightInset = CGFloat(1)
-    private static let controlHighlightMinCornerRadius = CGFloat(4)
-    private static let controlHighlightMaxCornerRadius = CGFloat(9)
+    static let roundedHighlightLayerName = "settingsSearchRoundedHighlight"
+    static let roundedHighlightCornerRadius = CGFloat(4)
+    static let roundedHighlightHorizontalInset = CGFloat(1.5)
+    static let roundedHighlightVerticalInset = CGFloat(0.8)
+    static let roundedHighlightLeadingTrim = CGFloat(1.4)
+    static let controlHighlightLayerName = "settingsSearchControlHighlight"
+    static let segmentedControlHighlightLayerName = "settingsSearchSegmentHighlight"
+    static let controlHighlightInset = CGFloat(1)
+    static let controlHighlightMinCornerRadius = CGFloat(4)
+    static let controlHighlightMaxCornerRadius = CGFloat(9)
     static var shared: SettingsWindow!
 
     static var canBecomeKey_ = true
@@ -499,19 +42,18 @@ class SettingsWindow: NSWindow {
     private let contentContainer = NSView()
     private let searchField = NSSearchField(frame: .zero)
     private let sidebarScrollView = NSScrollView()
-    private let sidebarTableView = NSTableView()
+    let sidebarTableView = NSTableView()
     private let rightScrollView = NSScrollView()
     private let sectionsDocumentView = SettingsFlippedView(frame: .zero)
     private let sectionsStack = NSStackView()
-    private var sections = [SettingsSection]()
+    var sections = [SettingsSection]()
     private var visibleSections = [SettingsSection]()
     /// Story 16: without a query only the selected page is shown; with one, every match is stacked.
     private var isSearching = false
     /// The page the user picked; leaving the search returns to it.
-    private var chosenSectionId: String?
-    private var sidebarRows = [SettingsSidebarRow]()
-    private var selectedSectionId: String?
-    private var sheetHighlightTargets = [ObjectIdentifier: [SettingsSearchHighlightTarget]]()
+    var chosenSectionId: String?
+    var sidebarRows = [SettingsSidebarRow]()
+    var selectedSectionId: String?
     private var liveResizeOriginX: CGFloat?
     private var sectionSelectionTriggerRatio = SettingsWindow.sectionSelectionTriggerRatioWhenScrollingDown
     private var lastContentScrollY: CGFloat?
@@ -553,6 +95,8 @@ class SettingsWindow: NSWindow {
         setupSidebar()
         setupContentPane()
         let definitions = sectionDefinitions()
+        assert(definitions.allSatisfy { SettingsSidebarLayout.allSectionIds.contains($0.id) },
+               "a section id is missing from SettingsSidebarLayout.allSectionIds and would silently fall back to .actions")
         SettingsSidebarLayout.order(definitions.map(\.id)).compactMap { id in definitions.first { $0.id == id } }.forEach { addSection($0) }
         refreshControlsFromSettings()
         applySearch("")
@@ -677,23 +221,37 @@ class SettingsWindow: NSWindow {
             //
             // The grouping runs from what applies to the whole machine down to what applies to single apps:
             // General, then the three system-wide modules, then the window switcher, then per-app lists.
-            SettingsSectionDefinition(id: "general", title: NSLocalizedString("General", comment: ""), description: NSLocalizedString("Manage startup, menu bar, language, and settings files.", comment: ""), imageName: "general", systemSymbolName: "gearshape", view: GeneralTab.initTab()),
-            SettingsSectionDefinition(id: "hyperkey", title: NSLocalizedString("Hyperkey", comment: ""), description: NSLocalizedString("Use Caps Lock as a system-wide combination of modifier keys.", comment: ""), imageName: "controls", systemSymbolName: "capslock", view: HyperkeyTab.initTab()),
-            SettingsSectionDefinition(id: "pointer-scroll", title: NSLocalizedString("Pointer & Scroll", comment: ""), description: NSLocalizedString("Adjust pointer acceleration and speed, and the direction of the mouse wheel.", comment: ""), imageName: "controls", systemSymbolName: "cursorarrow", view: PointerScrollTab.initTab()),
-            SettingsSectionDefinition(id: "spaces", title: NSLocalizedString("Spaces", comment: ""), description: NSLocalizedString("Show, activate, and move between macOS Spaces.", comment: ""), imageName: "controls", systemSymbolName: "square.grid.2x2", view: SpacesTab.initTab()),
+            SettingsSectionDefinition(id: "general", title: NSLocalizedString("General", comment: ""), description: NSLocalizedString("Manage startup, menu bar, language, and settings files.", comment: ""), imageName: "general", systemSymbolName: "gearshape", view: GeneralTab.initTab(), builder: { GeneralTab.initTab() }),
+            SettingsSectionDefinition(id: "hyperkey", title: NSLocalizedString("Hyperkey", comment: ""), description: NSLocalizedString("Use Caps Lock as a system-wide combination of modifier keys.", comment: ""), imageName: "controls", systemSymbolName: "capslock", view: HyperkeyTab.initTab(), builder: { HyperkeyTab.initTab() }),
+            SettingsSectionDefinition(id: "pointer-scroll", title: NSLocalizedString("Pointer & Scroll", comment: ""), description: NSLocalizedString("Adjust pointer acceleration and speed, and the direction of the mouse wheel.", comment: ""), imageName: "controls", systemSymbolName: "cursorarrow", view: PointerScrollTab.initTab(), builder: { PointerScrollTab.initTab() }),
+            SettingsSectionDefinition(id: "spaces", title: NSLocalizedString("Spaces", comment: ""), description: NSLocalizedString("Show, activate, and move between macOS Spaces.", comment: ""), imageName: "controls", systemSymbolName: "square.grid.2x2", view: SpacesTab.initTab(), builder: { SpacesTab.initTab() }),
             // not named in the requested order; placed next to Spaces because both arrange windows across
             // the system rather than inside the switcher
-            SettingsSectionDefinition(id: "window-layouts", title: NSLocalizedString("Window Layouts", comment: ""), description: NSLocalizedString("Assign shortcuts for arranging the focused window.", comment: ""), imageName: "controls", systemSymbolName: "rectangle.split.3x1", view: WindowLayoutsTab.initTab()),
-            SettingsSectionDefinition(id: "leader", title: NSLocalizedString("Leader", comment: ""), description: NSLocalizedString("Run actions from nested key sequences after a trigger key.", comment: ""), imageName: "controls", systemSymbolName: "keyboard", view: LeaderTab.initTab()),
-            SettingsSectionDefinition(id: "flick-ring", title: NSLocalizedString("FlickRing", comment: ""), description: NSLocalizedString("Open a four-direction action ring on a mouse button.", comment: ""), imageName: "controls", systemSymbolName: "circle.grid.cross", view: FlickRingTab.initTab()),
-            SettingsSectionDefinition(id: "profiles", title: NSLocalizedString("Profiles", comment: ""), description: NSLocalizedString("Group apps into a profile, optionally bound to a space, and filter the switcher to it.", comment: ""), imageName: "controls", systemSymbolName: "square.stack.3d.up", view: ProfilesTab.initTab()),
-            SettingsSectionDefinition(id: "appearance", title: NSLocalizedString("Cmd-Tab", comment: ""), description: NSLocalizedString("Choose how the window switcher looks and where it appears.", comment: ""), imageName: "appearance", systemSymbolName: "paintpalette", view: AppearanceTab.initTab()),
-            SettingsSectionDefinition(id: "controls", title: NSLocalizedString("Cmd-Tab Controls", comment: ""), description: NSLocalizedString("Set how you open and navigate the window switcher.", comment: ""), imageName: "controls", systemSymbolName: "command", view: ControlsTab.initTab()),
-            SettingsSectionDefinition(id: ShortcutOverviewTab.sectionId, title: NSLocalizedString("Shortcuts", comment: ""), description: NSLocalizedString("Every action shortcut and its conflicts. Switcher triggers stay in Cmd-Tab Controls, the Leader key in Leader, and the FlickRing button in FlickRing.", comment: ""), imageName: "controls", systemSymbolName: "keyboard", view: ShortcutOverviewTab.initTab()),
-            SettingsSectionDefinition(id: "system-actions", title: NSLocalizedString("System Actions", comment: ""), description: NSLocalizedString("Configure Auto-Quit, Cat Mode, and the function key mode.", comment: ""), imageName: "controls", systemSymbolName: "switch.2", view: SystemActionsTab.initTab()),
-            SettingsSectionDefinition(id: "keep-awake", title: NSLocalizedString("Keep Awake", comment: ""), description: NSLocalizedString("Keep the Mac awake for a while, with battery protection.", comment: ""), imageName: "controls", systemSymbolName: "cup.and.saucer", view: KeepAwakeTab.initTab()),
-            SettingsSectionDefinition(id: "apps-urls", title: NSLocalizedString("Apps & URLs", comment: ""), description: NSLocalizedString("Assign shortcuts to launch apps or open URLs.", comment: ""), imageName: "controls", systemSymbolName: "app.badge", view: AppsUrlsTab.initTab()),
-            SettingsSectionDefinition(id: "exceptions", title: NSLocalizedString("Exceptions", comment: ""), description: NSLocalizedString("Choose apps whose windows should not appear in the switcher.", comment: ""), imageName: "exceptions", systemSymbolName: "hand.raised", view: ExceptionsTab.initTab()),
+            SettingsSectionDefinition(id: "window-layouts", title: NSLocalizedString("Window Layouts", comment: ""), description: NSLocalizedString("Assign shortcuts for arranging the focused window.", comment: ""), imageName: "controls", systemSymbolName: "rectangle.split.3x1", view: WindowLayoutsTab.initTab(), builder: { WindowLayoutsTab.initTab() }),
+            // `leaderSlotAction*` is written by a custom popup with no `identifier` (see LeaderTab), so
+            // the view-tree collector cannot find it; declared here instead. Resetting it does not by
+            // itself rebuild the cached lookup trie those actions run through, hence `afterReset`.
+            SettingsSectionDefinition(id: "leader", title: NSLocalizedString("Leader", comment: ""), description: NSLocalizedString("Run actions from nested key sequences after a trigger key.", comment: ""), imageName: "controls", systemSymbolName: "keyboard", view: LeaderTab.initTab(), builder: { LeaderTab.initTab() },
+                extraResettableKeys: { PreferencesResetLogic.keysWithPrefix("leaderSlotAction", in: Preferences.defaultValues) },
+                afterReset: { LeaderController.rebuildTrie() }),
+            // `flickRing{Up,Right,Down,Left}` are written by custom popups with no `identifier` (see
+            // FlickRingTab); declared here instead. Unlike Leader's trie, bindings are read live from
+            // `CachedUserDefaults` on every flick, so no extra rebuild step is needed after a reset.
+            SettingsSectionDefinition(id: "flick-ring", title: NSLocalizedString("FlickRing", comment: ""), description: NSLocalizedString("Open a four-direction action ring on a mouse button.", comment: ""), imageName: "controls", systemSymbolName: "circle.grid.cross", view: FlickRingTab.initTab(), builder: { FlickRingTab.initTab() },
+                extraResettableKeys: { PreferencesResetLogic.keysWithPrefix("flickRing", in: Preferences.defaultValues) }),
+            // No reset button: a profile is user-created content (name, apps, layout, space), not a
+            // setting, so "Reset to Defaults" must not delete it.
+            SettingsSectionDefinition(id: ProfilesTab.sectionId, title: NSLocalizedString("Profiles", comment: ""), description: NSLocalizedString("Group apps into a profile, optionally bound to a space, and filter the switcher to it.", comment: ""), imageName: "controls", systemSymbolName: "square.stack.3d.up", view: ProfilesTab.initTab(), builder: { ProfilesTab.initTab() },
+                hidesResetButton: true),
+            SettingsSectionDefinition(id: "appearance", title: NSLocalizedString("Cmd-Tab", comment: ""), description: NSLocalizedString("Choose how the window switcher looks and where it appears.", comment: ""), imageName: "appearance", systemSymbolName: "paintpalette", view: AppearanceTab.initTab(), builder: { AppearanceTab.initTab() }),
+            SettingsSectionDefinition(id: "controls", title: NSLocalizedString("Cmd-Tab Controls", comment: ""), description: NSLocalizedString("Set how you open and navigate the window switcher.", comment: ""), imageName: "controls", systemSymbolName: "command", view: ControlsTab.initTab(), builder: { ControlsTab.initTab() }),
+            SettingsSectionDefinition(id: ShortcutOverviewTab.sectionId, title: NSLocalizedString("Shortcuts", comment: ""), description: NSLocalizedString("Every action shortcut and its conflicts. Switcher triggers stay in Cmd-Tab Controls, the Leader key in Leader, and the FlickRing button in FlickRing.", comment: ""), imageName: "controls", systemSymbolName: "keyboard", view: ShortcutOverviewTab.initTab(), builder: { ShortcutOverviewTab.initTab() }),
+            SettingsSectionDefinition(id: "system-actions", title: NSLocalizedString("System Actions", comment: ""), description: NSLocalizedString("Configure Auto-Quit, Cat Mode, and the function key mode.", comment: ""), imageName: "controls", systemSymbolName: "switch.2", view: SystemActionsTab.initTab(), builder: { SystemActionsTab.initTab() }),
+            SettingsSectionDefinition(id: "keep-awake", title: NSLocalizedString("Keep Awake", comment: ""), description: NSLocalizedString("Keep the Mac awake for a while, with battery protection.", comment: ""), imageName: "controls", systemSymbolName: "cup.and.saucer", view: KeepAwakeTab.initTab(), builder: { KeepAwakeTab.initTab() }),
+            // No reset button: the launch-app/open-URL entries are user-created content, not settings.
+            SettingsSectionDefinition(id: AppsUrlsTab.sectionId, title: NSLocalizedString("Apps & URLs", comment: ""), description: NSLocalizedString("Assign shortcuts to launch apps or open URLs.", comment: ""), imageName: "controls", systemSymbolName: "app.badge", view: AppsUrlsTab.initTab(), builder: { AppsUrlsTab.initTab() },
+                hidesResetButton: true),
+            SettingsSectionDefinition(id: "exceptions", title: NSLocalizedString("Exceptions", comment: ""), description: NSLocalizedString("Choose apps whose windows should not appear in the switcher.", comment: ""), imageName: "exceptions", systemSymbolName: "hand.raised", view: ExceptionsTab.initTab(), builder: { ExceptionsTab.initTab() }),
         ]
     }
 
@@ -710,6 +268,11 @@ class SettingsWindow: NSWindow {
     }
 
     private func addSection(_ definition: SettingsSectionDefinition) {
+        let pathLabel = TableGroupView.makeText("")
+        pathLabel.font = NSFont.systemFont(ofSize: 11)
+        pathLabel.textColor = .secondaryLabelColor
+        pathLabel.lineBreakMode = .byTruncatingTail
+        pathLabel.isHidden = true
         let sectionTitle = TableGroupView.makeText(definition.title, bold: true)
         sectionTitle.font = NSFont.systemFont(ofSize: 15, weight: .medium)
         sectionTitle.lineBreakMode = .byWordWrapping
@@ -720,30 +283,62 @@ class SettingsWindow: NSWindow {
         sectionDescription.maximumNumberOfLines = 0
         // without a wrapping width a long description asks for its one-line width and stretches the window
         sectionDescription.preferredMaxLayoutWidth = Self.contentWidth
+        // Reset button, in the title row, vertically centered on the title and right-aligned to the
+        // content tables; hidden on pages with nothing to reset. Kept in the tree unconditionally so
+        // the constraint chain below the header stays the same whether or not the button is shown.
+        // Sentence case, matching the codebase's more recent settings button titles (e.g. "Show preview")
+        // over the older Title Case ones ("Open System Settings").
+        let resetButton = NSButton(title: NSLocalizedString("Reset to defaults", comment: ""), target: nil, action: nil)
+        resetButton.bezelStyle = .inline
+        resetButton.controlSize = .small
+        resetButton.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        // [title ... flexible space ... button]: the title's low horizontal hugging (the NSTextField
+        // default) lets it stretch to fill the row, while the button keeps its intrinsic size and sits
+        // flush with the trailing edge — the same edge the content tables end at.
+        let titleRow = NSStackView(views: [sectionTitle, resetButton])
+        titleRow.orientation = .horizontal
+        titleRow.alignment = .centerY
+        titleRow.spacing = 8
+        // The content view is wrapped in a stable slot so a rebuilt page can be swapped in without
+        // recreating the constraints that anchor it to the header above and the spacer below.
+        let contentSlot = NSView()
         let container = NSView()
         let spacer = NSView()
-        container.addSubview(sectionTitle)
+        container.addSubview(pathLabel)
+        container.addSubview(titleRow)
         container.addSubview(sectionDescription)
-        container.addSubview(definition.view)
+        container.addSubview(contentSlot)
         container.addSubview(spacer)
-        sectionTitle.translatesAutoresizingMaskIntoConstraints = false
+        pathLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleRow.translatesAutoresizingMaskIntoConstraints = false
         sectionDescription.translatesAutoresizingMaskIntoConstraints = false
-        definition.view.translatesAutoresizingMaskIntoConstraints = false
+        contentSlot.translatesAutoresizingMaskIntoConstraints = false
         spacer.translatesAutoresizingMaskIntoConstraints = false
         container.translatesAutoresizingMaskIntoConstraints = false
-        let titleTopConstraint = sectionTitle.topAnchor.constraint(equalTo: container.topAnchor)
-        let interSectionSpacingConstraint = spacer.topAnchor.constraint(equalTo: definition.view.bottomAnchor, constant: Self.sectionInterSectionSpacing)
+        pinContentView(definition.view, into: contentSlot)
+        // `titleTopConstraint` now anchors the breadcrumb (the topmost element); the isFirst/spacing
+        // logic in updateVisibleSectionsSpacing is unaffected since it only changes this constant.
+        let titleTopConstraint = pathLabel.topAnchor.constraint(equalTo: container.topAnchor)
+        let pathLabelHeightConstraint = pathLabel.heightAnchor.constraint(equalToConstant: 0)
+        let pathToTitleSpacingConstraint = titleRow.topAnchor.constraint(equalTo: pathLabel.bottomAnchor, constant: 0)
+        let interSectionSpacingConstraint = spacer.topAnchor.constraint(equalTo: contentSlot.bottomAnchor, constant: Self.sectionInterSectionSpacing)
         let spacerHeightConstraint = spacer.heightAnchor.constraint(equalToConstant: Self.sectionBottomSpacing)
         NSLayoutConstraint.activate([
             titleTopConstraint,
-            sectionTitle.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            sectionTitle.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            sectionDescription.topAnchor.constraint(equalTo: sectionTitle.bottomAnchor, constant: 4),
+            pathLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            pathLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            pathLabelHeightConstraint,
+            pathToTitleSpacingConstraint,
+            titleRow.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            titleRow.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            sectionDescription.topAnchor.constraint(equalTo: titleRow.bottomAnchor, constant: 4),
             sectionDescription.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             sectionDescription.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            definition.view.topAnchor.constraint(equalTo: sectionDescription.bottomAnchor, constant: 12),
-            definition.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            definition.view.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor),
+            // Matches `TableGroupSetView.spacing`, the same rhythm used between table groups within a
+            // page, so the header-to-first-table gap reads as part of the same vertical grid.
+            contentSlot.topAnchor.constraint(equalTo: sectionDescription.bottomAnchor, constant: TableGroupSetView.spacing),
+            contentSlot.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            contentSlot.trailingAnchor.constraint(lessThanOrEqualTo: container.trailingAnchor),
             interSectionSpacingConstraint,
             spacer.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             spacer.trailingAnchor.constraint(equalTo: container.trailingAnchor),
@@ -753,7 +348,58 @@ class SettingsWindow: NSWindow {
         sectionsStack.addArrangedSubview(container)
         container.widthAnchor.constraint(equalTo: sectionsStack.widthAnchor).isActive = true
         let (searchableStrings, highlightTargets) = collectSearchContent(sectionTitle, sectionDescription, definition.view)
-        let section = SettingsSection(definition.id,
+        // Tracks whichever view is currently pinned into `contentSlot`, so both a reset (which swaps it
+        // for a freshly built one) and an in-place mutation (e.g. AppearanceTab's CustomizeStyle
+        // disclosure) walk/index the view that is actually on screen, not the one from construction time.
+        var currentContentView = definition.view
+        let knownDefaultKeys = Set(Preferences.defaultValues.keys)
+        let resettableKeysProvider: () -> [String] = {
+            var seen = Set<String>()
+            return (SettingsResetKeysCollector.collectResettableKeys(in: currentContentView) + definition.extraResettableKeys())
+                .filter { knownDefaultKeys.contains($0) && seen.insert($0).inserted }
+        }
+        var section: SettingsSection!
+        func refreshResetButtonVisibility() {
+            let showsResetButton = section.canResetToDefaults
+            // Hiding an arranged subview collapses its space in the stack view, so no extra
+            // height/spacing bookkeeping is needed here (unlike the old below-description layout).
+            resetButton.isHidden = !showsResetButton
+            if showsResetButton {
+                resetButton.target = self
+                resetButton.action = #selector(resetSectionToDefaults(_:))
+                // Identifies the section by id rather than a positional index: this closure also runs
+                // from `reindexSearchContent()` long after `addSection` finishes, by which point
+                // `sections.count` is the total section count, not this section's index.
+                resetButton.identifier = NSUserInterfaceItemIdentifier(definition.id)
+            }
+        }
+        let rebuildContent: ([String]) -> Void = { [weak self] changedKeys in
+            guard let self, let section else { return }
+            contentSlot.subviews.forEach { $0.removeFromSuperview() }
+            let newContentView = definition.builder()
+            currentContentView = newContentView
+            self.pinContentView(newContentView, into: contentSlot)
+            let (searchableStrings, highlightTargets) = self.collectSearchContent(sectionTitle, sectionDescription, newContentView)
+            section.updateSearchContent(searchableStrings, highlightTargets)
+            if !changedKeys.isEmpty {
+                let changedKeysSet = Set(changedKeys)
+                SettingsResetKeysCollector.collectResettableControls(in: newContentView)
+                    .filter { changedKeysSet.contains($0.identifier?.rawValue ?? "") }
+                    // Replays the same target/action `LabelAndControl.setupControl` wired up for an
+                    // interactive edit, so a control's `extraAction` (releasing pointer ownership,
+                    // clearing `AppleLanguages`, rebuilding a cached trie, …) applies to the default
+                    // value too, instead of the reset only clearing the preference underneath it.
+                    .forEach { $0.sendAction($0.action, to: $0.target) }
+            }
+            definition.afterReset?()
+            refreshResetButtonVisibility()
+        }
+        let reindex: () -> Void = { [weak self] in
+            guard let self, let section else { return }
+            let (searchableStrings, highlightTargets) = self.collectSearchContent(sectionTitle, sectionDescription, currentContentView)
+            section.updateSearchContent(searchableStrings, highlightTargets)
+        }
+        section = SettingsSection(definition.id,
                                       definition.title,
                                       sidebarImage(definition),
                                       container,
@@ -762,8 +408,49 @@ class SettingsWindow: NSWindow {
                                       highlightTargets,
                                       interSectionSpacingConstraint,
                                       spacerHeightConstraint,
-                                      titleTopConstraint)
+                                      titleTopConstraint,
+                                      pathLabel,
+                                      pathLabelHeightConstraint,
+                                      pathToTitleSpacingConstraint,
+                                      resettableKeysProvider,
+                                      definition.hidesResetButton,
+                                      rebuildContent,
+                                      reindex,
+                                      refreshResetButtonVisibility)
+        refreshResetButtonVisibility()
         sections.append(section)
+    }
+
+    /// Re-indexes settings search for a section from its current content, without rebuilding it. For a
+    /// page that mutates its own content in place outside of a reset (e.g. AppearanceTab's CustomizeStyle
+    /// disclosure), so search does not keep pointing at the discarded content view.
+    func reindexSection(_ id: String) {
+        sections.first { $0.id == id }?.reindexSearchContent()
+    }
+
+    /// Pins a page's content view to fill `slot` on all four edges, matching the layout the
+    /// content view previously had directly inside the section container.
+    private func pinContentView(_ view: NSView, into slot: NSView) {
+        view.translatesAutoresizingMaskIntoConstraints = false
+        slot.addSubview(view)
+        NSLayoutConstraint.activate([
+            view.topAnchor.constraint(equalTo: slot.topAnchor),
+            view.leadingAnchor.constraint(equalTo: slot.leadingAnchor),
+            view.trailingAnchor.constraint(lessThanOrEqualTo: slot.trailingAnchor),
+            view.bottomAnchor.constraint(equalTo: slot.bottomAnchor),
+        ])
+    }
+
+    @objc private func resetSectionToDefaults(_ sender: NSButton) {
+        guard let id = sender.identifier?.rawValue, let section = sections.first(where: { $0.id == id }) else { return }
+        let alert = NSAlert()
+        alert.messageText = String(format: NSLocalizedString("Reset %@ to defaults?", comment: ""), section.title)
+        alert.informativeText = NSLocalizedString("This page's settings return to their default values.", comment: "")
+        alert.addButton(withTitle: NSLocalizedString("Reset", comment: ""))
+        alert.addButton(withTitle: NSLocalizedString("Cancel", comment: ""))
+        alert.alertStyle = .warning
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        section.resetToDefaults()
     }
 
     private func updateVisibleSectionsSpacing(_ displayed: [SettingsSection]) {
@@ -773,403 +460,6 @@ class SettingsWindow: NSWindow {
             section.titleTopConstraint.constant = isFirst ? Self.topSectionTitlePadding : 0
             section.interSectionSpacingConstraint.constant = isLast ? 0 : Self.sectionInterSectionSpacing
             section.bottomSpacingConstraint.constant = isLast ? 0 : Self.sectionBottomSpacing
-        }
-    }
-
-    private func collectSearchContent(_ sectionTitle: NSTextField, _ sectionDescription: NSTextField, _ root: NSView) -> ([String], [SettingsSearchHighlightTarget]) {
-        var textValues = [String]()
-        var highlightTargets = [SettingsSearchHighlightTarget]()
-        textValues.append(sectionTitle.stringValue)
-        textValues.append(sectionDescription.stringValue)
-        if let target = highlightTarget(sectionTitle) {
-            highlightTargets.append(target)
-        }
-        if let target = highlightTarget(sectionDescription) {
-            highlightTargets.append(target)
-        }
-        collectSearchContent(root, &textValues, &highlightTargets)
-        return (Array(Set(textValues)), highlightTargets)
-    }
-
-    private func collectSearchContent(_ root: NSView,
-                                      _ textValues: inout [String],
-                                      _ highlightTargets: inout [SettingsSearchHighlightTarget]) {
-        if let textField = root as? NSTextField {
-            let value = textField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !value.isEmpty {
-                textValues.append(value)
-                if let target = highlightTarget(textField) {
-                    highlightTargets.append(target)
-                }
-            }
-        } else if let popUpButton = root as? NSPopUpButton {
-            let value = popUpButton.title.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !value.isEmpty {
-                textValues.append(value)
-            }
-            popUpButton.itemTitles.forEach {
-                let value = $0.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !value.isEmpty {
-                    textValues.append(value)
-                }
-            }
-            if let target = highlightTarget(popUpButton) {
-                highlightTargets.append(target)
-            }
-        } else if let tableView = root as? TableView {
-            SettingsWindow.searchStrings(tableView).forEach {
-                textValues.append($0)
-            }
-            if let target = highlightTarget(tableView) {
-                highlightTargets.append(target)
-            }
-        } else if let button = root as? NSButton {
-            let value = button.title.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !value.isEmpty {
-                textValues.append(value)
-            }
-            if let target = highlightTarget(button) {
-                highlightTargets.append(target)
-            }
-        } else if let segmentedControl = root as? NSSegmentedControl {
-            (0..<segmentedControl.segmentCount).forEach {
-                let value = (segmentedControl.label(forSegment: $0) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-                if !value.isEmpty {
-                    textValues.append(value)
-                }
-            }
-            if let target = highlightTarget(segmentedControl) {
-                highlightTargets.append(target)
-            }
-        } else if let infoButton = root as? ClickHoverImageView {
-            SettingsWindow.searchStrings(infoButton).forEach {
-                textValues.append($0)
-            }
-            if let target = highlightTarget(infoButton) {
-                highlightTargets.append(target)
-            }
-        } else if let textView = root as? NSTextView {
-            let value = textView.string.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !value.isEmpty {
-                textValues.append(value)
-            }
-        }
-        root.subviews.forEach { collectSearchContent($0, &textValues, &highlightTargets) }
-    }
-
-    private func highlightTarget(_ textField: NSTextField) -> SettingsSearchHighlightTarget? {
-        guard !textField.stringValue.isEmpty else { return nil }
-        var baseAttributedString: NSAttributedString?
-        var highlightedText = ""
-        var isHighlighted = false
-        return SettingsSearchHighlightTarget({ query in
-            SettingsSearch.match(query, in: textField.stringValue)?.ranges ?? []
-        }, { ranges in
-            let text = textField.stringValue
-            if !isHighlighted || highlightedText != text {
-                baseAttributedString = textField.attributedStringValue
-                highlightedText = text
-            }
-            let mutable = NSMutableAttributedString(attributedString: baseAttributedString ?? textField.attributedStringValue)
-            let nsRanges = ranges.compactMap { SettingsWindow.characterRangeToNSRange($0, in: text) }
-            nsRanges.forEach {
-                mutable.addAttribute(.foregroundColor, value: Appearance.searchMatchForegroundColor, range: $0)
-            }
-            textField.attributedStringValue = mutable
-            SettingsWindow.applyRoundedHighlights(to: textField, attributedString: mutable, ranges: nsRanges)
-            isHighlighted = true
-        }, {
-            guard isHighlighted else { return }
-            if let baseAttributedString {
-                textField.attributedStringValue = baseAttributedString
-            }
-            SettingsWindow.clearRoundedHighlights(from: textField)
-            baseAttributedString = nil
-            highlightedText = ""
-            isHighlighted = false
-        })
-    }
-
-    private func highlightTarget(_ popUpButton: NSPopUpButton) -> SettingsSearchHighlightTarget? {
-        controlHighlightTarget(popUpButton) {
-            SettingsWindow.searchStrings(popUpButton)
-        }
-    }
-
-    private func highlightTarget(_ tableView: TableView) -> SettingsSearchHighlightTarget? {
-        let targetView = tableView.enclosingScrollView ?? tableView
-        return controlHighlightTarget(targetView) {
-            SettingsWindow.searchStrings(tableView)
-        }
-    }
-
-    private func highlightTarget(_ button: NSButton) -> SettingsSearchHighlightTarget? {
-        guard SettingsWindow.sheet(forSearchButton: button) != nil else { return nil }
-        return controlHighlightTarget(button) {
-            var values = [String]()
-            SettingsWindow.appendTrimmed(button.title, &values)
-            if let sheet = SettingsWindow.sheet(forSearchButton: button) {
-                values.append(contentsOf: SettingsWindow.sheetSearchStrings(sheet))
-            }
-            return Array(Set(values))
-        }
-    }
-
-    private func highlightTarget(_ segmentedControl: NSSegmentedControl) -> SettingsSearchHighlightTarget? {
-        let segmentLabels = (0..<segmentedControl.segmentCount).map {
-            SettingsWindow.trimmedText(segmentedControl.label(forSegment: $0) ?? "")
-        }
-        if segmentLabels.allSatisfy(\.isEmpty) { return nil }
-        var matchingSegmentIndexes = [Int]()
-        return SettingsSearchHighlightTarget({ query in
-            matchingSegmentIndexes = []
-            segmentLabels.enumerated().forEach { index, label in
-                guard !label.isEmpty else { return }
-                if SettingsSearch.match(query, in: label) != nil {
-                    matchingSegmentIndexes.append(index)
-                }
-            }
-            if matchingSegmentIndexes.isEmpty { return [] }
-            return [0..<1]
-        }, { _ in
-            SettingsWindow.applySegmentedControlHighlight(to: segmentedControl, segmentIndexes: matchingSegmentIndexes)
-        }, {
-            SettingsWindow.clearSegmentedControlHighlight(from: segmentedControl)
-        })
-    }
-
-    private func highlightTarget(_ infoButton: ClickHoverImageView) -> SettingsSearchHighlightTarget? {
-        controlHighlightTarget(infoButton) {
-            SettingsWindow.searchStrings(infoButton)
-        }
-    }
-
-    private func controlHighlightTarget(_ control: NSView, _ searchableStrings: @escaping () -> [String]) -> SettingsSearchHighlightTarget? {
-        if searchableStrings().isEmpty { return nil }
-        return SettingsSearchHighlightTarget({ query in
-            searchableStrings().contains {
-                SettingsSearch.match(query, in: $0) != nil
-            }
-        }, {
-            SettingsWindow.applyControlHighlight(to: control)
-        }, {
-            SettingsWindow.clearControlHighlight(from: control)
-        })
-    }
-
-    private static func characterRangeToNSRange(_ range: Range<Int>, in text: String) -> NSRange? {
-        if range.lowerBound < 0 || range.upperBound > text.count || range.isEmpty { return nil }
-        let start = text.index(text.startIndex, offsetBy: range.lowerBound)
-        let end = text.index(text.startIndex, offsetBy: range.upperBound)
-        return NSRange(start..<end, in: text)
-    }
-
-    private static func clearRoundedHighlights(from view: NSView) {
-        view.layer?.sublayers?.filter { $0.name == roundedHighlightLayerName }.forEach { $0.removeFromSuperlayer() }
-    }
-
-    private static func clearControlHighlight(from view: NSView) {
-        view.layer?.sublayers?.filter { $0.name == controlHighlightLayerName }.forEach { $0.removeFromSuperlayer() }
-    }
-
-    private static func clearSegmentedControlHighlight(from view: NSView) {
-        view.layer?.sublayers?.filter { $0.name == segmentedControlHighlightLayerName }.forEach { $0.removeFromSuperlayer() }
-    }
-
-    private static func applySegmentedControlHighlight(to control: NSSegmentedControl, segmentIndexes: [Int]) {
-        clearSegmentedControlHighlight(from: control)
-        control.layoutSubtreeIfNeeded()
-        guard !segmentIndexes.isEmpty else { return }
-        control.wantsLayer = true
-        let segmentRects = segmentedControlSegmentRects(control)
-        segmentIndexes.forEach {
-            guard segmentRects.indices.contains($0) else { return }
-            let rect = segmentRects[$0].insetBy(dx: 1, dy: 1)
-            guard rect.width > 0, rect.height > 0 else { return }
-            let layer = noAnimation { CAShapeLayer() }
-            layer.name = segmentedControlHighlightLayerName
-            layer.fillColor = Appearance.searchMatchHighlightColor.cgColor
-            let cornerRadius = min(max(rect.height * 0.3, 4), 7)
-            layer.path = CGPath(roundedRect: rect, cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil)
-            control.layer?.insertSublayer(layer, at: 0)
-        }
-    }
-
-    private static func segmentedControlSegmentRects(_ control: NSSegmentedControl) -> [CGRect] {
-        let segmentCount = control.segmentCount
-        if segmentCount <= 0 { return [] }
-        let widths = (0..<segmentCount).map { max(control.width(forSegment: $0), 0) }
-        let explicitWidthTotal = widths.reduce(0) {
-            $0 + ($1 > 0 ? $1 : 0)
-        }
-        let autoSegmentCount = widths.filter { $0 == 0 }.count
-        let autoSegmentWidth = autoSegmentCount > 0 ? max(control.bounds.width - explicitWidthTotal, 0) / CGFloat(autoSegmentCount) : 0
-        var currentX = control.bounds.minX
-        return widths.enumerated().map { index, width in
-            let resolvedWidth = width > 0 ? width : autoSegmentWidth
-            let isLastSegment = index == segmentCount - 1
-            let segmentWidth = isLastSegment ? max(control.bounds.maxX - currentX, 0) : resolvedWidth
-            defer { currentX += segmentWidth }
-            return CGRect(x: currentX, y: control.bounds.minY, width: segmentWidth, height: control.bounds.height)
-        }
-    }
-
-    private static func applyControlHighlight(to view: NSView) {
-        clearControlHighlight(from: view)
-        view.layoutSubtreeIfNeeded()
-        guard view.bounds.width > 0, view.bounds.height > 0 else { return }
-        view.wantsLayer = true
-        let layer = noAnimation { CAShapeLayer() }
-        layer.name = controlHighlightLayerName
-        layer.fillColor = Appearance.searchMatchHighlightColor.cgColor
-        let rect = view.bounds.insetBy(dx: -controlHighlightInset, dy: -controlHighlightInset)
-        let cornerRadius = min(max(rect.height * 0.35, controlHighlightMinCornerRadius), controlHighlightMaxCornerRadius)
-        layer.path = CGPath(roundedRect: rect, cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil)
-        view.layer?.insertSublayer(layer, at: 0)
-    }
-
-    private static func applyRoundedHighlights(to textField: NSTextField,
-                                               attributedString: NSAttributedString,
-                                               ranges: [NSRange]) {
-        clearRoundedHighlights(from: textField)
-        guard !ranges.isEmpty else { return }
-        textField.layoutSubtreeIfNeeded()
-        let textRect = textDrawingRect(textField)
-        guard textRect.width > 0, textRect.height > 0 else { return }
-        textField.wantsLayer = true
-        let textStorage = NSTextStorage(attributedString: attributedString)
-        let layoutManager = NSLayoutManager()
-        let textContainer = NSTextContainer(size: NSSize(width: textRect.width, height: CGFloat.greatestFiniteMagnitude))
-        textContainer.lineFragmentPadding = 0
-        textContainer.maximumNumberOfLines = textField.maximumNumberOfLines
-        textContainer.lineBreakMode = textField.lineBreakMode
-        layoutManager.addTextContainer(textContainer)
-        textStorage.addLayoutManager(layoutManager)
-        layoutManager.ensureLayout(for: textContainer)
-        let usedRect = layoutManager.usedRect(for: textContainer)
-        let horizontalOffset = textRect.minX
-        let verticalOffset = textRect.minY + max(0, (textRect.height - usedRect.height) / 2)
-        ranges.forEach { range in
-            let glyphRange = layoutManager.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
-            guard glyphRange.length > 0 else { return }
-            layoutManager.enumerateEnclosingRects(forGlyphRange: glyphRange, withinSelectedGlyphRange: NSRange(location: NSNotFound, length: 0), in: textContainer) { rect, _ in
-                var highlightRect = rect.offsetBy(dx: horizontalOffset, dy: verticalOffset)
-                highlightRect = highlightRect.insetBy(dx: -roundedHighlightHorizontalInset, dy: -roundedHighlightVerticalInset)
-                highlightRect = leadingTrimmedHighlightRect(highlightRect, textField)
-                let layer = noAnimation { CAShapeLayer() }
-                layer.name = roundedHighlightLayerName
-                layer.fillColor = Appearance.searchMatchHighlightColor.cgColor
-                layer.path = CGPath(roundedRect: highlightRect, cornerWidth: roundedHighlightCornerRadius, cornerHeight: roundedHighlightCornerRadius, transform: nil)
-                textField.layer?.insertSublayer(layer, at: 0)
-            }
-        }
-    }
-
-    private static func leadingTrimmedHighlightRect(_ rect: CGRect, _ textField: NSTextField) -> CGRect {
-        let trimmedWidth = max(rect.width - roundedHighlightLeadingTrim, 0.5)
-        if textField.userInterfaceLayoutDirection == .rightToLeft {
-            return CGRect(x: rect.minX, y: rect.minY, width: trimmedWidth, height: rect.height)
-        }
-        return CGRect(x: rect.minX + roundedHighlightLeadingTrim, y: rect.minY, width: trimmedWidth, height: rect.height)
-    }
-
-    private static func textDrawingRect(_ textField: NSTextField) -> CGRect {
-        textField.cell?.drawingRect(forBounds: textField.bounds) ?? textField.bounds
-    }
-
-    private static func appendTrimmed(_ text: String, _ values: inout [String]) {
-        let value = trimmedText(text)
-        if !value.isEmpty {
-            values.append(value)
-        }
-    }
-
-    private static func trimmedText(_ text: String) -> String {
-        text.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private static func searchStrings(_ popUpButton: NSPopUpButton) -> [String] {
-        var values = [String]()
-        appendTrimmed(popUpButton.title, &values)
-        popUpButton.itemTitles.forEach {
-            appendTrimmed($0, &values)
-        }
-        return Array(Set(values))
-    }
-
-    private static func searchStrings(_ segmentedControl: NSSegmentedControl) -> [String] {
-        var values = [String]()
-        (0..<segmentedControl.segmentCount).forEach {
-            appendTrimmed(segmentedControl.label(forSegment: $0) ?? "", &values)
-        }
-        return Array(Set(values))
-    }
-
-    private static func searchStrings(_ infoButton: ClickHoverImageView) -> [String] {
-        var values = [String]()
-        infoButton.searchableStrings.forEach {
-            appendTrimmed($0, &values)
-        }
-        return Array(Set(values))
-    }
-
-    private static func searchStrings(_ tableView: TableView) -> [String] {
-        var values = [String]()
-        tableView.tableColumns.forEach {
-            appendTrimmed($0.headerCell.stringValue, &values)
-            appendTrimmed($0.headerToolTip ?? "", &values)
-        }
-        tableView.items.forEach {
-            appendTrimmed($0.bundleIdentifier, &values)
-            appendTrimmed($0.hide.localizedString, &values)
-            appendTrimmed($0.ignore.localizedString, &values)
-        }
-        return Array(Set(values))
-    }
-
-    private static func sheet(forSearchButton button: NSButton) -> SheetWindow? {
-        guard let action = button.action else { return nil }
-        if action == #selector(AppearanceTab.showCustomizeStyleSheet) { return AppearanceTab.customizeStyleSheet }
-        if action == #selector(AppearanceTab.showAnimationsSheet) { return AppearanceTab.animationsSheet }
-        if action == #selector(ControlsTab.showShortcutsSettings) { return ControlsTab.shortcutsWhenActiveSheet }
-        if action == #selector(ControlsTab.showAdditionalControlsSettings) { return ControlsTab.additionalControlsSheet }
-        return nil
-    }
-
-    private static func sheetSearchStrings(_ sheet: SheetWindow) -> [String] {
-        guard let contentView = sheet.contentView else { return [] }
-        var values = [String]()
-        collectSearchStrings(contentView, &values)
-        return Array(Set(values))
-    }
-
-    private static func collectSearchStrings(_ root: NSView, _ values: inout [String]) {
-        if let textField = root as? NSTextField {
-            appendTrimmed(textField.stringValue, &values)
-        } else if let popUpButton = root as? NSPopUpButton {
-            appendTrimmed(popUpButton.title, &values)
-            popUpButton.itemTitles.forEach {
-                appendTrimmed($0, &values)
-            }
-        } else if let tableView = root as? TableView {
-            searchStrings(tableView).forEach {
-                appendTrimmed($0, &values)
-            }
-        } else if let button = root as? NSButton {
-            appendTrimmed(button.title, &values)
-        } else if let segmentedControl = root as? NSSegmentedControl {
-            (0..<segmentedControl.segmentCount).forEach {
-                appendTrimmed(segmentedControl.label(forSegment: $0) ?? "", &values)
-            }
-        } else if let infoButton = root as? ClickHoverImageView {
-            searchStrings(infoButton).forEach {
-                appendTrimmed($0, &values)
-            }
-        } else if let textView = root as? NSTextView {
-            appendTrimmed(textView.string, &values)
-        }
-        root.subviews.forEach {
-            collectSearchStrings($0, &values)
         }
     }
 
@@ -1183,69 +473,6 @@ class SettingsWindow: NSWindow {
     func refreshControlsFromSettings() {
         GeneralTab.refreshControlsFromPreferences()
         PointerScrollTab.refreshControlsFromPreferences()
-    }
-
-    func beginSheetWithSearchHighlight(_ sheet: SheetWindow) {
-        beginSheet(sheet) { [weak self] _ in
-            self?.clearSheetHighlights(sheet)
-        }
-        applySearchToSheet(sheet, searchField.stringValue)
-    }
-
-    private func applySearchToVisibleSheets(_ query: String) {
-        sheets.compactMap { $0 as? SheetWindow }.forEach {
-            applySearchToSheet($0, query)
-        }
-    }
-
-    private func applySearchToSheet(_ sheet: SheetWindow, _ query: String) {
-        let targets = highlightTargets(for: sheet)
-        if SettingsSearch.isQueryEmpty(query) {
-            targets.forEach { $0.clear() }
-            return
-        }
-        targets.forEach { $0.updateHighlight(query) }
-    }
-
-    private func highlightTargets(for sheet: SheetWindow) -> [SettingsSearchHighlightTarget] {
-        let key = ObjectIdentifier(sheet)
-        if let targets = sheetHighlightTargets[key] {
-            return targets
-        }
-        guard let contentView = sheet.contentView else { return [] }
-        var targets = [SettingsSearchHighlightTarget]()
-        collectSheetHighlightTargets(contentView, &targets)
-        sheetHighlightTargets[key] = targets
-        return targets
-    }
-
-    private func collectSheetHighlightTargets(_ root: NSView, _ targets: inout [SettingsSearchHighlightTarget]) {
-        if let textField = root as? NSTextField {
-            if let target = highlightTarget(textField) {
-                targets.append(target)
-            }
-        } else if let popUpButton = root as? NSPopUpButton {
-            if let target = highlightTarget(popUpButton) {
-                targets.append(target)
-            }
-        } else if let segmentedControl = root as? NSSegmentedControl {
-            if let target = highlightTarget(segmentedControl) {
-                targets.append(target)
-            }
-        } else if let infoButton = root as? ClickHoverImageView {
-            if let target = highlightTarget(infoButton) {
-                targets.append(target)
-            }
-        }
-        root.subviews.forEach {
-            collectSheetHighlightTargets($0, &targets)
-        }
-    }
-
-    private func clearSheetHighlights(_ sheet: SheetWindow) {
-        let key = ObjectIdentifier(sheet)
-        guard let targets = sheetHighlightTargets[key] else { return }
-        targets.forEach { $0.clear() }
     }
 
     @objc private func contentViewBoundsDidChange(_ notification: Notification) {
@@ -1283,7 +510,7 @@ class SettingsWindow: NSWindow {
         } ?? visibleSections[0]
     }
 
-    private func selectSection(_ section: SettingsSection, scroll: Bool, selectInSidebar: Bool = true) {
+    func selectSection(_ section: SettingsSection, scroll: Bool, selectInSidebar: Bool = true) {
         selectedSectionId = section.id
         if selectInSidebar, let row = sidebarRows.firstIndex(of: .section(section.id)), sidebarTableView.selectedRow != row {
             sidebarTableView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
@@ -1335,9 +562,61 @@ class SettingsWindow: NSWindow {
         applySearch("")
         guard let section = sections.first(where: { $0.id == sectionId }),
               let label = Self.findLabel(rowTitle, in: section.container) else { return }
+        scrollToVisibleAndFlash(label)
+    }
+
+    /// Jumps to the first highlighted match on Return without touching the search query, so the
+    /// user can keep refining it. See `control(_:textView:doCommandBy:)` for why this isn't driven
+    /// by the search field's action.
+    private func jumpToFirstMatch() {
+        guard isSearching, let firstSection = visibleSections.first,
+              let target = Self.firstHighlightedView(in: firstSection.container) else { return }
+        scrollToVisibleAndFlash(target)
+    }
+
+    private func scrollToVisibleAndFlash(_ view: NSView) {
         sectionsDocumentView.layoutSubtreeIfNeeded()
-        label.scrollToVisible(label.bounds.insetBy(dx: 0, dy: -80))
-        Self.flash(label)
+        view.scrollToVisible(view.bounds.insetBy(dx: 0, dy: -80))
+        Self.flash(view)
+    }
+
+    private func searchPath(for section: SettingsSection) -> String {
+        let groupTitle = Self.groupTitle(SettingsSidebarLayout.group(of: section.id))
+        let sectionTitles = Self.matchedDisclosureSectionTitles(in: section.container)
+        return SettingsSidebarLayout.searchPath(groupTitle: groupTitle, pageTitle: section.title, sectionTitles: sectionTitles)
+    }
+
+    /// Titles of the `DisclosureSection`s (in document order) that contain a highlighted match,
+    /// found by looking for the highlight sublayers `SettingsSearchHighlighting` applies to a
+    /// matching view. Relies on `highlightMatches` having already run for this query.
+    private static func matchedDisclosureSectionTitles(in view: NSView) -> [String] {
+        var titles = [String]()
+        func walk(_ view: NSView) {
+            if let disclosure = view as? DisclosureSection, containsHighlight(disclosure) {
+                titles.append(disclosure.title)
+            }
+            view.subviews.forEach(walk)
+        }
+        walk(view)
+        return titles
+    }
+
+    private static func firstHighlightedView(in view: NSView) -> NSView? {
+        if isHighlighted(view) { return view }
+        for subview in view.subviews {
+            if let found = firstHighlightedView(in: subview) { return found }
+        }
+        return nil
+    }
+
+    private static func isHighlighted(_ view: NSView) -> Bool {
+        guard let sublayers = view.layer?.sublayers else { return false }
+        let highlightLayerNames: Set<String> = [roundedHighlightLayerName, controlHighlightLayerName, segmentedControlHighlightLayerName]
+        return sublayers.contains { highlightLayerNames.contains($0.name ?? "") }
+    }
+
+    private static func containsHighlight(_ view: NSView) -> Bool {
+        isHighlighted(view) || view.subviews.contains { containsHighlight($0) }
     }
 
     private static func findLabel(_ title: String, in view: NSView) -> NSTextField? {
@@ -1372,10 +651,13 @@ class SettingsWindow: NSWindow {
         visibleSections = sections.filter { !isSearching || $0.matches(query) }
         let matchingIds = Set(visibleSections.map(\.id))
         sections.forEach { section in
-            guard isSearching, matchingIds.contains(section.id) else { return section.clearHighlights() }
+            guard isSearching, matchingIds.contains(section.id) else {
+                section.clearHighlights()
+                return section.updateSearchPath(nil)
+            }
             section.highlightMatches(query)
+            section.updateSearchPath(searchPath(for: section))
         }
-        applySearchToVisibleSheets(query)
         sidebarRows = SettingsSidebarLayout.rows(visibleSections.map(\.id))
         sidebarTableView.reloadData()
         let preferred = isSearching ? selectedSectionId : (chosenSectionId ?? selectedSectionId)
@@ -1414,74 +696,12 @@ extension SettingsWindow: NSSearchFieldDelegate {
     func controlTextDidChange(_ notification: Notification) {
         applySearch(searchField.stringValue)
     }
-}
 
-extension SettingsWindow: NSTableViewDataSource, NSTableViewDelegate {
-    private static let headerRowHeight = CGFloat(26)
-
-    func numberOfRows(in tableView: NSTableView) -> Int {
-        sidebarRows.count
-    }
-
-    func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
-        sidebarRows[row].sectionId == nil ? Self.headerRowHeight : 30
-    }
-
-    func tableView(_ tableView: NSTableView, isGroupRow row: Int) -> Bool {
-        sidebarRows[row].sectionId == nil
-    }
-
-    func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool {
-        sidebarRows[row].sectionId != nil
-    }
-
-    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        guard let id = sidebarRows[row].sectionId, let section = sections.first(where: { $0.id == id }) else {
-            guard case .header(let group) = sidebarRows[row] else { return nil }
-            return SettingsSidebarHeaderView(Self.groupTitle(group))
-        }
-        let cell = tableView.makeView(withIdentifier: SettingsSidebarCellView.identifier, owner: self) as? SettingsSidebarCellView ?? {
-            let view = SettingsSidebarCellView()
-            view.identifier = SettingsSidebarCellView.identifier
-            return view
-        }()
-        cell.configure(section)
-        return cell
-    }
-
-    func tableViewSelectionDidChange(_ notification: Notification) {
-        let row = sidebarTableView.selectedRow
-        guard row >= 0, row < sidebarRows.count, let id = sidebarRows[row].sectionId,
-              let section = sections.first(where: { $0.id == id }) else { return }
-        chosenSectionId = section.id
-        if selectedSectionId == section.id { return }
-        selectSection(section, scroll: true, selectInSidebar: false)
-    }
-
-    private static func groupTitle(_ group: SettingsSidebarGroup) -> String {
-        switch group {
-            case .app: return App.name
-            case .switcher: return NSLocalizedString("Switcher", comment: "")
-            case .windows: return NSLocalizedString("Windows", comment: "")
-            case .triggers: return NSLocalizedString("Triggers", comment: "")
-            case .devices: return NSLocalizedString("Devices", comment: "")
-            case .actions: return NSLocalizedString("Actions", comment: "")
-        }
-    }
-}
-
-/// A non-selectable group heading in the sidebar.
-private final class SettingsSidebarHeaderView: NSTableCellView {
-    convenience init(_ title: String) {
-        self.init(frame: .zero)
-        let label = NSTextField(labelWithString: title)
-        label.font = NSFont.systemFont(ofSize: 11, weight: .semibold)
-        label.textColor = .tertiaryLabelColor
-        label.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(label)
-        NSLayoutConstraint.activate([
-            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
-            label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -3),
-        ])
+    // `sendsSearchStringImmediately` fires the field's action on every keystroke, so Return can't be
+    // told apart from typing there; `doCommandBySelector` gets the actual key command instead.
+    func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        guard commandSelector == #selector(NSResponder.insertNewline(_:)) else { return false }
+        jumpToFirstMatch()
+        return true
     }
 }

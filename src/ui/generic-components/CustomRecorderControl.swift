@@ -3,9 +3,10 @@ import Carbon.HIToolbox.Events
 import ShortcutRecorder
 
 /// Story 16: `Record Shortcut` did not fit and showed as `Recor…rtcut`.
+/// Also matches the "None" wording used by the read-only overview page (ShortcutOverviewTab).
 final class ShortPlaceholderStyle: RecorderControlStyle {
     override var noValueNormalLabel: String {
-        NSLocalizedString("Record", comment: "Placeholder of an empty shortcut recorder")
+        NSLocalizedString("None", comment: "Placeholder of an empty shortcut recorder")
     }
 }
 
@@ -13,6 +14,15 @@ class CustomRecorderControl: RecorderControl {
     static let allowedModifiers = NSEvent.ModifierFlags(arrayLiteral: [.command, .control, .option, .shift])
     var clearable: Bool!
     var id: String!
+    /// Tracks mouse-hover to draw the subtle background used by the overview-style recorder;
+    /// the pod itself only draws a background bezel, no plain hover state.
+    private var isHoveredControl = false
+    private var hoverTrackingArea: NSTrackingArea?
+    /// Notified whenever this control's `objectValue` changes through a programmatic path (e.g.
+    /// `updateShortcut`, used when accepting a conflict clears another recorder) rather than through
+    /// `onAction`. Lets callers like the "Restore default" button keep their own UI (e.g. its visibility)
+    /// in sync even when the change did not originate from this control's own recording gesture.
+    var onProgrammaticChange: (() -> Void)?
 
     convenience init(_ shortcutString: String, _ clearable: Bool, _ id: String) {
         self.init(Shortcut(keyEquivalent: shortcutString), clearable, id)
@@ -37,6 +47,56 @@ class CustomRecorderControl: RecorderControl {
         if clearable {
             super.drawClearButton(aDirtyRect)
         }
+    }
+
+    /// Renders as plain text like the read-only Shortcuts overview page: no grey filled bar in the
+    /// normal state. The bezel is kept only while recording, since it is the recording indicator.
+    override func drawBackground(_ aDirtyRect: NSRect) {
+        if isRecording {
+            super.drawBackground(aDirtyRect)
+            return
+        }
+        if isHoveredControl {
+            NSColor.quaternaryLabelColor.setFill()
+            NSBezierPath(roundedRect: bounds, xRadius: 5, yRadius: 5).fill()
+        }
+    }
+
+    /// Same label color rule as ShortcutOverviewTab.shortcutLabel: tertiary when empty, label color
+    /// when a shortcut is assigned. normalLabelAttributes/disabledLabelAttributes still supply the
+    /// font and paragraph style (centered; the pod's alignment guides don't support right-alignment
+    /// without reimplementing layout, so this keeps the existing centered text).
+    override var drawingLabelAttributes: [NSAttributedString.Key: Any]? {
+        guard var attributes = super.drawingLabelAttributes else { return nil }
+        if isEnabled && !isRecording {
+            let isEmpty = objectValue == nil
+            attributes[.foregroundColor] = isEmpty ? NSColor.tertiaryLabelColor : NSColor.labelColor
+        }
+        return attributes
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let hoverTrackingArea {
+            removeTrackingArea(hoverTrackingArea)
+        }
+        let trackingArea = NSTrackingArea(rect: bounds,
+                                           options: [.mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect],
+                                           owner: self, userInfo: nil)
+        addTrackingArea(trackingArea)
+        hoverTrackingArea = trackingArea
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        super.mouseEntered(with: event)
+        isHoveredControl = true
+        needsDisplay = true
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
+        isHoveredControl = false
+        needsDisplay = true
     }
 
     override func clearAndEndRecording() {
@@ -90,6 +150,9 @@ class CustomRecorderControl: RecorderControl {
         control.objectValue = objectValue
         LabelAndControl.controlWasChanged(senderControl, id)
         ControlsTab.shortcutChangedCallback(senderControl)
+        // This bypasses `control`'s own `onAction`, so its extraAction (e.g. "Restore default"
+        // visibility) never runs on its own; notify it explicitly instead.
+        control.onProgrammaticChange?()
     }
 
     func alertIfShortcutReservedByMacos(_ candidateShortcut: Shortcut, _ shortcutReservedByMacos: String) {

@@ -3,8 +3,14 @@ import UniformTypeIdentifiers
 
 class GeneralTab {
     static var menubarIconDropdown: NSPopUpButton?
+    static var menubarIconNote: NSTextField?
     static var captureWindowsInBackgroundRowInfo: TableGroupView.RowInfo?
+    static var captureWindowsInBackgroundNote: NSTextField?
     static var policyLock = false
+    private static var accessibilityStatusLabel: NSTextField?
+    private static var accessibilityOpenSettingsButton: NSButton?
+    private static var screenRecordingStatusLabel: NSTextField?
+    private static var screenRecordingOpenSettingsButton: NSButton?
     private static var menubarIsVisibleObserver: NSKeyValueObservation?
 
     static func initTab() -> NSView {
@@ -12,11 +18,8 @@ class GeneralTab {
             rightViews: [LabelAndControl.makeSwitch("startAtLogin")])
         menubarIconDropdown = LabelAndControl.makeDropdown("menubarIcon", MenubarIconPreference.allCases)
         let menuIconShownToggle = LabelAndControl.makeSwitch("menubarIconShown")
-        let menubarIcon = TableGroupView.Row(leftTitle: NSLocalizedString("Menubar icon", comment: ""),
-            rightViews: [
-                menubarIconDropdown!,
-                menuIconShownToggle,
-            ])
+        menubarIconNote = LabelAndControl.makeDependencyNote(
+            NSLocalizedString("Enable the menu bar icon to choose its style.", comment: ""))
         let language = TableGroupView.Row(leftTitle: NSLocalizedString("Language", comment: ""),
             rightViews: [LabelAndControl.makeDropdown("language", LanguagePreference.allCases, extraAction: setLanguageCallback)])
         // 0 is the two-tone glyph the status item draws, 1 the same glyph as a template
@@ -30,17 +33,71 @@ class GeneralTab {
         cell.arrowPosition = .arrowAtBottom
         cell.imagePosition = .imageOverlaps
         enableDraggingOffMenubarIcon(menuIconShownToggle)
-        let captureWindowsInBackground = TableGroupView.Row(leftTitle: NSLocalizedString("Keep window previews up to date in the background", comment: ""),
-            subTitle: NSLocalizedString("Keeps thumbnail and full-size previews current while the switcher is hidden. Turning this off avoids the screen-recording indicator and possible DRM interruptions; required previews refresh when the switcher opens.", comment: ""),
-            rightViews: [LabelAndControl.makeSwitch("captureWindowsInBackground")])
+        captureWindowsInBackgroundNote = LabelAndControl.makeDependencyNote(
+            NSLocalizedString("Available when window thumbnails are shown, either as the Thumbnails style or as the preview of the selected window in Windows mode.", comment: ""))
         let table = TableGroupView(width: SettingsWindow.contentWidth)
         table.addRow(startAtLogin)
-        table.addRow(menubarIcon)
-        captureWindowsInBackgroundRowInfo = table.addRow(captureWindowsInBackground)
+        table.addRow(leftViews: [TableGroupView.makeText(NSLocalizedString("Menubar icon", comment: ""))],
+            rightViews: [menubarIconDropdown!, menuIconShownToggle],
+            secondaryViews: [menubarIconNote!])
+        captureWindowsInBackgroundRowInfo = table.addRow(
+            leftViews: [TableGroupView.makeText(NSLocalizedString("Keep window previews up to date in the background", comment: ""))],
+            rightViews: [LabelAndControl.makeSwitch("captureWindowsInBackground")],
+            secondaryViews: [
+                makeSubtitleLabel(NSLocalizedString("Keeps thumbnail and full-size previews current while the switcher is hidden. Turning this off avoids the screen-recording indicator and possible DRM interruptions; required previews refresh when the switcher opens.", comment: "")),
+                captureWindowsInBackgroundNote!,
+            ], secondaryViewsOrientation: .vertical)
         updateCaptureWindowsInBackgroundState()
+        updateMenubarIconDropdownState()
         table.addNewTable()
         table.addRow(language)
-        return TableGroupSetView(originalViews: [table, settingsFileTable()], bottomPadding: 0)
+        return TableGroupSetView(originalViews: [table, permissionsTable(), settingsFileTable()], padding: 0, bottomPadding: 0)
+    }
+
+    private static func permissionsTable() -> TableGroupView {
+        let table = TableGroupView(title: NSLocalizedString("Permissions", comment: ""), width: SettingsWindow.contentWidth)
+        let accessibilityStatus = NSTextField(labelWithString: "")
+        let accessibilityButton = NSButton(title: NSLocalizedString("Open System Settings", comment: ""), target: nil, action: nil)
+        accessibilityButton.onAction = { _ in
+            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
+        }
+        table.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Accessibility", comment: ""),
+            rightViews: [accessibilityStatus, accessibilityButton]))
+        accessibilityStatusLabel = accessibilityStatus
+        accessibilityOpenSettingsButton = accessibilityButton
+        if #available(macOS 10.15, *) {
+            let screenRecordingStatus = NSTextField(labelWithString: "")
+            let screenRecordingButton = NSButton(title: NSLocalizedString("Open System Settings", comment: ""), target: nil, action: nil)
+            screenRecordingButton.onAction = { _ in ScreenRecordingPermission.requestAccessAndOpenSettings() }
+            table.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Screen Recording", comment: ""),
+                rightViews: [screenRecordingStatus, screenRecordingButton]))
+            screenRecordingStatusLabel = screenRecordingStatus
+            screenRecordingOpenSettingsButton = screenRecordingButton
+        }
+        refreshPermissionsRows()
+        return table
+    }
+
+    /// Called whenever the settings window is (re)shown, since the user grants or revokes permissions in
+    /// System Settings while AltTab+ keeps running — no polling is added here, this piggybacks on the
+    /// existing `refreshControlsFromPreferences` call.
+    static func refreshPermissionsRows() {
+        AccessibilityPermission.update()
+        accessibilityStatusLabel?.stringValue = permissionStatusText(AccessibilityPermission.status)
+        accessibilityOpenSettingsButton?.isHidden = AccessibilityPermission.status == .granted
+        if #available(macOS 10.15, *) {
+            ScreenRecordingPermission.update()
+            screenRecordingStatusLabel?.stringValue = permissionStatusText(ScreenRecordingPermission.status)
+            screenRecordingOpenSettingsButton?.isHidden = ScreenRecordingPermission.status == .granted
+        }
+    }
+
+    private static func permissionStatusText(_ status: PermissionStatus) -> String {
+        switch status {
+            case .granted: return NSLocalizedString("Granted", comment: "")
+            case .notGranted: return NSLocalizedString("Not granted", comment: "")
+            case .skipped: return NSLocalizedString("Skipped", comment: "")
+        }
     }
 
     /// Story 16: moved here from the bottom of the sidebar, next to export and import.
@@ -79,8 +136,9 @@ class GeneralTab {
 
     static func refreshControlsFromPreferences() {
         menubarIconDropdown?.selectItem(at: CachedUserDefaults.intFromMacroPref("menubarIcon", MenubarIconPreference.allCases))
-        menubarIconDropdown?.isEnabled = Preferences.menubarIconShown
+        updateMenubarIconDropdownState()
         updateCaptureWindowsInBackgroundState()
+        refreshPermissionsRows()
     }
 
     static func updateCaptureWindowsInBackgroundState() {
@@ -93,6 +151,22 @@ class GeneralTab {
             $0.setStateWithoutAction(isEnabled && Preferences.captureWindowsInBackground ? .on : .off)
             $0.isEnabled = isEnabled
         }
+        captureWindowsInBackgroundNote?.isHidden = isEnabled
+    }
+
+    /// Also called from `Menubar.menubarIconCallback`, which is the path that reacts to the
+    /// `menubarIconShown` preference actually changing (both at startup and from the toggle above).
+    static func updateMenubarIconDropdownState() {
+        let isEnabled = Preferences.menubarIconShown
+        menubarIconDropdown?.isEnabled = isEnabled
+        menubarIconNote?.isHidden = isEnabled
+    }
+
+    private static func makeSubtitleLabel(_ text: String) -> NSTextField {
+        let label = NSTextField(wrappingLabelWithString: text)
+        label.font = NSFont.systemFont(ofSize: 12)
+        label.textColor = .gray
+        return label
     }
 
     private static func enableDraggingOffMenubarIcon(_ menuIconShownToggle: Switch) {

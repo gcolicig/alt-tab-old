@@ -3,7 +3,8 @@ import Cocoa
 /// Story 16, stage 2: only the filled app and URL slots, as a list. New entries take the first free slot;
 /// removing one empties its slot and never moves the others, so bindings keep pointing at the same entry.
 class AppsUrlsTab {
-    private static let container = RebuildableSettingsView()
+    static let sectionId = "apps-urls"
+    private static let container = RebuildableSettingsView(sectionId: sectionId)
 
     static func initTab() -> NSView {
         container.rebuild(makeViews)
@@ -153,10 +154,24 @@ class AppsUrlsTab {
 
 /// A settings page whose content is rebuilt when its list changes.
 final class RebuildableSettingsView: NSStackView {
+    /// The section this view fills, so `rebuild` can re-index settings search and refresh "Reset to
+    /// Defaults" against the freshly built content instead of the one just discarded.
+    private let sectionId: String
+
+    init(sectionId: String) {
+        self.sectionId = sectionId
+        super.init(frame: .zero)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
     func rebuild(_ content: () -> [NSView]) {
         orientation = .vertical
         alignment = .leading
         arrangedSubviews.forEach { $0.removeFromSuperview() }
-        addArrangedSubview(TableGroupSetView(originalViews: content(), bottomPadding: 0))
+        addArrangedSubview(TableGroupSetView(originalViews: content(), padding: 0, bottomPadding: 0))
+        SettingsWindow.shared?.reindexSection(sectionId)
     }
 }

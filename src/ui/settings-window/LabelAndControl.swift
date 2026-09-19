@@ -108,10 +108,99 @@ class LabelAndControl: NSObject {
 
     static func makeLabelWithRecorder(_ labelText: String, _ rawName: String, _ shortcut: Shortcut?, _ clearable: Bool = true, labelPosition: LabelPosition = .leftWithSeparator) -> [NSView] {
         let input = CustomRecorderControl(shortcut, clearable, rawName)
-        let views = makeLabelWithProvidedControl(labelText, rawName, input, labelPosition: labelPosition, extraAction: { _ in ControlsTab.shortcutChangedCallback(input) })
+        var restoreButton: NSButton?
+        let views = makeLabelWithProvidedControl(labelText, rawName, input, labelPosition: labelPosition, extraAction: { _ in
+            ControlsTab.shortcutChangedCallback(input)
+            if let restoreButton { updateRestoreDefaultButtonVisibility(restoreButton, rawName, input) }
+        })
         ControlsTab.shortcutChangedCallback(input)
         ControlsTab.shortcutControls[rawName] = (input, labelText)
-        return views
+        guard Preferences.defaultValues[rawName] != nil,
+              let index = views.firstIndex(where: { $0 === input }) else { return views }
+        let button = makeRestoreDefaultButton(rawName, input)
+        restoreButton = button
+        // Keeps the button in sync with programmatic objectValue changes too (e.g. accepting a
+        // conflict alert clears/reassigns a recorder outside of its own recording gesture).
+        input.onProgrammaticChange = { [weak button] in
+            guard let button else { return }
+            updateRestoreDefaultButtonVisibility(button, rawName, input)
+        }
+        updateRestoreDefaultButtonVisibility(button, rawName, input)
+        var result = views
+        result[index] = wrapRecorderWithRestoreButton(input, button)
+        return result
+    }
+
+    /// A small borderless button that restores a cleared/changed shortcut to its registered default,
+    /// placed right next to the recorder. Reserves its width even while hidden (alpha 0, disabled,
+    /// never `isHidden`) so the recorder column never shifts as it appears and disappears.
+    private static func makeRestoreDefaultButton(_ rawName: String, _ input: CustomRecorderControl) -> NSButton {
+        let title = NSLocalizedString("Restore default", comment: "")
+        let config = NSImage.SymbolConfiguration(pointSize: 11, weight: .medium)
+        let button = NSButton(image: NSImage(systemSymbolName: "arrow.uturn.backward", accessibilityDescription: title)?
+            .withSymbolConfiguration(config) ?? NSImage(), target: nil, action: nil)
+        button.isBordered = false
+        button.imagePosition = .imageOnly
+        button.setButtonType(.momentaryChange)
+        button.toolTip = title
+        button.setAccessibilityLabel(title)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.widthAnchor.constraint(equalToConstant: 16).isActive = true
+        button.heightAnchor.constraint(equalToConstant: 16).isActive = true
+        button.onAction = { _ in restoreDefaultShortcut(rawName, input, button) }
+        return button
+    }
+
+    /// Restores `rawName` to its registered default and replays the same callback path an interactive
+    /// recorder edit runs (`ControlsTab.shortcuts` / registration update), instead of only clearing the
+    /// preference underneath the recorder. Routes the candidate default through the same
+    /// acceptability/conflict checks a live recording goes through
+    /// (`CustomRecorderControlTestable.isShortcutAcceptable`, `CustomRecorderControl`'s alert methods)
+    /// rather than writing it straight to preferences: a default can conflict with a shortcut the user
+    /// since assigned elsewhere, and this must offer the same "unassign and continue" choice, or leave
+    /// things untouched if declined or unacceptable.
+    private static func restoreDefaultShortcut(_ rawName: String, _ input: CustomRecorderControl, _ button: NSButton) {
+        guard let defaultShortcut = Preferences.defaultShortcut(forKey: rawName) else {
+            Preferences.remove(rawName)
+            input.objectValue = nil
+            input.sendAction(input.action, to: input.target)
+            updateRestoreDefaultButtonVisibility(button, rawName, input)
+            return
+        }
+        switch CustomRecorderControlTestable.isShortcutAcceptable(rawName, defaultShortcut) {
+        case .accepted:
+            Preferences.remove(rawName)
+            input.objectValue = defaultShortcut
+            input.sendAction(input.action, to: input.target)
+        case .modifiersOnlyButContainsKeycode:
+            // The registered default is not acceptable for this control; leave it untouched rather
+            // than force an invalid value onto it.
+            break
+        case .conflictWithExistingShortcut(let shortcutAlreadyAssigned):
+            input.alertIfSameShortcutAlreadyAssigned(defaultShortcut, shortcutAlreadyAssigned)
+        case .reservedByMacos(let shortcutUsingEscape):
+            input.alertIfShortcutReservedByMacos(defaultShortcut, shortcutUsingEscape)
+        case .usedByGameOverlay(let shortcutUsingGameOverlay):
+            input.alertIfShortcutUsedByGameOverlay(defaultShortcut, shortcutUsingGameOverlay)
+        }
+        // Covers both a direct restore above and the no-op/declined alert paths; the conflict-clearing
+        // alert paths already refresh via `onProgrammaticChange` from `updateShortcut`.
+        updateRestoreDefaultButtonVisibility(button, rawName, input)
+    }
+
+    private static func updateRestoreDefaultButtonVisibility(_ button: NSButton, _ rawName: String, _ input: CustomRecorderControl) {
+        let differs = ShortcutDefault.differsFromDefault(input.objectValue, Preferences.defaultShortcut(forKey: rawName))
+        button.alphaValue = differs ? 1 : 0
+        button.isEnabled = differs
+    }
+
+    private static func wrapRecorderWithRestoreButton(_ input: CustomRecorderControl, _ button: NSButton) -> NSView {
+        let stack = NSStackView(views: [input, button])
+        stack.orientation = .horizontal
+        stack.alignment = .centerY
+        stack.spacing = 4
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
     }
 
     static func makeLabelWithCheckbox(_ labelText: String, _ rawName: String, extraAction: ActionClosure? = nil, labelPosition: LabelPosition = .leftWithSeparator) -> [NSView] {
@@ -135,6 +224,18 @@ class LabelAndControl: NSObject {
         checkbox.state = CachedUserDefaults.bool(rawName) ? .on : .off
         _ = setupControl(checkbox, rawName, extraAction: extraAction)
         return checkbox
+    }
+
+    /// A small explanatory note for a row whose control is currently disabled. Hidden by default; the
+    /// caller toggles `isHidden` alongside the control's `isEnabled` state.
+    static func makeDependencyNote(_ text: String) -> NSTextField {
+        let note = NSTextField(wrappingLabelWithString: text)
+        note.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        note.textColor = .secondaryLabelColor
+        note.lineBreakMode = .byWordWrapping
+        note.maximumNumberOfLines = 0
+        note.isHidden = true
+        return note
     }
 
     static func makeInfoButton(size: CGFloat = 16,

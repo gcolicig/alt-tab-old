@@ -7,7 +7,8 @@ import Cocoa
 /// Story 16, stage 2: one profile at a time, picked from the filled slots. A new profile takes the first
 /// free slot; deleting empties its slot without moving the others, so shortcuts and bindings stay put.
 class ProfilesTab {
-    private static let container = RebuildableSettingsView()
+    static let sectionId = "profiles"
+    private static let container = RebuildableSettingsView(sectionId: sectionId)
     private static var selected: Int?
     private static var picker: NSPopUpButton?
     private static var bindingLabel: NSTextField?
@@ -15,6 +16,15 @@ class ProfilesTab {
     static func initTab() -> NSView {
         refresh()
         return container
+    }
+
+    /// Selects a profile slot and rebuilds, so the details table (and its "Shortcut" row) shows this
+    /// profile. Used when revealing a profile shortcut from the Shortcuts overview, where Profiles
+    /// otherwise still shows whichever profile the user last picked.
+    static func select(_ index: Int) {
+        guard occupiedSlots().contains(index) else { return }
+        selected = index
+        refresh()
     }
 
     private static func refresh() {
@@ -180,7 +190,7 @@ class ProfilesTab {
     }
 
     private static func makeBindingViews(_ index: Int) -> [NSView] {
-        let label = NSTextField(labelWithString: "")
+        let label = TableGroupView.makeText("")
         label.translatesAutoresizingMaskIntoConstraints = false
         bindingLabel = label
         updateBindingLabel(index)

@@ -170,8 +170,8 @@ class ControlsTab {
     static var arrowKeysCheckbox: Switch!
     static var vimKeysCheckbox: Switch!
 
-    static var shortcutsWhenActiveSheet: ShortcutsWhenActiveSheet!
-    static var additionalControlsSheet: AdditionalControlsSheet!
+    static var shortcutsWhenActiveDisclosure: DisclosureSection!
+    static var additionalControlsDisclosure: DisclosureSection!
 
     private static let shortcutSidebarWidth = CGFloat(200)
     private static let sidebarRowHeight = CGFloat(52)
@@ -288,12 +288,12 @@ class ControlsTab {
         shortcutEditorViews = (0..<Preferences.maxShortcutCount).map { shortcutTab($0) }
         gestureEditorView = gestureTab(Preferences.gestureIndex)
         let shortcutsView = makeShortcutsView()
-        let additionalControlsButton = NSButton(title: NSLocalizedString("Additional controls…", comment: ""), target: self, action: #selector(showAdditionalControlsSettings))
-        let shortcutsButton = NSButton(title: NSLocalizedString("Shortcuts when active…", comment: ""), target: self, action: #selector(showShortcutsSettings))
-        let tools = StackView([additionalControlsButton, shortcutsButton], .horizontal)
-        let view = TableGroupSetView(originalViews: [shortcutsView], toolsViews: [tools], bottomPadding: 0, othersAlignment: .leading, toolsAlignment: .trailing)
-        shortcutsWhenActiveSheet = ShortcutsWhenActiveSheet()
-        additionalControlsSheet = AdditionalControlsSheet()
+        additionalControlsDisclosure = DisclosureSection(id: "controls.additionalControls",
+            title: NSLocalizedString("Additional controls", comment: ""), content: AdditionalControlsSection.makeView())
+        shortcutsWhenActiveDisclosure = DisclosureSection(id: "controls.shortcutsWhenActive",
+            title: NSLocalizedString("Shortcuts When Active", comment: ""), content: ShortcutsWhenActiveSection.makeView())
+        let view = TableGroupSetView(originalViews: [shortcutsView, additionalControlsDisclosure, shortcutsWhenActiveDisclosure],
+            padding: 0, bottomPadding: 0, othersAlignment: .leading)
         refreshShortcutUi()
         (0..<Preferences.shortcutCount).forEach { initializeShortcutRecorderState($0) }
         return view
@@ -432,11 +432,23 @@ class ControlsTab {
 
     private static func shortcutTab(_ index: Int) -> TableGroupView {
         let holdName = Preferences.indexToName("holdShortcut", index)
-        var holdShortcut = LabelAndControl.makeLabelWithRecorder(NSLocalizedString("Hold", comment: ""), holdName, Preferences.shortcut(holdName), false, labelPosition: .leftWithoutSeparator)
-        holdShortcut.append(LabelAndControl.makeLabel(NSLocalizedString("and press", comment: "")))
+        let holdShortcut = LabelAndControl.makeLabelWithRecorder(NSLocalizedString("Hold", comment: ""), holdName, Preferences.shortcut(holdName), false, labelPosition: .leftWithoutSeparator)
+        // "and press" must never be the view Auto Layout shrinks to resolve a tight row: pin it to its
+        // full intrinsic width so the restore-default button (which reserves space even while hidden)
+        // squeezes elsewhere instead of truncating this label.
+        let andPressLabel = LabelAndControl.makeLabel(NSLocalizedString("and press", comment: ""))
+        andPressLabel.setContentHuggingPriority(.required, for: .horizontal)
+        andPressLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        // Group the hold recorder with "and press" in their own tightly-spaced stack so this row has one
+        // fewer TableGroupView.spacing gap to fit, freeing the width the restore buttons now take up.
+        let holdAndPressGroup = NSStackView(views: [holdShortcut[1], andPressLabel])
+        holdAndPressGroup.orientation = .horizontal
+        holdAndPressGroup.alignment = .centerY
+        holdAndPressGroup.spacing = 6
+        holdAndPressGroup.translatesAutoresizingMaskIntoConstraints = false
         let nextName = Preferences.indexToName("nextWindowShortcut", index)
         let nextWindowShortcut = LabelAndControl.makeLabelWithRecorder(NSLocalizedString("Select next window", comment: ""), nextName, Preferences.shortcut(nextName), labelPosition: .right)
-        return controlTab(index, holdShortcut + [nextWindowShortcut[0]], shortcutEditorContentWidth)
+        return controlTab(index, [holdShortcut[0], holdAndPressGroup, nextWindowShortcut[0]], shortcutEditorContentWidth)
     }
 
     private static func gestureTab(_ index: Int) -> TableGroupView {
@@ -743,14 +755,6 @@ class ControlsTab {
                 }
             }
         }
-    }
-
-    @objc static func showShortcutsSettings() {
-        SettingsWindow.shared.beginSheetWithSearchHighlight(shortcutsWhenActiveSheet)
-    }
-
-    @objc static func showAdditionalControlsSettings() {
-        SettingsWindow.shared.beginSheetWithSearchHighlight(additionalControlsSheet)
     }
 
     private static func addShortcut(_ triggerPhase: ShortcutTriggerPhase, _ scope: ShortcutScope, _ shortcut: Shortcut, _ controlId: String, _ index: Int?) {

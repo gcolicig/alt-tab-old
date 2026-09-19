@@ -140,7 +140,7 @@ class ShowHideIllustratedView {
     }
 
     func makeView() -> TableGroupSetView {
-        table = TableGroupView(width: CustomizeStyleSheet.width)
+        table = TableGroupView(width: CustomizeStyleSection.illustratedImageWidth)
         for row in showHideRows {
             setStateOnApplications(row: row)
             if row.supportedStyles.contains(style) {
@@ -410,24 +410,25 @@ extension Popover: NSPopoverDelegate {
 }
 
 class AppearanceTab: NSObject {
-    static var customizeStyleButton: NSButton!
-    static var animationsButton: NSButton!
-    static var customizeStyleSheet: CustomizeStyleSheet!
-    static var animationsSheet: AnimationsSheet!
+    static var customizeStyleDisclosure: DisclosureSection!
+    static var animationsDisclosure: DisclosureSection!
+    static var customizeStyleSection: CustomizeStyleSection!
     static var previewSelectedWindowRowInfo: TableGroupView.RowInfo!
+    static var previewSelectedWindowNote: NSTextField!
 
     static func initTab() -> NSView {
-        customizeStyleButton = NSButton(title: getCustomizeStyleButtonTitle(), target: self, action: #selector(showCustomizeStyleSheet))
-        animationsButton = NSButton(title: NSLocalizedString("Animations…", comment: ""), target: self, action: #selector(showAnimationsSheet))
-        customizeStyleSheet = CustomizeStyleSheet()
-        animationsSheet = AnimationsSheet()
+        customizeStyleSection = CustomizeStyleSection()
+        customizeStyleDisclosure = DisclosureSection(id: "appearance.customizeStyle",
+            title: customizeStyleDisclosureTitle(), content: customizeStyleSection.makeView())
+        animationsDisclosure = DisclosureSection(id: "appearance.animations",
+            title: NSLocalizedString("Animations", comment: ""), content: AnimationsSection.makeView())
         return makeView()
     }
 
     private static func makeView() -> NSStackView {
         let appearanceView = makeAppearanceView()
         let multipleScreensView = makeMultipleScreensView()
-        let view = TableGroupSetView(originalViews: [appearanceView, multipleScreensView, animationsButton], titleTableGroupSpacing: 15, bottomPadding: 0)
+        let view = TableGroupSetView(originalViews: [appearanceView, multipleScreensView, customizeStyleDisclosure, animationsDisclosure], titleTableGroupSpacing: 15, padding: 0, bottomPadding: 0)
         view.translatesAutoresizingMaskIntoConstraints = false
         view.widthAnchor.constraint(equalToConstant: view.fittingSize.width).isActive = true
         return view
@@ -435,6 +436,7 @@ class AppearanceTab: NSObject {
 
     private static func makeAppearanceView() -> NSView {
         let table = TableGroupView(width: SettingsWindow.contentWidth)
+        addShowPreviewRow(table)
         table.addRow(secondaryViews: [LabelAndControl.makeImageRadioButtons("appearanceStyle", AppearanceStylePreference.allCases, extraAction: { _ in
             toggleCustomizeStyleButton()
             updatePreviewSelectedWindowState()
@@ -445,8 +447,22 @@ class AppearanceTab: NSObject {
             rightViews: [LabelAndControl.makeSegmentedControl("appearanceTheme", AppearanceThemePreference.allCases, segmentWidth: 100)])
         addAfterKeysReleasedRow(table)
         addPreviewSelectedWindowRow(table)
-        table.addRow(rightViews: customizeStyleButton)
         return table
+    }
+
+    private static func addShowPreviewRow(_ table: TableGroupView) {
+        let previewButton = NSButton(title: NSLocalizedString("Show preview", comment: ""), target: nil, action: nil)
+        previewButton.onAction = { _ in showPreview() }
+        table.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Preview appearance and animation changes", comment: ""),
+            rightViews: [previewButton]))
+    }
+
+    /// Shows the real switcher so appearance/animation changes can be judged live, without binding it to a
+    /// held shortcut key. `App.showUi` sets `forceDoNothingOnRelease = true`, so even if a modifier happens
+    /// to be down when this runs, releasing it won't focus a window; dismissal only happens via Esc or a
+    /// click outside (both of which already just call `App.hideUi()`, never focusing a window).
+    static func showPreview() {
+        App.showUi(App.shortcutIndex)
     }
 
     private static func addAfterKeysReleasedRow(_ table: TableGroupView) {
@@ -455,8 +471,12 @@ class AppearanceTab: NSObject {
     }
 
     private static func addPreviewSelectedWindowRow(_ table: TableGroupView) {
-        previewSelectedWindowRowInfo = table.addRow(leftText: NSLocalizedString("Preview selected window", comment: ""),
-            rightViews: [LabelAndControl.makeSwitch("previewFocusedWindow")])
+        previewSelectedWindowNote = LabelAndControl.makeDependencyNote(
+            NSLocalizedString("AltTab is currently set to show Applications. This setting is only available when AltTab is set to show Windows.", comment: ""))
+        previewSelectedWindowRowInfo = table.addRow(
+            leftViews: [TableGroupView.makeText(NSLocalizedString("Preview selected window", comment: ""))],
+            rightViews: [LabelAndControl.makeSwitch("previewFocusedWindow")],
+            secondaryViews: [previewSelectedWindowNote])
         updatePreviewSelectedWindowState()
     }
 
@@ -473,6 +493,7 @@ class AppearanceTab: NSObject {
                 switchControl.isEnabled = isEnabled
             }
         }
+        previewSelectedWindowNote?.isHidden = isEnabled
     }
 
     private static func isPreviewSelectedWindowDisabled() -> Bool {
@@ -495,21 +516,22 @@ class AppearanceTab: NSObject {
         return NSLocalizedString("Customize Titles style…", comment: "")
     }
 
+    private static func customizeStyleDisclosureTitle() -> String {
+        getCustomizeStyleButtonTitle().trimmingCharacters(in: CharacterSet(charactersIn: "…"))
+    }
+
     @objc static func toggleCustomizeStyleButton() {
         NSObject.cancelPreviousPerformRequests(withTarget: self, selector: #selector(handleToggleAdvancedButton), object: nil)
         self.perform(#selector(handleToggleAdvancedButton), with: nil, afterDelay: 0.1)
     }
 
     @objc static func handleToggleAdvancedButton() {
-        customizeStyleButton.animator().title = getCustomizeStyleButtonTitle()
-        customizeStyleSheet = CustomizeStyleSheet()
-    }
-
-    @objc static func showCustomizeStyleSheet() {
-        SettingsWindow.shared.beginSheetWithSearchHighlight(customizeStyleSheet)
-    }
-
-    @objc static func showAnimationsSheet() {
-        SettingsWindow.shared.beginSheetWithSearchHighlight(animationsSheet)
+        customizeStyleDisclosure.title = customizeStyleDisclosureTitle()
+        customizeStyleSection = CustomizeStyleSection()
+        customizeStyleDisclosure.setContent(customizeStyleSection.makeView())
+        // The disclosure's content view was just swapped in place: the owning section's search index
+        // and highlight targets still point at what was discarded, so re-index against the page's
+        // current (unchanged) root view instead of waiting for a full page rebuild.
+        SettingsWindow.shared?.reindexSection("appearance")
     }
 }

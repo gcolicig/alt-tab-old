@@ -13,20 +13,10 @@ class WindowLayoutsTab {
             rightViews: [LabelAndControl.makeDropdown("windowResizeModifier", DragModifierPreference.selectable) { _ in modifierChanged(resize: true) }]))
         table.addNewTable()
         ShortcutPresets.layouts.forEach { table.addRow(PresetRow.make($0)) }
-        table.addNewTable()
-        WindowLayoutAction.allCases.forEach {
-            let views = LabelAndControl.makeLabelWithRecorder($0.localizedTitle, $0.shortcutPreferenceKey, Preferences.shortcut($0.shortcutPreferenceKey))
-            table.addRow(TableGroupView.Row(leftTitle: $0.localizedTitle, rightViews: [views[1]]))
-        }
-        table.addNewTable()
-        DisplayMoveAction.allCases.forEach {
-            let views = LabelAndControl.makeLabelWithRecorder($0.localizedTitle, $0.shortcutPreferenceKey, Preferences.shortcut($0.shortcutPreferenceKey))
-            table.addRow(TableGroupView.Row(leftTitle: $0.localizedTitle, rightViews: [views[1]]))
-        }
-        table.addNewTable()
         let cluesViews = LabelAndControl.makeLabelWithRecorder(NSLocalizedString("Show the active app's shortcuts while holding", comment: ""),
                                                               ShortcutCluesController.shortcutPreferenceKey,
                                                               Preferences.shortcut(ShortcutCluesController.shortcutPreferenceKey))
+        table.addNewTable()
         table.addRow(TableGroupView.Row(
             leftTitle: NSLocalizedString("Show the active app's shortcuts while holding", comment: ""),
             subTitle: NSLocalizedString("Reads the menus of the app in front. It never absorbs keys, so a shortcut you press while looking still runs.", comment: ""),
@@ -35,7 +25,22 @@ class WindowLayoutsTab {
         table.addRow(TableGroupView.Row(
             leftTitle: NSLocalizedString("Disable input extensions (safe mode)", comment: ""),
             rightViews: [LabelAndControl.makeSwitch("inputModulesSafeMode") { _ in safeModeChanged() }]))
-        return TableGroupSetView(originalViews: [table], bottomPadding: 0)
+
+        let layoutSections = WindowLayoutSections.grouped().map { section, actions -> TableGroupView in
+            let sectionTable = TableGroupView(title: section.title, width: SettingsWindow.contentWidth)
+            actions.forEach {
+                let views = LabelAndControl.makeLabelWithRecorder($0.localizedTitle, $0.shortcutPreferenceKey, Preferences.shortcut($0.shortcutPreferenceKey))
+                sectionTable.addRow(TableGroupView.Row(leftTitle: $0.localizedTitle, rightViews: [views[1]]))
+            }
+            return sectionTable
+        }
+        let displaysTable = TableGroupView(title: NSLocalizedString("Displays", comment: ""), width: SettingsWindow.contentWidth)
+        DisplayMoveAction.allCases.forEach {
+            let views = LabelAndControl.makeLabelWithRecorder($0.localizedTitle, $0.shortcutPreferenceKey, Preferences.shortcut($0.shortcutPreferenceKey))
+            displaysTable.addRow(TableGroupView.Row(leftTitle: $0.localizedTitle, rightViews: [views[1]]))
+        }
+
+        return TableGroupSetView(originalViews: [table] + layoutSections + [displaysTable], padding: 0, bottomPadding: 0)
     }
 
     /// Both modules share one tap and one session, so the same combination cannot drive both: whichever
