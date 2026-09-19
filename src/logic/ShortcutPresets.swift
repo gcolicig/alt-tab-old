@@ -99,6 +99,13 @@ enum ShortcutPresets {
     static func isAssignable(_ preset: ShortcutPreset) -> Bool {
         activeId(in: preset.domain) == nil
     }
+
+    /// The other preset of the same domain that is currently assigned and therefore blocks `preset`
+    /// from being assigned, if any.
+    static func blockingPreset(for preset: ShortcutPreset) -> ShortcutPreset? {
+        guard let activeId = activeId(in: preset.domain), activeId != preset.id else { return nil }
+        return all.first { $0.id == activeId }
+    }
     private static let digitKeyCodes: [KeyCode] = [.ansi0, .ansi1, .ansi2, .ansi3, .ansi4, .ansi5, .ansi6, .ansi7, .ansi8, .ansi9]
 
     static func shortcut(_ code: KeyCode, _ modifierFlags: NSEvent.ModifierFlags) -> Shortcut {

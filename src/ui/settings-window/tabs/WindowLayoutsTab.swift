@@ -12,7 +12,7 @@ class WindowLayoutsTab {
             subTitle: NSLocalizedString("The corner you start near is the one that follows; the opposite corner stays put.", comment: ""),
             rightViews: [LabelAndControl.makeDropdown("windowResizeModifier", DragModifierPreference.selectable) { _ in modifierChanged(resize: true) }]))
         table.addNewTable()
-        ShortcutPresets.layouts.forEach { table.addRow(PresetRow.make($0)) }
+        ShortcutPresets.layouts.forEach { PresetRow.make(table, $0) }
         let cluesViews = LabelAndControl.makeLabelWithRecorder(NSLocalizedString("Show the active app's shortcuts while holding", comment: ""),
                                                               ShortcutCluesController.shortcutPreferenceKey,
                                                               Preferences.shortcut(ShortcutCluesController.shortcutPreferenceKey))
