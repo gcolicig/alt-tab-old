@@ -2,6 +2,7 @@ import Cocoa
 
 class ScrollwheelEvents {
     private static var eventTap: CFMachPort!
+    private static let smoothScroller = SmoothScroller()
     /// The switcher gesture wants continuous (trackpad) scrolling swallowed, so it cannot scroll the app
     /// underneath. Set for the duration of a gesture. Separate from the scroll-modifying settings, which
     /// keep the tap in the stream even when the switcher is closed.
@@ -26,6 +27,11 @@ class ScrollwheelEvents {
     /// Called by the switcher to demand (or release) continuous-scroll blocking.
     static func toggle(_ enabled: Bool) {
         switcherWantsTap = enabled
+        if enabled {
+            // the switcher's own gesture handling owns the tap while it runs; a glide left over from
+            // scrolling just before invoking it must not keep posting events underneath it
+            smoothScroller.stopAndClear()
+        }
         updateEnabled()
     }
 
@@ -34,12 +40,16 @@ class ScrollwheelEvents {
     /// intent, safe mode is a temporary state. Leaving safe mode calls this again and the effect is back
     /// without a restart.
     static func scrollSettingsChanged() {
+        if !smoothScrollActive() {
+            smoothScroller.stopAndClear()
+        }
         updateEnabled()
     }
 
     static func disableForSafety() {
         guard eventTap != nil else { return }
         switcherWantsTap = false
+        smoothScroller.stopAndClear()
         setEnabled(false)
     }
 
@@ -65,7 +75,11 @@ class ScrollwheelEvents {
 
     private static func scrollModifyActive() -> Bool {
         guard !Preferences.inputModulesSafeMode else { return false }
-        return ScrollTransform.anyModifies(mouse: mouseSettings(), trackpad: trackpadSettings())
+        return ScrollTransform.anyModifies(mouse: mouseSettings(), trackpad: trackpadSettings()) || Preferences.smoothScrollMouse
+    }
+
+    private static func smoothScrollActive() -> Bool {
+        !Preferences.inputModulesSafeMode && Preferences.smoothScrollMouse
     }
 
     private static func mouseSettings() -> ScrollAxisSettings {
@@ -101,6 +115,12 @@ class ScrollwheelEvents {
             }
             return Unmanaged.passUnretained(cgEvent)
         }
+        let isSynthetic = cgEvent.getIntegerValueField(.eventSourceUserData) == SmoothScroller.marker
+        if isSynthetic {
+            // our own posted event, re-entering the tap: pass through untouched, before anything else
+            // looks at it, or it would loop back into the smoother it came from
+            return Unmanaged.passUnretained(cgEvent)
+        }
         // macOS marks trackpad and Magic Mouse scrolling as continuous and a notched wheel as discrete,
         // which is the only device distinction available without enumerating devices
         let isContinuous = cgEvent.getIntegerValueField(.scrollWheelEventIsContinuous) != 0
@@ -109,10 +129,25 @@ class ScrollwheelEvents {
             // unchanged so it can move the selection
             return isContinuous ? nil : Unmanaged.passUnretained(cgEvent)
         }
+        if SmoothScrollStep.shouldSmooth(isContinuous: isContinuous, flags: cgEvent.flags, isSynthetic: isSynthetic, enabled: smoothScrollActive()) {
+            smooth(cgEvent)
+            return nil // swallowed: the smoother posts its own pixel events over time
+        }
         if scrollModifyActive() {
             applyTransform(cgEvent, isContinuous: isContinuous)
         }
         return Unmanaged.passUnretained(cgEvent) // focused app will receive the (possibly modified) event
+    }
+
+    /// Applies today's reverse/speed transform to the event's pixel delta, then hands it to the smoother
+    /// instead of letting the original discrete notch through.
+    private static func smooth(_ cgEvent: CGEvent) {
+        let settings = mouseSettings()
+        let vertical = ScrollTransform.verticalFactor(settings)
+        let horizontal = ScrollTransform.horizontalFactor(settings)
+        let dy = Double(cgEvent.getIntegerValueField(.scrollWheelEventPointDeltaAxis1)) * vertical
+        let dx = Double(cgEvent.getIntegerValueField(.scrollWheelEventPointDeltaAxis2)) * horizontal
+        smoothScroller.add(dx: dx, dy: dy, flags: cgEvent.flags)
     }
 
     /// Rewrites the event's scroll deltas in place. Axis 1 is vertical, axis 2 horizontal. The line, pixel,
