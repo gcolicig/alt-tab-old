@@ -6,7 +6,7 @@ import ShortcutRecorder
 /// recorded here. One recorder per shortcut, so the two places can never disagree.
 class ShortcutOverviewTab {
     static let sectionId = "shortcuts"
-    private static let container = RebuildableSettingsView()
+    private static let container = RebuildableSettingsView(sectionId: sectionId)
     private static var filter = ShortcutOverviewFilter.all
     private static var isStale = true
     private static var refreshScheduled = false

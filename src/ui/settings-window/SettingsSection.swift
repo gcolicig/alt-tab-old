@@ -94,6 +94,9 @@ final class SettingsSection {
     /// mutates its own content in place outside of a reset (e.g. AppearanceTab's CustomizeStyle
     /// disclosure swapping its own content via `DisclosureSection.setContent`).
     private let reindex: () -> Void
+    /// Re-evaluates whether "Reset to Defaults" should show, for a page whose rebuilt content can
+    /// change which resettable keys it exposes (e.g. Shortcuts' filtered/regrouped rows).
+    private let refreshResetButtonVisibilityAction: () -> Void
     /// Breadcrumb shown above the title while searching (e.g. "Switcher › Cmd-Tab › Animations").
     /// Collapsed to zero height outside of search via `pathLabelHeightConstraint`.
     private let pathLabel: NSTextField
@@ -118,6 +121,7 @@ final class SettingsSection {
     /// mutates its own content outside of a reset (see `reindex`).
     func reindexSearchContent() {
         reindex()
+        refreshResetButtonVisibilityAction()
     }
 
     /// Called by `rebuildContent`/`reindex` once the page's content view has changed, so settings
@@ -143,7 +147,8 @@ final class SettingsSection {
          _ resettableKeysProvider: @escaping () -> [String],
          _ hidesResetButton: Bool,
          _ rebuildContent: (([String]) -> Void)?,
-         _ reindex: @escaping () -> Void) {
+         _ reindex: @escaping () -> Void,
+         _ refreshResetButtonVisibility: @escaping () -> Void = {}) {
         self.id = id
         self.title = title
         self.icon = icon
@@ -160,6 +165,7 @@ final class SettingsSection {
         self.hidesResetButton = hidesResetButton
         self.rebuildContent = rebuildContent
         self.reindex = reindex
+        self.refreshResetButtonVisibilityAction = refreshResetButtonVisibility
         self.pathToTitleSpacingConstraint = pathToTitleSpacingConstraint
     }
 

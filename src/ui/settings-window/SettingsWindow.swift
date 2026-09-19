@@ -241,7 +241,7 @@ class SettingsWindow: NSWindow {
                 extraResettableKeys: { PreferencesResetLogic.keysWithPrefix("flickRing", in: Preferences.defaultValues) }),
             // No reset button: a profile is user-created content (name, apps, layout, space), not a
             // setting, so "Reset to Defaults" must not delete it.
-            SettingsSectionDefinition(id: "profiles", title: NSLocalizedString("Profiles", comment: ""), description: NSLocalizedString("Group apps into a profile, optionally bound to a space, and filter the switcher to it.", comment: ""), imageName: "controls", systemSymbolName: "square.stack.3d.up", view: ProfilesTab.initTab(), builder: { ProfilesTab.initTab() },
+            SettingsSectionDefinition(id: ProfilesTab.sectionId, title: NSLocalizedString("Profiles", comment: ""), description: NSLocalizedString("Group apps into a profile, optionally bound to a space, and filter the switcher to it.", comment: ""), imageName: "controls", systemSymbolName: "square.stack.3d.up", view: ProfilesTab.initTab(), builder: { ProfilesTab.initTab() },
                 hidesResetButton: true),
             SettingsSectionDefinition(id: "appearance", title: NSLocalizedString("Cmd-Tab", comment: ""), description: NSLocalizedString("Choose how the window switcher looks and where it appears.", comment: ""), imageName: "appearance", systemSymbolName: "paintpalette", view: AppearanceTab.initTab(), builder: { AppearanceTab.initTab() }),
             SettingsSectionDefinition(id: "controls", title: NSLocalizedString("Cmd-Tab Controls", comment: ""), description: NSLocalizedString("Set how you open and navigate the window switcher.", comment: ""), imageName: "controls", systemSymbolName: "command", view: ControlsTab.initTab(), builder: { ControlsTab.initTab() }),
@@ -249,7 +249,7 @@ class SettingsWindow: NSWindow {
             SettingsSectionDefinition(id: "system-actions", title: NSLocalizedString("System Actions", comment: ""), description: NSLocalizedString("Configure Auto-Quit, Cat Mode, and the function key mode.", comment: ""), imageName: "controls", systemSymbolName: "switch.2", view: SystemActionsTab.initTab(), builder: { SystemActionsTab.initTab() }),
             SettingsSectionDefinition(id: "keep-awake", title: NSLocalizedString("Keep Awake", comment: ""), description: NSLocalizedString("Keep the Mac awake for a while, with battery protection.", comment: ""), imageName: "controls", systemSymbolName: "cup.and.saucer", view: KeepAwakeTab.initTab(), builder: { KeepAwakeTab.initTab() }),
             // No reset button: the launch-app/open-URL entries are user-created content, not settings.
-            SettingsSectionDefinition(id: "apps-urls", title: NSLocalizedString("Apps & URLs", comment: ""), description: NSLocalizedString("Assign shortcuts to launch apps or open URLs.", comment: ""), imageName: "controls", systemSymbolName: "app.badge", view: AppsUrlsTab.initTab(), builder: { AppsUrlsTab.initTab() },
+            SettingsSectionDefinition(id: AppsUrlsTab.sectionId, title: NSLocalizedString("Apps & URLs", comment: ""), description: NSLocalizedString("Assign shortcuts to launch apps or open URLs.", comment: ""), imageName: "controls", systemSymbolName: "app.badge", view: AppsUrlsTab.initTab(), builder: { AppsUrlsTab.initTab() },
                 hidesResetButton: true),
             SettingsSectionDefinition(id: "exceptions", title: NSLocalizedString("Exceptions", comment: ""), description: NSLocalizedString("Choose apps whose windows should not appear in the switcher.", comment: ""), imageName: "exceptions", systemSymbolName: "hand.raised", view: ExceptionsTab.initTab(), builder: { ExceptionsTab.initTab() }),
         ]
@@ -412,7 +412,8 @@ class SettingsWindow: NSWindow {
                                       resettableKeysProvider,
                                       definition.hidesResetButton,
                                       rebuildContent,
-                                      reindex)
+                                      reindex,
+                                      refreshResetButtonVisibility)
         refreshResetButtonVisibility()
         sections.append(section)
     }
