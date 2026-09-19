@@ -75,6 +75,38 @@ class CustomRecorderControl: RecorderControl {
         return attributes
     }
 
+    /// Right-aligns the label like a system settings shortcut row, instead of the pod's centered
+    /// text (SRRecorderControl.m:784-824, `SRRecorderControl.h:372`). Drawn against
+    /// `style.alignmentGuide.frame` (the control's full width) rather than the pod's own
+    /// `labelDrawingGuide.frame`, which autolayout already shrinks to the label's own size and
+    /// centers — right-aligning text inside a frame that already equals the text's width would look
+    /// identical to centered. While recording, the pod's own centered drawing is kept: it doubles as
+    /// the recording indicator and is the only state that actually draws the cancel/clear buttons.
+    override func drawLabel(_ aDirtyRect: NSRect) {
+        guard !isRecording else {
+            super.drawLabel(aDirtyRect)
+            return
+        }
+        var labelFrame = style.alignmentGuide.frame
+        guard !labelFrame.isEmpty, needsToDraw(labelFrame) else { return }
+        // Defensive: the clear/cancel guides are documented as valid only while recording, so this
+        // is normally a no-op here, but keeps the right-aligned text from sitting under them if a
+        // future style ever draws one outside recording too.
+        let clearFrame = style.clearButtonDrawingGuide?.frame ?? .zero
+        if clearable, objectValue != nil, !clearFrame.isEmpty {
+            labelFrame.size.width -= max(0, NSMaxX(labelFrame) - clearFrame.minX)
+        }
+        guard var attributes = drawingLabelAttributes else { return }
+        let paragraphStyle = (attributes[.paragraphStyle] as? NSParagraphStyle)?.mutableCopy() as? NSMutableParagraphStyle ?? NSMutableParagraphStyle()
+        paragraphStyle.alignment = .right
+        attributes[.paragraphStyle] = paragraphStyle
+        // Same baseline offset the pod itself uses.
+        labelFrame.origin.y = NSMaxY(labelFrame) - style.baselineDrawingOffsetFromBottom
+        let minWidth = (attributes[NSAttributedString.Key.SRMinimalDrawableWidthAttributeName] as? NSNumber)?.doubleValue ?? 0
+        guard labelFrame.width >= CGFloat(minWidth) else { return }
+        drawingLabel.draw(with: labelFrame, options: [], attributes: attributes, context: nil)
+    }
+
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
         if let hoverTrackingArea {
