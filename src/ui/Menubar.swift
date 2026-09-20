@@ -17,7 +17,8 @@ class Menubar {
     /// image (see refreshSpaces), so a click is matched by position here instead of hitting a live NSButton.
     ///
     /// The whole strip counts, not the drawn boxes: every segment opens the same preview, and the gaps between
-    /// the boxes and around a display divider fell through to the icon's handler, which opened the menu.
+    /// the boxes and around a display divider fell through to the icon's handler, which opened the menu. Only
+    /// the x range of this rect is matched; see handleSegmentClick for why the height is not.
     private static var spacesRowRect: CGRect?
     private static var muteTargets = [(rect: CGRect, icon: MuteIcon)]()
     private static let muteIconWidth = CGFloat(22)
@@ -84,7 +85,9 @@ class Menubar {
             MicMuteIndicator.unmute(mute.icon)
             return true
         }
-        guard let rowRect = spacesRowRect, rowRect.contains(point) else { return false }
+        // only the horizontal range counts: the status button is 22pt tall inside a menu bar that can be 37pt,
+        // so a click near the top or the bottom of the bar converts to a y outside the button's own bounds
+        guard let rowRect = spacesRowRect, point.x >= rowRect.minX, point.x < rowRect.maxX else { return false }
         // a segment opens the Spaces preview, where every display's Spaces are shown in place; the switch
         // itself happens on a tile click (switchToSpace)
         SpacesPreviewPanel.toggle(anchoredTo: button)
@@ -99,22 +102,39 @@ class Menubar {
     }
 
     /// Switches the display's Space to `index` (1-based within the display). A synthetic Space switch reaches only
-    /// the display the cursor is on, so for another display the cursor moves to its centre first.
+    /// the display the cursor is on, so for another display the cursor moves there first.
     static func switchToSpace(index: Int, displayUuid: ScreenUuid, screen: NSScreen) {
         SpacesPreviewPanel.hide()
         let cursorUuid = NSScreen.withMouse()?.cachedUuid()
         let reachable = MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: cursorUuid.map { $0 as String == displayUuid as String } ?? true,
                                                          separateSpaces: NSScreen.screensHaveSeparateSpaces)
         if !reachable {
-            let primaryHeight = NSScreen.screens.first?.frame.height ?? screen.frame.height
-            let quartz = SpacesPreviewLayout.quartzFrame(cocoaFrame: screen.frame, primaryScreenHeight: primaryHeight)
-            CGWarpMouseCursorPosition(CGPoint(x: quartz.midX, y: quartz.midY))
+            CGWarpMouseCursorPosition(cursorLandingPoint(on: screen))
         }
         if index <= 9 {
             Actions.perform(.space(.index(index)))
         } else {
             InstantSpaces.perform(.index(index))
         }
+    }
+
+    /// Where the cursor lands on the display it has to move to. Just under the menu bar, at the x of the Spaces
+    /// row, instead of the middle of the display: the cursor stays next to the row it was just used on, so the
+    /// hand does not have to bring it back. The point is in Quartz coordinates, as CGWarpMouseCursorPosition wants.
+    private static func cursorLandingPoint(on screen: NSScreen) -> CGPoint {
+        let primaryHeight = NSScreen.screens.first?.frame.height ?? screen.frame.height
+        let quartz = SpacesPreviewLayout.quartzFrame(cocoaFrame: screen.frame, primaryScreenHeight: primaryHeight)
+        let rowMidX = rowMidXInScreenCoordinates() ?? quartz.midX
+        let x = min(max(rowMidX, quartz.minX + 8), quartz.maxX - 8)
+        let y = quartz.minY + NSStatusBar.system.thickness + 8
+        return CGPoint(x: x, y: y)
+    }
+
+    /// The middle of the Spaces row in screen coordinates. The x axis is the same in Cocoa and in Quartz, so the
+    /// value needs no flipping.
+    private static func rowMidXInScreenCoordinates() -> CGFloat? {
+        guard let button = statusItem?.button, let window = button.window, let rowRect = spacesRowRect else { return nil }
+        return window.frame.minX + rowRect.midX
     }
 
     @objc static func statusItemOnClick() {
