@@ -13,13 +13,12 @@ class Menubar {
     /// display a drop landed on instead of always taking the next one in physical order.
     private static var groupBoundsInButton = [(ScreenUuid, CGRect)]()
 
-    /// One clickable segment of the rendered row, in the status button's coordinates. The row is drawn as a
-    /// single image (see refreshSpaces), so a click on the button maps to a segment by position here instead
-    /// of hitting a live NSButton.
-    private struct SegmentTarget {
-        let rect: CGRect
-    }
-    private static var segmentTargets = [SegmentTarget]()
+    /// The Spaces part of the rendered row, in the status button's coordinates. The row is drawn as a single
+    /// image (see refreshSpaces), so a click is matched by position here instead of hitting a live NSButton.
+    ///
+    /// The whole strip counts, not the drawn boxes: every segment opens the same preview, and the gaps between
+    /// the boxes and around a display divider fell through to the icon's handler, which opened the menu.
+    private static var spacesRowRect: CGRect?
     private static var muteTargets = [(rect: CGRect, icon: MuteIcon)]()
     private static let muteIconWidth = CGFloat(22)
 
@@ -85,7 +84,7 @@ class Menubar {
             MicMuteIndicator.unmute(mute.icon)
             return true
         }
-        guard segmentTargets.contains(where: { $0.rect.contains(point) }) else { return false }
+        guard let rowRect = spacesRowRect, rowRect.contains(point) else { return false }
         // a segment opens the Spaces preview, where every display's Spaces are shown in place; the switch
         // itself happens on a tile click (switchToSpace)
         SpacesPreviewPanel.toggle(anchoredTo: button)
@@ -175,7 +174,7 @@ class Menubar {
         // overflow menu. The row is torn down here, so this is where the table stops being true.
         overflowIndexesByButton.removeAll()
         groupBoundsInButton.removeAll()
-        segmentTargets.removeAll()
+        spacesRowRect = nil
         muteTargets.removeAll()
         statusButton.image = preferredIcon()
         statusItem.length = NSStatusItem.squareLength
@@ -237,7 +236,7 @@ class Menubar {
             muteTargets.append((CGRect(x: x, y: 0, width: muteIconWidth, height: rowHeight), icon))
         }
         row.addSubview(container) // container already carries its x
-        segmentTargets = collectSegmentTargets(container)
+        spacesRowRect = totalWidth > 0 ? CGRect(x: spacesX, y: 0, width: totalWidth, height: rowHeight) : nil
         statusButton.image = renderRowImage(row)
         statusButton.imageScaling = .scaleNone
         statusButton.alignment = .center
@@ -279,21 +278,6 @@ class Menubar {
         tinted.unlockFocus()
         tinted.isTemplate = false
         return tinted
-    }
-
-    /// Records the clickable rect of every segment in the status button's coordinates, before the row is
-    /// flattened to an image. The container sits at `iconWidth`, so each button's row x adds that offset.
-    ///
-    /// The rect covers the whole segment, not the drawn box: the box is inset by 2pt on each side and keeps a
-    /// fixed 16pt height inside a menu bar that is 24pt or taller, so a click near the top or the bottom edge
-    /// fell through to the icon's own handler and opened the menu instead of the Spaces preview.
-    private static func collectSegmentTargets(_ container: NSView) -> [SegmentTarget] {
-        container.subviews.compactMap { subview in
-            guard let button = subview as? NSButton, button.identifier != nil else { return nil }
-            let rect = CGRect(x: container.frame.minX + button.frame.minX - 2, y: 0,
-                              width: button.frame.width + 4, height: container.frame.height)
-            return SegmentTarget(rect: rect)
-        }
     }
 
     /// Renders a view tree to an image through a throwaway offscreen window. A window-less view can drop the
