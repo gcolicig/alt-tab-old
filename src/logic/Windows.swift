@@ -129,7 +129,8 @@ class Windows {
         let allowed = WindowPreviewCapturePolicy.allowsCapture(
             Preferences.usesImageBasedWindowPreviews,
             Preferences.captureWindowsInBackground,
-            App.appIsBeingUsed)
+            App.appIsBeingUsed,
+            SpacesPreviewPanel.isShowing)
         return allowed && (source != .refreshOnlyThumbnailsAfterShowUi || App.appIsBeingUsed)
     }
 

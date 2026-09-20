@@ -49,6 +49,13 @@ final class AppearanceTests: XCTestCase {
         XCTAssertFalse(WindowPreviewCapturePolicy.allowsCapture(false, true, false))
     }
 
+    /// The Spaces preview shows the same thumbnails, so it is a visible consumer like the switcher.
+    func testAVisibleSpacesPreviewAllowsCaptureOnItsOwn() {
+        XCTAssertTrue(WindowPreviewCapturePolicy.allowsCapture(true, false, false, true))
+        XCTAssertFalse(WindowPreviewCapturePolicy.allowsCapture(true, false, false, false))
+        XCTAssertFalse(WindowPreviewCapturePolicy.allowsCapture(false, false, false, true))
+    }
+
     private let screens: [(String, (CGFloat, CGFloat), (CGFloat, CGFloat), (CGFloat, CGFloat), [(Int, CGFloat, CGFloat)])] = [
         // screen model, (widthInPixels, heightInPixels), (physicalWidthInMM, physicalHeightInMM), (expectedWidthForHorizontal, expectedWidthForVertical), (rowCount, expectedMinWidth, expectedMaxWidth)
         ("11\" Laptop: MacBook Air 11\": HD", (1366, 768), (255.7, 178.6), (0.90, 0.90), [(3, 0.12, 0.25), (4, 0.09, 0.19), (5, 0.09, 0.15)]),

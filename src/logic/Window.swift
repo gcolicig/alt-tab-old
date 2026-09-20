@@ -130,6 +130,7 @@ class Window {
 
     func refreshThumbnail(_ screenshot: CALayerContents) {
         thumbnail = screenshot
+        SpacesPreviewPanel.noteThumbnailArrived()
         if !App.appIsBeingUsed || !shouldShowTheUser { return }
         if let position, let size,
            let view = (TilesView.recycledViews.first { $0.window_?.cgWindowId == cgWindowId }) {

@@ -443,4 +443,5 @@ extension App: NSApplicationDelegate {
 enum RefreshCausedBy {
     case refreshOnlyThumbnailsAfterShowUi
     case refreshUiAfterExternalEvent
+    case spacesPreview
 }

@@ -14,6 +14,7 @@ class SpacesPreviewPanel: NSPanel {
 
 
     static var isShowing: Bool { shared != nil }
+    private static var rebuildIsScheduled = false
 
     static func toggle(anchoredTo button: NSStatusBarButton) {
         if isShowing {
@@ -66,6 +67,20 @@ class SpacesPreviewPanel: NSPanel {
         tile.onClick?()
     }
 
+    /// A capture landed. The panel asks for the thumbnails of the windows it shows, and those arrive one by
+    /// one, so the rebuilds are coalesced into one per runloop turn.
+    static func noteThumbnailArrived() {
+        guard isShowing, !rebuildIsScheduled else { return }
+        rebuildIsScheduled = true
+        DispatchQueue.main.async {
+            rebuildIsScheduled = false
+            guard let panel = shared else { return }
+            let top = panel.frame.maxY
+            panel.build()
+            panel.setFrameTopLeftPoint(NSPoint(x: panel.frame.minX, y: top))
+        }
+    }
+
     /// The active Space can change while the panel is open (keyboard shortcut, trackpad swipe).
     static func refreshIfShowing() {
         guard let panel = shared else { return }
@@ -96,6 +111,8 @@ class SpacesPreviewPanel: NSPanel {
     private var tileHeight = SpacesPreviewPanel.preferredTileHeight
     /// The display the status item was clicked on. The panel is sized and placed against this one.
     private var anchorScreen: NSScreen?
+    /// Every window drawn in the current content, for the thumbnail request.
+    private var shownWindows = [Window]()
 
     /// Builds at the preferred tile size, then once more with smaller tiles when the panel is wider than the
     /// menu bar screen, so every Space stays on screen.
@@ -120,6 +137,7 @@ class SpacesPreviewPanel: NSPanel {
             screensByUuid[group.displayUuid as String].map { (group.displayUuid as String, SpacesPreviewPanel.physicalHeight($0)) }
         }, uniquingKeysWith: { first, _ in first })
         let tallest = physicalHeights.values.max() ?? 1
+        shownWindows = []
         let strips = groups.compactMap { group -> (SpacesPreviewLayout.Display, NSView)? in
             guard let screen = screensByUuid[group.displayUuid as String] else { return nil }
             let scale = (physicalHeights[group.displayUuid as String] ?? tallest) / max(tallest, 1)
@@ -137,6 +155,9 @@ class SpacesPreviewPanel: NSPanel {
         background.addSubview(content)
         contentView = background
         setContentSize(content.frame.size)
+        // the switcher captures thumbnails only while it is open, so a preview opened on a fresh launch has
+        // none; ask for the windows it shows, and rebuild as they arrive (noteThumbnailArrived)
+        Windows.refreshThumbnailsAsync(shownWindows, .spacesPreview)
         return content.frame.size
     }
 
@@ -195,9 +216,11 @@ class SpacesPreviewPanel: NSPanel {
 
     /// Back to front, so the most recently focused window is drawn last and ends on top.
     private func windows(in spaceId: CGSSpaceID) -> [Window] {
-        Windows.list
+        let found = Windows.list
             .filter { !$0.isWindowlessApp && !$0.isMinimized && !$0.isHidden && $0.spaceIds.contains(spaceId) }
             .sorted { $0.lastFocusOrder > $1.lastFocusOrder }
+        shownWindows.append(contentsOf: found)
+        return found
     }
 
     private func position(under button: NSStatusBarButton) {
