@@ -93,7 +93,7 @@ extension SettingsWindow: NSTableViewDataSource, NSTableViewDelegate {
         let row = sidebarTableView.selectedRow
         guard row >= 0, row < sidebarRows.count, let id = sidebarRows[row].sectionId,
               let section = sections.first(where: { $0.id == id }) else { return }
-        chosenSectionId = section.id
+        chooseSectionFromSidebar(section.id)
         if selectedSectionId == section.id { return }
         selectSection(section, scroll: true, selectInSidebar: false)
     }

@@ -50,6 +50,11 @@ class SettingsSidebarTests: XCTestCase {
         XCTAssertNil(SettingsSidebarLayout.selection(visible: [], preferred: "spaces"))
     }
 
+    func testSearchSelectionKeepsPreviouslyChosenSection() {
+        XCTAssertEqual(SettingsSidebarLayout.chosenSection(current: "window-layouts", selected: "general", searching: true), "window-layouts")
+        XCTAssertEqual(SettingsSidebarLayout.chosenSection(current: "window-layouts", selected: "general", searching: false), "general")
+    }
+
     func testOnlyTheSelectedPageIsShownWithoutAQuery() {
         let all = ["general", "leader", "spaces"]
         XCTAssertEqual(SettingsSidebarLayout.displayed(all: all, matching: all, selected: "leader", searching: false), ["leader"])

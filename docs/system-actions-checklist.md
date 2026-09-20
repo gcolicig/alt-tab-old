@@ -4,7 +4,8 @@ Run on the supported Apple-silicon Mac and record the macOS build. Everything he
 2026-09-16. Unit tests cover the pure parts (`MenuLayoutTests`, `WindowFocusTests`, `SystemActionTests`,
 `ScreenToolsFormatTests`, `KeepAwakeTests`, `DebugToolsTests`). The app launched and stayed idle at 0 % CPU;
 the grouped menu, settings, microphone icon and browser list were seen on the device, but most actions were
-not operated. Steps 42 and 43 passed on 2026-09-19; steps 44 to 50 remain open.
+not operated. Steps 42 and 43 passed on 2026-09-19. Step 19 was rerun on macOS 26.7 (25G229) on 2026-09-20;
+all 15 sidebar entries opened without a crash and retained the window structure. Steps 44 to 50 remain open.
 
 Emergency shortcut: `Command+Control+Option+Shift+Escape`.
 

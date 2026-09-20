@@ -1,8 +1,10 @@
 # Settings Window Checklist (Story 16)
 
 Run on the supported Mac after installing a build of `feat/settings-shortcut-overview` or later. Seen on
-2026-09-16: steps 1–3, 5, 7, 8, 10 and 11. Seen on 2026-09-18: steps 12 and 14. Step 13 failed, see V-23
-in `HANDOVER.md`. Not yet run: 4, 6 and 9.
+2026-09-16: steps 1–3, 5, 7, 8, 10 and 11. Seen on 2026-09-18: steps 12 and 14. On
+2026-09-20 steps 1–6 and 19 of the system-actions checklist were rerun on macOS 26.7 (25G229). The rerun
+found and fixed that clearing a search returned to `General` instead of the page chosen before the search.
+Step 13 failed, see V-23 in `HANDOVER.md`. Not yet run: 9.
 
 ## Pages and sidebar (stage 1)
 
@@ -12,7 +14,7 @@ in `HANDOVER.md`. Not yet run: 4, 6 and 9.
 | 2 | Click each sidebar entry | That section alone is shown, scrolled to the top; the window keeps its width |
 | 3 | Pick `Window Layouts`, search for `record`, clear the search with the x button | Matching sections are stacked with highlights; after clearing, `Window Layouts` is shown again |
 | 4 | Search for text that matches nothing | The sidebar is empty; clearing restores it |
-| 5 | Look at any empty shortcut recorder | It reads `Record`, not truncated |
+| 5 | Look at any empty shortcut recorder | It reads `None`, not truncated |
 | 6 | `General > Settings file`: Export, Import, Apply, Reset | Each opens its dialog; Reset asks before it restarts |
 
 ## Lists (stage 2)

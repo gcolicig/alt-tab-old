@@ -77,6 +77,10 @@ enum SettingsSidebarLayout {
         return preferred
     }
 
+    static func chosenSection(current: String?, selected: String, searching: Bool) -> String? {
+        searching ? current : selected
+    }
+
     static func displayed(all: [String], matching: [String], selected: String?, searching: Bool) -> [String] {
         guard searching else { return selected.map { [$0] } ?? [] }
         return all.filter { matching.contains($0) }

@@ -734,6 +734,10 @@ class SettingsWindow: NSWindow {
         selectSection(section, scroll: true)
     }
 
+    func chooseSectionFromSidebar(_ sectionId: String) {
+        chosenSectionId = SettingsSidebarLayout.chosenSection(current: chosenSectionId, selected: sectionId, searching: isSearching)
+    }
+
     override func close() {
         hideAppIfLastWindowIsClosed()
         super.close()
