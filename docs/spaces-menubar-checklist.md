@@ -60,3 +60,42 @@ changes. It is the manual half of `V-14`.
   default value outside an app bundle and reported the opposite of the truth on 2026-08-05, which is how a
   grouping rule came to be built on a misreading.
 - Steps 1 and 2 have never been observed in the state they describe. They are the ones to run first.
+
+## Defect V-22: a segment click opens the menu instead of the preview (reported 2026-09-20)
+
+Since #72 a left click on a Space segment must open the Spaces preview. The menu opens instead,
+depending on where and when the click lands. The failure is not reliably reproducible by eye.
+
+The click path is `Menubar.statusItemOnClick()` → `handleSegmentClick()`. The handler returns false,
+and the caller then pops `Menubar.menu`, when any of these is true:
+
+- `NSApp.currentEvent` is nil, or its type is not `.leftMouseDown`
+- `spacesRowRect` is nil, which `refreshSpaces()` sets while it rebuilds the row
+- `point.x` falls outside `spacesRowRect`; only the x axis is tested, never y
+
+Run every step twice and record which of the two appeared. The row is one rendered image, so a
+segment is found by position, not by hit-testing a view.
+
+| # | Action | Expectation |
+|---|---|---|
+| A1 | Click the left edge, the middle and the right edge of one segment | Preview each time |
+| A2 | Click the 1 pt boundary between two segments | Preview, never the menu |
+| A3 | Click the divider between two display groups | Preview, never the menu |
+| A4 | Click the gap between the AltTab+ icon and the first segment | Menu (the gap is not the row) |
+| A5 | Click a segment at the top edge of the menu bar, then at the bottom edge | Same result as in the middle |
+| A6 | Click the same segment 20 times | 20 previews; record every menu that appears |
+| A7 | Click a segment immediately after a Space switch, and again during the switch animation | Preview |
+| A8 | Click a segment right after plugging or unplugging a display | Preview |
+| A9 | Click a segment right after muting or unmuting the microphone | Preview |
+| A10 | Add and delete a Space in Mission Control, then click a segment | Preview |
+| A11 | Leave the Mac idle for 10 minutes, then click a segment | Preview |
+| A12 | Click with tap-to-click on a trackpad, then with a physical click | Preview both times |
+| A13 | Click while Command, Option, Control or Shift is held | Defined behaviour, and the same one each time |
+| A14 | Double-click a segment | No menu, no double toggle |
+| A15 | Click a segment while the preview is already open | The preview closes, no menu |
+| A16 | Click the mute icon and the overflow button | Their own action, never the preview |
+| A17 | Repeat A1 and A6 with one display, then with two displays | Same result |
+| A18 | Repeat A1 on a display carrying a single Space | Preview |
+
+Record for each failure: the macOS build, the number of displays, the number of Spaces per display,
+and what happened right before the click. Start the app with `--logs-file=<path>` to keep a log.

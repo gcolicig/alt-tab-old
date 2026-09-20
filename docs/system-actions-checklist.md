@@ -87,3 +87,17 @@ Emergency shortcut: `Command+Control+Option+Shift+Escape`.
 | 39 | `Copy Accessibility Tree` for Finder, Safari, an Electron app | Header plus indented tree; text fields and windows show only title lengths |
 | 40 | Same with a hung app | Partial tree or a notice; the menu bar stays responsive |
 | 41 | `Reset Permissions…` → Reset and Restart | App restarts and asks for both permissions again. If `tccutil` refuses, the dialog shows its output |
+
+## Paste and Match Style, Press and Hold (story 14 addendum, 2026-09-19)
+
+| # | Action | Expectation |
+|---|---|---|
+| 42 | Copy bold, coloured text, click into a rich text editor, run `Other… > System > Paste and Match Style` | Plain text is pasted; done on 2026-09-19, passed |
+| 43 | Check the clipboard half a second later | The original rich text is back; done on 2026-09-19, passed |
+| 44 | Copy something else within that half second | The newer clipboard survives, nothing is overwritten |
+| 45 | Run the action with an empty clipboard | Entry greyed out, tooltip names the reason |
+| 46 | Run the action from a Leader key and from a global shortcut | Pastes in the front app, modifiers still held do not change the key |
+| 47 | Open `Other… > Toggles` | `Press and Hold for Accents` carries a tick that matches `defaults read -g ApplePressAndHoldEnabled` |
+| 48 | Toggle it off, restart TextEdit, hold `e` | The key repeats. A notice asked for the restart |
+| 49 | Toggle it on, restart TextEdit, hold `e` | The accent popup appears |
+| 50 | Quit AltTab+ | The value stays as set; AltTab+ does not give it back, which the README states |

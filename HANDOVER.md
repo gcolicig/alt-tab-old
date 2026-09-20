@@ -300,3 +300,62 @@ V-10 step 11 negative half, V-16.
   upstream repository.
 - Settings pages are built on demand since #69. A page may not exist when other code runs: never force
   unwrap a control of another page, and route conflict resolution through preferences, not the UI.
+
+## Handover to Codex, second session of 2026-09-20
+
+This section continues the handover above. It covers the work of 2026-09-19/20 that the first section
+does not, and states per item whether it is specified well enough to implement without asking the author.
+
+### What shipped
+
+| PR | Change |
+|---|---|
+| #63 | `Focus on 3 Foremost Windows`, menu reorder, microphone key, plus two new system actions: `Paste and Match Style` (`system.pasteAsPlainText`) and `Press and Hold for Accents` (`keyboard.pressAndHold.toggle`) |
+| #70 | README and changelog for both actions |
+| #72 | Spaces preview from a Space segment |
+
+`Paste and Match Style` replaces the clipboard with its plain text, posts `Cmd+V` to the front app, and
+restores the original clipboard 0.5 s later unless something else wrote to it. It does not send the system
+`Cmd+Option+Shift+V`, because apps may ignore that. Operated on 2026-09-19: the paste arrived, the
+formatting was gone, and the rich clipboard came back. Steps 42 and 43 of
+`docs/system-actions-checklist.md` are therefore closed; 44 to 50 are open.
+
+`Press and Hold for Accents` writes the global `ApplePressAndHoldEnabled` preference. Apps read it at
+launch, so a notice asks for an app restart. Unlike `Function Keys`, it never gives the earlier value
+back; the README says so. Not operated.
+
+### Open defect
+
+**V-22, a segment click opens the menu instead of the preview.** Reported 2026-09-20, not reproducible
+by eye. The click path and the three ways it falls through to the menu are written up in
+`docs/spaces-menubar-checklist.md`, together with an 18-step click matrix (A1–A18). The y axis is ignored
+on purpose in `handleSegmentClick()`; the comment there says why, so a fix must not simply add a y test
+without taking the 37 pt menu bar into account.
+
+Neither Codex nor Claude can click a menu bar item here: `osascript` has no accessibility permission, and
+granting it is out of scope. So the pure hit-test maths belongs in `MenubarSpaceRow` with unit tests, and
+the clicks stay with the author. The app takes `--logs-file=<path>`, because a GUI app has no usable
+stdout and launching its binary from a terminal misattributes the TCC grant.
+
+### Specification quality of what is left
+
+**Ready to implement as written**
+- **Story 17, URL scheme**: unchanged from the first section. Full spec, allowlist, default off. The
+  scheme name is the one open decision (`alttabplus` is a proposal).
+
+**Specified, but two gaps to close first**
+- **Story 2D stage 2, profiles**: the backlog names the actions (start profile apps, assign windows to the
+  profile Space, save and restore a session), the snapshot fields and the best-effort rules. Missing:
+  preference keys, where the actions sit in the settings, and whether restore is one action or one per
+  profile. Pick them in the established style, or ask.
+
+**Closed in this session**
+- Always on Top and a command palette are non-goals with a reactivation criterion, in `backlog.md` under
+  `Nicht-Ziele fuer die erste Iteration`. Always on Top would need a SIP-weakening scripting addition;
+  a spike that proves a way without one reopens it.
+
+### Outside this repository
+
+A specification for `New++`, a separate Finder-extension app that creates files from templates, was
+written on 2026-09-19 and handed to the author as a file. It is deliberately not part of AltTab+; the only
+planned link is a URL scheme on each side. Do not add file-creation features here.
