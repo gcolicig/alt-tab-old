@@ -1002,7 +1002,9 @@ Der MVP-Scope oben bleibt das Ziel. Er wird in zwei Schritten gebaut, weil nur d
 
 ### 6c. Smoothed Scrolling fuer das Mausrad
 
-Status: Spezifiziert 2026-09-16; nicht begonnen. Wartet auf V-17 (Story 6 am Geraet)
+Status: Umgesetzt 2026-09-19 (PR #65, Commit `c5e1f77f`): Mausrad vertikal und horizontal, vier
+Smoothness-Stufen, Schalter in `Pointer & Scroll`. V-17 und V-18 sind weiterhin offen, die
+Messungen am Geraet stehen also noch aus
 Prioritaet: Mittel. Folgestufe von Story 6, aus deren `Nicht im MVP` herausgeloest
 
 Referenz: LinearMouse, Scrolling-Modus `Smoothed (beta)`, Stand `d82e98fba7f2` vom 2026-09-14 (Release `v0.12.0-beta.5`), MIT. Gelesen: `SmoothedScrollingEngine.swift`, `SmoothedScrollingTransformer.swift`, `Scheme/Scrolling/Smoothed.swift`, `GestureKit/GestureEvent+Scroll.swift`. Das Feature ist dort Beta und wird aktiv umgebaut.

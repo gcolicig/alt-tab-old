@@ -145,7 +145,7 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 - Reverse betrifft im MVP nur die vertikale Achse; Speed skaliert beide. Keine App- oder geraetespezifischen Regeln, kein Smoothing, keine eigenen Kurven.
 - Offen (Geraete-Gate): Tap-, Berechtigungs- und Energiepruefung am Zielgeraet (`docs/scroll-direction-checklist.md`), inkl. Momentum-/Phase-Verhalten. Die Energie- und Latenzmessung fuer den dauerhaft aktiven Tap ist V-17 und noch offen.
 
-- Folgestufe Smoothed Scrolling (Story 6c): Engine aus LinearMouse uebernehmen, Anbindung an den bestehenden Tap neu bauen. Erst Mausrad vertikal mit festem Preset und ohne Gesten-Begleiter, dann Messung (V-18), dann Presets und Regler. Beginnt erst nach bestandenem V-17.
+- Folgestufe Smoothed Scrolling (Story 6c): Engine aus LinearMouse uebernehmen, Anbindung an den bestehenden Tap neu bauen. Umgesetzt 2026-09-19 (PR #65) mit vier Smoothness-Stufen; die Reihenfolge wurde vorgezogen. Die Messungen V-17 (Energie und Latenz des Taps) und V-18 (Smoothed Scrolling) sind offen und bleiben Gates vor einem Release.
 
 ## Phase 8: Gesten
 

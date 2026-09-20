@@ -222,3 +222,81 @@ In rough priority. Everything here needs a human at the keyboard; none of it can
   `screensHaveSeparateSpaces` finding is in `backlog.md` with its cause, so nobody rebuilds on it.
 - Do not commit code that claims more than it delivers. If a wiring step is missing, the status line says
   so rather than the module looking finished.
+
+## Handover to Codex, 2026-09-20
+
+This section hands the work over to a Codex session. It adds what changed on 2026-09-19/20 and states,
+per open story, whether the specification is complete enough to implement without asking the author.
+
+### What changed on 2026-09-19/20 (all merged to `main`)
+
+| PR | Change |
+|---|---|
+| #64 | Settings window overhaul: modal sheets became collapsible sections, sidebar regrouped (`Input`), search shows a path and jumps to the first match, inline notes for disabled controls, permission rows, per-page `Reset to defaults`, plain-text shortcut recorders, `SettingsWindow.swift` split into focused files |
+| #65 | Smoothed scrolling for classic mouse wheels (story 6c) |
+| #66 | Sentence-case labels, explained shortcut-set states, chevron in the shortcut overview |
+| #67 | App icon: grey background `#9D9C9C`, colored traffic lights, one look in light and dark |
+| #68 | Exceptions page rebuilt as rows with app name, icon and labelled options; old 4-column `TableView` deleted |
+| #69 | First open of the settings window: 3.7 s → 0.33 s. Pages are built on demand, shortcut registration no longer runs while pages are built, Cmd-Tab editors build when selected |
+| #71 | Pointer & Scroll grouped into `Mouse`/`Trackpad`, System Actions app lists with icons, long help texts moved into info buttons, recorder text right-aligned |
+
+Measured, not assumed: the settings numbers come from in-app probes (build 3713 ms → 1767 ms → 330 ms;
+show 253 ms → 38 ms; the background chain finishes ~1.5 s after the window is visible). The greyscale
+illustration path was measured at ~13 ms per image before and ~4 ms after #68.
+
+Not verified by operating: every page was checked in screenshots, but the interactions were not run —
+recording a shortcut, the conflict dialog across two Cmd-Tab slots, `Reset to defaults` on each page,
+adding and removing apps in System Actions and Exceptions, and smoothed scrolling with a real wheel mouse
+in several apps. `docs/settings-window-checklist.md` has one item open from before.
+
+### Open stories and their specification quality
+
+**Ready to implement as written**
+- **Story 9, Thumbnail-Drop, rest**: the drop path exists (`src/ui/main-window/TilesView.swift:674`);
+  spring-loading (TD-01/TD-02), the settings switch and the dwell preference are missing. The backlog has
+  the state machine, acceptance criteria and defaults (1.5 s, range 0.5–3.0 s).
+- **Story 17, URL scheme**: full spec, allowlist per action, default off. One open decision: the scheme
+  name (`alttabplus` is a proposal).
+- **Story 11, switcher deltas**: four named deltas with a preserved default; preference keys are not
+  named, pick them in the established style.
+
+**Needs a decision from the author first**
+- **Story 6b, SwiftFormat**: `.swiftformatignore` ends in `**/*`, so the pre-commit lint checks nothing.
+  Three ways out, the backlog says the work is the decision itself.
+- **Story 2G follow-up**: two candidate paths for the native title-bar drag, neither chosen.
+- **Story 6b, Move/Resize exception column**: one shared column or two.
+
+**Blocked by a spike, do not start**
+- **Story 18, apps bound to spaces**: two proofs required first; only the private wrapper exists
+  (`src/api-wrappers/private-apis/SkyLight.framework.swift:129`).
+- **Story 2F, linked spaces across displays**: spike open. Read S-10d (2026-09-16) before the older
+  2026-08-07 paragraph, which it disproves but does not delete.
+- **Story 2H**: no system path; specified and resting.
+- **Story 7, three-finger middle click**: design constraints only — no acceptance criterion, no UI
+  placement, no preference key.
+- **Story 4c, per-device pointer settings**: its own exit criterion forbids building while the read path
+  is unresolved.
+
+### Verification debt (checklists never run on the target machine)
+
+`docs/tahoe-tiling-checklist.md` (blocks the Phase 5 residue), `docs/leader-flickring-checklist.md`,
+`docs/profiles-checklist.md`, `docs/window-drag-checklist.md` (needs two displays),
+`docs/system-actions-checklist.md`, `docs/scroll-direction-checklist.md` (V-17, and V-18 has no checklist
+yet), `docs/shortcut-clues-checklist.md`, `docs/space-identity-checklist.md`, menubar drop stage 2,
+V-10 step 11 negative half, V-16.
+
+### Conventions a new session must follow
+
+- Swift 5.8 only, no SwiftUI, no Interface Builder, no Xcode GUI (`AGENTS.md`).
+- `./build.sh --test` before every commit; Conventional Commits with a subject of at most 72 characters.
+- Any changed `NSLocalizedString` needs `scripts/l10n/extract_l10n_strings.sh`; CI fails otherwise. When a
+  key is renamed, rename it in all 59 `resources/l10n/*.lproj/Localizable.strings` files, or the
+  translations are lost.
+- New files must be registered by hand in `alt-tab-macos.xcodeproj/project.pbxproj`, `*Testable.swift`
+  files in the app target and the unit-tests target.
+- Local Xcode is 27, CI runs `macos-15`. Guard macOS 26 SDK APIs, and keep expressions short: the build
+  enforces a 250 ms type-check limit per expression.
+- PRs go to `gcolicig/alt-tab-old`; `gh` needs `--repo gcolicig/alt-tab-old`, otherwise it targets the
+  upstream repository.
+- Settings pages are built on demand since #69. A page may not exist when other code runs: never force
+  unwrap a control of another page, and route conflict resolution through preferences, not the UI.
