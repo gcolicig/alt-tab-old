@@ -283,10 +283,15 @@ class Menubar {
 
     /// Records the clickable rect of every segment in the status button's coordinates, before the row is
     /// flattened to an image. The container sits at `iconWidth`, so each button's row x adds that offset.
+    ///
+    /// The rect covers the whole segment, not the drawn box: the box is inset by 2pt on each side and keeps a
+    /// fixed 16pt height inside a menu bar that is 24pt or taller, so a click near the top or the bottom edge
+    /// fell through to the icon's own handler and opened the menu instead of the Spaces preview.
     private static func collectSegmentTargets(_ container: NSView) -> [SegmentTarget] {
         container.subviews.compactMap { subview in
             guard let button = subview as? NSButton, button.identifier != nil else { return nil }
-            let rect = CGRect(x: container.frame.minX + button.frame.minX, y: button.frame.minY, width: button.frame.width, height: button.frame.height)
+            let rect = CGRect(x: container.frame.minX + button.frame.minX - 2, y: 0,
+                              width: button.frame.width + 4, height: container.frame.height)
             return SegmentTarget(rect: rect)
         }
     }
