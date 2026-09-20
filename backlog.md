@@ -2278,6 +2278,7 @@ Default-Settings, Reset-Verhalten und Migration werden nach jedem neuen Modul ge
 | V-19 | Cat Mode | Story 14K am Geraet: alle drei Auswege (Panic-Kill-Switch, Menue, `unlock`), Tap-Ausfall beendet sichtbar, Auto-Ende nach Ablauf, bei Sleep und Bildschirmsperre; keine haengenden Modifier nach dem Ende. Vor jeder Freigabe Pflicht |
 | V-20 | Funktionstasten | Story 14J: wirkt ein Wechsel von `HIDFKeyMode` sofort, bleibt er nach Neustart, und gibt `Restore Original Mode` den Ausgangswert zurueck. Lesen und Schreiben desselben Werts sind belegt (2026-09-16) |
 | V-21 | Mitteilungen per AX | Story 14H: Struktur und Aktionsnamen der Mitteilungszentrale unter macOS 26 belegen; erst danach gilt die Versionsfreigabe als geprueft |
+| V-22 | Klick auf ein Space-Segment | Nach dem Fix vom 2026-09-20 die Matrix A1-A18 in `docs/spaces-menubar-checklist.md` am Geraet laufen lassen: jeder Klick auf die Zeile oeffnet die Vorschau, der Klick auf Symbol oder Luecke das Menue. Ursache war ein auf den linken Fensterrand fixiertes `event.locationInWindow`; die Hit-Logik liegt jetzt unit-getestet in `MenubarSpaceRow` |
 
 ## Provenienz-Register
 

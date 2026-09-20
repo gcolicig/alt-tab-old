@@ -359,3 +359,85 @@ stdout and launching its binary from a terminal misattributes the TCC grant.
 A specification for `New++`, a separate Finder-extension app that creates files from templates, was
 written on 2026-09-19 and handed to the author as a file. It is deliberately not part of AltTab+; the only
 planned link is a URL scheme on each side. Do not add file-creation features here.
+
+## Handover to Codex, third session of 2026-09-20
+
+This section covers the late work of 2026-09-20. It states per item whether it is specified well enough
+to implement without asking the author.
+
+### V-22 has a cause and a fix
+
+`event.locationInWindow` is intermittently pinned to the status window's left content inset for clicks
+on the part of the status item that was added beyond its original square. The recorded pair is
+`(0, 11.21)` for a click whose live screen point converted to `(40.695, 11.21)`, which lies inside the
+Spaces row. The x test failed, `handleSegmentClick()` returned false, and the menu opened.
+
+The handler now converts `NSEvent.mouseLocation` through the status window. The hit test moved to
+`MenubarSpaceRow.hitTarget(at:spacesRect:muteRects:)`, so it is unit-testable without a click: the
+recorded pair, the half-open horizontal range at every menu bar height, and mute icons winning over the
+row. 369 tests pass.
+
+What is left is the device run: matrix A1-A18 in `docs/spaces-menubar-checklist.md`, now listed as V-22
+in `backlog.md`. Neither Codex nor Claude can click a menu bar item here, so this stays with the author.
+Do not add a y test to the hit target; the comment in `MenubarSpaceRow` states why the y axis is ignored.
+
+### Renaming the app
+
+The author decided on `Panion`, with the subtitle
+`Keyboard-first window switching, layouts, focus, and workspace control for macOS.`
+
+Measured against the name in an earlier session: the name is in use elsewhere. There is a Mac App Store
+app `Panion - Panic Companion`, a company of that name, and the GitHub name is taken. The author accepts
+this. Repeat the check for GitHub, Homebrew and the trademark register before the first public release,
+because a release is the point where a clash starts to cost.
+
+What the name touches, measured on 2026-09-20:
+
+| Ort | Befund |
+|---|---|
+| `config/base.xcconfig` | `PRODUCT_NAME = AltTab+`, `PRODUCT_BUNDLE_IDENTIFIER = com.gcolicig.alttab-plus` |
+| `src/ui/App.swift` | `App.name` reads `CFBundleName`, so most on-screen text follows the product name |
+| Swift sources | 13 literals containing `AltTab` |
+| `resources/l10n` | 7 English strings contain the name, across 59 locales |
+| Bundle id | appears in 6 files: the xcconfig, `README.md`, `backlog.md`, two checklists, the install skill |
+| `Info.plist` | `SUFeedURL` is empty, so no appcast breaks |
+| Preferences and TCC | both are keyed by the bundle id |
+
+Three stages, in this order:
+
+1. Product name only, bundle id unchanged. Settings and permissions survive, because macOS keys both by
+   the bundle id. Touches the xcconfig, the 13 literals, the 7 English strings, the README head and the
+   GitHub description. The 58 translations keep the old name until Crowdin catches up.
+2. Bundle id, with a one-shot preference migration in `PreferencesMigrations.swift` following the
+   existing marker pattern. Accessibility and Screen Recording must be granted once more; that cannot be
+   avoided, because macOS treats a new id as a new app.
+3. Repository and delivery: rename the GitHub repository, set the description, adjust the zip name in
+   `scripts/update_readme_and_website.sh`.
+
+### When to rename
+
+Do stage 1 and 2 together, in one release, and do it before the first public release, while the author is
+the only user. Two reasons, both measurable rather than a matter of taste:
+
+- The permission reset in stage 2 hits every installation. Today that is one machine. After a release it
+  is every user, and each one must find two panes in System Settings.
+- The 58 translations carry the name. Every week of further translation work adds strings that have to be
+  regenerated a second time.
+
+Do not rename in the middle of the open device runs. V-19 to V-22 and the system-actions checklist steps
+44 to 50 are written against an installed `AltTab+`, and stage 2 resets the permissions those runs
+depend on. Finish the open runs, rename, then re-run only the permission-sensitive steps.
+
+### Specification quality of what is left
+
+**Ready to implement as written**
+- The rename, stages 1 to 3 above. Open decision: none, once the author confirms `Panion`.
+- Story 17, URL scheme. Unchanged. The scheme name is the one open decision, and it depends on the
+  rename: pick it after stage 1, not before.
+
+**Needs a device, not a coder**
+- V-22 matrix A1-A18, V-19, V-20, V-21, and steps 44 to 50 of `docs/system-actions-checklist.md`.
+
+**Specified, with two gaps**
+- Story 2D stage 2, profiles. Unchanged from the second section: preference keys, the place in the
+  settings, and whether restore is one action or one per profile are still open.
