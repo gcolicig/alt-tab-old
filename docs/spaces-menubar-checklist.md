@@ -73,6 +73,18 @@ and the caller then pops `Menubar.menu`, when any of these is true:
 - `spacesRowRect` is nil, which `refreshSpaces()` sets while it rebuilds the row
 - `point.x` falls outside `spacesRowRect`; only the x axis is tested, never y
 
+### Cause found on 2026-09-20, fix pending the run below
+
+`event.locationInWindow` is intermittently pinned to the status window's left content inset for clicks
+on the part of the item that was added beyond its original square. The recorded pair is `(0, 11.21)`
+for a click whose live screen point converted to `(40.695, 11.21)`, which is inside the row. The x test
+therefore failed and the menu opened.
+
+The handler now converts `NSEvent.mouseLocation` through the status window instead, and the hit test
+moved to `MenubarSpaceRow.hitTarget(at:spacesRect:muteRects:)`, where three unit tests hold it: the
+recorded pair, the half-open horizontal range at every menu bar height, and mute icons winning over the
+row. The matrix below now verifies the fix.
+
 Run every step twice and record which of the two appeared. The row is one rendered image, so a
 segment is found by position, not by hit-testing a view.
 

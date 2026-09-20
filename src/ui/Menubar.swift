@@ -79,15 +79,20 @@ class Menubar {
     /// mapped to a segment by position. Returns false when the click was on the icon or empty area, so the
     /// icon's own behaviour (menu or switcher) runs.
     private static func handleSegmentClick() -> Bool {
-        guard let button = statusItem?.button, let event = NSApp.currentEvent, event.type == .leftMouseDown else { return false }
-        let point = button.convert(event.locationInWindow, from: nil)
-        if let mute = muteTargets.first(where: { $0.rect.contains(point) }) {
-            MicMuteIndicator.unmute(mute.icon)
+        guard let button = statusItem?.button, let window = button.window,
+              let event = NSApp.currentEvent, event.type == .leftMouseDown else { return false }
+        // `event.locationInWindow` is intermittently pinned to the status window's left content inset when
+        // clicking the part added beyond the original square item. The live screen point remains correct.
+        let point = button.convert(window.convertPoint(fromScreen: NSEvent.mouseLocation), from: nil)
+        switch MenubarSpaceRow.hitTarget(at: point, spacesRect: spacesRowRect, muteRects: muteTargets.map { $0.rect }) {
+        case .mute(let index):
+            MicMuteIndicator.unmute(muteTargets[index].icon)
             return true
+        case .none:
+            return false
+        case .spaces:
+            break
         }
-        // only the horizontal range counts: the status button is 22pt tall inside a menu bar that can be 37pt,
-        // so a click near the top or the bottom of the bar converts to a y outside the button's own bounds
-        guard let rowRect = spacesRowRect, point.x >= rowRect.minX, point.x < rowRect.maxX else { return false }
         // a segment opens the Spaces preview, where every display's Spaces are shown in place; the switch
         // itself happens on a tile click (switchToSpace)
         SpacesPreviewPanel.toggle(anchoredTo: button)

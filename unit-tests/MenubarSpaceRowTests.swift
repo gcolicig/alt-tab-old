@@ -94,6 +94,26 @@ class MenubarSpaceRowTests: XCTestCase {
                        9 * MenubarSpaceRow.segmentWidth + 4 * MenubarSpaceRow.groupGap)
     }
 
+    func testRecordedLivePointerHitsSpacesWhenTheEventPointWasPinnedToTheIcon() {
+        let spaces = CGRect(x: 28, y: 0, width: 124, height: 22)
+        XCTAssertEqual(MenubarSpaceRow.hitTarget(at: CGPoint(x: 0, y: 11.21), spacesRect: spaces, muteRects: []), .none)
+        XCTAssertEqual(MenubarSpaceRow.hitTarget(at: CGPoint(x: 40.695, y: 11.21), spacesRect: spaces, muteRects: []), .spaces)
+    }
+
+    func testSpacesUseAHalfOpenHorizontalRangeAtEveryMenuBarHeight() {
+        let spaces = CGRect(x: 28, y: 0, width: 124, height: 22)
+        XCTAssertEqual(MenubarSpaceRow.hitTarget(at: CGPoint(x: 28, y: -8), spacesRect: spaces, muteRects: []), .spaces)
+        XCTAssertEqual(MenubarSpaceRow.hitTarget(at: CGPoint(x: 151.999, y: 37), spacesRect: spaces, muteRects: []), .spaces)
+        XCTAssertEqual(MenubarSpaceRow.hitTarget(at: CGPoint(x: 152, y: 11), spacesRect: spaces, muteRects: []), .none)
+    }
+
+    func testMuteTargetsKeepTheirFullRectangleAndPrecedeSpaces() {
+        let mute = CGRect(x: 40, y: 3, width: 22, height: 16)
+        let spaces = CGRect(x: 28, y: 0, width: 124, height: 22)
+        XCTAssertEqual(MenubarSpaceRow.hitTarget(at: CGPoint(x: 50, y: 10), spacesRect: spaces, muteRects: [mute]), .mute(0))
+        XCTAssertEqual(MenubarSpaceRow.hitTarget(at: CGPoint(x: 50, y: 21), spacesRect: spaces, muteRects: [mute]), .spaces)
+    }
+
     func testDisplaysFollowScreenOrderAndOnlyThoseThatOwnSpaces() {
         let ordered = MenubarSpaceRow.orderedDisplays(screensInOrder: ["left", "middle", "right"],
                                                       displaysWithSpaces: ["right", "left"])

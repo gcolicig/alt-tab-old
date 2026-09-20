@@ -4,6 +4,12 @@ import Foundation
 /// interesting cases — overflow past the ninth Space, several display groups — cannot be reproduced
 /// on a single-display machine, so they are covered by tests instead of by clicking.
 struct MenubarSpaceRow {
+    enum HitTarget: Equatable {
+        case none
+        case mute(Int)
+        case spaces
+    }
+
     static let segmentWidth = CGFloat(28)
     static let groupGap = CGFloat(6)
     /// Segments beyond this count per display collapse into an overflow segment.
@@ -34,6 +40,15 @@ struct MenubarSpaceRow {
     static func totalWidth(_ spaceCounts: [Int]) -> CGFloat {
         spaceCounts.reduce(CGFloat(0)) { $0 + groupWidth($1) }
             + CGFloat(max(0, spaceCounts.count - 1)) * groupGap * 2
+    }
+
+    /// Mute icons win over the Spaces row, because they sit inside it. For the row itself only the
+    /// horizontal range counts: the status button is 22pt tall inside a menu bar that can be 37pt, so a
+    /// click near the top or the bottom of the bar converts to a y outside the button's own bounds.
+    static func hitTarget(at point: CGPoint, spacesRect: CGRect?, muteRects: [CGRect]) -> HitTarget {
+        if let index = muteRects.firstIndex(where: { $0.contains(point) }) { return .mute(index) }
+        guard let spacesRect, point.x >= spacesRect.minX, point.x < spacesRect.maxX else { return .none }
+        return .spaces
     }
 
     /// Optical heights, measured against the system status items on a Tahoe menubar: the shield sits at
