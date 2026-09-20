@@ -21,6 +21,7 @@
 * take the matching system shortcuts over only while a preset is assigned, and restore them when it is removed or after a crash
 * add `Paste and Match Style` to the menu, which pastes the clipboard as plain text into any app and restores the clipboard afterwards
 * add a `Press and Hold for Accents` toggle for the macOS accent popup on held letter keys
+* open a preview of every display's Spaces from a Space segment in the menu bar, laid out the way the displays stand, with window miniatures per Space; a click on a Space switches to it, and the overflow menu for Space 10 and higher is gone
 
 ### Defaults
 

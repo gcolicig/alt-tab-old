@@ -21,6 +21,10 @@
 		C0DE10000000000000000018 /* LaunchAppOpenUrlAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000014 /* LaunchAppOpenUrlAction.swift */; };
 		C0DE1000000000000000001A /* AppsUrlsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000015 /* AppsUrlsTab.swift */; };
 		C0DE1000000000000000001B /* MenubarTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000016 /* MenubarTestable.swift */; };
+		C0DE100000000000000000F1 /* SpacesPreviewLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000F0 /* SpacesPreviewLayout.swift */; };
+		C0DE100000000000000000F2 /* SpacesPreviewLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000F0 /* SpacesPreviewLayout.swift */; };
+		C0DE100000000000000000F4 /* SpacesPreviewPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000F3 /* SpacesPreviewPanel.swift */; };
+		C0DE100000000000000000F6 /* SpacesPreviewLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000F5 /* SpacesPreviewLayoutTests.swift */; };
 		C0DE1000000000000000001C /* MenubarTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000016 /* MenubarTestable.swift */; };
 		C0DE1000000000000000001D /* MenubarSpaceRowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000017 /* MenubarSpaceRowTests.swift */; };
 		C0DE1000000000000000001E /* ActionTargetsTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE20000000000000000018 /* ActionTargetsTestable.swift */; };
@@ -483,6 +487,9 @@
 		C0DE20000000000000000014 /* LaunchAppOpenUrlAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAppOpenUrlAction.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000015 /* AppsUrlsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppsUrlsTab.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000016 /* MenubarTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenubarTestable.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000F0 /* SpacesPreviewLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacesPreviewLayout.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000F3 /* SpacesPreviewPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacesPreviewPanel.swift; sourceTree = "<group>"; };
+		C0DE200000000000000000F5 /* SpacesPreviewLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpacesPreviewLayoutTests.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000017 /* MenubarSpaceRowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenubarSpaceRowTests.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000018 /* ActionTargetsTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionTargetsTestable.swift; sourceTree = "<group>"; };
 		C0DE20000000000000000019 /* OpenUrlTargetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenUrlTargetTests.swift; sourceTree = "<group>"; };
@@ -1468,6 +1475,7 @@
 				C0DE200000000000000EE2 /* WindowLayoutSectionsTests.swift */,
 				C0DE20000000000000000091 /* WindowReachabilityTests.swift */,
 				C0DE20000000000000000017 /* MenubarSpaceRowTests.swift */,
+				C0DE200000000000000000F5 /* SpacesPreviewLayoutTests.swift */,
 				C0DE20000000000000000019 /* OpenUrlTargetTests.swift */,
 				BF0C84933936C6FE676CD33C /* AppearanceTests.swift */,
 				BF0C899905524253DC170B56 /* KeyboardEventsTests.swift */,
@@ -1744,6 +1752,7 @@
 				8AC597FDBC9C498C9C0C6283 /* PreferencesResetTestable.swift */,
 				D04BA7C6F2519091717F4B4E /* SystemPermissions.swift */,
 				D04BA7CF9C2D1BEC7C05AB24 /* Spaces.swift */,
+				C0DE200000000000000000F0 /* SpacesPreviewLayout.swift */,
 				D04BA015A45DE7AFDC9794FE /* Window.swift */,
 				D04BA10777505D8A67ABD186 /* Application.swift */,
 				D04BA282BB16C1554595A968 /* Applications.swift */,
@@ -1859,6 +1868,7 @@
 				D04BABCD12CA72B06290C248 /* settings-window */,
 				D04BAD905546AA93E5117B0A /* Menubar.swift */,
 				C0DE20000000000000000016 /* MenubarTestable.swift */,
+				C0DE200000000000000000F3 /* SpacesPreviewPanel.swift */,
 				D04BA26C75F76C277653C932 /* FeedbackWindow.swift */,
 				D04BA2F0A1B2C3D4E5F60004 /* DebugWindow.swift */,
 				D04BA2CBF267F267225CA671 /* generic-components */,
@@ -3103,6 +3113,8 @@
 				C0DE10000000000000000091 /* WindowReachability.swift in Sources */,
 				C0DE10000000000000000092 /* WindowReachabilityTests.swift in Sources */,
 				C0DE1000000000000000001C /* MenubarTestable.swift in Sources */,
+				C0DE100000000000000000F2 /* SpacesPreviewLayout.swift in Sources */,
+				C0DE100000000000000000F6 /* SpacesPreviewLayoutTests.swift in Sources */,
 				C0DE1000000000000000001D /* MenubarSpaceRowTests.swift in Sources */,
 				C0DE1000000000000000001F /* ActionTargetsTestable.swift in Sources */,
 				C0DE10000000000000000020 /* OpenUrlTargetTests.swift in Sources */,
@@ -3212,6 +3224,8 @@
 				C0DE10000000000000000003 /* WindowLayoutsTab.swift in Sources */,
 				C0DE1000000000000000001A /* AppsUrlsTab.swift in Sources */,
 				C0DE1000000000000000001B /* MenubarTestable.swift in Sources */,
+				C0DE100000000000000000F1 /* SpacesPreviewLayout.swift in Sources */,
+				C0DE100000000000000000F4 /* SpacesPreviewPanel.swift in Sources */,
 				C0DE1000000000000000000E /* HyperkeyTab.swift in Sources */,
 				C0DE1000000000000000000F /* SpacesTab.swift in Sources */,
 				D04BAFBC862BA5FE0294EA7A /* AXUIElement.swift in Sources */,

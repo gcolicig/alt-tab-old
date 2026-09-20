@@ -39,7 +39,10 @@ struct WindowPreviewCapturePolicy {
         usesThumbnails || (showsWindows && previewsSelectedWindow)
     }
 
-    static func allowsCapture(_ usesImageBasedPreviews: Bool, _ capturesInBackground: Bool, _ switcherIsVisible: Bool) -> Bool {
-        usesImageBasedPreviews && (capturesInBackground || switcherIsVisible)
+    /// The Spaces preview shows the same thumbnails as the switcher, so it counts as a visible consumer: without
+    /// it, a preview opened on a fresh launch stayed empty until the switcher had run once.
+    static func allowsCapture(_ usesImageBasedPreviews: Bool, _ capturesInBackground: Bool, _ switcherIsVisible: Bool,
+                              _ spacesPreviewIsVisible: Bool = false) -> Bool {
+        usesImageBasedPreviews && (capturesInBackground || switcherIsVisible || spacesPreviewIsVisible)
     }
 }

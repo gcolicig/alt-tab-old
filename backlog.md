@@ -2058,6 +2058,56 @@ Akzeptanzideen:
 - Bei ausgeschaltetem Scheme und bei einer gesperrten ID passiert ausser der Meldung nichts.
 - Unit-Tests fuer das Parsen der URL und fuer die Allowlist; die Ausfuehrung selbst ist schon ueber die anderen Trigger getestet.
 
+### 18. Apps an Spaces binden: feste Zuordnung, alle Spaces, Fenster mitnehmen
+
+Status: Offen; Idee vom 2026-09-20
+Prioritaet: Mittel
+
+Beschreibung:
+
+Der Nutzer will pro App festlegen, wo ihre Fenster leben. Drei Faelle:
+
+- Feste Zuordnung: die App gehoert auf einen bestimmten Space.
+- Alle Spaces: die App ist auf jedem Space sichtbar (Beispiel Finder).
+- Mitnehmen: war ein Fenster beim Space-Wechsel im Vordergrund, steht es auch auf dem neuen Space im Vordergrund.
+
+Beispiel des Nutzers: Der Finder soll auf dem jeweils aktiven Space erscheinen, wenn das Fenster im Switcher oder ueber das Dock gewaehlt wird. War das Fenster beim Space-Wechsel vorne, soll es auf dem neu angesteuerten Space ebenfalls vorne sein.
+
+Vorhandene macOS-Grundlage:
+
+- macOS kann eine App schon heute an einen Space binden: Dock-Icon gedrueckt halten, `Optionen`, dann `Dieser Schreibtisch` oder `Alle Schreibtische`. Die Zuordnung gilt pro App, nicht pro Fenster, und sie gilt erst ab dem naechsten Fenster.
+- Was macOS nicht kann: eine Regel pro Fenster, das Mitnehmen des zuletzt fokussierten Fensters und eine Zuordnung, die beim Wechsel im Switcher greift.
+- AltTab+ dokumentiert die native Bedienung zuerst und bietet die eigene Funktion als Abkuerzung an, wie im Guide `macOS Spaces` festgelegt.
+
+Umfang fuer AltTab+:
+
+- Regel pro Bundle-ID im bestehenden `Exceptions`-Tab: `Space folgt dem System` (Default), `Fester Space <n>`, `Alle Spaces`, `Mitnehmen`.
+- `Alle Spaces` und `Fester Space` setzen die Space-Zuordnung der Fenster der App beim Erscheinen eines neuen Fensters.
+- `Mitnehmen` verschiebt beim Space-Wechsel genau das Fenster, das vorher fokussiert war, auf den neuen Space und fokussiert es dort.
+- Eine Auswahl im Switcher auf einem fremden Space holt das Fenster auf den aktiven Space, statt zum Fenster zu springen. Das ist eine eigene Option, weil es dem heutigen Verhalten widerspricht.
+- Jede Regel ist einzeln abschaltbar; ohne Regel bleibt das heutige Verhalten unveraendert.
+
+Technische Lage:
+
+- Die noetigen privaten Aufrufe liegen schon im Projekt: `CGSAddWindowsToSpaces`, `CGSRemoveWindowsFromSpaces`, `CGSCopySpacesForWindows` und `CGSCopyManagedDisplaySpaces` in `src/api-wrappers/private-apis/SkyLight.framework.swift`.
+- Unverifiziert: ob `CGSAddWindowsToSpaces` unter Tahoe ein Fenster einer fremden App zuverlaessig verschiebt und ob die Zuordnung einen Neustart der App ueberlebt.
+- Unverifiziert: ob sich `Alle Spaces` ohne den Sticky-Tag der nativen Dock-Option erreichen laesst.
+- Risiko: Fenster, die auf mehreren Spaces liegen, verwirren die vorhandene Space-Logik (`Spaces.screenSpacesMap`, `Window.spaceIds`). Der Switcher muss ein solches Fenster genau einmal zeigen.
+- Die Spaces-Vorschau aus der Menueleiste ist der natuerliche Ort, um die Zuordnung sichtbar zu machen und ein Fenster per Drag auf einen anderen Space zu legen.
+
+Spike vor der Umsetzung:
+
+- Beleg, dass ein Fenster einer fremden App unter Tahoe per `CGSAddWindowsToSpaces` auf einen anderen Space wandert und dort fokussierbar bleibt.
+- Beleg, dass das Entfernen vom alten Space (`CGSRemoveWindowsFromSpaces`) kein Fenster verwaist.
+- Ohne beide Belege bleibt nur die native Dock-Option, und die Story reduziert sich auf eine Bedienhilfe dafuer.
+
+Akzeptanzideen:
+
+- Finder auf `Alle Spaces`: ein Wechsel auf jeden Space zeigt das Finder-Fenster ohne weitere Aktion.
+- Eine App auf `Fester Space 2`: ein neues Fenster der App erscheint auf Space 2, auch wenn die App von Space 1 gestartet wird.
+- `Mitnehmen`: das vor dem Wechsel fokussierte Fenster ist nach dem Wechsel auf dem neuen Space fokussiert.
+- Ohne Regel bleibt jedes Verhalten wie heute; Unit-Tests decken die Regelauswahl je Bundle-ID ab.
+
 ## Distribution und Migration
 
 - Produktname und Bundle-ID bleiben fork-spezifisch: AltTab+ und `com.gcolicig.alttab-plus`.

@@ -13,20 +13,17 @@ class Menubar {
     /// display a drop landed on instead of always taking the next one in physical order.
     private static var groupBoundsInButton = [(ScreenUuid, CGRect)]()
 
-    /// One clickable segment of the rendered row, in the status button's coordinates. The row is drawn as a
-    /// single image (see refreshSpaces), so a click on the button maps to a segment by position here instead
-    /// of hitting a live NSButton.
-    private struct SegmentTarget {
-        let rect: CGRect
-        let displayUuid: String
-        let spaceIndex: Int
-        let overflowIndexes: [Int]?
-    }
-    private static var segmentTargets = [SegmentTarget]()
+    /// The Spaces part of the rendered row, in the status button's coordinates. The row is drawn as a single
+    /// image (see refreshSpaces), so a click is matched by position here instead of hitting a live NSButton.
+    ///
+    /// The whole strip counts, not the drawn boxes: every segment opens the same preview, and the gaps between
+    /// the boxes and around a display divider fell through to the icon's handler, which opened the menu. Only
+    /// the x range of this rect is matched; see handleSegmentClick for why the height is not.
+    private static var spacesRowRect: CGRect?
     private static var muteTargets = [(rect: CGRect, icon: MuteIcon)]()
     private static let muteIconWidth = CGFloat(22)
 
-    private struct SpaceGroup {
+    struct SpaceGroup {
         let displayUuid: ScreenUuid
         let spaceIds: [CGSSpaceID]
         let activeSpaceId: CGSSpaceID?
@@ -88,34 +85,56 @@ class Menubar {
             MicMuteIndicator.unmute(mute.icon)
             return true
         }
-        guard let target = segmentTargets.first(where: { $0.rect.contains(point) }) else { return false }
-        // a synthetic Space switch reaches only the display the cursor is on, so a click on another display's
-        // group is refused with the same notice the live buttons showed
-        if let cursorUuid = NSScreen.withMouse()?.cachedUuid(),
-           !MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: target.displayUuid == cursorUuid as String,
-                                             separateSpaces: NSScreen.screensHaveSeparateSpaces) {
-            TransientNotice.show(crossDisplayTooltip())
-            return true
-        }
-        if let overflowIndexes = target.overflowIndexes {
-            showOverflowMenu(overflowIndexes, atX: point.x)
-        } else if target.spaceIndex <= 9 {
-            Actions.perform(.space(.index(target.spaceIndex)))
-        } else {
-            InstantSpaces.perform(.index(target.spaceIndex))
-        }
+        // only the horizontal range counts: the status button is 22pt tall inside a menu bar that can be 37pt,
+        // so a click near the top or the bottom of the bar converts to a y outside the button's own bounds
+        guard let rowRect = spacesRowRect, point.x >= rowRect.minX, point.x < rowRect.maxX else { return false }
+        // a segment opens the Spaces preview, where every display's Spaces are shown in place; the switch
+        // itself happens on a tile click (switchToSpace)
+        SpacesPreviewPanel.toggle(anchoredTo: button)
         return true
     }
 
-    private static func showOverflowMenu(_ indexes: [Int], atX x: CGFloat) {
-        guard let button = statusItem?.button else { return }
-        let menu = NSMenu()
-        indexes.forEach { index in
-            let item = menu.addItem(withTitle: String(format: NSLocalizedString("Space %d", comment: ""), index), action: #selector(spaceOverflowItemOnClick(_:)), keyEquivalent: "")
-            item.target = self
-            item.tag = index
+    /// Every display's Space group, for the Spaces preview. Unlike the menu bar row, the preview keeps the
+    /// displays that hold a single Space: the row drops them to stay narrow, but the preview is a map of the
+    /// desk and would otherwise leave a display out.
+    static func previewGroups() -> [SpaceGroup] {
+        spaceGroups(hidingSingleSpaceDisplays: false)
+    }
+
+    /// Switches the display's Space to `index` (1-based within the display). A synthetic Space switch reaches only
+    /// the display the cursor is on, so for another display the cursor moves there first.
+    static func switchToSpace(index: Int, displayUuid: ScreenUuid, screen: NSScreen) {
+        SpacesPreviewPanel.hide()
+        let cursorUuid = NSScreen.withMouse()?.cachedUuid()
+        let reachable = MenubarSpaceRow.clickIsReachable(groupIsUnderCursor: cursorUuid.map { $0 as String == displayUuid as String } ?? true,
+                                                         separateSpaces: NSScreen.screensHaveSeparateSpaces)
+        if !reachable {
+            CGWarpMouseCursorPosition(cursorLandingPoint(on: screen))
         }
-        menu.popUp(positioning: nil, at: NSPoint(x: x, y: button.bounds.height), in: button)
+        if index <= 9 {
+            Actions.perform(.space(.index(index)))
+        } else {
+            InstantSpaces.perform(.index(index))
+        }
+    }
+
+    /// Where the cursor lands on the display it has to move to. Just under the menu bar, at the x of the Spaces
+    /// row, instead of the middle of the display: the cursor stays next to the row it was just used on, so the
+    /// hand does not have to bring it back. The point is in Quartz coordinates, as CGWarpMouseCursorPosition wants.
+    private static func cursorLandingPoint(on screen: NSScreen) -> CGPoint {
+        let primaryHeight = NSScreen.screens.first?.frame.height ?? screen.frame.height
+        let quartz = SpacesPreviewLayout.quartzFrame(cocoaFrame: screen.frame, primaryScreenHeight: primaryHeight)
+        let rowMidX = rowMidXInScreenCoordinates() ?? quartz.midX
+        let x = min(max(rowMidX, quartz.minX + 8), quartz.maxX - 8)
+        let y = quartz.minY + NSStatusBar.system.thickness + 8
+        return CGPoint(x: x, y: y)
+    }
+
+    /// The middle of the Spaces row in screen coordinates. The x axis is the same in Cocoa and in Quartz, so the
+    /// value needs no flipping.
+    private static func rowMidXInScreenCoordinates() -> CGFloat? {
+        guard let button = statusItem?.button, let window = button.window, let rowRect = spacesRowRect else { return nil }
+        return window.frame.minX + rowRect.midX
     }
 
     @objc static func statusItemOnClick() {
@@ -175,7 +194,7 @@ class Menubar {
         // overflow menu. The row is torn down here, so this is where the table stops being true.
         overflowIndexesByButton.removeAll()
         groupBoundsInButton.removeAll()
-        segmentTargets.removeAll()
+        spacesRowRect = nil
         muteTargets.removeAll()
         statusButton.image = preferredIcon()
         statusItem.length = NSStatusItem.squareLength
@@ -237,7 +256,7 @@ class Menubar {
             muteTargets.append((CGRect(x: x, y: 0, width: muteIconWidth, height: rowHeight), icon))
         }
         row.addSubview(container) // container already carries its x
-        segmentTargets = collectSegmentTargets(container)
+        spacesRowRect = totalWidth > 0 ? CGRect(x: spacesX, y: 0, width: totalWidth, height: rowHeight) : nil
         statusButton.image = renderRowImage(row)
         statusButton.imageScaling = .scaleNone
         statusButton.alignment = .center
@@ -279,16 +298,6 @@ class Menubar {
         tinted.unlockFocus()
         tinted.isTemplate = false
         return tinted
-    }
-
-    /// Records the clickable rect of every segment in the status button's coordinates, before the row is
-    /// flattened to an image. The container sits at `iconWidth`, so each button's row x adds that offset.
-    private static func collectSegmentTargets(_ container: NSView) -> [SegmentTarget] {
-        container.subviews.compactMap { subview in
-            guard let button = subview as? NSButton, let uuid = button.identifier?.rawValue else { return nil }
-            let rect = CGRect(x: container.frame.minX + button.frame.minX, y: button.frame.minY, width: button.frame.width, height: button.frame.height)
-            return SegmentTarget(rect: rect, displayUuid: uuid, spaceIndex: button.tag, overflowIndexes: overflowIndexesByButton[ObjectIdentifier(button)])
-        }
     }
 
     /// Renders a view tree to an image through a throwaway offscreen window. A window-less view can drop the
@@ -420,7 +429,7 @@ class Menubar {
     /// Displays are ordered left to right, then top to bottom. Groups with separate Spaces collapse to a
     /// single shared group when the system setting `Displays have separate Spaces` is off, since macOS
     /// then reports one shared display identifier for all screens.
-    private static func spaceGroups() -> [SpaceGroup] {
+    private static func spaceGroups(hidingSingleSpaceDisplays: Bool = true) -> [SpaceGroup] {
         guard !Spaces.screenSpacesMap.isEmpty else { return [] }
         // The screen carrying the menubar leads, the rest follow by physical position. Sorting purely by
         // `origin.x` put a display stacked *above* the main one first, because a wider screen centred over
@@ -440,6 +449,7 @@ class Menubar {
             guard let spaceIds = Spaces.screenSpacesMap[key], !spaceIds.isEmpty else { return nil }
             return SpaceGroup(displayUuid: key, spaceIds: spaceIds, activeSpaceId: spaceIds.first { Spaces.visibleSpaces.contains($0) })
         }
+        guard hidingSingleSpaceDisplays else { return groups }
         let visible = MenubarSpaceRow.visibleGroupIndexes(spaceCounts: groups.map { $0.spaceIds.count },
                                                           separateSpaces: NSScreen.screensHaveSeparateSpaces)
         return visible.map { groups[$0] }

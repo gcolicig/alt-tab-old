@@ -16,6 +16,7 @@ class SpacesEvents {
         // SpacePredictionPolicy already discards a prediction that no longer matches the real Space.
         InstantSpaces.noteSystemSpaceChange()
         Menubar.refreshSpaces(spacesAreFresh: true)
+        SpacesPreviewPanel.refreshIfShowing()
         throttler.throttleOrProceed {
             Logger.debug { notification.name.rawValue }
             // Workaround for Safari full-screen videos
