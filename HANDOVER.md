@@ -1,5 +1,14 @@
 # Handover
 
+## Current state, 2026-09-20
+
+The latest state is the third Codex handover below. The six commits from `docs/handover-codex-session2`
+were fast-forwarded into local `main` on 2026-09-20; publishing `main` remains a separate step. V-22 has a
+code fix and unit coverage but still needs the A1–A18 device run. V-23 is open and registered in
+`backlog.md`. `Panion` is the accepted product name; run the permission-sensitive device checks before
+changing the bundle identifier. Earlier sections are chronological records and may describe branches or
+findings that later sections supersede.
+
 Written 2026-08-05, revised 2026-08-10, 2026-08-14 and 2026-09-16, for whoever picks this up next. It records what is built, what is
 genuinely verified, and the traps this codebase has already sprung — so they need not be sprung twice.
 
@@ -26,7 +35,7 @@ part that is easy to lose: which claims rest on measurement and which do not.
 | Profiles, window drag quarters, reverse scroll and speed | yes | **no** |
 | Window focus, system actions, screen tools, Keep Awake, Debug submenu (stories 10, 12–14) | yes, 2026-09-16 | partly — menu structure, settings, mic icon, browser list seen; actions not run |
 | Grouped menubar menu (story 15) | yes, 2026-09-16 | yes, by the user |
-| Settings window rework (story 16) | yes, 2026-09-16, three stacked branches | yes — pages, search, lists, profile add/delete, overview and `Show` |
+| Settings window rework (story 16) | yes; later merged through PR #71 | yes — pages, search, lists, profile add/delete, overview and `Show` |
 
 The unit-test suite passes. Build with `./build.sh --test`; `SCHEME=Release ./build.sh` also works again.
 
@@ -451,7 +460,7 @@ depend on. Finish the open runs, rename, then re-run only the permission-sensiti
 ### Specification quality of what is left
 
 **Ready to implement as written**
-- The rename, stages 1 to 3 above. Open decision: none, once the author confirms `Panion`.
+- The rename, stages 1 to 3 above. The author accepted `Panion`; finish the permission-sensitive device runs first.
 - Story 17, URL scheme. Unchanged. The scheme name is the one open decision, and it depends on the
   rename: pick it after stage 1, not before.
 

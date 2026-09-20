@@ -1,9 +1,10 @@
 # System Actions Checklist (Stories 10, 12, 13, 14, 15)
 
 Run on the supported Apple-silicon Mac and record the macOS build. Everything here was built on
-2026-09-16 and is covered only by unit tests for its pure parts (`MenuLayoutTests`, `WindowFocusTests`,
-`SystemActionTests`, `ScreenToolsFormatTests`, `KeepAwakeTests`, `DebugToolsTests`). The app launched and
-stayed idle at 0 % CPU; the menu itself has not been looked at on the device.
+2026-09-16. Unit tests cover the pure parts (`MenuLayoutTests`, `WindowFocusTests`, `SystemActionTests`,
+`ScreenToolsFormatTests`, `KeepAwakeTests`, `DebugToolsTests`). The app launched and stayed idle at 0 % CPU;
+the grouped menu, settings, microphone icon and browser list were seen on the device, but most actions were
+not operated. Steps 42 and 43 passed on 2026-09-19; steps 44 to 50 remain open.
 
 Emergency shortcut: `Command+Control+Option+Shift+Escape`.
 

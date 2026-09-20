@@ -2279,6 +2279,7 @@ Default-Settings, Reset-Verhalten und Migration werden nach jedem neuen Modul ge
 | V-20 | Funktionstasten | Story 14J: wirkt ein Wechsel von `HIDFKeyMode` sofort, bleibt er nach Neustart, und gibt `Restore Original Mode` den Ausgangswert zurueck. Lesen und Schreiben desselben Werts sind belegt (2026-09-16) |
 | V-21 | Mitteilungen per AX | Story 14H: Struktur und Aktionsnamen der Mitteilungszentrale unter macOS 26 belegen; erst danach gilt die Versionsfreigabe als geprueft |
 | V-22 | Klick auf ein Space-Segment | Nach dem Fix vom 2026-09-20 die Matrix A1-A18 in `docs/spaces-menubar-checklist.md` am Geraet laufen lassen: jeder Klick auf die Zeile oeffnet die Vorschau, der Klick auf Symbol oder Luecke das Menue. Ursache war ein auf den linken Fensterrand fixiertes `event.locationInWindow`; die Hit-Logik liegt jetzt unit-getestet in `MenubarSpaceRow` |
+| V-23 | `Control+Zahl` im Space-Shortcut-Recorder | Am 2026-09-18 schlug Schritt 13 aus `docs/settings-window-checklist.md` fehl: `Control+1` speichert nur `Control`, weil die Ziffer den Recorder nicht erreicht. System-Hotkeys 118–127 sind deaktiviert, AltTab+ besitzt keinen passenden Hotkey und die reine Akzeptanzlogik lehnt `space1Shortcut` nicht ab. Naechster Schritt: je eine Probe im Keyboard-Tap und in `recorderControl(_:canRecord:)`, mit `--logs=error --logs-file=<path>`, danach den schluckenden Pfad beheben und Schritte 12–14 wiederholen |
 
 ## Provenienz-Register
 

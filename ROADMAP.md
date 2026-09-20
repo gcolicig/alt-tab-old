@@ -69,7 +69,7 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 - Der erste Schnitt zeigt bis zu neun Spaces fuer das Display unter dem Cursor und deaktiviert Klicks bei nicht verfuegbarem Instant-Spaces-Kern.
 - Umgesetzt: konfigurierbare Shortcut-Fallbacks fuer links, rechts und Space 1 bis 9.
 - Umgesetzt: gruppierte Display-Reihen gemaess `Displays haben separate Spaces` (Befund 2026-08-05: macOS liefert auch bei deaktivierter Option eine Gruppe je Display; Ein-Space-Gruppen sollen dann ausgeblendet werden, noch offen) und Ueberlauf-Menue ab dem neunten Space pro Display.
-- Klicks auf eine Nicht-Cursor-Display-Gruppe werden bei einer einzigen, nicht gespiegelten Menueleiste ignoriert statt das falsche Display zu schalten: Instant Spaces postet synthetische Trackpad-Gesten ohne Zieldisplay-Feld und kann nur das Display unter dem Cursor schalten. Bei gespiegelter Menueleiste (macOS-Einstellung) trifft der Klick immer das richtige Display, da der Cursor beim Klick bereits dort sitzt.
+- Korrigiert durch S-10d am 2026-09-16: `event.location` adressiert das Zieldisplay. Ein synthetischer Swipe kann deshalb ein anderes Display schalten, ohne den Cursor zu verschieben. Die Menueleisten-Vorschau nutzt diesen Mehrdisplay-Pfad noch nicht; die fruehere Annahme, nur das Cursor-Display sei erreichbar, ist widerlegt.
 - Beobachtung aus der manuellen Abnahme: Zum Aufzeichnen eines Space-Shortcuts musste Hyperkey einmal aus- und wieder eingeschaltet werden. Der Befund ist dokumentiert; es wurde bewusst keine Aenderung vorgenommen.
 - Umgesetzt: Stabile Managed-Space-Identitaet ist verifiziert (S-08, 2026-08-03). UUIDs ueberleben Neustart, Reorder, Create und Delete; `id64` wechselt dabei. Aliase duerfen auf der UUID aufbauen, ein Space ohne UUID bleibt unbenennbar und wird sichtbar so markiert.
 
@@ -109,7 +109,7 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 ## Paralleler Spike: Pointer
 
 - Umgesetzt: Pointer Acceleration und Speed fuer Maus und Trackpad ueber IOKit (`IOHIDGetAccelerationWithKey` / `IOHIDSetAccelerationWithKey`). Der Weg ueber `NSGlobalDomain` wurde am 2026-08-07 widerlegt: die Praeferenz liess sich setzen, der effektive Wert blieb unveraendert. Siehe Story 4 im Backlog.
-- Offen: V-10 am Zielgeraet; der schreibende Pfad ist bisher nur durch Entscheidungslogik abgedeckt, nicht ausgefuehrt.
+- V-10 wurde am 2026-08-10, 2026-08-13/14 und fuer Schritt 8 erneut am 2026-09-16 gefahren. Schritte 1–10 und 12 sowie die positive Haelfte von Schritt 11 bestehen. Offen bleiben die negative Haelfte von Schritt 11, die per Apple-Menue oder Deckel echten Ruhezustand braucht, und der eingeschraenkte Fremdtool-Nachweis aus Schritt 13.
 - Persistiertes State Ownership mit `unmanaged`, `managed` und `relinquished`.
 - Kein Release ohne konfliktfreies Restore sowie Crash-/Kill-Recovery.
 - Der Spike darf nach Phase 0 parallel zu Aktionskern, Spaces und Fensteroperationen laufen.
@@ -209,11 +209,11 @@ Lokales Codesigning ist eingerichtet. Notarisierung, ein eigener Update-Feed und
 
 ## Phase 16: Einstellungsfenster umbauen
 
-- Umgesetzt 2026-09-16 in drei gestapelten Branches; darunter liegt der Fix `fix/system-action-shortcuts` (PR #57).
+- Umgesetzt und in `main` zusammengefuehrt: der globale Shortcut-Fix aus PR #57 sowie die Settings-Ueberarbeitung aus PR #64 und die Folgearbeiten bis PR #71.
 
-- Stufe 1 (`feat/settings-pages`): eine Seite pro Bereich, Seitenleiste mit Gruppen inklusive Triggers und Devices, breitere Recorder, Seitenleiste unten aufgeraeumt, Texte.
-- Stufe 2 (`feat/settings-lists`): Apps & URLs und Profiles als Listen mit App-Auswahl per Dialog; Speicherformat bleibt, nur Aufraeumen leerer Slots.
-- Stufe 3 (`feat/settings-shortcut-overview`): Shortcut-Uebersicht mit Konflikten und `Show`; ein Recorder pro Shortcut.
+- Stufe 1: eine Seite pro Bereich, Seitenleiste mit Gruppen inklusive Triggers und Devices, breitere Recorder, Seitenleiste unten aufgeraeumt, Texte.
+- Stufe 2: Apps & URLs und Profiles als Listen mit App-Auswahl per Dialog; Speicherformat bleibt, nur Aufraeumen leerer Slots.
+- Stufe 3: Shortcut-Uebersicht mit Konflikten und `Show`; ein Recorder pro Shortcut.
 - Vollstaendige Spezifikation in `backlog.md` unter Story 16.
 
 ## Release-Gates

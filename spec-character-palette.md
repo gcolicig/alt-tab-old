@@ -2,7 +2,9 @@
 
 Status: specification only. Do not implement from this file without the user's go-ahead.
 Audience: Codex, or any agent that picks this up with no session context.
-Written 2026-09-20 against `main` at `269c7b92`.
+Written 2026-09-20 against `main` at `269c7b92`; revalidated after the handover integration at `1b63a8f2`.
+The referenced files and symbols still exist, although line numbers may have shifted. Re-resolve anchors
+before implementation.
 
 ## Context
 
