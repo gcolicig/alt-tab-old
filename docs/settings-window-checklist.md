@@ -1,7 +1,8 @@
 # Settings Window Checklist (Story 16)
 
 Run on the supported Mac after installing a build of `feat/settings-shortcut-overview` or later. Seen on
-2026-09-16: steps 1–3, 5, 7, 8, 10 and 11. Not yet run: 4, 6, 9 and 12–14.
+2026-09-16: steps 1–3, 5, 7, 8, 10 and 11. Seen on 2026-09-18: steps 12 and 14. Step 13 failed, see V-23
+in `HANDOVER.md`. Not yet run: 4, 6 and 9.
 
 ## Pages and sidebar (stage 1)
 
@@ -30,4 +31,7 @@ Run on the supported Mac after installing a build of `feat/settings-shortcut-ove
 | 11 | `Shortcuts`, then `Show` on `Left third` | `Window Layouts` opens and `Left third` flashes |
 | 12 | Assign the same shortcut to two menu actions | The recorder warns and offers to unassign the other one. If a duplicate arrives through a settings import, the rows show `Also used by …` and `Conflicts (n)` counts them |
 | 13 | Assign `⌃1` to `Space 1` | The row notes that it replaces a macOS shortcut; removing it gives the macOS shortcut back |
+
+Step 13 failed on 2026-09-18: the recorder shows `⌃` alone, because the digit never arrives. V-23 in
+`HANDOVER.md` lists what is already ruled out.
 | 14 | Filter `Assigned`, then `Conflicts` | Only assigned rows, then only conflict rows or `No conflicts.` |

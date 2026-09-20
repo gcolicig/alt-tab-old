@@ -324,7 +324,7 @@ formatting was gone, and the rich clipboard came back. Steps 42 and 43 of
 launch, so a notice asks for an app restart. Unlike `Function Keys`, it never gives the earlier value
 back; the README says so. Not operated.
 
-### Open defect
+### Open defects
 
 **V-22, a segment click opens the menu instead of the preview.** Reported 2026-09-20, not reproducible
 by eye. The click path and the three ways it falls through to the menu are written up in
@@ -336,6 +336,26 @@ Neither Codex nor Claude can click a menu bar item here: `osascript` has no acce
 granting it is out of scope. So the pure hit-test maths belongs in `MenubarSpaceRow` with unit tests, and
 the clicks stay with the author. The app takes `--logs-file=<path>`, because a GUI app has no usable
 stdout and launching its binary from a terminal misattributes the TCC grant.
+
+**V-23, `⌃1` cannot be recorded for `Space 1`.** Step 13 of `docs/settings-window-checklist.md`, failed
+on 2026-09-18. The recorder ends up holding `⌃` alone: the digit never reaches it, and the recorder
+accepts modifiers on their own, so releasing the key saves the modifier. Steps 12 and 14 of that
+checklist passed the same day.
+
+Ruled out by measurement on 2026-09-18:
+- macOS: the symbolic hotkeys 118–127 (`⌃1` to `⌃0`, switch to desktop) read back disabled, and
+  `com.apple.symbolichotkeys` has no stored entry for 118 or 119.
+- AltTab+ owns none of them: its `ownedSystemHotkeys` record is empty.
+- No AltTab+ shortcut is `⌃` plus a digit.
+- No menu item or window key equivalent uses a digit.
+- The silent rejection in `CustomRecorderControlTestable.isShortcutAcceptable`
+  (`modifiersOnlyButContainsKeycode`) applies to `holdShortcut…` ids only, not to `space1Shortcut`.
+
+Open hypothesis: something swallows the digit while `⌃` is held — another app's Carbon hotkey, or a path
+inside AltTab+ between the event tap and the recorder. The measurement was prepared but never ran: two
+probe lines (one in the tap for key code 18 with `⌃`, one in `recorderControl(_:canRecord:)`) wrote
+nothing, and the code was removed again. Repeat it with `--logs=error --logs-file=<path>`, which keeps
+window titles out of the file, and press `⌃1` once in the recorder for `Space 1`.
 
 ### Specification quality of what is left
 
