@@ -2,6 +2,10 @@
 
 ## Current state, 2026-09-20
 
+Switcher focus was stabilised and instrumented on 2026-09-25. It is treated as fixed but remains under
+observation; reuse `docs/switcher-focus-diagnosis.md` for the exact diagnosis command, trace interpretation
+and manual regression cases.
+
 The latest state is the third Codex handover below. The six commits from `docs/handover-codex-session2`
 were fast-forwarded into local `main` on 2026-09-20; publishing `main` remains a separate step. V-22 has a
 code fix and unit coverage but still needs the A1–A18 device run. V-23 is open and registered in

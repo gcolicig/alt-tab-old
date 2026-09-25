@@ -8,6 +8,7 @@ class Windows {
     // we use this to track if the focused window changed while alt-tab was open
     private static var lastFocusedWindowTarget: String?
     private static var lastWindowActivityType = WindowActivityType.none
+    private static var selectionWasExplicitlyNavigated = false
     static var searchQuery = ""
     private static var shouldSelectBestMatchOnSearchChange = false
     private static var shouldRestoreDefaultSelectionOnSearchClear = false
@@ -227,6 +228,7 @@ class Windows {
     }
 
     static func setInitialSelectedAndHoveredWindowIndex() {
+        selectionWasExplicitlyNavigated = false
         let oldIndex = selectedWindowIndex
         selectedWindowIndex = 0
         selectedWindowTarget = nil
@@ -244,12 +246,15 @@ class Windows {
             if list.count >= 2 && list[0].isMinimized && list[1].isMinimized {
                 updateSelectedAndHoveredWindowIndex(0)
             } else {
-                cycleSelectedWindowIndex(1)
+                cycleSelectedWindowIndex(1, isUserInitiated: false)
                 if selectedWindowIndex == 0 {
                     updateSelectedAndHoveredWindowIndex(0)
                 }
             }
         }
+        // The first refresh after showing must compare against this session's source window, not the
+        // previous session's. Otherwise it immediately rebuilds the initial selection a second time.
+        lastFocusedWindowTarget = currentFocusedWindowTarget()
         SwitcherDiagnostics.recordSelection("initial-selection")
     }
 
@@ -272,7 +277,7 @@ class Windows {
             updateSelectedAndHoveredWindowIndex(firstVisibleIndex)
             return
         }
-        if shouldSelectFromScratch(focusedWindowTarget) {
+        if shouldSelectFromScratch(focusedWindowTarget) && !selectionWasExplicitlyNavigated {
             setInitialSelectedAndHoveredWindowIndex()
             return
         }
@@ -326,7 +331,7 @@ class Windows {
         }
     }
 
-    static func updateSelectedAndHoveredWindowIndex(_ newIndex: Int, _ fromMouse: Bool = false) {
+    static func updateSelectedAndHoveredWindowIndex(_ newIndex: Int, _ fromMouse: Bool = false, _ isUserInitiated: Bool = false) {
         guard newIndex >= 0 && newIndex < list.count else { return }
         guard shouldDisplay(list[newIndex]) else { return }
         var index: Int?
@@ -347,6 +352,7 @@ class Windows {
             let oldIndex = selectedWindowIndex
             selectedWindowIndex = newIndex
             selectedWindowTarget = list[newIndex].id
+            selectionWasExplicitlyNavigated = selectionWasExplicitlyNavigated || fromMouse || isUserInitiated
             TilesView.highlight(oldIndex)
             previewSelectedWindowIfNeeded()
             index = selectedWindowIndex
@@ -365,7 +371,7 @@ class Windows {
         voiceOverWindow(index)
     }
 
-    static func cycleSelectedWindowIndex(_ step: Int, allowWrap: Bool = true) {
+    static func cycleSelectedWindowIndex(_ step: Int, allowWrap: Bool = true, isUserInitiated: Bool = true) {
         guard App.appIsBeingUsed else { return }
         guard list.contains(where: { shouldDisplay($0) }) else { return }
         let nextIndex = selectedWindowIndexAfterCycling(step)
@@ -376,7 +382,7 @@ class Windows {
                || (!allowWrap && list[nextIndex].rowIndex != list[selectedWindowIndex].rowIndex) {
             return
         }
-        updateSelectedAndHoveredWindowIndex(nextIndex)
+        updateSelectedAndHoveredWindowIndex(nextIndex, false, isUserInitiated)
         SwitcherDiagnostics.recordSelection(step > 0 ? "cycle-forward" : "cycle-backward")
     }
 
@@ -638,6 +644,7 @@ class SwitcherDiagnostics {
         let mruWindowIds: [CGWindowID]?
         let targetPid: pid_t?
         let frontmostPid: pid_t?
+        let focusedWindowId: CGWindowID?
         let succeeded: Bool?
     }
 
@@ -662,7 +669,8 @@ class SwitcherDiagnostics {
 
     static func recordFocusResult(_ window: Window) {
         let frontmostPid = NSWorkspace.shared.frontmostApplication?.processIdentifier
-        recordFocus("focus-result", window, succeeded: frontmostPid == window.application.pid, frontmostPid: frontmostPid)
+        recordFocus("focus-result", window, succeeded: frontmostPid == window.application.pid,
+                    frontmostPid: frontmostPid, focusedWindowId: window.application.focusedWindow?.cgWindowId)
     }
 
     static func record(_ kind: String) {
@@ -683,23 +691,27 @@ class SwitcherDiagnostics {
         lock.unlock()
     }
 
-    private static func recordFocus(_ kind: String, _ window: Window, succeeded: Bool?, frontmostPid: pid_t? = nil) {
-        append(kind, selectedIndex: nil, selected: window, targetPid: window.application.pid, frontmostPid: frontmostPid, succeeded: succeeded)
+    private static func recordFocus(_ kind: String, _ window: Window, succeeded: Bool?, frontmostPid: pid_t? = nil, focusedWindowId: CGWindowID? = nil) {
+        append(kind, selectedIndex: nil, selected: window, targetPid: window.application.pid,
+               frontmostPid: frontmostPid, focusedWindowId: focusedWindowId, succeeded: succeeded)
     }
 
-    private static func append(_ kind: String, selectedIndex: Int?, selected: Window?, displayedWindowIds: [CGWindowID]? = nil, mruWindowIds: [CGWindowID]? = nil, targetPid: pid_t? = nil, frontmostPid: pid_t? = nil, succeeded: Bool? = nil) {
+    private static func append(_ kind: String, selectedIndex: Int?, selected: Window?, displayedWindowIds: [CGWindowID]? = nil, mruWindowIds: [CGWindowID]? = nil, targetPid: pid_t? = nil, frontmostPid: pid_t? = nil, focusedWindowId: CGWindowID? = nil, succeeded: Bool? = nil) {
         lock.lock()
-        appendLocked(kind, selectedIndex: selectedIndex, selected: selected, displayedWindowIds: displayedWindowIds, mruWindowIds: mruWindowIds, targetPid: targetPid, frontmostPid: frontmostPid, succeeded: succeeded)
+        appendLocked(kind, selectedIndex: selectedIndex, selected: selected, displayedWindowIds: displayedWindowIds,
+                     mruWindowIds: mruWindowIds, targetPid: targetPid, frontmostPid: frontmostPid,
+                     focusedWindowId: focusedWindowId, succeeded: succeeded)
         lock.unlock()
     }
 
-    private static func appendLocked(_ kind: String, selectedIndex: Int? = nil, selected: Window? = nil, displayedWindowIds: [CGWindowID]? = nil, mruWindowIds: [CGWindowID]? = nil, targetPid: pid_t? = nil, frontmostPid: pid_t? = nil, succeeded: Bool? = nil) {
+    private static func appendLocked(_ kind: String, selectedIndex: Int? = nil, selected: Window? = nil, displayedWindowIds: [CGWindowID]? = nil, mruWindowIds: [CGWindowID]? = nil, targetPid: pid_t? = nil, frontmostPid: pid_t? = nil, focusedWindowId: CGWindowID? = nil, succeeded: Bool? = nil) {
         events.append(Event(uptime: ProcessInfo.processInfo.systemUptime, session: session, kind: kind,
                             selectedIndex: selectedIndex, selectedWindowId: selected?.cgWindowId,
                             appBundleId: selected?.application.bundleIdentifier,
                             screenId: selected?.screenId.map { $0 as String }, spaceIndexes: selected?.spaceIndexes,
                             displayedWindowIds: displayedWindowIds, mruWindowIds: mruWindowIds,
-                            targetPid: targetPid, frontmostPid: frontmostPid, succeeded: succeeded))
+                            targetPid: targetPid, frontmostPid: frontmostPid, focusedWindowId: focusedWindowId,
+                            succeeded: succeeded))
         if events.count > capacity {
             events.removeFirst(events.count - capacity)
         }

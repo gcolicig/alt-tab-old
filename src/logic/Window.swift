@@ -269,6 +269,7 @@ class Window {
                 }
                 SwitcherDiagnostics.recordFocus("ax-focus-requested", self, succeeded: axFocusSucceeded)
                 DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(50)) {
+                    self.updateSpacesAndScreen()
                     SwitcherDiagnostics.recordFocusResult(self)
                     Windows.previewSelectedWindowIfNeeded()
                 }
