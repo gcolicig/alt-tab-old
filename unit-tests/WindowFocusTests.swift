@@ -1,6 +1,21 @@
 import XCTest
 
 class WindowFocusTests: XCTestCase {
+    override func tearDown() {
+        SwitcherDiagnostics.reset()
+        super.tearDown()
+    }
+
+    func testSwitcherDiagnosticsKeepsOnlyTheMostRecentEvents() {
+        for index in 0...128 {
+            SwitcherDiagnostics.record("test-\(index)")
+        }
+        let events = SwitcherDiagnostics.report().events
+        XCTAssertEqual(events.count, 128)
+        XCTAssertEqual(events.first?.kind, "test-1")
+        XCTAssertEqual(events.last?.kind, "test-128")
+    }
+
     private func app(_ pid: pid_t, regular: Bool = true, isSelf: Bool = false, hidden: Bool = false) -> FocusAppInfo {
         FocusAppInfo(pid: pid, isRegular: regular, isSelf: isSelf, isHidden: hidden)
     }

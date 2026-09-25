@@ -223,9 +223,11 @@ class Window {
     }
 
     func focus() {
+        SwitcherDiagnostics.recordFocus("focus-requested", self)
         if let altTabWindow = altTabWindow() {
             App.shared.activate(ignoringOtherApps: true)
             altTabWindow.makeKeyAndOrderFront(nil)
+            SwitcherDiagnostics.recordFocusResult(self)
             Windows.previewSelectedWindowIfNeeded()
         } else if isWindowlessApp || cgWindowId == nil || Preferences.onlyShowApplications() {
             if let bundleUrl = application.bundleURL, isWindowlessApp {
@@ -242,6 +244,7 @@ class Window {
             } else {
                 application.runningApplication.activate(options: .activateAllWindows)
             }
+            SwitcherDiagnostics.recordFocusResult(self)
             Windows.previewSelectedWindowIfNeeded()
         } else {
             // macOS bug: when switching to a System Preferences window in another space, it switches to that space,
@@ -249,12 +252,24 @@ class Window {
             // You can reproduce this buggy behaviour by clicking on the dock icon, proving it's an OS bug
             BackgroundWork.accessibilityCommandsQueue.addOperation { [weak self] in
                 guard let self else { return }
+                self.application.runningApplication.activate(options: .activateIgnoringOtherApps)
+                SwitcherDiagnostics.recordFocus("app-activated", self)
                 var psn = ProcessSerialNumber()
                 GetProcessForPID(self.application.pid, &psn)
                 _SLPSSetFrontProcessWithOptions(&psn, self.cgWindowId!, SLPSMode.userGenerated.rawValue)
+                SwitcherDiagnostics.recordFocus("window-front-requested", self)
                 self.makeKeyWindow(&psn)
-                try? self.axUiElement!.focusWindow()
+                SwitcherDiagnostics.recordFocus("window-key-requested", self)
+                let axFocusSucceeded: Bool
+                do {
+                    try self.axUiElement!.focusWindow()
+                    axFocusSucceeded = true
+                } catch {
+                    axFocusSucceeded = false
+                }
+                SwitcherDiagnostics.recordFocus("ax-focus-requested", self, succeeded: axFocusSucceeded)
                 DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(50)) {
+                    SwitcherDiagnostics.recordFocusResult(self)
                     Windows.previewSelectedWindowIfNeeded()
                 }
             }

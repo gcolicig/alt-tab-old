@@ -17,7 +17,8 @@ extension NSScreen {
     static var preferred = NSScreen.screens.first!
     private static var uuidCache = [ObjectIdentifier: ScreenUuid]()
 
-    static func updatePreferred() {
+    static func updatePreferred(_ switcherIsOpening: Bool = false) {
+        guard switcherIsOpening || !App.appIsBeingUsed else { return }
         preferred = detectPreferred() ?? NSScreen.screens.first!
     }
 

@@ -250,6 +250,7 @@ class Windows {
                 }
             }
         }
+        SwitcherDiagnostics.recordSelection("initial-selection")
     }
 
     static func updateSelectedWindow() {
@@ -350,6 +351,7 @@ class Windows {
             previewSelectedWindowIfNeeded()
             index = selectedWindowIndex
             lastWindowActivityType = .focus
+            SwitcherDiagnostics.recordSelection(fromMouse ? "hover-selection" : "selection-changed")
         }
         guard let index else { return }
         TilesView.highlight(index)
@@ -375,6 +377,7 @@ class Windows {
             return
         }
         updateSelectedAndHoveredWindowIndex(nextIndex)
+        SwitcherDiagnostics.recordSelection(step > 0 ? "cycle-forward" : "cycle-backward")
     }
 
     static func selectedWindowIndexAfterCycling(_ step: Int) -> Int {
@@ -609,4 +612,96 @@ enum WindowActivityType: Int {
     case none = 0
     case hover = 1
     case focus = 2
+}
+
+/// A bounded local trace for intermittent switcher errors. It deliberately omits window titles and contents.
+class SwitcherDiagnostics {
+    private static let capacity = 128
+    private static let lock = NSLock()
+    private static var session = 0
+    private static var events = [Event]()
+
+    struct Report: Codable {
+        let events: [Event]
+    }
+
+    struct Event: Codable {
+        let uptime: Double
+        let session: Int
+        let kind: String
+        let selectedIndex: Int?
+        let selectedWindowId: CGWindowID?
+        let appBundleId: String?
+        let screenId: String?
+        let spaceIndexes: [SpaceIndex]?
+        let displayedWindowIds: [CGWindowID]?
+        let mruWindowIds: [CGWindowID]?
+        let targetPid: pid_t?
+        let frontmostPid: pid_t?
+        let succeeded: Bool?
+    }
+
+    static func beginSession() {
+        lock.lock()
+        session += 1
+        appendLocked("switcher-opened")
+        lock.unlock()
+    }
+
+    static func recordSelection(_ kind: String) {
+        let selected = Windows.selectedWindow()
+        let displayed = Windows.list.filter { Windows.shouldDisplay($0) }
+        append(kind, selectedIndex: Windows.selectedWindowIndex, selected: selected,
+               displayedWindowIds: displayed.prefix(16).compactMap(\.cgWindowId),
+               mruWindowIds: displayed.sorted { $0.lastFocusOrder < $1.lastFocusOrder }.prefix(16).compactMap(\.cgWindowId))
+    }
+
+    static func recordFocus(_ kind: String, _ window: Window, succeeded: Bool? = nil) {
+        append(kind, selectedIndex: nil, selected: window, targetPid: window.application.pid, succeeded: succeeded)
+    }
+
+    static func recordFocusResult(_ window: Window) {
+        let frontmostPid = NSWorkspace.shared.frontmostApplication?.processIdentifier
+        recordFocus("focus-result", window, succeeded: frontmostPid == window.application.pid, frontmostPid: frontmostPid)
+    }
+
+    static func record(_ kind: String) {
+        append(kind, selectedIndex: nil, selected: nil)
+    }
+
+    static func report() -> Report {
+        lock.lock()
+        let report = Report(events: events)
+        lock.unlock()
+        return report
+    }
+
+    static func reset() {
+        lock.lock()
+        session = 0
+        events.removeAll(keepingCapacity: true)
+        lock.unlock()
+    }
+
+    private static func recordFocus(_ kind: String, _ window: Window, succeeded: Bool?, frontmostPid: pid_t? = nil) {
+        append(kind, selectedIndex: nil, selected: window, targetPid: window.application.pid, frontmostPid: frontmostPid, succeeded: succeeded)
+    }
+
+    private static func append(_ kind: String, selectedIndex: Int?, selected: Window?, displayedWindowIds: [CGWindowID]? = nil, mruWindowIds: [CGWindowID]? = nil, targetPid: pid_t? = nil, frontmostPid: pid_t? = nil, succeeded: Bool? = nil) {
+        lock.lock()
+        appendLocked(kind, selectedIndex: selectedIndex, selected: selected, displayedWindowIds: displayedWindowIds, mruWindowIds: mruWindowIds, targetPid: targetPid, frontmostPid: frontmostPid, succeeded: succeeded)
+        lock.unlock()
+    }
+
+    private static func appendLocked(_ kind: String, selectedIndex: Int? = nil, selected: Window? = nil, displayedWindowIds: [CGWindowID]? = nil, mruWindowIds: [CGWindowID]? = nil, targetPid: pid_t? = nil, frontmostPid: pid_t? = nil, succeeded: Bool? = nil) {
+        events.append(Event(uptime: ProcessInfo.processInfo.systemUptime, session: session, kind: kind,
+                            selectedIndex: selectedIndex, selectedWindowId: selected?.cgWindowId,
+                            appBundleId: selected?.application.bundleIdentifier,
+                            screenId: selected?.screenId.map { $0 as String }, spaceIndexes: selected?.spaceIndexes,
+                            displayedWindowIds: displayedWindowIds, mruWindowIds: mruWindowIds,
+                            targetPid: targetPid, frontmostPid: frontmostPid, succeeded: succeeded))
+        if events.count > capacity {
+            events.removeFirst(events.count - capacity)
+        }
+    }
 }

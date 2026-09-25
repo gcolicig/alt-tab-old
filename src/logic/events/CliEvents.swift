@@ -74,6 +74,9 @@ class CliServer {
                 }
             )
         }
+        if rawValue == "--switcher-diagnostics" {
+            return SwitcherDiagnostics.report()
+        }
         if rawValue.hasPrefix("--focus="),
            let id = CGWindowID(rawValue.dropFirst("--focus=".count)), let window = (Windows.list.first { $0.cgWindowId == id }) {
             window.focus()
@@ -128,7 +131,7 @@ class CliClient {
     static func detectCommand() -> String? {
         let args = CommandLine.arguments
         if args.count == 2 && !args[1].starts(with: "--logs=") {
-            if args[1] == "--list" || args[1] == "--detailed-list" || args[1].hasPrefix("--focus=") || args[1].hasPrefix("--focusUsingLastFocusOrder=") || args[1].hasPrefix("--show=") {
+            if args[1] == "--list" || args[1] == "--detailed-list" || args[1] == "--switcher-diagnostics" || args[1].hasPrefix("--focus=") || args[1].hasPrefix("--focusUsingLastFocusOrder=") || args[1].hasPrefix("--show=") {
                 return args[1]
             }
         }

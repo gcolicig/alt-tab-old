@@ -52,6 +52,7 @@ class App: NSApplication {
     static func hideUi(_ keepPreview: Bool = false) {
         Logger.info { "appIsBeingUsed:\(appIsBeingUsed)" }
         guard appIsBeingUsed else { return } // already hidden
+        SwitcherDiagnostics.recordSelection("switcher-closed")
         appIsBeingUsed = false
         isFirstSummon = true
         forceDoNothingOnRelease = false
@@ -239,6 +240,7 @@ class App: NSApplication {
 
     static func focusSelectedWindow(_ selectedWindow: Window?) {
         guard appIsBeingUsed else { return } // already hidden
+        SwitcherDiagnostics.recordSelection("focus-confirmed")
         hideUi(true)
         if let window = selectedWindow, MissionControl.state() == .inactive || MissionControl.state() == .showDesktop {
             window.focus()
@@ -287,7 +289,8 @@ class App: NSApplication {
         appIsBeingUsed = true
         UsageStats.recordTrigger(shortcutIndex)
         if isFirstSummon || shortcutIndex != App.shortcutIndex {
-            NSScreen.updatePreferred()
+            SwitcherDiagnostics.beginSession()
+            NSScreen.updatePreferred(true)
             if isVeryFirstSummon {
                 Windows.sortByLevel()
                 isVeryFirstSummon = false
