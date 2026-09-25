@@ -2,65 +2,89 @@ import CoreAudio
 import Foundation
 import IOKit.hidsystem
 
-/// Story 14E. Mute through CoreAudio on the default device. A microphone without a mute control is muted
-/// by its input volume instead; that simulated mute is the only state AltTab+ gives back on quit.
+/// Story 14E. Mute every available input or output through CoreAudio. A microphone without a
+/// mute control is muted by its input volume instead; that simulated mute is the only state AltTab+ gives back on quit.
 enum AudioMute {
-    private static var simulatedInputMute: (device: AudioObjectID, volume: Float32)?
-    private static var defaultInputListener: AudioObjectPropertyListenerBlock?
+    private static var simulatedInputMutes = [AudioObjectID: Float32]()
 
     static func isMuted(input: Bool) -> Bool {
-        guard let device = defaultDevice(input: input) else { return false }
-        if input, let simulated = simulatedInputMute, simulated.device == device { return true }
-        return readUInt32(device, kAudioDevicePropertyMute, scope(input)) == 1
+        let devices = muteableDevices(input: input)
+        return !devices.isEmpty && devices.allSatisfy { isMuted($0, input: input) }
     }
 
     static func isAvailable(input: Bool) -> Bool {
-        guard let device = defaultDevice(input: input) else { return false }
-        return isSettable(device, kAudioDevicePropertyMute, scope(input)) || (input && isSettable(device, kAudioDevicePropertyVolumeScalar, scope(input)))
+        !muteableDevices(input: input).isEmpty
     }
 
     static func toggle(input: Bool) {
-        guard let device = defaultDevice(input: input) else { return }
+        let devices = muteableDevices(input: input)
+        guard !devices.isEmpty else { return }
         let muted = isMuted(input: input)
-        if isSettable(device, kAudioDevicePropertyMute, scope(input)) {
-            writeUInt32(device, kAudioDevicePropertyMute, scope(input), muted ? 0 : 1)
-        } else if input {
-            muted ? restoreSimulatedInputMute() : simulateInputMute(device)
+        devices.forEach { device in
+            if isSettable(device, kAudioDevicePropertyMute, scope(input)) {
+                writeUInt32(device, kAudioDevicePropertyMute, scope(input), muted ? 0 : 1)
+            } else if input {
+                muted ? restoreSimulatedInputMute(device) : simulateInputMute(device)
+            }
         }
+        MicMuteIndicator.refresh()
+        if input { TeamsMuteSync.microphoneToggled() }
     }
 
     static func restoreOnQuit() {
-        restoreSimulatedInputMute()
+        Array(simulatedInputMutes.keys).forEach { restoreSimulatedInputMute($0) }
     }
 
     private static func simulateInputMute(_ device: AudioObjectID) {
         guard let volume = readFloat(device, kAudioDevicePropertyVolumeScalar, scope(true)) else { return }
-        simulatedInputMute = (device, volume)
+        simulatedInputMutes[device] = volume
         writeFloat(device, kAudioDevicePropertyVolumeScalar, scope(true), 0)
-        observeDefaultInput(true)
-        MicMuteIndicator.refresh()
     }
 
-    private static func restoreSimulatedInputMute() {
-        guard let simulated = simulatedInputMute else { return }
-        writeFloat(simulated.device, kAudioDevicePropertyVolumeScalar, scope(true), simulated.volume)
-        simulatedInputMute = nil
-        observeDefaultInput(false)
-        MicMuteIndicator.refresh()
+    private static func restoreSimulatedInputMute(_ device: AudioObjectID) {
+        guard let volume = simulatedInputMutes.removeValue(forKey: device) else { return }
+        writeFloat(device, kAudioDevicePropertyVolumeScalar, scope(true), volume)
     }
 
-    /// A device switch while the volume stands in for mute would leave the old device silent without any
-    /// sign of it, so the old volume comes back first.
-    private static func observeDefaultInput(_ enabled: Bool) {
-        var address = globalAddress(kAudioHardwarePropertyDefaultInputDevice)
-        if enabled, defaultInputListener == nil {
-            let listener: AudioObjectPropertyListenerBlock = { _, _ in DispatchQueue.main.async { restoreSimulatedInputMute() } }
-            defaultInputListener = listener
-            AudioObjectAddPropertyListenerBlock(AudioObjectID(kAudioObjectSystemObject), &address, DispatchQueue.main, listener)
-        } else if !enabled, let listener = defaultInputListener {
-            AudioObjectRemovePropertyListenerBlock(AudioObjectID(kAudioObjectSystemObject), &address, DispatchQueue.main, listener)
-            defaultInputListener = nil
-        }
+    /// The microphone key is a privacy control: it affects every currently available input device, not only
+    /// the device macOS happens to name as the default while a meeting app may use another one.
+    static func inputDevices() -> [AudioObjectID] {
+        devices(withChannelsIn: kAudioObjectPropertyScopeInput)
+    }
+
+    static func outputDevices() -> [AudioObjectID] {
+        devices(withChannelsIn: kAudioObjectPropertyScopeOutput)
+    }
+
+    private static func devices(withChannelsIn scope: AudioObjectPropertyScope) -> [AudioObjectID] {
+        var address = globalAddress(kAudioHardwarePropertyDevices)
+        var size = UInt32(0)
+        guard AudioObjectGetPropertyDataSize(AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, &size) == noErr else { return [] }
+        var devices = [AudioObjectID](repeating: 0, count: Int(size) / MemoryLayout<AudioObjectID>.size)
+        guard AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, &size, &devices) == noErr else { return [] }
+        return devices.filter { hasChannels($0, scope: scope) }
+    }
+
+    private static func muteableDevices(input: Bool) -> [AudioObjectID] {
+        let devices = input ? inputDevices() : outputDevices()
+        return devices.filter { isSettable($0, kAudioDevicePropertyMute, scope(input)) || (input && isSettable($0, kAudioDevicePropertyVolumeScalar, scope(input))) }
+    }
+
+    private static func isMuted(_ device: AudioObjectID, input: Bool) -> Bool {
+        if input, simulatedInputMutes[device] != nil { return true }
+        return readUInt32(device, kAudioDevicePropertyMute, scope(input)) == 1
+    }
+
+    private static func hasChannels(_ device: AudioObjectID, scope: AudioObjectPropertyScope) -> Bool {
+        var address = AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyStreamConfiguration, mScope: scope, mElement: kAudioObjectPropertyElementMain)
+        guard AudioObjectHasProperty(device, &address) else { return false }
+        var size = UInt32(0)
+        guard AudioObjectGetPropertyDataSize(device, &address, 0, nil, &size) == noErr else { return false }
+        let bufferList = UnsafeMutableRawPointer.allocate(byteCount: Int(size), alignment: MemoryLayout<AudioBufferList>.alignment)
+        defer { bufferList.deallocate() }
+        guard AudioObjectGetPropertyData(device, &address, 0, nil, &size, bufferList) == noErr else { return false }
+        let buffers = UnsafeMutableAudioBufferListPointer(bufferList.assumingMemoryBound(to: AudioBufferList.self))
+        return buffers.contains { $0.mNumberChannels > 0 }
     }
 
     private static func scope(_ input: Bool) -> AudioObjectPropertyScope {
@@ -69,22 +93,6 @@ enum AudioMute {
 
     private static func globalAddress(_ selector: AudioObjectPropertySelector) -> AudioObjectPropertyAddress {
         AudioObjectPropertyAddress(mSelector: selector, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
-    }
-
-    static func defaultInputDevice() -> AudioObjectID? {
-        defaultDevice(input: true)
-    }
-
-    static func defaultOutputDevice() -> AudioObjectID? {
-        defaultDevice(input: false)
-    }
-
-    private static func defaultDevice(input: Bool) -> AudioObjectID? {
-        var address = globalAddress(input ? kAudioHardwarePropertyDefaultInputDevice : kAudioHardwarePropertyDefaultOutputDevice)
-        var device = AudioObjectID(0)
-        var size = UInt32(MemoryLayout<AudioObjectID>.size)
-        let status = AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, &size, &device)
-        return status == noErr && device != 0 ? device : nil
     }
 
     private static func isSettable(_ device: AudioObjectID, _ selector: AudioObjectPropertySelector, _ scope: AudioObjectPropertyScope) -> Bool {

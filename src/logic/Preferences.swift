@@ -118,6 +118,7 @@ class Preferences {
         }
         values["micMuteIndicator"] = "true"
         values["micKeyMutesMicrophone"] = "false"
+        values["teamsMuteSync"] = "false"
         values["autoQuitEnabled"] = "false"
         values["autoQuitDelaySeconds"] = "10"
         values["autoQuitMode"] = String(AutoQuitMode.onlyListed.rawValue)
@@ -196,6 +197,7 @@ class Preferences {
     static var smoothScrollDuration: SmoothScrollDuration { CachedUserDefaults.macroPref("smoothScrollDuration", SmoothScrollDuration.allCases) }
     static var micMuteIndicator: Bool { CachedUserDefaults.bool("micMuteIndicator") }
     static var micKeyMutesMicrophone: Bool { CachedUserDefaults.bool("micKeyMutesMicrophone") }
+    static var teamsMuteSync: Bool { CachedUserDefaults.bool("teamsMuteSync") }
     static var autoQuitEnabled: Bool { CachedUserDefaults.bool("autoQuitEnabled") }
     static var autoQuitDelaySeconds: Int { CachedUserDefaults.int("autoQuitDelaySeconds") }
     static var autoQuitMode: Int { CachedUserDefaults.int("autoQuitMode") }

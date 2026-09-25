@@ -255,14 +255,16 @@ class Menubar {
         muteIcons.enumerated().forEach { offset, icon in
             let x = spacesX + totalWidth + CGFloat(offset) * muteIconWidth
             let view = NSImageView(frame: MenubarSpaceRow.centeredRect(x: x + 2, width: muteIconWidth - 4, availableHeight: rowHeight, preferredHeight: MenubarSpaceRow.iconHeight))
-            view.image = tinted(icon.image)
+            view.image = icon.coloredImage
             view.imageScaling = .scaleProportionallyUpOrDown
             row.addSubview(view)
             muteTargets.append((CGRect(x: x, y: 0, width: muteIconWidth, height: rowHeight), icon))
         }
         row.addSubview(container) // container already carries its x
         spacesRowRect = totalWidth > 0 ? CGRect(x: spacesX, y: 0, width: totalWidth, height: rowHeight) : nil
-        statusButton.image = renderRowImage(row)
+        let renderedRow = renderRowImage(row)
+        renderedRow.isTemplate = false
+        statusButton.image = renderedRow
         statusButton.imageScaling = .scaleNone
         statusButton.alignment = .center
         customIconView = nil

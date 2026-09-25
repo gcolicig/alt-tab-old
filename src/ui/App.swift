@@ -359,6 +359,7 @@ class App: NSApplication {
         // built now rather than on the first menu click, so a registration problem shows at launch
         _ = Actions.registry
         MicMuteIndicator.preferenceChanged()
+        TeamsMuteSync.preferenceChanged()
         MainMenu.create()
         _ = TilesPanel()
         _ = PreviewPanel()

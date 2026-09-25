@@ -431,6 +431,7 @@
 		C0DE100000000000000000BF /* WindowFocusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000B8 /* WindowFocusTests.swift */; };
 		C0DE100000000000000000C0 /* SystemUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000B9 /* SystemUtilities.swift */; };
 		C0DE100000000000000000C1 /* AudioMute.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000BA /* AudioMute.swift */; };
+		7EA550000000000000000001 /* TeamsMuteSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EA550000000000000000002 /* TeamsMuteSync.swift */; };
 		C0DE100000000000000000C2 /* DefaultBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000BB /* DefaultBrowser.swift */; };
 		C0DE100000000000000000C3 /* FunctionKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000BC /* FunctionKeys.swift */; };
 		C0DE100000000000000000C4 /* AppQuit.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000BD /* AppQuit.swift */; };
@@ -1018,6 +1019,7 @@
 		C0DE200000000000000000B8 /* WindowFocusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowFocusTests.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000B9 /* SystemUtilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemUtilities.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000BA /* AudioMute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioMute.swift; sourceTree = "<group>"; };
+		7EA550000000000000000002 /* TeamsMuteSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamsMuteSync.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000BB /* DefaultBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowser.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000BC /* FunctionKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunctionKeys.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000BD /* AppQuit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppQuit.swift; sourceTree = "<group>"; };
@@ -2576,6 +2578,7 @@
 				C0DE200000000000000000BC /* FunctionKeys.swift */,
 				C0DE200000000000000000BB /* DefaultBrowser.swift */,
 				C0DE200000000000000000BA /* AudioMute.swift */,
+				7EA550000000000000000002 /* TeamsMuteSync.swift */,
 				C0DE200000000000000000B9 /* SystemUtilities.swift */,
 				C0DE200000000000000000B7 /* WindowFocusActions.swift */,
 				C0DE200000000000000000B6 /* WindowFocusTestable.swift */,
@@ -3166,6 +3169,7 @@
 				C0DE100000000000000000C3 /* FunctionKeys.swift in Sources */,
 				C0DE100000000000000000C2 /* DefaultBrowser.swift in Sources */,
 				C0DE100000000000000000C1 /* AudioMute.swift in Sources */,
+				7EA550000000000000000001 /* TeamsMuteSync.swift in Sources */,
 				C0DE100000000000000000C0 /* SystemUtilities.swift in Sources */,
 				C0DE100000000000000000BE /* WindowFocusActions.swift in Sources */,
 				C0DE100000000000000000BC /* WindowFocusTestable.swift in Sources */,

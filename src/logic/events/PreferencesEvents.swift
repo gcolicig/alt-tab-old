@@ -71,6 +71,7 @@ class PreferencesEvents {
         case "startAtLogin": applyStartAtLoginPreference()
         case "autoQuitEnabled": AutoQuit.enabledChanged()
         case "micMuteIndicator": MicMuteIndicator.preferenceChanged()
+        case "teamsMuteSync": TeamsMuteSync.preferenceChanged()
         case "keepAwakeDisplay": KeepAwake.displayPreferenceChanged()
         case "updatePolicy": applyUpdatePolicyPreference()
         case let k where preferencesRequiringUiReset.contains(k) && TilesPanel.shared != nil: App.resetPreferencesDependentComponents()

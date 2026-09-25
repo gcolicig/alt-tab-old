@@ -69,6 +69,9 @@ class SystemActionsTab {
             rightViews: [LabelAndControl.makeInfoButton(searchableTooltipTexts: [micKeyFullText], onMouseEntered: { event, view in
                 Popover.shared.show(event: event, positioningView: view, message: micKeyFullText)
             }, onMouseExited: { _, _ in Popover.shared.hide() }), LabelAndControl.makeSwitch("micKeyMutesMicrophone", extraAction: { _ in MicKey.settingChanged() })]))
+        microphone.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Sync Teams mute with microphone", comment: ""),
+            subTitle: NSLocalizedString("Teams is muted automatically when the microphone is muted. It is unmuted only directly after an AltTab+ microphone action.", comment: ""),
+            rightViews: [LabelAndControl.makeSwitch("teamsMuteSync")]))
         let keys = TableGroupView(title: NSLocalizedString("Function Keys", comment: ""), width: SettingsWindow.contentWidth)
         let restore = NSButton(title: NSLocalizedString("Restore original mode", comment: ""), target: nil, action: nil)
         restore.onAction = { _ in FunctionKeys.releaseOwnership() }
