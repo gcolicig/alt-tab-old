@@ -40,7 +40,9 @@ Prioritaet: Mittel. Klein, nutzt bestehenden Tap und bestehende CoreAudio-Pfade.
 | TM-02 | Funktion aus oder kein Mikrofon in Benutzung: kein Timer, keine CoreAudio-Schreibzugriffe | Q-10 |
 | TM-03 | Im Tap-Callback nur Zeitstempel und Flag setzen; CoreAudio-Aufrufe auf eigener serieller Queue | Q-02; `AudioObjectSetPropertyData` kann bei USB-Geraeten blockieren |
 | TM-04 | Die Funktion gibt nur Geraete frei, die sie selbst stummgeschaltet hat und die sie noch besitzt | Manuelle Stummschaltung des Nutzers hat Vorrang |
-| TM-05 | Eine Tipp-Stummschaltung loest nie `TeamsMuteSync` aus | Sonst drueckt AltTab+ in Teams bei jedem Wort den Mute-Knopf |
+| TM-05 | Eine Tipp-Stummschaltung loest nie `TeamsMuteSync` aus, weder direkt noch ueber den 10-s-Abgleich | Sonst drueckt AltTab+ in Teams bei jedem Wort den Mute-Knopf, und ohne `allowUnmute` bleibt Teams danach stumm |
+| TM-09 | `AudioMute.isMuted(input:)` wertet Geraete in der TypingMute-Ownership als **nicht stumm** (nicht: ausgelassen) | Siehe [Teams](#teams); Auslassen kippt die Auswertung, wenn nur eigene Geraete uebrig bleiben |
+| TM-10 | Die Ownership ist threadsicher lesbar (Lock oder atomarer Snapshot) | `TeamsMuteSync` liest `isMuted` auf `accessibilityCommandsQueue` mit bis zu 4 parallelen Operationen |
 | TM-06 | Panic-Kill-Switch (Q-01), Beenden und Safe Mode geben alle eigenen Stummschaltungen sofort frei | Ein Weg, der garantiert das Mikrofon zurueckbringt |
 | TM-07 | Absturzsicherheit: eigene Stummschaltungen werden vor dem Schreiben persistiert und beim naechsten Start freigegeben | `kill -9` darf kein stummes Mikrofon hinterlassen |
 | TM-08 | Keine Tastencodes, Zeichen oder Tipp-Frequenzen im Log oder Ringbuffer, nur Zustandswechsel | Der Tap sieht alles, was der Nutzer tippt |
@@ -111,9 +113,16 @@ Die Logik ist eine reine Zustandsmaschine in `TypingMuteTestable.swift`, analog 
 Der Nutzer drueckt die Mikrofontaste, waehrend AltTab+ wegen Tippens stummgeschaltet hat. Das
 Mikrofon ist technisch stumm, der Nutzer meint aber seinen eigenen Zustand. Festgelegt:
 
-- `AudioMute.toggle(input: true)` fragt zuerst `TypingMute.surrenderOwnership()`. Liefert das `true`,
-  war das Mikrofon nur durch Tippen stumm; der Toggle interpretiert den Ausgangszustand als **nicht
-  stumm** und schaltet folglich stumm. Die Geraete bleiben stumm, gehoeren jetzt aber dem Nutzer.
+- `AudioMute.toggle(input: true)` liest den Ausgangszustand **vor** der Uebergabe. Nach TM-09 gelten
+  eigene Geraete dabei als nicht stumm, der Toggle will also stummschalten.
+- Danach ruft er `TypingMute.surrenderOwnership()`. Das stoppt den Timer, loescht den Absturz-Marker und
+  uebergibt jedes eigene Geraet an `AudioMute`:
+  - Stumm ueber Mute-Property: Geraet bleibt stumm, `AudioMute` schreibt nichts.
+  - Stumm ueber Lautstaerke: die gemerkte Ursprungslautstaerke wandert nach
+    `AudioMute.simulatedInputMutes`. **Ohne diese Uebergabe koennte der Nutzer die Lautstaerke spaeter
+    nicht wiederherstellen; das Mikrofon bliebe dauerhaft auf 0.**
+- Fuer die uebrigen Geraete laeuft der Toggle normal. Am Ende ruft er wie heute
+  `TeamsMuteSync.microphoneToggled()` auf; das ist ein manueller Pfad und darf Teams stummschalten.
 - Damit fuehrt ein Druck auf die Mikrofontaste immer zu dem Zustand, den der Nutzer erwartet, und die
   Frist gibt spaeter nichts frei.
 
@@ -128,10 +137,35 @@ Wert gilt als extern und entfernt das Geraet aus der Ownership.
 | Funktion | Verhalten |
 |---|---|
 | `MicMuteIndicator` | Zeigt Tipp-Stummschaltung **nicht** als stummes Mikrofon; sonst flackert das Icon bei jedem Wort. `AudioMute.isMuted(input:)` ignoriert Geraete in der TypingMute-Ownership. Optional eigenes dezentes Icon, siehe [Offene Fragen](#offene-fragen) |
-| `TeamsMuteSync` | Wird nie aus TypingMute aufgerufen (TM-05). Der 10-s-Abgleich liest `AudioMute.isMuted`, das Tipp-Stummschaltungen ignoriert |
-| `MicKey` | Unveraendert; die Taste landet in `AudioMute.toggle` und damit in `surrenderOwnership` |
+| `TeamsMuteSync` | Siehe [Teams](#teams) |
+| `MicKey` | Unveraendert; die Taste landet ueber `KeyboardEvents` in `AudioMute.toggle` und damit in `surrenderOwnership` |
+| Systemaktion „Mikrofon stumm“ | `isOn` nutzt `AudioMute.isMuted` und zeigt dank TM-09 den Zustand des Nutzers, nicht den der Tipp-Phase |
+| `MicMuteIndicator.unmute` | Waehrend einer Tipp-Phase ohne manuelle Stummschaltung ist kein Icon sichtbar; ein Klick ist also nicht moeglich |
 | `AudioMute.restoreOnQuit` | Ruft zusaetzlich `TypingMute.releaseAll()` auf |
 | Panic-Kill-Switch | `disableInputModulesForSafety` ruft `TypingMute.releaseAll()` auf |
+
+### Teams
+
+`TeamsMuteSync` synchronisiert heute nur in eine Richtung: vom Systemzustand nach Teams, per AXPress auf
+„Mute mic“ oder „Unmute mic“. Es hat zwei Einstiege, und beide lesen `AudioMute.isMuted(input: true)`:
+
+| Einstieg | Heute | Risiko ohne Anpassung | Festlegung |
+|---|---|---|---|
+| 10-s-Timer, `allowUnmute: false` | Schaltet Teams stumm, wenn das System stumm ist | Faellt der Tick in eine Tipp-Phase, schaltet AltTab+ Teams stumm. Nach dem Tippen ist das Mikrofon offen, aber Teams bleibt stumm, weil der Timer nie freigibt. Bei laengerem Tippen ist das fast sicher | TM-09: eigene Geraete zaehlen als offen, der Tick sieht „nicht stumm“ und tut nichts |
+| `microphoneToggled()`, `allowUnmute: true` | Nur aus `AudioMute.toggle` | TypingMute koennte denselben Pfad nutzen, wenn es `toggle` verwendet | TypingMute schreibt ueber eigene Funktionen, nie ueber `toggle` (TM-05) |
+| Doppelpruefung nach 200 ms | Vergleicht `isMuted` mit dem ersten Wert | Beginnt oder endet dazwischen eine Tipp-Phase, koennte der Vergleich kippen | Durch TM-09 aendert eine Tipp-Phase `isMuted` nicht; der Vergleich bleibt stabil |
+
+Warum „als offen werten“ statt „auslassen“: `isMuted` verlangt, dass die Liste nicht leer ist **und**
+alle Geraete stumm sind. Laesst man eigene Geraete aus und ist ein zweites, unbenutztes Mikrofon vom
+Nutzer stumm, ergibt die Restliste „alle stumm“, und Teams wuerde stummgeschaltet.
+
+Weitere Festlegungen:
+
+- `AudioMute.isMuted` wird auf `accessibilityCommandsQueue` parallel gelesen. Die Ownership braucht
+  deshalb TM-10. `AudioMute.simulatedInputMutes` ist schon heute nicht threadsicher; die Uebergabe in
+  `surrenderOwnership` laeuft auf dem Main Thread, wie `toggle` selbst.
+- Teams bekommt die Tipp-Stummschaltung nur auf Geraeteebene mit. Der Mute-Knopf in Teams bleibt
+  unveraendert, und im Call erscheint kein Wechsel „stumm/offen“ bei den anderen Teilnehmenden.
 
 ## Absturzsicherheit
 
@@ -196,7 +230,13 @@ Stufe 1 und 2 zusammen sind auslieferbar, solange Stufe 4 vor dem Merge folgt.
 - Nutzer hat das Mikrofon stummgeschaltet und tippt: nach dem Tippen bleibt es stumm.
 - Mikrofontaste waehrend einer Tipp-Phase: Mikrofon bleibt stumm, auch nach Ablauf der Frist.
 - `MicMuteIndicator` flackert beim Tippen nicht.
-- Teams-Call mit `teamsMuteSync` an: der Teams-Mute-Knopf wird beim Tippen nie gedrueckt.
+- Teams-Call mit `teamsMuteSync` an: der Teams-Mute-Knopf wird beim Tippen nie gedrueckt, auch nicht
+  bei mehr als 20 s ununterbrochenem Tippen (mindestens zwei Timer-Ticks).
+- Teams-Call mit `teamsMuteSync` an, Mikrofontaste waehrend einer Tipp-Phase: Teams zeigt danach
+  „Unmute mic“; ein zweiter Druck gibt System und Teams wieder frei.
+- Mikrofon ohne Mute-Property (Lautstaerke-Weg), Mikrofontaste waehrend einer Tipp-Phase, danach
+  erneut: die Eingangslautstaerke ist wieder auf dem Wert vor der Tipp-Phase.
+- Zweites, unbenutztes Mikrofon vom Nutzer stumm, Tippen im Teams-Call: Teams wird nicht stummgeschaltet.
 - `kill -9` waehrend einer Tipp-Phase, danach Neustart von AltTab+: Mikrofon ist offen.
 - Panic-Kill-Switch waehrend einer Tipp-Phase: Mikrofon sofort offen.
 - Gehaltene Taste (Autorepeat) loest nach dem ersten Anschlag keine weiteren Schreibzugriffe aus.
@@ -207,7 +247,12 @@ Stufe 1 und 2 zusammen sind auslieferbar, solange Stufe 4 vor dem Merge folgt.
 - Reicht `kAudioDevicePropertyDeviceIsRunningSomewhere` fuer Apps, die das Mikrofon dauerhaft offen
   halten (z. B. Diktat im Hintergrund), oder braucht es eine Liste von Call-Apps als Zusatzbedingung?
 - Reagieren Zoom, Teams und Meet auf ein kurz stummes Hardware-Mikrofon mit einem Hinweis „Mikrofon ist
-  stumm“? Falls ja: Lautstaerke-Weg statt Mute-Property bevorzugen (**zu verifizieren**).
+  stumm“? Falls ja: Lautstaerke-Weg statt Mute-Property bevorzugen (**zu verifizieren**, fuer Teams
+  zuerst, weil es bereits integriert ist).
+- Haelt Teams das Mikrofon auch dann offen (`IsRunningSomewhere`), wenn es in Teams stumm ist? Falls ja,
+  schaltet TypingMute unnoetig; harmlos, aber vermeidbar, indem TypingMute den zuletzt von
+  `TeamsMuteSync` gelesenen Knopfzustand mitnutzt. Nicht in v1, weil `TeamsMuteSync` den Zustand heute
+  nur bei eingeschalteter Einstellung und nur alle 10 s kennt.
 - Soll die Tipp-Stummschaltung im Menueleisten-Icon sichtbar sein (z. B. gedimmtes Mikrofon), oder
   bleibt sie unsichtbar?
 - Hat das schnelle Umschalten der Mute-Property bei Bluetooth-Headsets hoerbare Artefakte oder
