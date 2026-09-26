@@ -197,6 +197,23 @@ Weitere Festlegungen:
 - Teams bekommt die Tipp-Stummschaltung nur auf Geraeteebene mit. Der Mute-Knopf in Teams bleibt
   unveraendert, und im Call erscheint kein Wechsel „stumm/offen“ bei den anderen Teilnehmenden.
 
+### Menueleiste
+
+Entschieden 2026-09-26. Das bestehende Symbol von `MicMuteIndicator` wird mit zwei weiteren Zustaenden
+wiederverwendet. Durchgestrichen heisst: du bist nicht zu hoeren.
+
+| Zustand | Symbol | Farbe | Klick |
+|---|---|---|---|
+| Nutzer hat stummgeschaltet | `mic.slash.fill` | Rot | gibt frei (unveraendert) |
+| Tipp-Phase | `mic.slash.fill` | Gelb (nicht Orange: Aufnahmepunkt) | pausiert die Funktion |
+| Pausiert, Mikrofon offen | `mic.fill` | Grau | setzt fort |
+
+- Rot hat Vorrang; Rot und Gelb oder Grau erscheinen nie gleichzeitig.
+- Die Pause endet, sobald kein Eingabegeraet mehr `IsRunningSomewhere` meldet, und gilt nicht ueber
+  einen Neustart von AltTab+. Die Einstellung selbst bleibt unveraendert.
+- Nur in der Zeile neben den Spaces; das Fallback-Statusitem bei ausgeblendetem AltTab+-Icon zeigt
+  weiterhin nur Rot.
+
 ## Absturzsicherheit
 
 - Vor dem ersten Schreibzugriff einer `holding`-Phase schreibt TypingMute einen Marker in
@@ -307,7 +324,5 @@ Stufe 1 und 2 zusammen sind auslieferbar, solange Stufe 4 vor dem Merge folgt.
   schaltet TypingMute unnoetig; harmlos, aber vermeidbar, indem TypingMute den zuletzt von
   `TeamsMuteSync` gelesenen Knopfzustand mitnutzt. Nicht in v1, weil `TeamsMuteSync` den Zustand heute
   nur bei eingeschalteter Einstellung und nur alle 10 s kennt.
-- Soll die Tipp-Stummschaltung im Menueleisten-Icon sichtbar sein (z. B. gedimmtes Mikrofon), oder
-  bleibt sie unsichtbar?
 - Hat das schnelle Umschalten von Lautstaerke oder Mute-Property bei Bluetooth-Headsets hoerbare Artefakte oder
   Profilwechsel (HFP/A2DP)?

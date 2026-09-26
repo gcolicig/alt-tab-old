@@ -86,7 +86,7 @@ class Menubar {
         let point = button.convert(window.convertPoint(fromScreen: NSEvent.mouseLocation), from: nil)
         switch MenubarSpaceRow.hitTarget(at: point, spacesRect: spacesRowRect, muteRects: muteTargets.map { $0.rect }) {
         case .mute(let index):
-            MicMuteIndicator.unmute(muteTargets[index].icon)
+            MicMuteIndicator.clicked(muteTargets[index].icon)
             return true
         case .none:
             return false

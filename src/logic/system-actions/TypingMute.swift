@@ -1,6 +1,12 @@
 import CoreAudio
 import Foundation
 
+enum TypingMuteIndicator {
+    case none
+    case muted
+    case paused
+}
+
 /// spec-typing-mute.md. Silences the microphones in use while the user types, and gives back only what it
 /// silenced itself. The keyboard tap calls `keyActivity`; that path only takes a lock and compares, every
 /// CoreAudio call runs on `queue` (TM-03). The decisions live in `TypingMuteStateMachine`.
@@ -13,6 +19,9 @@ enum TypingMute {
     private static var hold: TimeInterval = 0.4
     private static var isEnabled = false
     private static var ownedIds = Set<AudioObjectID>()
+    private static var lastIdleKeyLog: TimeInterval = 0
+    /// Set from the menu bar icon; cleared once no app uses a microphone any more, so the next call is covered.
+    private static var isPaused = false
     // only touched on `queue`
     private static var plan = [TypingMuteTarget]()
     private static var owned = [AudioObjectID: TypingMuteOwnedDevice]()
@@ -29,6 +38,7 @@ enum TypingMute {
         withLock { hold = holdSeconds }
         guard enabled != withLock({ isEnabled }) else { return }
         withLock { isEnabled = enabled }
+        Logger.debug { "typing mute: enabled:\(enabled) hold:\(holdSeconds)" }
         if !enabled { releaseAll() }
         queue.async { enabled ? TypingMuteAudio.startObserving() : TypingMuteAudio.stopObserving() }
         queue.async { rebuildPlan() }
@@ -55,6 +65,31 @@ enum TypingMute {
         }
     }
 
+    /// The yellow icon: the microphone opens now and typing stops muting until no app records any more.
+    static func pauseUntilMicrophoneIdle() {
+        withLock {
+            isPaused = true
+            _ = state.end()
+        }
+        Logger.debug { "typing mute: paused until the microphone is idle" }
+        queue.sync {
+            release()
+            rebuildPlan()
+        }
+        MicMuteIndicator.refresh()
+    }
+
+    static func resume() {
+        withLock { isPaused = false }
+        Logger.debug { "typing mute: resumed" }
+        queue.async { rebuildPlan() }
+        MicMuteIndicator.refresh()
+    }
+
+    static var indicator: TypingMuteIndicator {
+        withLock { !ownedIds.isEmpty ? .muted : isPaused ? .paused : .none }
+    }
+
     /// Launch: a marker left behind means AltTab+ died during a phase. Runs whether or not the setting is on.
     static func recoverAfterUncleanExit() {
         guard let marker = UserDefaults.standard.string(forKey: markerKey) else { return }
@@ -65,9 +100,9 @@ enum TypingMute {
     }
 
     static func debugSummary() -> String {
-        let (enabled, armed, holding) = withLock { (isEnabled, state.isArmed, state.isHolding) }
+        let (enabled, armed, holding, paused) = withLock { (isEnabled, state.isArmed, state.isHolding, isPaused) }
         let details = queue.sync { "planned:\(plan.count) owned:\(owned.count) releaseFailures:\(releaseFailures) latency: \(latencies.summary())" }
-        return "enabled:\(enabled) armed:\(armed) holding:\(holding) \(details)"
+        return "enabled:\(enabled) armed:\(armed) holding:\(holding) paused:\(paused) \(details)"
     }
 
     // MARK: - any thread
@@ -80,8 +115,21 @@ enum TypingMute {
     static func keyActivity(_ key: TypingMuteKey) {
         let now = ProcessInfo.processInfo.systemUptime
         let decision = withLock { state.key(key, at: now, hold: hold) }
+        logIdleKeyIfNeeded(key, decision, now)
         guard case .mute(let generation) = decision else { return }
         queue.async { mute(generation, startedAt: now) }
+    }
+
+    /// At most every 5 s: a fresh key press that did not start a phase, with the reason in the state.
+    private static func logIdleKeyIfNeeded(_ key: TypingMuteKey, _ decision: TypingMuteKeyDecision, _ now: TimeInterval) {
+        guard key == .down(isAutorepeat: false), decision == .none else { return }
+        let (armed, holding, shouldLog) = withLock { () -> (Bool, Bool, Bool) in
+            let shouldLog = now - lastIdleKeyLog > 5
+            if shouldLog { lastIdleKeyLog = now }
+            return (state.isArmed, state.isHolding, shouldLog)
+        }
+        guard shouldLog, !holding else { return }
+        Logger.debug { "typing mute: key press ignored, armed:\(armed)" }
     }
 
     // MARK: - queue
@@ -93,8 +141,25 @@ enum TypingMute {
         }
         planIsStale = false
         let enabled = withLock { isEnabled }
-        plan = enabled ? TypingMuteAudio.targets().filter(TypingMuteOwnership.canSilence) : []
-        withLock { state.isArmed = enabled && !plan.isEmpty }
+        let inUse = enabled && TypingMuteAudio.anyInputRunning()
+        let paused = updatePause(inUse: inUse)
+        plan = inUse && !paused ? TypingMuteAudio.targets().filter(TypingMuteOwnership.canSilence) : []
+        withLock { state.isArmed = !plan.isEmpty }
+        Logger.debug { "typing mute: plan \(plan.map { "\($0.uid) \($0.route) \($0.currentValue)" }) armed:\(!plan.isEmpty) paused:\(paused)" }
+    }
+
+    /// The pause ends with the call it was meant for: once no app records, the next recording is covered again.
+    private static func updatePause(inUse: Bool) -> Bool {
+        let (paused, ended) = withLock { () -> (Bool, Bool) in
+            let ended = isPaused && !inUse
+            if ended { isPaused = false }
+            return (isPaused, ended)
+        }
+        if ended {
+            Logger.debug { "typing mute: pause ended, no microphone in use" }
+            MicMuteIndicator.refresh()
+        }
+        return paused
     }
 
     /// A property of a device changed. Our own writes land here too; only a value different from what
@@ -123,6 +188,7 @@ enum TypingMute {
         publishOwnership()
         writeMarker()
         entries.forEach { silence($0, startedAt) }
+        Logger.debug { "typing mute: phase started, silenced \(owned.count) of \(entries.count)" }
         scheduleTimer()
     }
 
@@ -139,6 +205,7 @@ enum TypingMute {
         let entries = Array(owned.values)
         owned = [:]
         let failed = entries.filter { !TypingMuteAudio.restore($0) }
+        if !entries.isEmpty { Logger.debug { "typing mute: phase ended, restored \(entries.count - failed.count) of \(entries.count)" } }
         failed.isEmpty ? UserDefaults.standard.removeObject(forKey: markerKey) : retryRelease(failed)
         publishOwnership()
         if planIsStale || !entries.isEmpty { rebuildPlan() }

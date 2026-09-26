@@ -39,6 +39,10 @@ enum TypingMuteAudio {
             .compactMap(target)
     }
 
+    static func anyInputRunning() -> Bool {
+        AudioMute.inputDevices().contains(where: isRunningSomewhere)
+    }
+
     static func isRunningSomewhere(_ device: AudioObjectID) -> Bool {
         var address = AudioObjectPropertyAddress(mSelector: kAudioDevicePropertyDeviceIsRunningSomewhere, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
         var value = UInt32(0)

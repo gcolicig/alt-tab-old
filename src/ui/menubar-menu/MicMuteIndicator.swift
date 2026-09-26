@@ -12,6 +12,7 @@ enum MicMuteIndicator {
     private static var isRunning = false
     private(set) static var inputMuted = false
     private(set) static var outputMuted = false
+    private(set) static var typing = TypingMuteIndicator.none
     private static let listener: AudioObjectPropertyListenerBlock = { _, _ in refresh() }
     private static let deviceListener: AudioObjectPropertyListenerBlock = { _, _ in followAudioDevices() }
 
@@ -38,20 +39,38 @@ enum MicMuteIndicator {
         }
         observeInputs([])
         observeOutputs([])
-        update(input: false, output: false)
+        update(input: false, output: false, typing: .none)
     }
 
     static func refresh() {
         DispatchQueue.main.async {
             guard isRunning else { return }
-            update(input: AudioMute.isMuted(input: true), output: AudioMute.isMuted(input: false))
+            update(input: AudioMute.isMuted(input: true), output: AudioMute.isMuted(input: false), typing: TypingMute.indicator)
         }
     }
 
     /// The icons to draw in the row, in order. Empty when nothing is muted or the row cannot host them.
     static var rowIcons: [MuteIcon] {
         guard isRunning else { return [] }
-        return (inputMuted ? [MuteIcon.input] : []) + (outputMuted ? [MuteIcon.output] : [])
+        return (inputIcon.map { [$0] } ?? []) + (outputMuted ? [MuteIcon.output] : [])
+    }
+
+    /// A mute the user set wins over the typing states: red and yellow or grey never show together.
+    private static var inputIcon: MuteIcon? {
+        if inputMuted { return .input }
+        switch typing {
+        case .none: return nil
+        case .muted: return .typing
+        case .paused: return .typingPaused
+        }
+    }
+
+    static func clicked(_ icon: MuteIcon) {
+        switch icon {
+        case .input, .output: unmute(icon)
+        case .typing: TypingMute.pauseUntilMicrophoneIdle()
+        case .typingPaused: TypingMute.resume()
+        }
     }
 
     static func unmute(_ icon: MuteIcon) {
@@ -61,10 +80,11 @@ enum MicMuteIndicator {
         refresh()
     }
 
-    private static func update(input: Bool, output: Bool) {
-        guard input != inputMuted || output != outputMuted else { return }
+    private static func update(input: Bool, output: Bool, typing: TypingMuteIndicator) {
+        guard input != inputMuted || output != outputMuted || typing != self.typing else { return }
         inputMuted = input
         outputMuted = output
+        self.typing = typing
         Menubar.refreshSpaces(spacesAreFresh: true)
         showFallback(input && !Preferences.menubarIconShown)
     }
@@ -141,15 +161,33 @@ enum MicMuteIndicator {
 enum MuteIcon {
     case input
     case output
+    case typing
+    case typingPaused
 
-    var symbol: String { self == .input ? "mic.slash.fill" : "speaker.slash.fill" }
+    var symbol: String {
+        switch self {
+        case .input, .typing: return "mic.slash.fill"
+        case .typingPaused: return "mic.fill"
+        case .output: return "speaker.slash.fill"
+        }
+    }
 
     var label: String {
-        self == .input ? NSLocalizedString("Microphone muted", comment: "") : NSLocalizedString("Sound muted", comment: "")
+        switch self {
+        case .input: return NSLocalizedString("Microphone muted", comment: "")
+        case .output: return NSLocalizedString("Sound muted", comment: "")
+        case .typing: return NSLocalizedString("Microphone muted while typing", comment: "")
+        case .typingPaused: return NSLocalizedString("Muting while typing paused", comment: "")
+        }
     }
 
     var tooltip: String {
-        self == .input ? NSLocalizedString("Microphone muted — click to unmute", comment: "") : NSLocalizedString("Sound muted — click to unmute", comment: "")
+        switch self {
+        case .input: return NSLocalizedString("Microphone muted — click to unmute", comment: "")
+        case .output: return NSLocalizedString("Sound muted — click to unmute", comment: "")
+        case .typing: return NSLocalizedString("Muted while typing — click to pause until the microphone is no longer in use", comment: "")
+        case .typingPaused: return NSLocalizedString("Muting while typing paused — click to resume", comment: "")
+        }
     }
 
     var image: NSImage? {
@@ -158,11 +196,14 @@ enum MuteIcon {
         return image
     }
 
+    /// Yellow, not orange: orange is the macOS recording dot right next to it.
     var color: NSColor {
         let dark = NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
         switch self {
         case .input: return dark ? NSColor(srgbRed: 1, green: 0.27, blue: 0.23, alpha: 1) : NSColor(srgbRed: 0.55, green: 0.08, blue: 0.08, alpha: 1)
         case .output: return dark ? NSColor(srgbRed: 0.19, green: 0.82, blue: 0.35, alpha: 1) : NSColor(srgbRed: 0.07, green: 0.42, blue: 0.16, alpha: 1)
+        case .typing: return dark ? NSColor(srgbRed: 1, green: 0.84, blue: 0.04, alpha: 1) : NSColor(srgbRed: 0.62, green: 0.45, blue: 0, alpha: 1)
+        case .typingPaused: return dark ? NSColor(srgbRed: 0.6, green: 0.6, blue: 0.62, alpha: 1) : NSColor(srgbRed: 0.42, green: 0.42, blue: 0.44, alpha: 1)
         }
     }
 
