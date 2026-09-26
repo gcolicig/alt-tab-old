@@ -320,6 +320,23 @@ Stufe 1 und 2 zusammen sind auslieferbar, solange Stufe 4 vor dem Merge folgt.
 - Gehaltene Taste (Autorepeat) loest nach dem ersten Anschlag keine weiteren Schreibzugriffe aus.
 - Log und Debug-Profil enthalten keine Tastencodes.
 
+## Feldtest
+
+Gestartet 2026-09-26 mit dem Stand `f5b7311c` (Debug-Build, lokal signiert, in `/Applications`).
+Ohne Logging: Die Beobachtungen werden von Hand notiert. Ziel ist, wie gut die Aktivierung ueber
+`IsRunningSomewhere` echte Teams-Calls trifft; die Pause-Optionen unter [Menueleiste](#menueleiste) werden
+danach entschieden.
+
+| Frage | Beobachtung |
+|---|---|
+| Scharf beim Beitritt zum Call (gelbes Symbol beim ersten Tippen)? | offen |
+| Aus nach dem Auflegen (kein gelbes Symbol mehr)? | offen |
+| Scharf, obwohl in Teams stummgeschaltet? | offen |
+| Scharf schon im Vorschau-Bildschirm vor dem Beitritt? | offen |
+| Scharf ohne Call durch andere Apps (Browser, Diktat)? | offen |
+| Zeigt Teams bei Lautstaerke 0 den Hinweis „Mikrofon stumm“? | offen |
+| Hoeren die anderen noch Tastengeraeusche (ausser dem ersten Anschlag)? | offen |
+
 ## Offene Fragen
 
 - Reicht `kAudioDevicePropertyDeviceIsRunningSomewhere` fuer Apps, die das Mikrofon dauerhaft offen
