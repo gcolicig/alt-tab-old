@@ -85,11 +85,31 @@ Frist abgelaufen (letzte Taste + holdMs) ─────────────
 
 - Standard: nur Eingabegeraete, die gerade laufen (`IsRunningSomewhere`). Ein unbenutztes USB-Mikrofon
   wird nicht angefasst.
-- Stummschaltung ueber `kAudioDevicePropertyMute`; ohne settable Mute-Property ueber die Eingangs-
-  lautstaerke wie in `AudioMute.simulateInputMute`. Der gemerkte Lautstaerkewert gehoert der
-  TypingMute-Ownership, nicht `AudioMute.simulatedInputMutes`.
-- Ein Geraet, das beim Ausloesen bereits stumm ist, gehoert **nicht** zur Ownership und wird beim
-  Freigeben nicht angefasst (TM-04).
+- **Standardweg ist die Eingangslautstaerke**, wie in `AudioMute.simulateInputMute`: Wert merken, auf
+  0 setzen, spaeter zuruecksetzen. Grund: Teams zeigt bei gesetzter `kAudioDevicePropertyMute` den
+  Hinweis „Dein Mikrofon ist stumm“ (beobachtet 2026-09-26). Die Mute-Property ist nur Rueckfall fuer
+  Geraete ohne settable `kAudioDevicePropertyVolumeScalar`; auf diesen Geraeten erscheint der Hinweis
+  weiterhin, das UI sagt es beim Einschalten.
+- Der gemerkte Lautstaerkewert gehoert der TypingMute-Ownership, nicht `AudioMute.simulatedInputMutes`,
+  bis `surrenderOwnership` ihn uebergibt.
+- Ein Geraet, das beim Ausloesen bereits stumm ist oder Lautstaerke 0 hat, gehoert **nicht** zur
+  Ownership und wird beim Freigeben nicht angefasst (TM-04).
+- Aendert jemand anders die Lautstaerke eines eigenen Geraets waehrend `holding` (Nutzer im
+  Kontrollzentrum, automatische Mikrofonempfindlichkeit einer Call-App), faellt das Geraet aus der
+  Ownership. Die neue Lautstaerke bleibt; TypingMute ueberschreibt sie beim Freigeben nicht.
+
+### Vorbereiteter Schreibplan
+
+Ein Tastendruck darf nur noch die eigentlichen Schreibzugriffe kosten. Jede CoreAudio-Abfrage ist ein
+IPC-Aufruf an `coreaudiod`; `AudioMute.inputDevices()` allein braucht pro Geraet mehrere davon.
+
+- TypingMute haelt einen **Plan**: je laufendem Eingabegeraet die `AudioObjectID`, den Weg (Lautstaerke
+  oder Mute), die fertige `AudioObjectPropertyAddress` und die aktuelle Lautstaerke.
+- Der Plan wird ausserhalb des Tippens neu gebaut: bei Aenderung der Geraeteliste, von
+  `IsRunningSomewhere` und von Lautstaerke oder Mute (Listener, solange die Funktion an ist).
+- `keyDown` im Zustand `idle` fuehrt pro Geraet genau einen `AudioObjectSetPropertyData` aus, das
+  meistgenutzte Geraet zuerst (Default-Input vor weiteren). Kein Lesen, keine Enumeration.
+- Die Uebergabe vom Tap an die TypingMute-Queue kostet Mikrosekunden und bleibt (TM-03).
 
 ## Zustandsmodell
 
@@ -164,6 +184,16 @@ Weitere Festlegungen:
 - `AudioMute.isMuted` wird auf `accessibilityCommandsQueue` parallel gelesen. Die Ownership braucht
   deshalb TM-10. `AudioMute.simulatedInputMutes` ist schon heute nicht threadsicher; die Uebergabe in
   `surrenderOwnership` laeuft auf dem Main Thread, wie `toggle` selbst.
+- **Hinweis „Dein Mikrofon ist stumm“:** erscheint bei gesetzter Mute-Property (beobachtet
+  2026-09-26). Deshalb ist die Eingangslautstaerke der Standardweg, siehe [Welche Geraete](#welche-geraete).
+  Ob Teams auch auf Lautstaerke 0 reagiert, ist offen.
+- **Helper-Prozesse:** Teams nimmt nicht im Hauptprozess auf. Im Bundle liegen
+  `com.microsoft.teams2.modulehost` (Media-Stack, einziger Helper mit `NSMicrophoneUsageDescription`)
+  und `com.microsoft.teams2.helper` (WebView). Folgen:
+  - Die Aktivierung ueber `IsRunningSomewhere` ist prozessunabhaengig und funktioniert unveraendert.
+  - Jede kuenftige Pruefung „nimmt Teams gerade auf?“ muss die Helper erfassen: Bundle-ID mit Praefix
+    `com.microsoft.teams2.`, nicht Gleichheit mit `com.microsoft.teams2`.
+  - `TeamsMuteSync` sucht den Mute-Knopf korrekt im Hauptprozess, weil die UI dort liegt; das bleibt.
 - Teams bekommt die Tipp-Stummschaltung nur auf Geraeteebene mit. Der Mute-Knopf in Teams bleibt
   unveraendert, und im Call erscheint kein Wechsel „stumm/offen“ bei den anderen Teilnehmenden.
 
@@ -190,9 +220,22 @@ Schalter an ist.
 ## Budgets
 
 - Tap-Callback: zusaetzlich hoechstens ein atomarer Zeitstempel-Schreibzugriff und ein Flag-Vergleich.
-- Latenz von `keyDown` bis Mikrofon stumm: Ziel unter 15 ms fuer eingebaute Mikrofone. Der erste
-  Anschlag einer Tipp-Phase kann trotzdem durchrutschen; das ist eine bekannte Grenze des Prinzips,
-  auch bei Unclack.
+- Latenz vom Zeitstempel des `keyDown` (`CGEvent.timestamp`) bis zur Rueckkehr des Schreibzugriffs,
+  p95 ueber 200 Tipp-Phasen:
+
+  | Geraet | Ziel |
+  |---|---|
+  | Eingebautes Mikrofon | unter 5 ms |
+  | USB | unter 15 ms (USB-Control-Transfer, nicht beeinflussbar) |
+  | Bluetooth | kein Ziel; Lautstaerke geht per Funk ans Headset |
+
+  Die 5 ms sind **zu verifizieren**; der Grossteil der Zeit liegt in `coreaudiod` und im Treiber, nicht
+  in AltTab+. Erreicht der Messwert das Ziel nicht, wird es nach Messung angepasst, nicht durch
+  Aufweichen von TM-03.
+- Die Latenz betrifft nur den **ersten** Anschlag einer Tipp-Phase; alle weiteren fallen in die
+  laufende Stummschaltung. Auch bei 5 ms rutscht der Anfang des ersten Klicks durch, weil der Klick
+  praktisch zeitgleich mit `keyDown` entsteht. Bekannte Grenze des Prinzips, auch bei Unclack.
+- Debug-Profil zeigt Median und p95 der Latenz je Geraet, ohne Tasteninformation (TM-08).
 - Idle mit Funktion an und ohne laufendes Mikrofon: keine zusaetzlichen Wakeups gegenueber Funktion aus.
 
 ## Fehlerfaelle
@@ -237,6 +280,10 @@ Stufe 1 und 2 zusammen sind auslieferbar, solange Stufe 4 vor dem Merge folgt.
 - Mikrofon ohne Mute-Property (Lautstaerke-Weg), Mikrofontaste waehrend einer Tipp-Phase, danach
   erneut: die Eingangslautstaerke ist wieder auf dem Wert vor der Tipp-Phase.
 - Zweites, unbenutztes Mikrofon vom Nutzer stumm, Tippen im Teams-Call: Teams wird nicht stummgeschaltet.
+- Teams-Call, eingebautes Mikrofon, Tippen: Teams zeigt keinen Hinweis „Dein Mikrofon ist stumm“.
+- Eingebautes Mikrofon: p95 der Latenz nach [Budgets](#budgets) unter 5 ms, abgelesen im Debug-Profil.
+- `keyDown` im Zustand `idle` fuehrt ausser den Schreibzugriffen keinen CoreAudio-Aufruf aus
+  (pruefbar ueber einen Zaehler im Debug-Build).
 - `kill -9` waehrend einer Tipp-Phase, danach Neustart von AltTab+: Mikrofon ist offen.
 - Panic-Kill-Switch waehrend einer Tipp-Phase: Mikrofon sofort offen.
 - Gehaltene Taste (Autorepeat) loest nach dem ersten Anschlag keine weiteren Schreibzugriffe aus.
@@ -246,14 +293,20 @@ Stufe 1 und 2 zusammen sind auslieferbar, solange Stufe 4 vor dem Merge folgt.
 
 - Reicht `kAudioDevicePropertyDeviceIsRunningSomewhere` fuer Apps, die das Mikrofon dauerhaft offen
   halten (z. B. Diktat im Hintergrund), oder braucht es eine Liste von Call-Apps als Zusatzbedingung?
-- Reagieren Zoom, Teams und Meet auf ein kurz stummes Hardware-Mikrofon mit einem Hinweis „Mikrofon ist
-  stumm“? Falls ja: Lautstaerke-Weg statt Mute-Property bevorzugen (**zu verifizieren**, fuer Teams
-  zuerst, weil es bereits integriert ist).
+- Zeigt Teams den Stumm-Hinweis auch bei Eingangslautstaerke 0? Falls ja, gibt es ohne virtuelles
+  Audiogeraet keinen hinweisfreien Weg; dann Funktion pausieren, solange ein
+  `com.microsoft.teams2.`-Prozess aufnimmt, und das im UI sagen.
+- Aendert der Teams-Media-Stack mit „Mikrofonempfindlichkeit automatisch anpassen“ die
+  System-Eingangslautstaerke? Falls ja, kaempft er gegen den Lautstaerke-Weg; TypingMute gibt dann nach
+  (externe Aenderung), die Stummschaltung ist in diesem Moment wirkungslos.
+- Ist Eingangslautstaerke 0 beim eingebauten Mikrofon echte Stille oder nur sehr leise? Messen; Ziel
+  unter −60 dBFS fuer einen Tastenklick.
+- Zeigen Zoom und Meet bei gesetzter Mute-Property ebenfalls einen Hinweis? (**zu verifizieren**)
 - Haelt Teams das Mikrofon auch dann offen (`IsRunningSomewhere`), wenn es in Teams stumm ist? Falls ja,
   schaltet TypingMute unnoetig; harmlos, aber vermeidbar, indem TypingMute den zuletzt von
   `TeamsMuteSync` gelesenen Knopfzustand mitnutzt. Nicht in v1, weil `TeamsMuteSync` den Zustand heute
   nur bei eingeschalteter Einstellung und nur alle 10 s kennt.
 - Soll die Tipp-Stummschaltung im Menueleisten-Icon sichtbar sein (z. B. gedimmtes Mikrofon), oder
   bleibt sie unsichtbar?
-- Hat das schnelle Umschalten der Mute-Property bei Bluetooth-Headsets hoerbare Artefakte oder
+- Hat das schnelle Umschalten von Lautstaerke oder Mute-Property bei Bluetooth-Headsets hoerbare Artefakte oder
   Profilwechsel (HFP/A2DP)?
