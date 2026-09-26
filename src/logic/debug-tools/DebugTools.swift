@@ -32,6 +32,7 @@ enum DebugTools {
             ("Active input modules", activeModules()),
             ("Pointer ownership", PointerCategory.allCases.map { "\($0):\(PointerOwnership.state($0))" }.joined(separator: DebugProfile.interSeparator)),
             ("Keep Awake", "\(KeepAwake.state)"),
+            ("Typing mute", TypingMute.debugSummary()),
             ("Uptime", String(format: "%.0f s", Date().timeIntervalSince(launchDate))),
         ]
     }

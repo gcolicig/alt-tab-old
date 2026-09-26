@@ -363,6 +363,8 @@ class App: NSApplication {
         _ = Actions.registry
         MicMuteIndicator.preferenceChanged()
         TeamsMuteSync.preferenceChanged()
+        TypingMute.recoverAfterUncleanExit()
+        TypingMute.preferenceChanged()
         MainMenu.create()
         _ = TilesPanel()
         _ = PreviewPanel()

@@ -72,6 +72,14 @@ class SystemActionsTab {
         microphone.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Sync Teams mute with microphone", comment: ""),
             subTitle: NSLocalizedString("Teams is muted automatically when the microphone is muted. It is unmuted only directly after an AltTab+ microphone action.", comment: ""),
             rightViews: [LabelAndControl.makeSwitch("teamsMuteSync")]))
+        let typingMuteFullText = NSLocalizedString("Works like Unclack: while you type, the microphones in use go silent, and they open again shortly after the last key. It lowers the input volume, so Teams does not report a muted microphone; a microphone without a volume control is muted instead, and Teams then shows its notice. The first key of a burst can still be heard.", comment: "")
+        microphone.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Mute the microphone while typing", comment: ""),
+            subTitle: NSLocalizedString("Only while an app uses the microphone. The microphone key always wins.", comment: ""),
+            rightViews: [LabelAndControl.makeInfoButton(searchableTooltipTexts: [typingMuteFullText], onMouseEntered: { event, view in
+                Popover.shared.show(event: event, positioningView: view, message: typingMuteFullText)
+            }, onMouseExited: { _, _ in Popover.shared.hide() }), LabelAndControl.makeSwitch("typingMuteEnabled")]))
+        microphone.addRow(TableGroupView.Row(leftTitle: NSLocalizedString("Open again after the last key", comment: ""),
+            rightViews: [SettingsControls.valuePopup("typingMuteHoldMs", typingMuteHoldOptions)]))
         let keys = TableGroupView(title: NSLocalizedString("Function Keys", comment: ""), width: SettingsWindow.contentWidth)
         let restore = NSButton(title: NSLocalizedString("Restore original mode", comment: ""), target: nil, action: nil)
         restore.onAction = { _ in FunctionKeys.releaseOwnership() }
@@ -80,6 +88,7 @@ class SystemActionsTab {
     }
 
     private static let delayOptions: [(String, Int)] = [0, 5, 10, 30, 60, 120, 300].map { (String(format: NSLocalizedString("%d s", comment: ""), $0), $0) }
+    private static let typingMuteHoldOptions: [(String, Int)] = [150, 250, 400, 600, 800, 1000, 1500].map { (String(format: NSLocalizedString("%d ms", comment: ""), $0), $0) }
     private static let catModeOptions: [(String, Int)] = [5, 15, 30, 60, 120, 240].map { (String(format: NSLocalizedString("%d min", comment: ""), $0), $0) }
     private static let modeOptions: [(String, Int)] = [
         (NSLocalizedString("Only apps in the list", comment: ""), AutoQuitMode.onlyListed.rawValue),

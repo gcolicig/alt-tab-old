@@ -16,23 +16,42 @@ enum AudioMute {
         !muteableDevices(input: input).isEmpty
     }
 
+    /// The state is read before a typing phase is surrendered: devices muted only by typing count as unmuted,
+    /// so pressing the key during a phase mutes, and the user owns that mute from then on.
     static func toggle(input: Bool) {
         let devices = muteableDevices(input: input)
         guard !devices.isEmpty else { return }
         let muted = isMuted(input: input)
-        devices.forEach { device in
-            if isSettable(device, kAudioDevicePropertyMute, scope(input)) {
-                writeUInt32(device, kAudioDevicePropertyMute, scope(input), muted ? 0 : 1)
-            } else if input {
-                muted ? restoreSimulatedInputMute(device) : simulateInputMute(device)
-            }
-        }
+        let typingMuted = input ? TypingMute.surrenderOwnership() : []
+        devices.forEach { setMuted(!muted, $0, input: input) }
+        typingMuted.forEach { adoptTypingMute($0, muted: !muted) }
         MicMuteIndicator.refresh()
         if input { TeamsMuteSync.microphoneToggled() }
     }
 
     static func restoreOnQuit() {
+        TypingMute.releaseAll()
         Array(simulatedInputMutes.keys).forEach { restoreSimulatedInputMute($0) }
+    }
+
+    private static func setMuted(_ mute: Bool, _ device: AudioObjectID, input: Bool) {
+        if isSettable(device, kAudioDevicePropertyMute, scope(input)) {
+            writeUInt32(device, kAudioDevicePropertyMute, scope(input), mute ? 1 : 0)
+        } else if input {
+            mute ? simulateInputMute(device) : restoreSimulatedInputMute(device)
+        }
+    }
+
+    /// A typing phase silenced by volume leaves the device at 0. Without taking over its original volume,
+    /// the next unmute could not bring the microphone back.
+    private static func adoptTypingMute(_ owned: TypingMuteOwnedDevice, muted: Bool) {
+        guard owned.route == .volume else { return }
+        let device = AudioObjectID(owned.device)
+        if muted, !isSettable(device, kAudioDevicePropertyMute, scope(true)) {
+            simulatedInputMutes[device] = owned.original
+        } else {
+            writeFloat(device, kAudioDevicePropertyVolumeScalar, scope(true), owned.original)
+        }
     }
 
     private static func simulateInputMute(_ device: AudioObjectID) {
@@ -71,6 +90,7 @@ enum AudioMute {
     }
 
     private static func isMuted(_ device: AudioObjectID, input: Bool) -> Bool {
+        if input, TypingMute.owns(device) { return false }
         if input, simulatedInputMutes[device] != nil { return true }
         return readUInt32(device, kAudioDevicePropertyMute, scope(input)) == 1
     }
@@ -95,14 +115,14 @@ enum AudioMute {
         AudioObjectPropertyAddress(mSelector: selector, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
     }
 
-    private static func isSettable(_ device: AudioObjectID, _ selector: AudioObjectPropertySelector, _ scope: AudioObjectPropertyScope) -> Bool {
+    static func isSettable(_ device: AudioObjectID, _ selector: AudioObjectPropertySelector, _ scope: AudioObjectPropertyScope) -> Bool {
         var address = AudioObjectPropertyAddress(mSelector: selector, mScope: scope, mElement: kAudioObjectPropertyElementMain)
         guard AudioObjectHasProperty(device, &address) else { return false }
         var settable = DarwinBoolean(false)
         return AudioObjectIsPropertySettable(device, &address, &settable) == noErr && settable.boolValue
     }
 
-    private static func readUInt32(_ device: AudioObjectID, _ selector: AudioObjectPropertySelector, _ scope: AudioObjectPropertyScope) -> UInt32? {
+    static func readUInt32(_ device: AudioObjectID, _ selector: AudioObjectPropertySelector, _ scope: AudioObjectPropertyScope) -> UInt32? {
         var address = AudioObjectPropertyAddress(mSelector: selector, mScope: scope, mElement: kAudioObjectPropertyElementMain)
         guard AudioObjectHasProperty(device, &address) else { return nil }
         var value = UInt32(0)
@@ -110,7 +130,7 @@ enum AudioMute {
         return AudioObjectGetPropertyData(device, &address, 0, nil, &size, &value) == noErr ? value : nil
     }
 
-    private static func readFloat(_ device: AudioObjectID, _ selector: AudioObjectPropertySelector, _ scope: AudioObjectPropertyScope) -> Float32? {
+    static func readFloat(_ device: AudioObjectID, _ selector: AudioObjectPropertySelector, _ scope: AudioObjectPropertyScope) -> Float32? {
         var address = AudioObjectPropertyAddress(mSelector: selector, mScope: scope, mElement: kAudioObjectPropertyElementMain)
         guard AudioObjectHasProperty(device, &address) else { return nil }
         var value = Float32(0)
@@ -118,21 +138,24 @@ enum AudioMute {
         return AudioObjectGetPropertyData(device, &address, 0, nil, &size, &value) == noErr ? value : nil
     }
 
-    private static func writeUInt32(_ device: AudioObjectID, _ selector: AudioObjectPropertySelector, _ scope: AudioObjectPropertyScope, _ value: UInt32) {
+    @discardableResult
+    static func writeUInt32(_ device: AudioObjectID, _ selector: AudioObjectPropertySelector, _ scope: AudioObjectPropertyScope, _ value: UInt32) -> Bool {
         var address = AudioObjectPropertyAddress(mSelector: selector, mScope: scope, mElement: kAudioObjectPropertyElementMain)
         var value = value
-        report(AudioObjectSetPropertyData(device, &address, 0, nil, UInt32(MemoryLayout<UInt32>.size), &value), selector)
+        return report(AudioObjectSetPropertyData(device, &address, 0, nil, UInt32(MemoryLayout<UInt32>.size), &value), selector)
     }
 
-    private static func writeFloat(_ device: AudioObjectID, _ selector: AudioObjectPropertySelector, _ scope: AudioObjectPropertyScope, _ value: Float32) {
+    @discardableResult
+    static func writeFloat(_ device: AudioObjectID, _ selector: AudioObjectPropertySelector, _ scope: AudioObjectPropertyScope, _ value: Float32) -> Bool {
         var address = AudioObjectPropertyAddress(mSelector: selector, mScope: scope, mElement: kAudioObjectPropertyElementMain)
         var value = value
-        report(AudioObjectSetPropertyData(device, &address, 0, nil, UInt32(MemoryLayout<Float32>.size), &value), selector)
+        return report(AudioObjectSetPropertyData(device, &address, 0, nil, UInt32(MemoryLayout<Float32>.size), &value), selector)
     }
 
-    private static func report(_ status: OSStatus, _ selector: AudioObjectPropertySelector) {
-        guard status != noErr else { return }
+    private static func report(_ status: OSStatus, _ selector: AudioObjectPropertySelector) -> Bool {
+        guard status != noErr else { return true }
         Logger.warning { "CoreAudio write \(selector) failed: \(status)" }
+        return false
     }
 }
 

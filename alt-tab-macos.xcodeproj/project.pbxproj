@@ -432,6 +432,11 @@
 		C0DE100000000000000000C0 /* SystemUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000B9 /* SystemUtilities.swift */; };
 		C0DE100000000000000000C1 /* AudioMute.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000BA /* AudioMute.swift */; };
 		7EA550000000000000000001 /* TeamsMuteSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EA550000000000000000002 /* TeamsMuteSync.swift */; };
+		7EA560000000000000000001 /* TypingMute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EA560000000000000000002 /* TypingMute.swift */; };
+		7EA560000000000000000003 /* TypingMuteAudio.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EA560000000000000000004 /* TypingMuteAudio.swift */; };
+		7EA560000000000000000005 /* TypingMuteTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EA560000000000000000007 /* TypingMuteTestable.swift */; };
+		7EA560000000000000000006 /* TypingMuteTestable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EA560000000000000000007 /* TypingMuteTestable.swift */; };
+		7EA560000000000000000008 /* TypingMuteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EA560000000000000000009 /* TypingMuteTests.swift */; };
 		C0DE100000000000000000C2 /* DefaultBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000BB /* DefaultBrowser.swift */; };
 		C0DE100000000000000000C3 /* FunctionKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000BC /* FunctionKeys.swift */; };
 		C0DE100000000000000000C4 /* AppQuit.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE200000000000000000BD /* AppQuit.swift */; };
@@ -1020,6 +1025,10 @@
 		C0DE200000000000000000B9 /* SystemUtilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemUtilities.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000BA /* AudioMute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioMute.swift; sourceTree = "<group>"; };
 		7EA550000000000000000002 /* TeamsMuteSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamsMuteSync.swift; sourceTree = "<group>"; };
+		7EA560000000000000000002 /* TypingMute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypingMute.swift; sourceTree = "<group>"; };
+		7EA560000000000000000004 /* TypingMuteAudio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypingMuteAudio.swift; sourceTree = "<group>"; };
+		7EA560000000000000000007 /* TypingMuteTestable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypingMuteTestable.swift; sourceTree = "<group>"; };
+		7EA560000000000000000009 /* TypingMuteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypingMuteTests.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000BB /* DefaultBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowser.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000BC /* FunctionKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunctionKeys.swift; sourceTree = "<group>"; };
 		C0DE200000000000000000BD /* AppQuit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppQuit.swift; sourceTree = "<group>"; };
@@ -1457,6 +1466,7 @@
 				3E1699A2D69849C483898542 /* PreferencesResetTests.swift */,
 				C0DE200000000000000000CA /* DebugToolsTests.swift */,
 				C0DE200000000000000000C3 /* KeepAwakeTests.swift */,
+				7EA560000000000000000009 /* TypingMuteTests.swift */,
 				C0DE200000000000000000BE /* SystemActionTests.swift */,
 				C0DE200000000000000000B8 /* WindowFocusTests.swift */,
 				C0DE200000000000000000B5 /* MenuLayoutTests.swift */,
@@ -2579,6 +2589,9 @@
 				C0DE200000000000000000BB /* DefaultBrowser.swift */,
 				C0DE200000000000000000BA /* AudioMute.swift */,
 				7EA550000000000000000002 /* TeamsMuteSync.swift */,
+				7EA560000000000000000002 /* TypingMute.swift */,
+				7EA560000000000000000004 /* TypingMuteAudio.swift */,
+				7EA560000000000000000007 /* TypingMuteTestable.swift */,
 				C0DE200000000000000000B9 /* SystemUtilities.swift */,
 				C0DE200000000000000000B7 /* WindowFocusActions.swift */,
 				C0DE200000000000000000B6 /* WindowFocusTestable.swift */,
@@ -3074,6 +3087,8 @@
 				C0DE100000000000000000D2 /* DebugToolsTestable.swift in Sources */,
 				C0DE100000000000000000CD /* ScreenToolsTestable.swift in Sources */,
 				C0DE100000000000000000CB /* KeepAwakeTests.swift in Sources */,
+				7EA560000000000000000006 /* TypingMuteTestable.swift in Sources */,
+				7EA560000000000000000008 /* TypingMuteTests.swift in Sources */,
 				C0DE100000000000000000C9 /* KeepAwakeTestable.swift in Sources */,
 				C0DE100000000000000000C5 /* SystemActionTests.swift in Sources */,
 				C0DE100000000000000000BF /* WindowFocusTests.swift in Sources */,
@@ -3170,6 +3185,9 @@
 				C0DE100000000000000000C2 /* DefaultBrowser.swift in Sources */,
 				C0DE100000000000000000C1 /* AudioMute.swift in Sources */,
 				7EA550000000000000000001 /* TeamsMuteSync.swift in Sources */,
+				7EA560000000000000000001 /* TypingMute.swift in Sources */,
+				7EA560000000000000000003 /* TypingMuteAudio.swift in Sources */,
+				7EA560000000000000000005 /* TypingMuteTestable.swift in Sources */,
 				C0DE100000000000000000C0 /* SystemUtilities.swift in Sources */,
 				C0DE100000000000000000BE /* WindowFocusActions.swift in Sources */,
 				C0DE100000000000000000BC /* WindowFocusTestable.swift in Sources */,

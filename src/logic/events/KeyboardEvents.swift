@@ -82,16 +82,20 @@ class KeyboardEvents {
                 }
                 return nil
             }
+            // only keys that reach the app: a key AltTab+ consumed above is a command, not typing
+            TypingMute.keyActivity(.down(isAutorepeat: isAutorepeat))
         } else if type == .keyUp {
             let keyCode = UInt32(cgEvent.getIntegerValueField(.keyboardEventKeycode))
             if handleHyperKeyUp(keyCode, cgEvent) {
                 return nil
             }
+            TypingMute.keyActivity(.up)
         } else if type == .flagsChanged {
             let keyCode = CGKeyCode(cgEvent.getIntegerValueField(.keyboardEventKeycode))
             if keyCode == CGKeyCode(kVK_CapsLock), hyperKeyIsActive() {
                 return nil
             }
+            TypingMute.keyActivity(.modifiers)
             withHyperKeyState { $0.markCapsLockUsed() }
             // the clues overlay is shown while a trigger is held; the modifier change is where a release
             // becomes visible without absorbing anything or opening a second tap
@@ -581,6 +585,8 @@ class KeyboardEvents {
         WindowDragEvents.disableForSafety()
         LeaderController.reset()
         FlickRingEvents.disableForSafety()
+        TypingMute.releaseAll()
+        TypingMute.preferenceChanged()
         ShortcutCluesController.triggerReleased()
         App.hideUi()
         if let message { showSafetyAlert(message) }

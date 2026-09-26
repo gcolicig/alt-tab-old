@@ -53,7 +53,7 @@ enum CreatorSettings {
     ///
     /// `Command+Control` additionally needs the global drag-on-gesture switch off; the launch path acquires
     /// and verifies that ownership like any deliberate activation, and refuses the modifier if it cannot.
-    private static let excludedInputModuleKeys: Set<String> = ["nextWindowGesture", "leaderEnabled"]
+    private static let excludedInputModuleKeys: Set<String> = ["nextWindowGesture", "leaderEnabled", "typingMuteEnabled"]
 
     /// Enforced rather than merely intended: a later edit that adds an input-module key to `values` is
     /// dropped here instead of quietly arming a tap on somebody else's machine.

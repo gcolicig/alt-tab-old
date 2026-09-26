@@ -119,6 +119,8 @@ class Preferences {
         values["micMuteIndicator"] = "true"
         values["micKeyMutesMicrophone"] = "false"
         values["teamsMuteSync"] = "false"
+        values["typingMuteEnabled"] = "false"
+        values["typingMuteHoldMs"] = "400"
         values["autoQuitEnabled"] = "false"
         values["autoQuitDelaySeconds"] = "10"
         values["autoQuitMode"] = String(AutoQuitMode.onlyListed.rawValue)
@@ -198,6 +200,8 @@ class Preferences {
     static var micMuteIndicator: Bool { CachedUserDefaults.bool("micMuteIndicator") }
     static var micKeyMutesMicrophone: Bool { CachedUserDefaults.bool("micKeyMutesMicrophone") }
     static var teamsMuteSync: Bool { CachedUserDefaults.bool("teamsMuteSync") }
+    static var typingMuteEnabled: Bool { CachedUserDefaults.bool("typingMuteEnabled") }
+    static var typingMuteHoldMs: Int { min(1500, max(150, CachedUserDefaults.int("typingMuteHoldMs"))) }
     static var autoQuitEnabled: Bool { CachedUserDefaults.bool("autoQuitEnabled") }
     static var autoQuitDelaySeconds: Int { CachedUserDefaults.int("autoQuitDelaySeconds") }
     static var autoQuitMode: Int { CachedUserDefaults.int("autoQuitMode") }
