@@ -18,7 +18,7 @@ ihn. Umgekehrt darf die Funktion ein Mikrofon, das der Nutzer selbst stummgescha
 
 ## Status und Prioritaet
 
-Status: Spezifiziert, nicht begonnen
+Status: Umgesetzt auf `feat/typing-mute`, Hardware-Verifikation offen
 Prioritaet: Mittel. Klein, nutzt bestehenden Tap und bestehende CoreAudio-Pfade.
 
 ## Plattform und Einbindung
@@ -214,13 +214,14 @@ Weitere Festlegungen:
 | `typingMuteHoldMs` | 150 bis 1500 | 400 |
 
 Beschriftung: „Mikrofon beim Tippen stummschalten“ mit Hinweis „Nur waehrend eine App das Mikrofon
-benutzt. Die Mikrofontaste hat immer Vorrang.“ Der Regler fuer die Frist erscheint erst, wenn der
-Schalter an ist.
+benutzt. Die Mikrofontaste hat immer Vorrang.“ Die Frist ist ein Auswahlmenue (150, 250, 400, 600, 800,
+1000, 1500 ms) wie die uebrigen Zeitwerte der Seite und immer sichtbar.
 
 ## Budgets
 
 - Tap-Callback: zusaetzlich hoechstens ein atomarer Zeitstempel-Schreibzugriff und ein Flag-Vergleich.
-- Latenz vom Zeitstempel des `keyDown` (`CGEvent.timestamp`) bis zur Rueckkehr des Schreibzugriffs,
+- Latenz vom Eintreffen des `keyDown` im Tap bis zur Rueckkehr des Schreibzugriffs (nicht ab
+  `CGEvent.timestamp`, dessen Einheit nicht verifiziert ist; die HID-Strecke davor fehlt in der Messung),
   p95 ueber 200 Tipp-Phasen:
 
   | Geraet | Ziel |
