@@ -214,6 +214,19 @@ wiederverwendet. Durchgestrichen heisst: du bist nicht zu hoeren.
 - Nur in der Zeile neben den Spaces; das Fallback-Statusitem bei ausgeblendetem AltTab+-Icon zeigt
   weiterhin nur Rot.
 
+**Bekannter Mangel (Feldtest 2026-09-26):** Das gelbe Symbol ist praktisch nicht anklickbar. Es
+verschwindet `holdMs` nach der letzten Taste, also bevor der Zeiger die Menueleiste erreicht. Damit ist
+auch Grau nie erreichbar, und Pausieren geht nur ueber den Settings-Schalter. Optionen, noch nicht
+entschieden:
+
+| Option | Beschreibung |
+|---|---|
+| Dauerhaftes Symbol (empfohlen) | Solange ein Mikrofon laeuft und die Funktion scharf ist: gelbes `mic.fill`; waehrend einer Tipp-Phase gelbes `mic.slash.fill`; pausiert graues `mic.fill`. Gleiche Position, nur der Strich wechselt, kein Springen der Spaces. Klick auf Gelb pausiert, auf Grau setzt fort |
+| Menueeintrag | „Mute while typing: pause/resume“ im AltTab+-Menue, sichtbar waehrend ein Mikrofon laeuft |
+| Tastenkuerzel | Globaler Shortcut fuer Pause/Fortsetzen; muss als Tastendruck selbst keine Tipp-Phase ausloesen |
+
+Die Optionen schliessen sich nicht aus. Entscheid nach dem Feldtest zur Call-Erkennung.
+
 ## Absturzsicherheit
 
 - Vor dem ersten Schreibzugriff einer `holding`-Phase schreibt TypingMute einen Marker in
